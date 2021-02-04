@@ -267,3 +267,30 @@ end
 getrv(orbit::Orbit, u) = getrv(orbit.a, orbit.e, orbit.n, u)
 getposition(orbit::Orbit, u) = getposition(orbit.a, orbit.e, u)
 getvelocity(orbit::Orbit, u) = getvelocity(orbit.a, orbit.e, orbit.n, u)
+
+
+
+
+###################################################################
+###################################################################
+###################################################################
+
+
+Rx(θ) = [
+    1   0      0
+    0  cos(θ) sin(θ)
+    0 -sin(θ) cos(θ)
+]
+
+Ry(θ) = [
+    cos(θ) 0 -sin(θ)
+     0     1   0
+    sin(θ) 0  cos(θ)
+]
+
+Rz(θ) = [
+     cos(θ) sin(θ) 0
+    -sin(θ) cos(θ) 0
+      0      0     1 
+]
+

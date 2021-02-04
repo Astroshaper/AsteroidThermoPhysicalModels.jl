@@ -70,7 +70,7 @@ function evaluate_by_predictor!(ps::AbstractVector, ϵ)
         p1.⁺a⁰ .= zero(eltype(p1.⁺a⁰))
         p1.⁺a¹ .= zero(eltype(p1.⁺a¹))
         for p2 in ps
-            evaluate_by_predictor!(p1, p2, ϵ)
+            p1 != p2 && evaluate_by_predictor!(p1, p2, ϵ)
         end
     end
 end
@@ -81,7 +81,7 @@ function evaluate_by_corrector!(ps::AbstractVector, ϵ)
         p1.⁺a⁰ .= zero(eltype(p1.⁺a⁰))
         p1.⁺a¹ .= zero(eltype(p1.⁺a¹))
         for p2 in ps
-            evaluate_by_corrector!(p1, p2, ϵ)
+            p1 != p2 && evaluate_by_corrector!(p1, p2, ϵ)
         end
     end
 end
@@ -92,7 +92,7 @@ function initialize!(ps::AbstractVector, ϵ)
         p1.a⁰ .= zero(eltype(p1.a⁰))
         p1.a¹ .= zero(eltype(p1.a¹))
         for p2 in ps
-            evaluate!(p1.a⁰, p1.a¹, p1.r, p1.v, p2.r, p2.v, p2.m, ϵ)
+            p1 != p2 && evaluate!(p1.a⁰, p1.a¹, p1.r, p1.v, p2.r, p2.v, p2.m, ϵ)
         end
     end
 end
