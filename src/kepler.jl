@@ -295,8 +295,8 @@ Rz(θ) = [
 ]
 
 
-function orb2ref()
-    
-    
-end
+orb2ref(r, ω, I, Ω) = Rz(-Ω) * Rx(-I) * Rz(-ω) * r
+ref2orb(r, ω, I, Ω) = Rz( ω) * Rx( I) * Rz( Ω) * r
 
+getr_orb(a, e, u) = [a * (cos(u) - e), a * √(1 - e*e) * sin(u), 0]
+# getr_ref(a, e, u) = orb2ref(getr_orb(a, e, u), ω, I, Ω)
