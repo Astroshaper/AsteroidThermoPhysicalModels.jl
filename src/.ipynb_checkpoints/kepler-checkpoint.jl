@@ -267,11 +267,3 @@ end
 getrv(orbit::Orbit, u) = getrv(orbit.a, orbit.e, orbit.n, u)
 getposition(orbit::Orbit, u) = getposition(orbit.a, orbit.e, u)
 getvelocity(orbit::Orbit, u) = getvelocity(orbit.a, orbit.e, orbit.n, u)
-
-
-
-
-###################################################################
-
-
-
