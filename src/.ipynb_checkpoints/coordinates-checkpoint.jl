@@ -5,7 +5,7 @@
 
 using StaticArrays
 
-include("kepler.jl")
+# include("kepler.jl")
 
 
 """
@@ -138,8 +138,6 @@ Parameters:
     θ : rotation angleon
 """
 function rotateZ!(v, θ)
-    
-
     sinθ = sin(θ)
     cosθ = cos(θ)
     
@@ -208,8 +206,8 @@ function inertia_to_orbit(v, ω, I, Ω)
     v = rotateZ(v, ω)
 end
 
-inertia_to_orbit!(v, orbit::Orbit) = inertia_to_orbit!(v, orbit.ω, orbit.I, orbit.Ω)
-inertia_to_orbit(v, orbit::Orbit) = inertia_to_orbit(v, orbit.ω, orbit.I, orbit.Ω)
+# inertia_to_orbit!(v, orbit::Orbit) = inertia_to_orbit!(v, orbit.ω, orbit.I, orbit.Ω)
+# inertia_to_orbit(v, orbit::Orbit) = inertia_to_orbit(v, orbit.ω, orbit.I, orbit.Ω)
 
 
 """
@@ -233,8 +231,8 @@ function orbit_to_inertia(v, ω, I, Ω)
     v = rotateZ(v, -Ω)
 end
 
-orbit_to_inertia!(v, orbit::Orbit) = orbit_to_inertia!(v, orbit.ω, orbit.I, orbit.Ω)
-orbit_to_inertia(v, orbit::Orbit) = orbit_to_inertia(v, orbit.ω, orbit.I, orbit.Ω)
+# orbit_to_inertia!(v, orbit::Orbit) = orbit_to_inertia!(v, orbit.ω, orbit.I, orbit.Ω)
+# orbit_to_inertia(v, orbit::Orbit) = orbit_to_inertia(v, orbit.ω, orbit.I, orbit.Ω)
 
 
 """
