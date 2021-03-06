@@ -5,6 +5,7 @@ using LinearAlgebra
 include("constants.jl")
 include("nbody.jl")
 
+# c.f.
 # https://github.com/nitadori/Hermite/blob/master/SRC/hermite4-k.cpp
 
 
@@ -20,18 +21,31 @@ function forward!(ps, Δt, ϵ, α, η)
 end
 
 
-function run_sim(ps, Δt, t_end, ϵ, α, η)
+function run_sim(ps, Δt, t_end, save_interval::Int, ϵ, α, η)
     
-    snapshots = typeof(ps.r)[]
+    nsteps = length(0:Δt:t_end)  # Number of time-steps for calculation
     
-    for t in 0:Δt:t_end
+    times = collect(0:Δt:t_end)[begin:save_interval:end]  # Time-series to be saved
+    nsaves = length(times)
+    snapshots = Vector{typeof(ps)}(undef, nsaves)  # Snapshots of particles
+    snapshots[begin] = deepcopy(ps)
+            
+    @show Δt
+    @show t_end
+    @show nsteps
+    @show nsaves
+    
+    for i in 1:nsteps-1
+        # t = Δt * (i - 1)
         forward!(ps, Δt, ϵ, α, η)
-        push!(snapshots, deepcopy(ps.r))
+        i%save_interval == 0 && (snapshots[div(i, save_interval)+1] = deepcopy(ps))
     end
-    snapshots
+    times, snapshots
 end
 
 
+#############################################################
+#############################################################
 #############################################################
 
 
@@ -40,6 +54,8 @@ function predict!(ps::AbstractVector, Δt)
         predict!(p, Δt)
     end
 end
+
+# predict!(ps::AbstractVector, Δt) = [predict!(p, Δt) for p in ps]
 
 
 function predict!(p::Particle, Δt)
@@ -66,9 +82,12 @@ evaluate_by_corrector!(p1, p2, ϵ) = evaluate!(p1.⁺a⁰, p1.⁺a¹, p1.ᶜr, p
 
 
 function evaluate_by_predictor!(ps::AbstractVector, ϵ)
+    for p in ps
+        p.⁺a⁰ .= 0
+        p.⁺a¹ .= 0
+    end
+    
     for p1 in ps
-        p1.⁺a⁰ .= zero(eltype(p1.⁺a⁰))
-        p1.⁺a¹ .= zero(eltype(p1.⁺a¹))
         for p2 in ps
             p1 != p2 && evaluate_by_predictor!(p1, p2, ϵ)
         end
@@ -77,9 +96,12 @@ end
 
 
 function evaluate_by_corrector!(ps::AbstractVector, ϵ)
+    for p in ps
+        p.⁺a⁰ .= 0
+        p.⁺a¹ .= 0
+    end
+    
     for p1 in ps
-        p1.⁺a⁰ .= zero(eltype(p1.⁺a⁰))
-        p1.⁺a¹ .= zero(eltype(p1.⁺a¹))
         for p2 in ps
             p1 != p2 && evaluate_by_corrector!(p1, p2, ϵ)
         end
@@ -89,8 +111,8 @@ end
 
 function initialize!(ps::AbstractVector, ϵ)
     for p1 in ps
-        p1.a⁰ .= zero(eltype(p1.a⁰))
-        p1.a¹ .= zero(eltype(p1.a¹))
+        p1.a⁰ .= 0
+        p1.a¹ .= 0
         for p2 in ps
             p1 != p2 && evaluate!(p1.a⁰, p1.a¹, p1.r, p1.v, p2.r, p2.v, p2.m, ϵ)
         end

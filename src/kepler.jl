@@ -100,6 +100,7 @@ function ref_to_orb!(r, ω, I, Ω)
     rotateZ!(r, ω)
 end
 
+
 function ref_to_orb(r, ω, I, Ω)
     r = rotateZ(r, Ω)
     r = rotateX(r, I)
@@ -109,7 +110,7 @@ end
 
 ###################################################################
 #                   Coordinate transformation
-#                   r (x, y, z) -> R (X, Y, Z)
+#                    r(x, y, z) -> R(X, Y, Z)
 ###################################################################
 
 
@@ -131,6 +132,7 @@ function orb_to_ref!(r, ω, I, Ω)
     rotateX!(r, -I)
     rotateZ!(r, -Ω)
 end
+
 
 function orb_to_ref(r, ω, I, Ω)
     r = rotateZ(r, -ω)
@@ -234,6 +236,22 @@ get_tₚ(t, E, e, n) = t - (E - e*sin(E)) / n
 
 # ****************************************************************
 # ****************************************************************
+# ****************************************************************
+
+
+function getOrbitalElementsError(elms, elms_ref)
+    Δa = elms.a - elms_ref.a
+    Δe = elms.e - elms_ref.e
+    Δω = elms.ω - elms_ref.ω
+    ΔT = elms.T - elms_ref.T
+    
+    return Δa, Δe, Δω, ΔT
+end
+
+
+# ****************************************************************
+#           Orbital elements -> r(x, y, z), v(ẋ, ẏ, ż)
+#                                @Orbital plane frame
 # ****************************************************************
 
 
@@ -414,28 +432,28 @@ end
 ################################################################
 
 
-Rx(θ) = [
-    1   0      0
-    0  cos(θ) sin(θ)
-    0 -sin(θ) cos(θ)
-]
+# Rx(θ) = [
+#     1   0      0
+#     0  cos(θ) sin(θ)
+#     0 -sin(θ) cos(θ)
+# ]
 
-Ry(θ) = [
-    cos(θ) 0 -sin(θ)
-     0     1   0
-    sin(θ) 0  cos(θ)
-]
+# Ry(θ) = [
+#     cos(θ) 0 -sin(θ)
+#      0     1   0
+#     sin(θ) 0  cos(θ)
+# ]
 
-Rz(θ) = [
-     cos(θ) sin(θ) 0
-    -sin(θ) cos(θ) 0
-      0      0     1 
-]
+# Rz(θ) = [
+#      cos(θ) sin(θ) 0
+#     -sin(θ) cos(θ) 0
+#       0      0     1 
+# ]
 
-orb2ref(r, elms) = orb2ref(r, elms.ω, elms.I, elms.Ω)
-ref2orb(r, elms) = ref2orb(r, elms.ω, elms.I, elms.Ω)
+# orb2ref(r, elms) = orb2ref(r, elms.ω, elms.I, elms.Ω)
+# ref2orb(r, elms) = ref2orb(r, elms.ω, elms.I, elms.Ω)
 
-orb2ref(r, ω, I, Ω) = Rz(-Ω) * Rx(-I) * Rz(-ω) * r
-ref2orb(r, ω, I, Ω) = Rz( ω) * Rx( I) * Rz( Ω) * r
+# orb2ref(r, ω, I, Ω) = Rz(-Ω) * Rx(-I) * Rz(-ω) * r
+# ref2orb(r, ω, I, Ω) = Rz( ω) * Rx( I) * Rz( Ω) * r
 
 

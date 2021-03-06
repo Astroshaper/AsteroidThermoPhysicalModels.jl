@@ -21,14 +21,6 @@ Coordinate transform from the equatorial to ecliptic coordinate systems
 - `β`: ecliptic latitude
 """
 function eq2ec(α, δ)
-    ## Coordinate transform from the equatorial to ecliptic coordinate systems
-    ##     (α, δ) -> (λ, β)
-    ## Parameters:
-    ##     α : right ascension (RA)
-    ##     δ : declination (Dec)
-    ## Returns:
-    ##     λ : ecliptic longitude
-    ##     β : ecliptic latitude
 
     ε = deg2rad(23.439279444444445)  # obliquity of the Earth's axis
 
@@ -51,14 +43,6 @@ end
 
 
 function ec2eq(λ, β)
-    ## Coordinate transform from the ecliptic to equatorial coordinate systems
-    ##     (λ, β) -> (α, δ)  
-    ## Parameters:
-    ##     λ : ecliptic longitude
-    ##     β : ecliptic latitude
-    ## Returns:
-    ##     α : right ascension (RA)
-    ##     δ : declination (Dec)
 
     ε = deg2rad(23.439279444444445)  # obliquity of the Earth's axis
 
@@ -100,7 +84,7 @@ end
 
 
 ################################################################
-#                     Rotation transformation
+#                 Rotation transformation (inpace)
 ################################################################
 
 """
@@ -145,7 +129,17 @@ function rotateZ!(v, θ)
 end
 
 
-function rotateX(v, θ)
+################################################################
+#                 Rotation transformation (non-inpalce)
+################################################################
+
+
+rotateX(v, θ) = rotateX!(copy(v), θ)
+rotateY(v, θ) = rotateY!(copy(v), θ)
+rotateZ(v, θ) = rotateZ!(copy(v), θ)
+
+
+function rotateX(v::SVector, θ)
     sinθ = sin(θ)
     cosθ = cos(θ)
     
@@ -157,7 +151,7 @@ function rotateX(v, θ)
 end
 
 
-function rotateY(v, θ)
+function rotateY(v::SVector, θ)
     sinθ = sin(θ)
     cosθ = cos(θ)
     
@@ -169,7 +163,7 @@ function rotateY(v, θ)
 end
 
 
-function rotateZ(v, θ)
+function rotateZ(v::SVector, θ)
     sinθ = sin(θ)
     cosθ = cos(θ)
     

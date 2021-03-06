@@ -28,22 +28,33 @@ struct Particle{T1 <: AbstractVector, T2 <: Real}
 end
 
 
-Particle(r, v, m) = Particle(r, v, zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), m, 1.)
-
-
-Particle(r, v) = Particle(r, v, zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), zeros(3), 1., 1.)
+function Particle(r, v, m, R)
+    
+    a⁰  = similar(r) ; a⁰  .= 0
+    a¹  = similar(r) ; a¹  .= 0
+    a²  = similar(r) ; a²  .= 0
+    a³  = similar(r) ; a³  .= 0
+    ᵖr  = similar(r) ; ᵖr  .= 0
+    ᵖv  = similar(r) ; ᵖv  .= 0
+    ⁺a⁰ = similar(r) ; ⁺a⁰ .= 0
+    ⁺a¹ = similar(r) ; ⁺a¹ .= 0
+    ᶜr  = similar(r) ; ᶜr  .= 0
+    ᶜv  = similar(r) ; ᶜv  .= 0
+    
+    Particle(r, v, a⁰, a¹, a², a³, ᵖr, ᵖv, ⁺a⁰, ⁺a¹, ᶜr, ᶜv, m, R)
+end
 
 
 function Base.show(io::IO, p::Particle)
     println(io, "Particle")
 
-    println("r   : ", p.r)
-    println("v   : ", p.v)
+    println(" r  : ", p.r)
+    println(" v  : ", p.v)
 
-    println("a⁰  : ", p.a⁰)
-    println("a¹  : ", p.a¹)
-    println("a²  : ", p.a²)
-    println("a³  : ", p.a³)
+    println(" a⁰ : ", p.a⁰)
+    println(" a¹ : ", p.a¹)
+    println(" a² : ", p.a²)
+    println(" a³ : ", p.a³)
     
     println("ᵖr  : ", p.ᵖr)
     println("ᵖv  : ", p.ᵖv)
@@ -59,30 +70,19 @@ function Base.show(io::IO, p::Particle)
 end
 
 
-#### https://rebound.readthedocs.io/en/latest/c_quickstart.html
-
-# struct reb_particle {
-#     double x;           ///< x-position of the particle. 
-#     double y;           ///< y-position of the particle. 
-#     double z;           ///< z-position of the particle. 
-#     double vx;          ///< x-velocity of the particle. 
-#     double vy;          ///< y-velocity of the particle. 
-#     double vz;          ///< z-velocity of the particle. 
-#     double ax;          ///< x-acceleration of the particle. 
-#     double ay;          ///< y-acceleration of the particle. 
-#     double az;          ///< z-acceleration of the particle. 
-#     double m;           ///< Mass of the particle. 
-#     double r;           ///< Radius of the particle. 
-#     double lastcollision;       ///< Last time the particle had a physical collision.
-#     struct reb_treecell* c;     ///< Pointer to the cell the particle is currently in.
-#     uint32_t hash;      ///< hash to identify particle.
-#     void* ap;           ///< Functionality for externally adding additional properties to particles.
-#     struct reb_simulation* sim; ///< Pointer to the parent simulation.
-# };
-
-# c.f. StructArrays
-# https://github.com/JuliaArrays/StructArrays.jl
+###################################################################
+#                  　　　　 Visualization
+###################################################################
 
 
-###########################################
+get_rs(snapshots, i) = [ps[i].r for ps in snapshots]
 
+get_xs(snapshots, i) = [r[1] for r in get_rs(snapshots, i)]
+get_ys(snapshots, i) = [r[2] for r in get_rs(snapshots, i)]
+get_zs(snapshots, i) = [r[3] for r in get_rs(snapshots, i)]
+
+
+"""
+Center-of-mass of particles
+"""
+get_COM(ps) = sum(ps.m .* ps.r) / sum(ps.m)
