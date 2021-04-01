@@ -1,7 +1,7 @@
 module Astroshaper
 
 export Point, double
-export load_obj
+export loadobj
 
 include("obj.jl")
 
