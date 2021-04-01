@@ -45,7 +45,7 @@ end
 
 
 #############################################################
-#############################################################
+#                        Predict
 #############################################################
 
 
@@ -55,13 +55,16 @@ function predict!(ps::AbstractVector, Δt)
     end
 end
 
-# predict!(ps::AbstractVector, Δt) = [predict!(p, Δt) for p in ps]
-
 
 function predict!(p::Particle, Δt)
     @. p.ᵖr = p.r + Δt*p.v  + (Δt^2)/2*p.a⁰ + (Δt^3)/6*p.a¹
     @. p.ᵖv = p.v + Δt*p.a⁰ + (Δt^2)/2*p.a¹
 end
+
+
+#############################################################
+#                        Evaluate
+#############################################################
 
 
 function evaluate!(a⁰, a¹, r1, v1, r2, v2, m2, ϵ)
@@ -72,8 +75,8 @@ function evaluate!(a⁰, a¹, r1, v1, r2, v2, m2, ϵ)
     r⁻³ = r_norm^-3
     r⁻⁵ = r_norm^-5
     
-    @. a⁰ -= G * m2 * r⁻³ * r  # allocated here
-    @. a¹ -= G * m2 * (r⁻³*v - 3*r⁻⁵*(v ⋅ r)*r)  # allocated here
+    @. a⁰ -= G * m2 * r⁻³ * r
+    @. a¹ -= G * m2 * (r⁻³*v - 3*r⁻⁵*(v ⋅ r)*r)
 end
 
 
@@ -120,6 +123,11 @@ function initialize!(ps::AbstractVector, ϵ)
 end
 
 
+#############################################################
+#                        Collect
+#############################################################
+
+
 function collect!(ps::AbstractVector, Δt, α)
     for p in ps
         collect!(p, Δt, α)
@@ -136,6 +144,10 @@ function collect!(p::Particle, Δt, α)
 end
 
 
+#############################################################
+#                 Prepare for the next step
+#############################################################
+
 
 prepare!(ps::AbstractVector, Δt, η) = minimum(prepare!(p, Δt, η) for p in ps)
 
@@ -151,9 +163,6 @@ function prepare!(p::Particle, Δt, η)
     
     ⁺Δt = get_Δt_Aarseth(p.⁺a⁰, p.⁺a¹, ⁺a², ⁺a³, η)
 end
-
-
-#############################################################
 
 
 # get_Δt_Aarseth(p::Particle, η) = get_Δt_Aarseth(p.a⁰, p.a¹, p.a², p.a³, η)
