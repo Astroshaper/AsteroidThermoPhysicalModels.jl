@@ -41,7 +41,7 @@ function Base.show(io::IO, spin::Spin)
 end
 
 
-function setSpinParams(params::Dict, orbit::Orbit)
+function setSpinParams(params, orbit)
 
     if haskey(params, :α) && haskey(params, :δ)
         α = deg2rad(params[:α])
