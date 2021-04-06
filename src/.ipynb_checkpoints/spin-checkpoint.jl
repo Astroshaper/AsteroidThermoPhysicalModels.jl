@@ -66,7 +66,7 @@ function setSpinParams(params, orbit)
 end
 
 
-function setSpinParams(T::Float64, ŝ::AbstractArray, orbit::Orbit)
+function setSpinParams(T::Float64, ŝ::AbstractVector, orbit)
     
     T *= 3600
     ω = 2π / T
@@ -95,7 +95,7 @@ Get a spin pole direction in the orbital plane frame
 # Return
 - ŝ : spin pole direction (normalized)
 """
-function getSpinNormal(λ, β, orbit::Orbit)
+function getSpinNormal(λ, β, orbit)
     ŝ = SA_F64[cos(β) * cos(λ), - cos(β) * sin(λ), sin(β)]  # inertial frame
     ŝ = inertia_to_orbit(ŝ, orbit)                          # orbital plane frame
 end
