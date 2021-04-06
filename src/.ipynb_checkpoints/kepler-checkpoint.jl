@@ -399,7 +399,7 @@ function get_r(a, e, u)
     r = SA_F64[x, y, z]
 end
 
-function get_r(orbit, u) = get_r(orbit.a, orbit.e, u)
+get_r(orbit, u) = get_r(orbit.a, orbit.e, u)
 
 
 """
@@ -428,7 +428,7 @@ function get_v(a, e, n, u)
     v = SA_F64[x, y, z]
 end
 
-function get_r(orbit, u) = get_r(orbit.a, orbit.e, orbit.n, u)
+get_r(orbit, u) = get_r(orbit.a, orbit.e, orbit.n, u)
 
 
 ################################################################
