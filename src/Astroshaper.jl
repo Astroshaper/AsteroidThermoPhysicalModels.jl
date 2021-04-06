@@ -1,5 +1,11 @@
 module Astroshaper
 
+using LinearAlgebra
+using StaticArrays
+
+include("constants.jl")
+export AU, G, GM☉, SOLAR_CONST, c₀
+
 include("obj.jl")
 export loadobj
 
