@@ -1,5 +1,6 @@
 name = "Astroshaper"
-uuid = "a569b8a0-c37f-4a84-bd1b-ea96d62b4aac"
+# uuid = "a569b8a0-c37f-4a84-bd1b-ea96d62b4aac"
+uuid = "ab46f4a3-3c83-4d86-98d6-41a8b1a2e76e"
 authors = ["Masanori Kanamaru"]
 version = "0.1.0"
 
