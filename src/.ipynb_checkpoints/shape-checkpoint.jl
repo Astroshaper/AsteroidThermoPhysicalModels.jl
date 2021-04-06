@@ -1,10 +1,4 @@
 
-using LinearAlgebra
-
-
-# include("obj.jl")
-# include("smesh.jl")
-
 
 struct Shape
     num_node::Int64
