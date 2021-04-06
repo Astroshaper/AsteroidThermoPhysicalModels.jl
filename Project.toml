@@ -1,5 +1,4 @@
 name = "Astroshaper"
-# uuid = "a569b8a0-c37f-4a84-bd1b-ea96d62b4aac"
 uuid = "ab46f4a3-3c83-4d86-98d6-41a8b1a2e76e"
 authors = ["Masanori Kanamaru"]
 version = "0.1.0"
@@ -7,8 +6,8 @@ version = "0.1.0"
 [compat]
 julia = "1"
 
-[extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+# [extras]
+# Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
-[targets]
-test = ["Test"]
+# [targets]
+# test = ["Test"]
