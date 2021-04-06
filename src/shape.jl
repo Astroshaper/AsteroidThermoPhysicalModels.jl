@@ -2,8 +2,8 @@
 using LinearAlgebra
 
 
-include("obj.jl")
-include("smesh.jl")
+# include("obj.jl")
+# include("smesh.jl")
 
 
 struct Shape
