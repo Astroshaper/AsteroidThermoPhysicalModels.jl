@@ -3,7 +3,7 @@
 
 using StaticArrays
 
-include("coordinate.jl")
+include("coordinates.jl")
 include("kepler.jl")
 
 
