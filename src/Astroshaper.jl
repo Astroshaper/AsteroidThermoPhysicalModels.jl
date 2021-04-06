@@ -9,7 +9,7 @@ export AU, G, GM☉, SOLAR_CONST, c₀
 include("obj.jl")
 export loadobj
 
-include("coordinate.jl")
+include("coordinates.jl")
 export rotateX, rotateY, rotateZ
 export rotateX!, rotateY!, rotateZ!
 
