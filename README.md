@@ -1,5 +1,7 @@
 # Astroshaper
 
+[![Build Status](https://travis-ci.com/MasanoriKanamaru/Astroshaper.svg?branch=main)](https://travis-ci.com/MasanoriKanamaru/Astroshaper)
+
 Julia-based toolkit for dynamical simulations of planets and asteroids.
 
 ## Installation
