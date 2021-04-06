@@ -6,7 +6,7 @@ using StaticArrays
 # using Rotations
 
 include("constants.jl")
-include("coordinate.jl")
+include("coordinates.jl")
 include("kepler.jl")
 include("spin.jl")
 include("obj.jl")
