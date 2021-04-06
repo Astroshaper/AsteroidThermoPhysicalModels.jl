@@ -1,5 +1,6 @@
 module Astroshaper
 
+
 using LinearAlgebra
 using StaticArrays
 
@@ -29,5 +30,6 @@ export Shape, setShapeModel, findVisibleFaces!
 
 include("YORP.jl")
 export getNetTorque, getNetTorque_shadowing, torque2rate, getTimeScale
+
 
 end # module Astroshaper

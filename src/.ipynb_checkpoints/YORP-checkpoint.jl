@@ -43,7 +43,8 @@ Get the solar irradition and the direction of the Sun
 """
 function getSolarCondition(orbit, spin, time)
     u = solveKeplerEquation2(orbit, time)
-    r = getposition(orbit, u)
+    # r = getposition(orbit, u)
+    r = get_r(orbit, u)
     F☉ = getSolarIrradiation(norm(r))
 
     r̂☉ = normalize(r) * -1  # Shift the origin from the sun to the body
