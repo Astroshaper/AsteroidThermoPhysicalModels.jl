@@ -1,15 +1,3 @@
-## YORP.jl
-
-using LinearAlgebra
-using StaticArrays
-# using CoordinateTransformations
-# using Rotations
-
-include("constants.jl")
-include("coordinates.jl")
-include("kepler.jl")
-include("spin.jl")
-include("obj.jl")
 
 
 """

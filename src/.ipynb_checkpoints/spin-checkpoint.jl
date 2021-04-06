@@ -1,11 +1,6 @@
 ## spin.jl
 ##     Spin parameters of a clestial body
 
-using StaticArrays
-
-include("coordinates.jl")
-include("kepler.jl")
-
 
 struct Spin
     #### Spin pole (equatorial coordinate) ####

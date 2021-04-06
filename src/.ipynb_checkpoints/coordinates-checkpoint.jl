@@ -3,11 +3,6 @@
 ##     Functions for coordinate transformation
 
 
-using StaticArrays
-
-# include("kepler.jl")
-
-
 """
     eq2ec(α, δ) -> λ, β
 

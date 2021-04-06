@@ -1,8 +1,4 @@
 
-using StaticArrays
-
-include("smesh.jl")
-
 
 function isobj(filepath)
     base, ext = splitext(filepath)

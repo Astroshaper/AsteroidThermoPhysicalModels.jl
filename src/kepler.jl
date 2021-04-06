@@ -1,11 +1,6 @@
 ## kepler.jl
 ##     Functions for orbital elements and Kepler motion
 
-using StaticArrays
-
-include("constants.jl")
-include("coordinates.jl")
-
 
 ###################################################################
 #                       Orbital elements

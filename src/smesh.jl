@@ -1,7 +1,4 @@
 
-using LinearAlgebra
-using StaticArrays
-
 
 """
 Triangular surface mesh of a polyhedral shape model
