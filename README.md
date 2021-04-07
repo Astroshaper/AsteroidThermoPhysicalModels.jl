@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/MasanoriKanamaru/Astroshaper.svg?branch=main)](https://travis-ci.com/MasanoriKanamaru/Astroshaper)
 
-Julia-based toolkit for dynamical simulations of planets and asteroids.
+Julia-based toolkit for dynamical simulations of small solar system bodies.
 
 ## Installation
 
@@ -16,7 +16,7 @@ Julia-based toolkit for dynamical simulations of planets and asteroids.
 ## Orbital dynamics
 N-body integrators will be implemeted.
 
-## Spin dynamics of asteroid
+## Spin dynamics
 Thermal recoil torque (i.e. YORP effect) can be calculated based on a 3-dimensional shape of an asteroid.
 
 ## Gravity calculation for asteoids
