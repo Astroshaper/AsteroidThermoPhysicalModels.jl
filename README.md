@@ -13,11 +13,11 @@ Julia-based toolkit for dynamical simulations of planets and asteroids.
     using Astroshaper
 
 
-## N-body simulation
-Coming soon.
+## Orbital dynamics
+N-body integrators will be implemeted.
 
 ## Spin dynamics of asteroid
-Coming soon.
+Thermal recoil torque (i.e. YORP effect) can be calsulated based on a 3-dimensional shape of an asteroid.
 
 ## Gravity calculation for asteoids
 Gravity filed of a constant-density polyhedron.
