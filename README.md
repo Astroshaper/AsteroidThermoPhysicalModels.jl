@@ -17,7 +17,7 @@ Julia-based toolkit for dynamical simulations of planets and asteroids.
 N-body integrators will be implemeted.
 
 ## Spin dynamics of asteroid
-Thermal recoil torque (i.e. YORP effect) can be calsulated based on a 3-dimensional shape of an asteroid.
+Thermal recoil torque (i.e. YORP effect) can be calculated based on a 3-dimensional shape of an asteroid.
 
 ## Gravity calculation for asteoids
 Gravity filed of a constant-density polyhedron.
