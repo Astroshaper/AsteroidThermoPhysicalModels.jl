@@ -62,7 +62,6 @@ In the future, we need to improve:
 - Tangential YORP effect
 """
 function sumTorqueOverSurface(shape, F☉, r̂☉)
-    # c₀ = 299792458.0
     τ = MVector(0., 0., 0.)  # YORP torque
 
     for mesh in shape.smeshes
