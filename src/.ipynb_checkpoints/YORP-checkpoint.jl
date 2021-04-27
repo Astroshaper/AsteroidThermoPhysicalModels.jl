@@ -69,7 +69,8 @@ function sumTorqueOverSurface(shape, F☉, r̂☉)
         if Ψ > 0  # daytime hemisphere of the body
             df = Ψ * mesh.area * mesh.normal  # force on each facet
             dτ = mesh.center × df             # torque on each facet
-            τ .+= dτ
+            # τ .+= dτ
+            τ += dτ
         end
     end
     τ *= - 2/3 * F☉ / c₀
