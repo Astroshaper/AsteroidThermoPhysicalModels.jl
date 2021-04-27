@@ -3,7 +3,7 @@
 """
 Triangular surface mesh of a polyhedral shape model
 """
-struct SMesh{T1<:AbstractVector, T2}
+struct SMesh{T1, T2}  # T1<:AbstractVector
     A::T1
     B::T1
     C::T1

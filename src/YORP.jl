@@ -31,7 +31,6 @@ Get the solar irradition and the direction of the Sun
 """
 function getSolarCondition(orbit, spin, time)
     u = solveKeplerEquation2(orbit, time)
-    # r = getposition(orbit, u)
     r = get_r(orbit, u)
     F☉ = getSolarIrradiation(norm(r))
 
@@ -69,8 +68,7 @@ function sumTorqueOverSurface(shape, F☉, r̂☉)
         if Ψ > 0  # daytime hemisphere of the body
             df = Ψ * mesh.area * mesh.normal  # force on each facet
             dτ = mesh.center × df             # torque on each facet
-            # τ .+= dτ
-            τ += dτ
+            τ .+= dτ
         end
     end
     τ *= - 2/3 * F☉ / c₀
