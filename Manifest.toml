@@ -439,9 +439,9 @@ version = "1.0.10"
 
 [[Plots]]
 deps = ["Base64", "Contour", "Dates", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs"]
-git-tree-sha1 = "114c51506911e42afa9fb9ea536670814831b1f6"
+git-tree-sha1 = "eced322de627fa8469c55f24899fdd4cce7d978c"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.13.1"
+version = "1.13.2"
 
 [[Preferences]]
 deps = ["TOML"]
