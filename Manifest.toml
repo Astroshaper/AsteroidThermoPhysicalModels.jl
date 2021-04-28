@@ -29,15 +29,15 @@ version = "1.16.0+6"
 
 [[ColorSchemes]]
 deps = ["ColorTypes", "Colors", "FixedPointNumbers", "Random", "StaticArrays"]
-git-tree-sha1 = "9d7dfad1326b1ad29afa1366587806a14d727745"
+git-tree-sha1 = "c8fd01e4b736013bc61b704871d20503b33ea402"
 uuid = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
-version = "3.12.0"
+version = "3.12.1"
 
 [[ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
-git-tree-sha1 = "32a2b8af383f11cbb65803883837a149d10dfe8a"
+git-tree-sha1 = "024fe24d83e4a5bf5fc80501a314ce0d1aa35597"
 uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
-version = "0.10.12"
+version = "0.11.0"
 
 [[Colors]]
 deps = ["ColorTypes", "FixedPointNumbers", "Reexport"]
@@ -149,9 +149,9 @@ version = "1.0.5+6"
 
 [[GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pkg", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll"]
-git-tree-sha1 = "bd1dbf065d7a4a0bdf7e74dd26cf932dda22b929"
+git-tree-sha1 = "a199aefead29c3c2638c3571a9993b564109d45a"
 uuid = "0656b61e-2033-5cc2-a64a-77c0f6c09b89"
-version = "3.3.3+0"
+version = "3.3.4+0"
 
 [[GR]]
 deps = ["Base64", "DelimitedFiles", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Pkg", "Printf", "Random", "Serialization", "Sockets", "Test", "UUIDs"]
@@ -184,9 +184,9 @@ uuid = "7746bdde-850d-59dc-9ae8-88ece973131d"
 version = "2.59.0+4"
 
 [[Grisu]]
-git-tree-sha1 = "03d381f65183cb2d0af8b3425fde97263ce9a995"
+git-tree-sha1 = "972f5abbfc7101df2ea122aa730f4861550aaf2f"
 uuid = "42e2da0e-8278-4e71-bc24-59509adca0fe"
-version = "1.0.0"
+version = "1.0.1"
 
 [[HTTP]]
 deps = ["Base64", "Dates", "IniFile", "MbedTLS", "NetworkOptions", "Sockets", "URIs"]

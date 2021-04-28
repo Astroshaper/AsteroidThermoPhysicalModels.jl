@@ -3,9 +3,10 @@ module Astroshaper
 
 using LinearAlgebra
 using StaticArrays
+using StructArrays
 
 include("constants.jl")
-export AU, G, GM☉, SOLAR_CONST, c₀
+export AU, G, GM☉, SOLAR_CONST, c₀, σ_SB
 
 include("obj.jl")
 export loadobj
