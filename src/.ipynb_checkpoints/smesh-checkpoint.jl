@@ -3,17 +3,29 @@
 """
 Triangular surface mesh of a polyhedral shape model
 """
-struct SMesh{T1<:AbstractVector, T2<:Real}
-    A::T1
-    B::T1
-    C::T1
+struct SMesh
+    A::SVector{3,Float64}
+    B::SVector{3,Float64}
+    C::SVector{3,Float64}
     
-    center::T1
-    normal::T1
-    area::T2
+    center::SVector{3,Float64}
+    normal::SVector{3,Float64}
+    area::Float64
     
     f2f::Vector{Int64}
 end
+
+# struct SMesh{T1<:AbstractVector, T2<:Real}
+#     A::T1
+#     B::T1
+#     C::T1
+    
+#     center::T1
+#     normal::T1
+#     area::T2
+    
+#     f2f::Vector{Int64}
+# end
 
 
 function Base.show(io::IO, smesh::SMesh)
