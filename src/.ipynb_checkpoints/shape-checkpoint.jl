@@ -6,8 +6,7 @@ struct Shape
     nodes::Vector{SVector{3,Float64}}
     faces::Vector{SVector{3,Int64}}
 
-    # smeshes::Vector{SMesh}
-    smeshes::Vector{ViewFactor}
+    smeshes::Vector{SMesh}
 
     AREA::Float64              # surface area
     VOLUME::Float64            # volume
