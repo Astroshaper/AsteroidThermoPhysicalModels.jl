@@ -30,11 +30,6 @@ end
 getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * dᵢⱼ^2) * aⱼ
 
 
-function addViewFactor!(id, meshes, mᵢ, mⱼ)
-    
-end
-
-
 ################################################################
 #                  Triangular surface mesh
 ################################################################
