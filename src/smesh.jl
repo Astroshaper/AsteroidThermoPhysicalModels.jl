@@ -13,7 +13,7 @@ struct SMesh
     area::Float64
     
     # f2f::Vector{Int64}
-    ViewFactors::Vector{ViewFactor}
+    viewfactors::Vector{ViewFactor}
 end
 
 
