@@ -199,15 +199,15 @@ raycast(mesh, R) = raycast(mesh.A, mesh.B, mesh.C, R)
 function raycast(A, B, C, R)
     E1 = B - A
     E2 = C - A
-    # T  = - A
+    T  = - A
 
     P = R × E2
-    Q = T × E1
     
     P_dot_E1 = P ⋅ E1
         
-    u = (P ⋅ -A) / P_dot_E1
+    u = (P ⋅ T) / P_dot_E1
     if 0 ≤ u ≤ 1
+        Q = T × E1
         v = (Q ⋅ R) / P_dot_E1
         if 0 ≤ v ≤ 1
             if 0 ≤ u + v ≤ 1
