@@ -202,12 +202,12 @@ function raycast(A, B, C, R)
     T  = - A
 
     P = R × E2
+    Q = T × E1
     
     P_dot_E1 = P ⋅ E1
         
     u = (P ⋅ T) / P_dot_E1
     if 0 ≤ u ≤ 1
-        Q = T × E1
         v = (Q ⋅ R) / P_dot_E1
         if 0 ≤ v ≤ 1
             if 0 ≤ u + v ≤ 1
