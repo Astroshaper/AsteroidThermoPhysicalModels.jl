@@ -70,7 +70,7 @@ function Base.show(io::IO, smesh::SMesh)
     println("Normal : ", smesh.normal)
     println("Area   : ", smesh.area)
 
-    println("Visible faces")
+    length(smesh.viewfactors) != 0 && println("Visible faces")
     length(smesh.viewfactors) != 0 && println([viewfactor.id for viewfactor in smesh.viewfactors])
     length(smesh.viewfactors) != 0 && println([viewfactor.fᵢⱼ for viewfactor in smesh.viewfactors])
 end
