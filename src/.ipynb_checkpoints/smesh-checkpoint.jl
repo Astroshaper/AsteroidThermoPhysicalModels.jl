@@ -129,7 +129,7 @@ end
 
 
 isFace(obs::SMesh, tar::SMesh) = isFace(obs.center, tar)
-isFace(obs, tar::SMesh) = (tar.center - obs) ⋅ tar.normal < 0 ? true : false
+isFace(obs::AbstractVector, tar::SMesh) = (tar.center - obs) ⋅ tar.normal < 0 ? true : false
 
 
 ################################################################
