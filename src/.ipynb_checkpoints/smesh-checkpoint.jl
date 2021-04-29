@@ -260,7 +260,8 @@ function findVisibleFaces!(obs::SMesh, meshes)
     end
     
     for i in ids
-        push!(obs.viewfactors, ViewFactor(i, 0))  # ViewFactor(id, fᵢⱼ)
+        # push!(obs.viewfactors, ViewFactor(i, 0))  # ViewFactor(id, fᵢⱼ)
+        push!(obs.viewfactors, ViewFactor(1, 0.5))
     end
 end
 
