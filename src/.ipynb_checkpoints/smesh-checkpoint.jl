@@ -232,7 +232,7 @@ Find faces directly seen from the observer on the face
 - `meshes` : Array of SMesh instances
 """
 function findVisibleFaces!(obs::SMesh, meshes)
-    obs = Int64[]
+    obs.f2f = Int64[]
     for i in eachindex(meshes)
         tar = meshes[i]
         isAbove(obs, tar) && isFace(obs, tar) && push!(obs.f2f, i)
