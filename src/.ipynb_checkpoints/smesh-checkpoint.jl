@@ -204,14 +204,14 @@ function raycast(A, B, C, R)
     P = R × E2
     Q = T × E1
     
-    PdotE1 = P ⋅ E1
+    P_dot_E1 = P ⋅ E1
         
-    u = (P ⋅ T) / PdotE1
+    u = (P ⋅ T) / P_dot_E1
     if 0 ≤ u ≤ 1
-        v = (Q ⋅ R) / PdotE1
+        v = (Q ⋅ R) / P_dot_E1
         if 0 ≤ v ≤ 1
             if 0 ≤ u + v ≤ 1
-                t = (Q ⋅ E2) / PdotE1  # 三角形までの距離（t<0なら裏から当たる）
+                t = (Q ⋅ E2) / P_dot_E1  # 三角形までの距離（t<0なら裏から当たる）
                 if t > 0
                     return true
                 end
@@ -232,6 +232,7 @@ Find faces directly seen from the observer on the face
 - `meshes` : Array of SMesh instances
 """
 function findVisibleFaces!(obs::SMesh, meshes)
+    obs = Int64[]
     for i in eachindex(meshes)
         tar = meshes[i]
         isAbove(obs, tar) && isFace(obs, tar) && push!(obs.f2f, i)
