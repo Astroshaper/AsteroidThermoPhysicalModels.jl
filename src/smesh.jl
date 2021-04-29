@@ -36,7 +36,7 @@ end
 
 
 SMesh(A, B, C) = SMesh([A, B, C])
-SMesh(vs) = SMesh(vs[1], vs[2], vs[3], getcenter(vs), getnormal(vs), getarea(vs), Int64[])
+SMesh(vs) = SMesh(vs[1], vs[2], vs[3], getcenter(vs), getnormal(vs), getarea(vs), ViewFactor[])
 
 getmeshes(nodes, faces) = StructArray([SMesh(nodes[face]) for face in faces])
 
