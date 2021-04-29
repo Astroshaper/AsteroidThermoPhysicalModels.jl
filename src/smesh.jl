@@ -238,24 +238,29 @@ Find faces directly seen from the observer on the face
 - `meshes` : Array of SMesh instances
 """
 function findVisibleFaces!(obs::SMesh, meshes)
+    ids = Int64[]
     for i in eachindex(meshes)
         tar = meshes[i]
-        isAbove(obs, tar) && isFace(obs, tar) && push!(obs.f2f, i)
+        isAbove(obs, tar) && isFace(obs, tar) && push!(ids, i)
     end
 
-    for i in copy(obs.f2f)
+    for i in copy(ids)
         tar_i = meshes[i]
         R = tar_i.center - obs.center
-        for j in copy(obs.f2f)
+        for j in copy(ids)
             i == j && continue
             tar_j = meshes[j]
 
             if raycast(tar_j, R, obs)
                 dᵢ = norm(R)                          # distance to i-th mesh
                 dⱼ = norm(tar_j.center - obs.center)  # distance to j-th mesh
-                dᵢ < dⱼ ? filter!(x->x≠j, obs.f2f) : filter!(x->x≠i, obs.f2f)
+                dᵢ < dⱼ ? filter!(x->x≠j, ids) : filter!(x->x≠i, ids)
             end
         end
+    end
+    
+    for i in ids
+        push!(obs, ViewFactor(i, 0))  # ViewFactor(id, fᵢⱼ)
     end
 end
 
