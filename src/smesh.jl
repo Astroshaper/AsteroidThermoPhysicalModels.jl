@@ -97,55 +97,6 @@ getVisibleFaceList(meshes::Vector{SMesh}) = [m.f2f for m in meshes]
 
 
 ################################################################
-#                    Solid angle of a mesh
-################################################################
-
-"""
-    getSolidAngle(mesh::SMesh, observer) -> Ω
-
-Solid angle of a triangular mesh,
-equal to area of the corresponding spherical triangle
-"""
-function getSolidAngle(mesh::SMesh, obs::AbstractVector)
-
-    ## Vectors from observer to mesh vertices
-    A = mesh.A - obs
-    B = mesh.B - obs
-    C = mesh.C - obs
-
-    AOB = getangle(A, B)
-    BOC = getangle(B, C)
-    COA = getangle(C, A)
-    
-    Ω = getSphericalExcess(AOB, BOC, COA)
-end
-
-
-"""
-    getSphericalExcess(a, b, c) -> E
-
-Area of a spherical triangle
-c.f. L'Huilier's Theorem
-
-# Arguments
-- `a`, `b`, `c` : side length of a spherical traiangle
-"""
-function getSphericalExcess(a, b, c)
-    s = (a + b + c) * 0.5  # semiperimeter
-        
-    E = tan(s*0.5)
-    E *= tan((s - a)*0.5)
-    E *= tan((s - b)*0.5)
-    E *= tan((s - c)*0.5)
-    E = sqrt(E)
-    E = 4 * atan(E)
-end
-
-
-getangle(v1, v2) = acos(normalize(v1) ⋅ normalize(v2))
-
-
-################################################################
 #                           Orinet3D
 ################################################################
 
@@ -178,10 +129,7 @@ end
 
 
 isFace(obs::SMesh, tar::SMesh) = isFace(obs.center, tar)
-
-function isFace(obs::AbstractVector, tar::SMesh)
-    (tar.center - obs) ⋅ tar.normal < 0 ? true : false
-end
+isFace(obs, tar::SMesh) = (tar.center - obs) ⋅ tar.normal < 0 ? true : false
 
 
 ################################################################
@@ -309,3 +257,51 @@ function getIlluminatedFaces_PSEUDOCONVEX(r̂☉, meshes::Vector{SMesh})
     illuminated
 end
 
+
+################################################################
+#                    Solid angle of a mesh
+################################################################
+
+"""
+    getSolidAngle(mesh::SMesh, observer) -> Ω
+
+Solid angle of a triangular mesh,
+equal to area of the corresponding spherical triangle
+"""
+function getSolidAngle(mesh::SMesh, obs::AbstractVector)
+
+    ## Vectors from observer to mesh vertices
+    A = mesh.A - obs
+    B = mesh.B - obs
+    C = mesh.C - obs
+
+    AOB = getangle(A, B)
+    BOC = getangle(B, C)
+    COA = getangle(C, A)
+    
+    Ω = getSphericalExcess(AOB, BOC, COA)
+end
+
+
+"""
+    getSphericalExcess(a, b, c) -> E
+
+Area of a spherical triangle
+c.f. L'Huilier's Theorem
+
+# Arguments
+- `a`, `b`, `c` : side length of a spherical traiangle
+"""
+function getSphericalExcess(a, b, c)
+    s = (a + b + c) * 0.5  # semiperimeter
+        
+    E = tan(s*0.5)
+    E *= tan((s - a)*0.5)
+    E *= tan((s - b)*0.5)
+    E *= tan((s - c)*0.5)
+    E = sqrt(E)
+    E = 4 * atan(E)
+end
+
+
+getangle(v1, v2) = acos(normalize(v1) ⋅ normalize(v2))
