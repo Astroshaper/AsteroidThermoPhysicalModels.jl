@@ -30,6 +30,11 @@ end
 getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * dᵢⱼ^2) * aⱼ
 
 
+function addViewFactor!(id, meshes, mᵢ, mⱼ)
+    
+end
+
+
 ################################################################
 #                  Triangular surface mesh
 ################################################################
@@ -66,8 +71,7 @@ function Base.show(io::IO, smesh::SMesh)
     println("Area   : ", smesh.area)
 
     println("Visible faces")
-    println(smesh.viewfactors.id)
-    println(smesh.viewfactors.fᵢⱼ)
+    println(smesh.f2f)
 end
 
 
@@ -252,11 +256,6 @@ function findVisibleFaces!(obs::SMesh, meshes)
             end
         end
     end
-end
-
-
-function addViewFactor!(id, meshes, mᵢ, mⱼ)
-    
 end
 
 
