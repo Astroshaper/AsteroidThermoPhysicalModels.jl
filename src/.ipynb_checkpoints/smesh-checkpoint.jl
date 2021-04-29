@@ -260,7 +260,7 @@ function findVisibleFaces!(obs::SMesh, meshes)
     end
     
     for id in ids
-        fᵢⱼ = 0.5
+        fᵢⱼ = getViewFactor(obs, meshes[id])
         push!(obs.viewfactors, ViewFactor(id, fᵢⱼ))
     end
 end
@@ -274,7 +274,7 @@ Find faces directly seen from the observer on each face
 # Parameters
 - `meshes` : Array of SMesh instances
 """
-function findVisibleFaces!(meshes::Vector{SMesh})
+function findVisibleFaces!(meshes)
     for obs in meshes
         findVisibleFaces!(obs, meshes)
     end
