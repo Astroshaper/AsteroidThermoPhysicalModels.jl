@@ -71,7 +71,8 @@ function Base.show(io::IO, smesh::SMesh)
     println("Area   : ", smesh.area)
 
     println("Visible faces")
-    println(smesh.f2f)
+    println(smesh.viewfactors.id)
+    println(smesh.viewfactors.fᵢⱼ)
 end
 
 
