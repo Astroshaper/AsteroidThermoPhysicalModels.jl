@@ -31,13 +31,14 @@ function Base.show(io::IO, shape::Shape)
 end
 
 
-function setShapeModel(shapepath::AbstractString; scale=1)
+function setShapeModel(shapepath::AbstractString; scale=1, find_visible_faces=false)
     nodes, faces = loadobj(shapepath; scale=scale, static=true, message=false)
 
     num_node = length(nodes)
     num_face = length(faces)
     
     smeshes = getmeshes(nodes, faces)
+    find_visible_faces && findVisibleFaces!(smeshes)
 
     AREA = sum(getareas(smeshes))
     VOLUME = getvolume(smeshes)
