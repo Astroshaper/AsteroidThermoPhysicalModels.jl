@@ -1,5 +1,45 @@
 
 
+################################################################
+#                      View Factor
+################################################################
+
+struct ViewFactor
+    id::Int64     # Index of the interfacing mesh
+    fᵢⱼ::Float64  # View factor from mesh i to mesh j
+end
+
+
+"""
+    getViewFactor(mᵢ, mⱼ) -> fᵢⱼ
+
+View factor from mesh i to mesh j
+assuming Lambertian emission
+"""
+function getViewFactor(mᵢ, mⱼ)
+    d⃗ᵢⱼ = mⱼ.center - mᵢ.center  # vector from mesh i to mesh j
+    d̂ᵢⱼ = normalize(d⃗ᵢⱼ)
+    dᵢⱼ = norm(d⃗ᵢⱼ)
+
+    cosθᵢ = mᵢ.normal ⋅ d̂ᵢⱼ
+    cosθⱼ = mⱼ.normal ⋅ (-d̂ᵢⱼ)
+
+    fᵢⱼ = getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, mⱼ.area)
+end
+
+getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * dᵢⱼ^2) * aⱼ
+
+
+function addViewFactor!(id, meshes, mᵢ, mⱼ)
+    
+end
+
+
+################################################################
+#                  Triangular surface mesh
+################################################################
+
+
 """
 Triangular surface mesh of a polyhedral shape model
 """
@@ -59,41 +99,6 @@ getnormals(meshes) = [m.normal for m in meshes]
 getareas(meshes) = [m.area for m in meshes]
 
 getVisibleFaceList(meshes::Vector{SMesh}) = [m.f2f for m in meshes]
-
-
-################################################################
-#                      View Factor
-################################################################
-
-struct ViewFactor
-    id::Int64     # Index of the interfacing mesh
-    fᵢⱼ::Float64  # View factor from mesh i to mesh j
-end
-
-
-"""
-    getViewFactor(mᵢ, mⱼ) -> fᵢⱼ
-
-View factor from mesh i to mesh j
-assuming Lambertian emission
-"""
-function getViewFactor(mᵢ, mⱼ)
-    d⃗ᵢⱼ = mⱼ.center - mᵢ.center  # vector from mesh i to mesh j
-    d̂ᵢⱼ = normalize(d⃗ᵢⱼ)
-    dᵢⱼ = norm(d⃗ᵢⱼ)
-
-    cosθᵢ = mᵢ.normal ⋅ d̂ᵢⱼ
-    cosθⱼ = mⱼ.normal ⋅ (-d̂ᵢⱼ)
-
-    fᵢⱼ = getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, mⱼ.area)
-end
-
-getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * dᵢⱼ^2) * aⱼ
-
-
-function addViewFactor!(id, meshes, mᵢ, mⱼ)
-    
-end
 
 
 ################################################################
