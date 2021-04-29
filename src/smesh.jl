@@ -12,8 +12,8 @@ struct SMesh
     normal::SVector{3,Float64}
     area::Float64
     
-    f2f::Vector{Int64}
-    # ViewFactors::Vector{ViewFactor}
+    # f2f::Vector{Int64}
+    ViewFactors::Vector{ViewFactor}
 end
 
 
