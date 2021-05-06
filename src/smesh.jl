@@ -36,7 +36,9 @@ getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * d
 
 
 """
-Triangular surface mesh of a polyhedral shape model
+Triangular surface mesh of a polyhedral shape model.
+
+Note that the mesh normal indicates outward the polyhedron.
 """
 struct SMesh{T1, T2, T3}
     A::T1  # Position of 1st vertex
@@ -71,7 +73,6 @@ end
 
 
 SMesh(A, B, C) = SMesh([A, B, C])
-# SMesh(vs) = SMesh(vs[1], vs[2], vs[3], getcenter(vs), getnormal(vs), getarea(vs), ViewFactor[])
 SMesh(vs) = SMesh(vs[1], vs[2], vs[3], getcenter(vs), getnormal(vs), getarea(vs), StructArray(ViewFactor[]))
 
 getmeshes(nodes, faces) = StructArray([SMesh(nodes[face]) for face in faces])
@@ -93,8 +94,6 @@ getarea(v1, v2, v3) = norm((v2 - v1) × (v3 - v2)) * 0.5
 getcenters(meshes) = [m.center for m in meshes]
 getnormals(meshes) = [m.normal for m in meshes]
 getareas(meshes) = [m.area for m in meshes]
-
-getVisibleFaceList(meshes::Vector{SMesh}) = [m.f2f for m in meshes]
 
 
 ################################################################

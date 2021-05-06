@@ -3,10 +3,10 @@
 struct Shape{T1, T2, T3, T4, T5, T6, T7}
     num_node::T1  # Number of nodes
     num_face::T1  # Number of faces
-    nodes::T2     # Array of node positions
-    faces::T3     # Array of vertex indices of faces
+    nodes::T2     # 1-D array of node positions
+    faces::T3     # 1-D array of vertex indices of faces
 
-    smeshes::T4   # Array of surface meshes
+    smeshes::T4   # 1-D array of surface meshes
 
     AREA::T5    # Surface area
     VOLUME::T5  # Volume
@@ -84,7 +84,7 @@ end
 
 
 """
-Calculate moment of inertia of a polyhedron
+Calculate moment of inertia tensor of a polyhedron
 """
 function getMOI(smeshes)
     I = zeros(3, 3)
