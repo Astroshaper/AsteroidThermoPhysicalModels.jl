@@ -155,19 +155,37 @@ function raycast(A, B, C, R)
     P_dot_E1 = P ⋅ E1
         
     u = (P ⋅ T) / P_dot_E1
-    if 0 ≤ u ≤ 1
-        v = (Q ⋅ R) / P_dot_E1
-        if 0 ≤ v ≤ 1
-            if 0 ≤ u + v ≤ 1
-                t = (Q ⋅ E2) / P_dot_E1  # 三角形までの距離（t<0なら裏から当たる）
-                if t > 0
-                    return true
-                end
-            end
-        end
-    end
+    v = (Q ⋅ R) / P_dot_E1
+    t = (Q ⋅ E2) / P_dot_E1  # Distance to triangle (if t < 0, the ray hits from the back)
+
+    0 ≤ u ≤ 1 && 0 ≤ v ≤ 1 && 0 ≤ u + v ≤ 1 && t > 0 && (return true)
     return false
 end
+
+# function raycast(A, B, C, R)
+#     E1 = B - A
+#     E2 = C - A
+#     T  = - A
+
+#     P = R × E2
+#     Q = T × E1
+    
+#     P_dot_E1 = P ⋅ E1
+        
+#     u = (P ⋅ T) / P_dot_E1
+#     if 0 ≤ u ≤ 1
+#         v = (Q ⋅ R) / P_dot_E1
+#         if 0 ≤ v ≤ 1
+#             if 0 ≤ u + v ≤ 1
+#                 t = (Q ⋅ E2) / P_dot_E1  # Distance to triangle (if t < 0, the ray hits from the back.)
+#                 if t > 0
+#                     return true
+#                 end
+#             end
+#         end
+#     end
+#     return false
+# end
 
 
 """
@@ -232,13 +250,6 @@ function isIlluminated(obs::SMesh, r̂☉, meshes)
     end
     return true
 end
-
-# function isIlluminated(obs::SMesh, r̂☉, meshes)
-#     for viewfactor in obs.viewfactors
-#         raycast(meshes[viewfactor.id], r̂☉, obs) && return false
-#     end
-#     return true
-# end
 
 
 # function getIlluminatedFaces(r̂☉, meshes::Vector{SMesh})
