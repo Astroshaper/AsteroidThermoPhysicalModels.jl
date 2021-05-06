@@ -67,8 +67,8 @@ function Base.show(io::IO, smesh::SMesh)
     println("Area   : ", smesh.area)
 
     length(smesh.viewfactors) != 0 && println("Visible faces")
-    length(smesh.viewfactors) != 0 && println([viewfactor.id for viewfactor in smesh.viewfactors])
-    length(smesh.viewfactors) != 0 && println([viewfactor.fᵢⱼ for viewfactor in smesh.viewfactors])
+    length(smesh.viewfactors) != 0 && println(smesh.viewfactors.id)
+    length(smesh.viewfactors) != 0 && println(smesh.viewfactors.fᵢⱼ)
 end
 
 
@@ -136,7 +136,7 @@ isFace(obs::AbstractVector, tar::SMesh) = (tar.center - obs) ⋅ tar.normal < 0 
 #                           Raycast
 ################################################################
 
-## Viewd from the observing points/mesh
+## Viewd from an observor's mesh/position
 raycast(mesh, R, obs::SMesh) = raycast(mesh, R, obs.center)
 raycast(mesh, R, obs::AbstractVector) = raycast(mesh.A - obs, mesh.B - obs, mesh.C - obs, R)
 
