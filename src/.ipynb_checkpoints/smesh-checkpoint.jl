@@ -159,34 +159,9 @@ function raycast(A, B, C, R)
     t = (Q ⋅ E2) / P_dot_E1  # Distance to triangle (if t < 0, the ray hits from the back)
 
     # 0 ≤ u ≤ 1 && 0 ≤ v ≤ 1 && 0 ≤ u + v ≤ 1 && t > 0 && (return true)
-    t > 0 && 0 ≤ u ≤ 1 && 0 ≤ v ≤ 1 && 0 ≤ u + v ≤ 1 && (return true)
+    0 ≤ u + v ≤ 1 && 0 ≤ u ≤ 1 && 0 ≤ v ≤ 1 && t > 0 && (return true)
     return false
 end
-
-# function raycast(A, B, C, R)
-#     E1 = B - A
-#     E2 = C - A
-#     T  = - A
-
-#     P = R × E2
-#     Q = T × E1
-    
-#     P_dot_E1 = P ⋅ E1
-        
-#     u = (P ⋅ T) / P_dot_E1
-#     if 0 ≤ u ≤ 1
-#         v = (Q ⋅ R) / P_dot_E1
-#         if 0 ≤ v ≤ 1
-#             if 0 ≤ u + v ≤ 1
-#                 t = (Q ⋅ E2) / P_dot_E1  # Distance to triangle (if t < 0, the ray hits from the back.)
-#                 if t > 0
-#                     return true
-#                 end
-#             end
-#         end
-#     end
-#     return false
-# end
 
 
 """
