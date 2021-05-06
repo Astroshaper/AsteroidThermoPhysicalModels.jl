@@ -39,13 +39,13 @@ getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * d
 Triangular surface mesh of a polyhedral shape model
 """
 struct SMesh{T1, T2, T3}
-    A::T1  # SVector{3,Float64}
-    B::T1  # SVector{3,Float64}
-    C::T1  # SVector{3,Float64}
+    A::T1  # Position of 1st vertex
+    B::T1  # Position of 2nd vertex
+    C::T1  # Position of 3rd vertex
     
-    center::T1  # SVector{3,Float64}
-    normal::T1  # SVector{3,Float64}
-    area::T2    # Float64
+    center::T1  # Position of mesh center
+    normal::T1  # Normal vector to mesh
+    area::T2    # Area of mesh
     
     viewfactors::T3  # Vector{ViewFactor}
 end
@@ -71,7 +71,8 @@ end
 
 
 SMesh(A, B, C) = SMesh([A, B, C])
-SMesh(vs) = SMesh(vs[1], vs[2], vs[3], getcenter(vs), getnormal(vs), getarea(vs), ViewFactor[])
+# SMesh(vs) = SMesh(vs[1], vs[2], vs[3], getcenter(vs), getnormal(vs), getarea(vs), ViewFactor[])
+SMesh(vs) = SMesh(vs[1], vs[2], vs[3], getcenter(vs), getnormal(vs), getarea(vs), StructArray(ViewFactor[]))
 
 getmeshes(nodes, faces) = StructArray([SMesh(nodes[face]) for face in faces])
 
