@@ -226,15 +226,12 @@ end
 """
 Return true if the observing mesh is illuminated by the direct sunlight, false if not
 """
-function isIlluminated(obs::SMesh, r̂☉, meshes::Vector{SMesh})  # meshes::Vector{SMesh}
+function isIlluminated(obs::SMesh, r̂☉, meshes)  # meshes::Vector{SMesh}
     for viewfactor in obs.viewfactors
         raycast(meshes[viewfactor.id], r̂☉, obs) && return false
     end
     return true
 end
-
-
-isIlluminated(obs::SMesh, r̂☉, shape::Shape) = isIlluminated(obs, r̂☉, shape.smeshes)
 
 
 function getIlluminatedFaces(r̂☉, meshes::Vector{SMesh})

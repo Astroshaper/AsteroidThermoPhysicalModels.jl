@@ -54,6 +54,7 @@ getFaceNormals(shape::Shape) = getnormals(shape.smeshes)
 getFaceAreas(shape::Shape) = getareas(shape.smeshes)
 
 findVisibleFaces!(shape::Shape) = findVisibleFaces!(shape.smeshes)
+isIlluminated(obs::SMesh, r̂☉, shape::Shape) = isIlluminated(obs, r̂☉, shape.smeshes)
 
 
 ################################################################
