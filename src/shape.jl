@@ -1,17 +1,36 @@
 
 
+"""
+    Shape{T1, T2, T3, T4, T5, T6, T7}
+
+A polyhedral shape model of an asteroid.
+
+# Fields
+
+- `num_node` : Number of nodes
+- `num_face` : Number of faces
+- `nodes`    : 1-D array of node positions
+- `faces`    : 1-D array of vertex indices of faces
+
+- `smeshes`  : 1-D array of surface meshes
+
+- `AREA`     : Surface area
+- `VOLUME`   : Volume
+- `COF`      : Center-of-figure
+- `I`        : Moment of inertia tensor
+"""
 struct Shape{T1, T2, T3, T4, T5, T6, T7}
-    num_node::T1  # Number of nodes
-    num_face::T1  # Number of faces
-    nodes::T2     # 1-D array of node positions
-    faces::T3     # 1-D array of vertex indices of faces
+    num_node::T1
+    num_face::T1
+    nodes::T2
+    faces::T3
 
-    smeshes::T4   # 1-D array of surface meshes
+    smeshes::T4
 
-    AREA::T5    # Surface area
-    VOLUME::T5  # Volume
-    COF::T6     # Center-of-figure
-    I::T7       # Moment of inertia tensor
+    AREA::T5
+    VOLUME::T5
+    COF::T6
+    I::T7
 end
 
 
