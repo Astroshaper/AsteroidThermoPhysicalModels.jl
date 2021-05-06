@@ -1,12 +1,12 @@
 
 
-struct Shape
+struct Shape{T1, T2, T3}
     num_node::Int64
     num_face::Int64
-    nodes::Vector{SVector{3,Float64}}
-    faces::Vector{SVector{3,Int64}}
+    nodes::T1  # Vector{SVector{3,Float64}}
+    faces::T2  # Vector{SVector{3,Int64}}
 
-    smeshes::Vector{SMesh}
+    smeshes::T3  # Vector{SMesh}
 
     AREA::Float64              # surface area
     VOLUME::Float64            # volume
