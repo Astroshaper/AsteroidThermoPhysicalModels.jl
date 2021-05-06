@@ -38,16 +38,16 @@ getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * d
 """
 Triangular surface mesh of a polyhedral shape model
 """
-struct SMesh
-    A::SVector{3,Float64}
-    B::SVector{3,Float64}
-    C::SVector{3,Float64}
+struct SMesh{T1, T2, T3}
+    A::T1  # SVector{3,Float64}
+    B::T1  # SVector{3,Float64}
+    C::T1  # SVector{3,Float64}
     
-    center::SVector{3,Float64}
-    normal::SVector{3,Float64}
-    area::Float64
+    center::T1  # SVector{3,Float64}
+    normal::T1  # SVector{3,Float64}
+    area::T2    # Float64
     
-    viewfactors::Vector{ViewFactor}
+    viewfactors::T3  # Vector{ViewFactor}
 end
 
 

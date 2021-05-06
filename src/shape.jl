@@ -1,17 +1,17 @@
 
 
 struct Shape{T1, T2, T3, T4, T5, T6, T7}
-    num_node::T1  # Int64
-    num_face::T1  # Int64
-    nodes::T2  # Vector{SVector{3,Float64}}
-    faces::T3  # Vector{SVector{3,Int64}}
+    num_node::T1  # Number of nodes
+    num_face::T1  # Number of faces
+    nodes::T2     # Array of node positions
+    faces::T3     # Array of vertex indices of faces
 
-    smeshes::T4  # Vector{SMesh}
+    smeshes::T4   # Array of surface meshes
 
-    AREA::T5  # Float64              # surface area
-    VOLUME::T5  # Float64            # volume
-    COF::T6  # SVector{3,Float64}    # center-of-figure
-    I::T7  # SMatrix{3,3,Float64,9}  # moment of inertia tensor
+    AREA::T5    # Surface area
+    VOLUME::T5  # Volume
+    COF::T6     # Center-of-figure
+    I::T7       # Moment of inertia tensor
 end
 
 
