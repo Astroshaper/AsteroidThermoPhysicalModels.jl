@@ -226,33 +226,41 @@ end
 """
 Return true if the observing mesh is illuminated by the direct sunlight, false if not
 """
-function isIlluminated(obs::SMesh, r̂☉, meshes)  # meshes::Vector{SMesh}
-    for viewfactor in obs.viewfactors
-        raycast(meshes[viewfactor.id], r̂☉, obs) && return false
+function isIlluminated(obs::SMesh, r̂☉, meshes)
+    for id in obs.viewfactors.id
+        raycast(meshes[id], r̂☉, obs) && return false
     end
     return true
 end
 
+# function isIlluminated(obs::SMesh, r̂☉, meshes)
+#     for viewfactor in obs.viewfactors
+#         raycast(meshes[viewfactor.id], r̂☉, obs) && return false
+#     end
+#     return true
+# end
 
-function getIlluminatedFaces(r̂☉, meshes::Vector{SMesh})
-    illuminated = Int64[]
-    for i in eachindex(meshes)
-        obs = meshes[i]
-        Ψ = obs.normal ⋅ r̂☉  # cosine of the Sun illumination angle
-        Ψ > 0 && isIlluminated(obs, r̂☉, meshes) && push!(illuminated, i)
-    end
-    illuminated
-end
 
-function getIlluminatedFaces_PSEUDOCONVEX(r̂☉, meshes::Vector{SMesh})
-    illuminated = Int64[]
-    for i in eachindex(meshes)
-        obs = meshes[i]
-        Ψ = obs.normal ⋅ r̂☉  # cosine of the Sun illumination angle
-        Ψ > 0 && push!(illuminated, i)
-    end
-    illuminated
-end
+# function getIlluminatedFaces(r̂☉, meshes::Vector{SMesh})
+#     illuminated = Int64[]
+#     for i in eachindex(meshes)
+#         obs = meshes[i]
+#         Ψ = obs.normal ⋅ r̂☉  # cosine of the Sun illumination angle
+#         Ψ > 0 && isIlluminated(obs, r̂☉, meshes) && push!(illuminated, i)
+#     end
+#     illuminated
+# end
+
+
+# function getIlluminatedFaces_PSEUDOCONVEX(r̂☉, meshes::Vector{SMesh})
+#     illuminated = Int64[]
+#     for i in eachindex(meshes)
+#         obs = meshes[i]
+#         Ψ = obs.normal ⋅ r̂☉  # cosine of the Sun illumination angle
+#         Ψ > 0 && push!(illuminated, i)
+#     end
+#     illuminated
+# end
 
 
 ################################################################
