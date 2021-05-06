@@ -1,22 +1,40 @@
-## spin.jl
-##     Spin parameters of a clestial body
 
 
-struct Spin
-    #### Spin pole (equatorial coordinate) ####
-    α::Float64  # right ascension (RA)
-    δ::Float64  # declination (Dec)
+"""
+    Spin
 
-    #### Spin pole (ecliptic coordinate) ####
-    λ::Float64  # ecliptic longitude
-    β::Float64  # ecliptic latitude
+Spin parameters of an asteroid
 
-    T::Float64             # spin period [sec]
-    ω::Float64             # angular velocity [rad/sec]
-    ŝ::SVector{3,Float64}  # spin pole direction (normalized)
-    ε::Float64             # obliquity
+# Fields
 
-    γ::Float64  # Vernal equinox lon. from the direction of perihelion
+## Spin pole @ equatorial coordinate
+- `α`  # Right ascension (RA)
+- `δ`  # Declination (Dec)
+
+## Spin pole @ ecliptic coordinate
+- `λ`  # Ecliptic longitude
+- `β`  # Ecliptic latitude
+
+## Other parameters
+- `T`  # Spin period [sec]
+- `ω`  # Angular velocity [rad/sec]
+- `ŝ`  # Spin pole direction (normalized)
+- `ε`  # Obliquity
+- `γ`  # Vernal equinox lon. from the direction of perihelion
+"""
+struct Spin{T1, T2}
+    α::T1
+    δ::T1
+
+    λ::T1
+    β::T1
+
+    T::T1
+    ω::T1
+    ŝ::T2
+    ε::T1
+
+    γ::T1
 end
 
 
