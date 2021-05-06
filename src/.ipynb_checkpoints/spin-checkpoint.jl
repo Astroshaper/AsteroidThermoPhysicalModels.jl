@@ -1,7 +1,7 @@
 
 
 """
-    Spin
+    Spin{T1, T2}
 
 Spin parameters of an asteroid
 
