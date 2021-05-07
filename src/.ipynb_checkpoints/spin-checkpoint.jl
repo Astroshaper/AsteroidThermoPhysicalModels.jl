@@ -68,7 +68,7 @@ function setSpinParams(params, orbit)
         println("Give spin pole direction.")
     end
     
-    ŝ = getSpinNormal(λ, β, orbit)  # in orbital plane frame
+    ŝ = getSpinNormal(λ, β, orbit)  # Orbital plane frame
     ε = acos(ŝ[3])
     γ = getVernalEquinox(ŝ)
 
