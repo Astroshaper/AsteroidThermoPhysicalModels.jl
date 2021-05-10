@@ -4,17 +4,26 @@
 #                      View Factor
 ################################################################
 
-mutable struct ViewFactor
-    id::Int64     # Index of the interfacing mesh
-    fᵢⱼ::Float64  # View factor from mesh i to mesh j
+"""
+    ViewFactor
+
+Index of an interfacing mesh and its view factor
+
+# Fields
+
+- `id`  : Index of the interfacing mesh
+- `fᵢⱼ` : View factor from mesh i to mesh j
+"""
+struct ViewFactor
+    id::Int64
+    fᵢⱼ::Float64
 end
 
 
 """
     getViewFactor(mᵢ, mⱼ) -> fᵢⱼ
 
-View factor from mesh i to mesh j
-assuming Lambertian emission
+View factor from mesh i to mesh j, assuming Lambertian emission
 """
 function getViewFactor(mᵢ, mⱼ)
     d⃗ᵢⱼ = mⱼ.center - mᵢ.center  # vector from mesh i to mesh j
@@ -36,20 +45,34 @@ getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * d
 
 
 """
+    SMesh{T1, T2, T3}
+
 Triangular surface mesh of a polyhedral shape model.
 
 Note that the mesh normal indicates outward the polyhedron.
+
+# Fields
+- `A` : Position of 1st vertex
+- `B` : Position of 2nd vertex
+- `C` : Position of 3rd vertex
+
+- `center` : Position of mesh center
+- `normal` : Normal vector to mesh
+- `area`   : Area of mesh
+    
+- `viewfactors` : 1-D array of `ViewFactor`
+- # fluxes::T4  # [F_sun, F_scat, F_rad, k(dT/dx), ϵσT⁴] + surface roughness infrared beaming
 """
 struct SMesh{T1, T2, T3}
-    A::T1  # Position of 1st vertex
-    B::T1  # Position of 2nd vertex
-    C::T1  # Position of 3rd vertex
+    A::T1
+    B::T1
+    C::T1
     
-    center::T1  # Position of mesh center
-    normal::T1  # Normal vector to mesh
-    area::T2    # Area of mesh
+    center::T1
+    normal::T1
+    area::T2
     
-    viewfactors::T3  # Vector{ViewFactor}
+    viewfactors::T3
     # fluxes::T4  # [F_sun, F_scat, F_rad, k(dT/dx), ϵσT⁴] + surface roughness infrared beaming
 end
 

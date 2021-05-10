@@ -12,7 +12,7 @@ A polyhedral shape model of an asteroid.
 - `nodes`    : 1-D array of node positions
 - `faces`    : 1-D array of vertex indices of faces
 
-- `smeshes`  : 1-D array of surface meshes
+- `smeshes`  : 1-D array of surface meshes (`SMesh`)
 
 - `AREA`     : Surface area
 - `VOLUME`   : Volume
