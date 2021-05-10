@@ -46,6 +46,15 @@ getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * d
 """
     Flux{T}
 
+SMeshにfluxesを保持させる
+NamedTupleは良さげだけど、immutable（Dictならmutable）
+そもそもSMeshをmutable structにすると、パフォーマンスはどれくらい劣化する？
+
+NamedTuple : 作るのは早い (immutable)
+Dict : 作るのは遅い。その後に計算で使う分には遅くないかも？ (mutable)
+それならmutable structがいいか（使い方次第では、遅くならない？）
+サイズが小さいなら、Dictより、mutable structが良さそう
+
 # Fields
 - `sun`  : F_sun
 - `scat` : F_scat
@@ -127,7 +136,7 @@ end
 
 
 SMesh(A, B, C) = SMesh([A, B, C])
-SMesh(vs) = SMesh(vs[1], vs[2], vs[3], getcenter(vs), getnormal(vs), getarea(vs), StructArray(ViewFactor[]), Flux(0.,0.,0.,0.,0.))
+SMesh(vs) = SMesh(vs[1], vs[2], vs[3], getcenter(vs), getnormal(vs), getarea(vs), StructArray(ViewFactor[]), Flux())
 
 getmeshes(nodes, faces) = StructArray([SMesh(nodes[face]) for face in faces])
 
