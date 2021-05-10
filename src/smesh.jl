@@ -4,7 +4,7 @@
 #                      View Factor
 ################################################################
 
-struct ViewFactor
+mutable struct ViewFactor
     id::Int64     # Index of the interfacing mesh
     fᵢⱼ::Float64  # View factor from mesh i to mesh j
 end
@@ -40,7 +40,7 @@ Triangular surface mesh of a polyhedral shape model.
 
 Note that the mesh normal indicates outward the polyhedron.
 """
-mutable struct SMesh{T1, T2, T3}
+struct SMesh{T1, T2, T3}
     A::T1  # Position of 1st vertex
     B::T1  # Position of 2nd vertex
     C::T1  # Position of 3rd vertex
