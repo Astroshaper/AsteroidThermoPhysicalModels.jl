@@ -14,7 +14,7 @@ Index of an interfacing mesh and its view factor
 - `id`  : Index of the interfacing mesh
 - `fᵢⱼ` : View factor from mesh i to mesh j
 """
-mutable struct ViewFactor
+struct ViewFactor
     id::Int64
     fᵢⱼ::Float64
 end
