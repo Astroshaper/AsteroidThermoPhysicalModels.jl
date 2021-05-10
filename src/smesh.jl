@@ -73,8 +73,6 @@ mutable struct Flux{T}
     rad::T
     cond::T
     ϵσT⁴::T
-    
-    Flux() = new(zero(T),zero(T),zero(T),zero(T),zero(T))
 end
 
 
@@ -136,7 +134,7 @@ end
 
 
 SMesh(A, B, C) = SMesh([A, B, C])
-SMesh(vs) = SMesh(vs[1], vs[2], vs[3], getcenter(vs), getnormal(vs), getarea(vs), StructArray(ViewFactor[]), Flux())
+SMesh(vs) = SMesh(vs[1], vs[2], vs[3], getcenter(vs), getnormal(vs), getarea(vs), StructArray(ViewFactor[]), Flux(0.,0.,0.,0.,0.))
 
 getmeshes(nodes, faces) = StructArray([SMesh(nodes[face]) for face in faces])
 
