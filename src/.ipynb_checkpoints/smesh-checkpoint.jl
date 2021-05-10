@@ -1,7 +1,7 @@
 
 
 ################################################################
-#                      View Factor
+#                      View factor
 ################################################################
 
 """
@@ -40,6 +40,24 @@ getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * d
 
 
 ################################################################
+#                 Face-to-face interactions
+################################################################
+
+"""
+    Flux{T}
+
+[F_sun, F_scat, F_rad, k(dT/dx), ϵσT⁴] + surface roughness infrared beaming
+"""
+mutable struct Flux{T}
+    sun::T
+    scat::T
+    rad::T
+    cond::T
+    ϵσT⁴::T
+end
+
+
+################################################################
 #                  Triangular surface mesh
 ################################################################
 
@@ -61,9 +79,9 @@ Note that the mesh normal indicates outward the polyhedron.
 - `area`   : Area of mesh
     
 - `viewfactors` : 1-D array of `ViewFactor`
-- # fluxes::T4  # [F_sun, F_scat, F_rad, k(dT/dx), ϵσT⁴] + surface roughness infrared beaming
+- # fluxes::T4  # 
 """
-struct SMesh{T1, T2, T3}
+struct SMesh{T1, T2, T3, T4}
     A::T1
     B::T1
     C::T1
@@ -73,7 +91,7 @@ struct SMesh{T1, T2, T3}
     area::T2
     
     viewfactors::T3
-    # fluxes::T4  # [F_sun, F_scat, F_rad, k(dT/dx), ϵσT⁴] + surface roughness infrared beaming
+    flux::T4
 end
 
 
@@ -97,7 +115,7 @@ end
 
 
 SMesh(A, B, C) = SMesh([A, B, C])
-SMesh(vs) = SMesh(vs[1], vs[2], vs[3], getcenter(vs), getnormal(vs), getarea(vs), StructArray(ViewFactor[]))
+SMesh(vs) = SMesh(vs[1], vs[2], vs[3], getcenter(vs), getnormal(vs), getarea(vs), StructArray(ViewFactor[]), Flux(0.,0.,0.,0.,0.))
 
 getmeshes(nodes, faces) = StructArray([SMesh(nodes[face]) for face in faces])
 
