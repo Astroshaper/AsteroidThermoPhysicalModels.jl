@@ -57,6 +57,7 @@ Dict : 作るのは遅い。その後に計算で使う分には遅くないか�
 
 フィールドの値を更新すると、allocationがかなり発生するかもしれない
 遅くなりそうなら、Vector{Float64}で代用する
+https://bkamins.github.io/julialang/2020/10/16/gctime.html
 
 # Fields
 - `sun`  : F_sun
