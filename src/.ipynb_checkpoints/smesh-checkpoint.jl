@@ -49,13 +49,14 @@ getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * d
 Energy flux from/to a mesh
 
 SMeshにfluxesを保持させる
-NamedTupleは良さげだけど、immutable（Dictならmutable）
-そもそもSMeshをmutable structにすると、パフォーマンスはどれくらい劣化する？
 
 NamedTuple : 作るのは早い (immutable)
 Dict : 作るのは遅い。その後に計算で使う分には遅くないかも？ (mutable)
 それならmutable structがいいか（使い方次第では、遅くならない？）
 サイズが小さいなら、Dictより、mutable structが良さそう
+
+フィールドの値を更新すると、allocationがかなり発生するかもしれない
+遅くなりそうなら、Vector{Float64}で代用する
 
 # Fields
 - `sun`  : F_sun
@@ -65,9 +66,6 @@ Dict : 作るのは遅い。その後に計算で使う分には遅くないか�
 - `ϵσT⁴` : ϵσT⁴
 
 surface roughness infrared beamingの効果も実装する
-
-フィールドの値を更新すると、allocationがかなり発生するかもしれない
-遅くなりそうなら、Vector{Float64}で代用する
 """
 mutable struct Flux{T}
     sun::T
