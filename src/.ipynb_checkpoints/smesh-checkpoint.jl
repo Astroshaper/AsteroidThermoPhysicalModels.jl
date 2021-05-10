@@ -46,6 +46,8 @@ getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * d
 """
     Flux{T}
 
+Energy flux from/to a mesh
+
 SMeshにfluxesを保持させる
 NamedTupleは良さげだけど、immutable（Dictならmutable）
 そもそもSMeshをmutable structにすると、パフォーマンスはどれくらい劣化する？
