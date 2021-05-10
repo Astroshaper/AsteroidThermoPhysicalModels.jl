@@ -40,7 +40,7 @@ Triangular surface mesh of a polyhedral shape model.
 
 Note that the mesh normal indicates outward the polyhedron.
 """
-struct SMesh{T1, T2, T3}
+mutable struct SMesh{T1, T2, T3}
     A::T1  # Position of 1st vertex
     B::T1  # Position of 2nd vertex
     C::T1  # Position of 3rd vertex
@@ -50,6 +50,7 @@ struct SMesh{T1, T2, T3}
     area::T2    # Area of mesh
     
     viewfactors::T3  # Vector{ViewFactor}
+    # fluxes::T4  # [F_sun, F_scat, F_rad, k(dT/dx), ϵσT⁴] + surface roughness infrared beaming
 end
 
 
