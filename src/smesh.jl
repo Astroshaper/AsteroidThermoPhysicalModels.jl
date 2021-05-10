@@ -74,7 +74,7 @@ mutable struct Flux{T}
     cond::T
     ϵσT⁴::T
     
-    Flux() = new(0,0,0,0,0)
+    Flux() = new(zero(T),zero(T),zero(T),zero(T),zero(T))
 end
 
 
