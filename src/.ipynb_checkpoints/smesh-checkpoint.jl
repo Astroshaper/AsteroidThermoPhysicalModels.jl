@@ -46,7 +46,17 @@ getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * d
 """
     Flux{T}
 
-[F_sun, F_scat, F_rad, k(dT/dx), ϵσT⁴] + surface roughness infrared beaming
+# Fields
+- `sun`  : F_sun
+- `scat` : F_scat
+- `rad`  : F_rad
+- `cond` : k(dT/dx)
+- `ϵσT⁴` : ϵσT⁴
+
+surface roughness infrared beamingの効果も実装する
+
+フィールドの値を更新すると、allocationがかなり発生するかもしれない
+遅くなりそうなら、Vector{Float64}で代用する
 """
 mutable struct Flux{T}
     sun::T
@@ -54,6 +64,8 @@ mutable struct Flux{T}
     rad::T
     cond::T
     ϵσT⁴::T
+    
+    Flux() = new(0,0,0,0,0)
 end
 
 
