@@ -235,57 +235,59 @@ Find faces directly seen from the observer on the face
 - `obs`    : Mesh where the observer stands
 - `meshes` : Array of SMesh instances
 """
+# function findVisibleFaces!(obs::SMesh, meshes)
+#     ids = Int64[]
+#     for i in eachindex(meshes)
+#         tar = meshes[i]
+#         isAbove(obs, tar) && isFace(obs, tar) && push!(ids, i)
+#     end
+
+#     for i in copy(ids)
+#         tar_i = meshes[i]
+#         R = tar_i.center - obs.center
+#         for j in copy(ids)
+#             i == j && continue
+#             tar_j = meshes[j]
+
+#             if raycast(tar_j, R, obs)
+#                 dᵢ = norm(R)                          # distance to i-th mesh
+#                 dⱼ = norm(tar_j.center - obs.center)  # distance to j-th mesh
+#                 dᵢ < dⱼ ? filter!(x->x≠j, ids) : filter!(x->x≠i, ids)
+#             end
+#         end
+#     end
+    
+#     for id in ids
+#         fᵢⱼ = getViewFactor(obs, meshes[id])
+#         push!(obs.viewfactors, ViewFactor(id, fᵢⱼ))
+#     end
+# end
+
+
 function findVisibleFaces!(obs::SMesh, meshes)
-    ids = Int64[]
+    visibles = fill(false, length(meshes))
+    
     for i in eachindex(meshes)
         tar = meshes[i]
-        isAbove(obs, tar) && isFace(obs, tar) && push!(ids, i)
+        isAbove(obs, tar) && isFace(obs, tar) && (visibles[i] = true)
     end
 
-    for i in copy(ids)
+    for i in findall(visibles)
         tar_i = meshes[i]
-        R = tar_i.center - obs.center
-        for j in copy(ids)
+        R = tar_i.center - obs.center  # Ray from observor to mesh i
+        for j in findall(visibles)
             i == j && continue
             tar_j = meshes[j]
 
             if raycast(tar_j, R, obs)
                 dᵢ = norm(R)                          # distance to i-th mesh
                 dⱼ = norm(tar_j.center - obs.center)  # distance to j-th mesh
-                dᵢ < dⱼ ? filter!(x->x≠j, ids) : filter!(x->x≠i, ids)
+                dᵢ < dⱼ ? (visibles[j] = false) : (visibles[i] = false)
             end
         end
     end
     
-    for id in ids
-        fᵢⱼ = getViewFactor(obs, meshes[id])
-        push!(obs.viewfactors, ViewFactor(id, fᵢⱼ))
-    end
-end
-
-function _findVisibleFaces!(obs::SMesh, meshes)
-    ids = Int64[]
-    for i in eachindex(meshes)
-        tar = meshes[i]
-        isAbove(obs, tar) && isFace(obs, tar) && push!(ids, i)
-    end
-
-    for i in copy(ids)
-        tar_i = meshes[i]
-        R = tar_i.center - obs.center
-        for j in copy(ids)
-            i == j && continue
-            tar_j = meshes[j]
-
-            if raycast(tar_j, R, obs)
-                dᵢ = norm(R)                          # distance to i-th mesh
-                dⱼ = norm(tar_j.center - obs.center)  # distance to j-th mesh
-                dᵢ < dⱼ ? filter!(x->x≠j, ids) : filter!(x->x≠i, ids)
-            end
-        end
-    end
-    
-    for id in ids
+    for id in visibles
         fᵢⱼ = getViewFactor(obs, meshes[id])
         push!(obs.viewfactors, ViewFactor(id, fᵢⱼ))
     end
