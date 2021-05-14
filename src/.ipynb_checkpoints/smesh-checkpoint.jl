@@ -222,7 +222,7 @@ function raycast(A, B, C, R)
 
     # 0 ≤ u ≤ 1 && 0 ≤ v ≤ 1 && 0 ≤ u + v ≤ 1 && t > 0 && (return true)
     # return false
-    (0 ≤ u ≤ 1 && 0 ≤ v ≤ 1 && 0 ≤ u + v ≤ 1 && t > 0) ? true : false
+    0 ≤ u ≤ 1 && 0 ≤ v ≤ 1 && 0 ≤ u + v ≤ 1 && t > 0 ? true : false
 end
 
 
@@ -262,6 +262,35 @@ function findVisibleFaces!(obs::SMesh, meshes)
         push!(obs.viewfactors, ViewFactor(id, fᵢⱼ))
     end
 end
+
+function _findVisibleFaces!(obs::SMesh, meshes)
+    ids = Int64[]
+    for i in eachindex(meshes)
+        tar = meshes[i]
+        isAbove(obs, tar) && isFace(obs, tar) && push!(ids, i)
+    end
+
+    for i in copy(ids)
+        tar_i = meshes[i]
+        R = tar_i.center - obs.center
+        for j in copy(ids)
+            i == j && continue
+            tar_j = meshes[j]
+
+            if raycast(tar_j, R, obs)
+                dᵢ = norm(R)                          # distance to i-th mesh
+                dⱼ = norm(tar_j.center - obs.center)  # distance to j-th mesh
+                dᵢ < dⱼ ? filter!(x->x≠j, ids) : filter!(x->x≠i, ids)
+            end
+        end
+    end
+    
+    for id in ids
+        fᵢⱼ = getViewFactor(obs, meshes[id])
+        push!(obs.viewfactors, ViewFactor(id, fᵢⱼ))
+    end
+end
+
 
 
 """
