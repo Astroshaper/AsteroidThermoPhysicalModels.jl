@@ -287,7 +287,7 @@ function findVisibleFaces!(obs::SMesh, meshes)
         end
     end
     
-    for id in visibles
+    for id in findall(visibles)
         fᵢⱼ = getViewFactor(obs, meshes[id])
         push!(obs.viewfactors, ViewFactor(id, fᵢⱼ))
     end
