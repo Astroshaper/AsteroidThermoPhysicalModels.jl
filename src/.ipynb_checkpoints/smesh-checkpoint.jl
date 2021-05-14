@@ -247,15 +247,11 @@ function findVisibleFaces!(obs::SMesh, meshes)
             i == j && continue
             tar_j = meshes[j]
 
-#             if raycast(tar_j, R, obs)
-#                 dᵢ = norm(R)                          # distance to i-th mesh
-#                 dⱼ = norm(tar_j.center - obs.center)  # distance to j-th mesh
-#                 dᵢ < dⱼ ? filter!(x->x≠j, ids) : filter!(x->x≠i, ids)
-#             end
-            
-            dᵢ = norm(R)
-            dⱼ = norm(tar_j.center - obs.center)
-            raycast(tar_j, R, obs) && (dᵢ < dⱼ ? filter!(x->x≠j, ids) : filter!(x->x≠i, ids))
+            if raycast(tar_j, R, obs)
+                dᵢ = norm(R)                          # distance to i-th mesh
+                dⱼ = norm(tar_j.center - obs.center)  # distance to j-th mesh
+                dᵢ < dⱼ ? filter!(x->x≠j, ids) : filter!(x->x≠i, ids)
+            end
         end
     end
     
