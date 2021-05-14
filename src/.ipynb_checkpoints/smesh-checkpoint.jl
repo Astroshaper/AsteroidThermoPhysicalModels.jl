@@ -220,8 +220,9 @@ function raycast(A, B, C, R)
     v = (Q ⋅ R) / P_dot_E1
     t = (Q ⋅ E2) / P_dot_E1  # Distance to triangle (if t < 0, the ray hits from the back)
 
-    0 ≤ u ≤ 1 && 0 ≤ v ≤ 1 && 0 ≤ u + v ≤ 1 && t > 0 && (return true)
-    return false
+    # 0 ≤ u ≤ 1 && 0 ≤ v ≤ 1 && 0 ≤ u + v ≤ 1 && t > 0 && (return true)
+    # return false
+    (0 ≤ u ≤ 1 && 0 ≤ v ≤ 1 && 0 ≤ u + v ≤ 1 && t > 0) ? true : false
 end
 
 
