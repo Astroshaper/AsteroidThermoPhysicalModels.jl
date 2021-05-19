@@ -4,6 +4,8 @@ using LinearAlgebra
 using StaticArrays
 using StructArrays
 
+using GLMakie  # 3D visulaization
+
 include("constants.jl")
 export AU, G, GM☉, SOLAR_CONST, c₀, σ_SB
 
@@ -26,11 +28,11 @@ include("smesh.jl")
 export SMesh
 
 include("shape.jl")
-export Shape, setShapeModel, findVisibleFaces!
+export Shape, setShapeModel, findVisibleFaces!, showshape
 
 include("YORP.jl")
 export getNetTorque, getNetTorque_shadowing, torque2rate, getTimeScale
 
-greet() = println("Hello.")
+include("thermophysics.jl")
 
 end # module Astroshaper

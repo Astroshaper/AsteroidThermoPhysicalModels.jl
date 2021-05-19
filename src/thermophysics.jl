@@ -1,9 +1,4 @@
 
-# using LinearAlgebra
-
-include("constants.jl")
-include("smesh.jl")
-
 
 # ****************************************************************
 #                      1D heat conduction
@@ -23,6 +18,9 @@ getThermalInertia(k, ρ, Cₚ) = √(k * ρ * Cₚ)
 
 
 """
+- `Tⱼ`   : Temperatures
+- `Tⱼ₊₁` : Temperatures at the next time step
+
 i : index of depth
 j : index of time step
 """
@@ -68,26 +66,6 @@ f_deriv(Γ, P, Δz, ϵ, T) = - Γ / √(4π * P) / Δz - 4*ϵ*σ*T[begin]^3
 # ****************************************************************
 #
 # ****************************************************************
-
-
-"""
-    getViewFactor(mᵢ::SMesh, mⱼ::SMesh) -> fᵢⱼ
-
-View factor from mesh i to mesh j
-assuming Lambertian emission
-"""
-function getViewFactor(mᵢ::SMesh, mⱼ::SMesh)
-    d⃗ᵢⱼ = mⱼ.center - mᵢ.center  # vector from mesh i to mesh j
-    d̂ᵢⱼ = normalize(d⃗ᵢⱼ)
-    dᵢⱼ = norm(d⃗ᵢⱼ)
-
-    cosθᵢ = mᵢ.normal ⋅ d̂ᵢⱼ
-    cosθⱼ = mⱼ.normal ⋅ (-d̂ᵢⱼ)
-
-    fᵢⱼ = getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, mⱼ.area)
-end
-
-getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * dᵢⱼ^2) * aⱼ
 
 
 """

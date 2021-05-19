@@ -119,3 +119,28 @@ function getMOI(smeshes)
 end
 
 
+################################################################
+#              3D visualization of polyhedral shape
+################################################################
+
+"""
+Vector of vector to 2D Matrix
+"""
+function VectorVector2Matrix(v)
+    m = Matrix{eltype(v[end])}(undef, length(v), 3)
+    for i in eachindex(v)
+        m[i, :] .= v[i]
+    end
+    m
+end
+
+
+function showshape(shape)    
+    nodes = VectorVector2Matrix(shape.nodes)
+    faces = VectorVector2Matrix(shape.faces)
+    
+    colors = :gray
+    
+    # scene = mesh(nodes, faces, color = colors, shading = false)
+    scene = mesh(nodes, faces, color=colors)
+end
