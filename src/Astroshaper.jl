@@ -31,4 +31,7 @@ export Shape, setShapeModel, findVisibleFaces!
 include("YORP.jl")
 export getNetTorque, getNetTorque_shadowing, torque2rate, getTimeScale
 
+VER=1.0
+export VER
+
 end # module Astroshaper
