@@ -129,7 +129,6 @@ function getNetTorque_shadowing(shape, orbit, spin, times)
     τ̄ /= length(times)
 end
 
-testYORP() = println("Test.")
 
 # ****************************************************************
 #
