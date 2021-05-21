@@ -288,6 +288,15 @@ function isIlluminated(obs::SMesh, r̂☉, meshes)
 end
 
 
+"""
+    isAboveHorizon(mesh) -> Bool
+
+The mesh is above its local horizon or not
+"""
+isAboveHorizon(mesh) = length(mesh.viewfactors) == 0
+
+
+
 # function getIlluminatedFaces(r̂☉, meshes::Vector{SMesh})
 #     illuminated = Int64[]
 #     for i in eachindex(meshes)

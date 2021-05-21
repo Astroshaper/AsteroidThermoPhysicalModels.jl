@@ -49,9 +49,7 @@ function updateSurfaceTemperature!(F_total, Γ, P, Δz, ϵ, T)
         T[begin] -= f(F_total, Γ, P, Δz, ϵ, T) / f_deriv(Γ, P, Δz, ϵ, T)
         err = abs(1 - T_pri / T[begin])
         # println(i,  " : ", err)
-        if err < 1e-10
-            return
-        end
+        err < 1e-10 && return
     end
 end
 
