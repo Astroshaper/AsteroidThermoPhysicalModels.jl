@@ -13,6 +13,8 @@ Index of an interfacing mesh and its view factor
 
 - `id`  : Index of the interfacing mesh
 - `fᵢⱼ` : View factor from mesh i to mesh j
+
+`d̂ᵢⱼ` も保持させる？
 """
 struct ViewFactor
     id::Int64
