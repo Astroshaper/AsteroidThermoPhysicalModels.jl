@@ -1,8 +1,28 @@
 
 
-using LinearAlgebra
+"""
+    Particle{T1 <: AbstractVector, T2 <: Real}
 
+Paticle for N-body simulation
 
+# Fields
+- `r`   # Position
+- `v`   # Velocity
+- `a`   # Acceleration
+
+- `a¹`  # 1st dervative of acceleration
+- `a²`  # 2nd dervative of acceleration
+- `a³`  # 3rd dervative of acceleration
+    
+- `ᵖr`  # Predicted position at next timestep
+- `ᵖv`  # Predicted velocity at next timestep
+
+- `ᶜr`  # Corrected position at next timestep
+- `ᶜv`  # Corrected position at next timestep
+
+- `m`   # Mass of the particle
+- `R`   # Radius of the particle
+"""
 struct Particle{T1 <: AbstractVector, T2 <: Real}
     r::T1  # Position
     v::T1  # Velocity

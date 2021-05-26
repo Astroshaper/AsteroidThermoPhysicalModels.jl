@@ -38,4 +38,7 @@ include("thermophysics.jl")
 include("nbody.jl")
 export Particle
 
+include("hermite4.jl")
+export run_sim
+
 end # module Astroshaper
