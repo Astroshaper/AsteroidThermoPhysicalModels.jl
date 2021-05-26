@@ -35,4 +35,7 @@ export getNetTorque, getNetTorque_shadowing, torque2rate, getTimeScale
 
 include("thermophysics.jl")
 
+include("nbody.jl")
+export Particle
+
 end # module Astroshaper

@@ -135,12 +135,13 @@ function VectorVector2Matrix(v)
 end
 
 
-function showshape(shape)    
+function showshape(shape)
     nodes = VectorVector2Matrix(shape.nodes)
     faces = VectorVector2Matrix(shape.faces)
     
     colors = :gray
     
     # scene = mesh(nodes, faces, color = colors, shading = false)
+    set_theme!(backgroundcolor = :black)
     scene = mesh(nodes, faces, color=colors)
 end
