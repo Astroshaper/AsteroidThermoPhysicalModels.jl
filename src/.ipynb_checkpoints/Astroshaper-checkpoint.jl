@@ -39,6 +39,6 @@ include("nbody.jl")
 export Particle
 
 include("hermite4.jl")
-export forward!, run_sim, predict!, evaluate!, evaluate_by_predictor!, evaluate_by_corrector!, initialize!, collect!, prepare!, get_Δt_Aarseth, get_Δt_initial
+
 
 end # module Astroshaper

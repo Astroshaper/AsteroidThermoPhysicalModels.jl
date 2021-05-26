@@ -1,10 +1,4 @@
 
-
-using LinearAlgebra
-
-include("constants.jl")
-include("nbody.jl")
-
 # c.f.
 # https://github.com/nitadori/Hermite/blob/master/SRC/hermite4-k.cpp
 
