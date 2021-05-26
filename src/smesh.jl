@@ -14,7 +14,7 @@ Index of an interfacing mesh and its view factor
 - `id`  : Index of the interfacing mesh
 - `fᵢⱼ` : View factor from mesh i to mesh j
 
-`d̂ᵢⱼ` も保持させる？
+`d̂ᵢⱼ`, dᵢⱼ も保持させる？
 """
 struct ViewFactor
     id::Int64
@@ -244,16 +244,16 @@ function findVisibleFaces!(obs::SMesh, meshes)
 
     for i in copy(ids)
         tar_i = meshes[i]
-        R = tar_i.center - obs.center
+        Rᵢ = tar_i.center - obs.center
+        dᵢ = norm(Rᵢ)      # distance to i-th mesh
         for j in copy(ids)
             i == j && continue
-            tar_j = meshes[j]
 
-            if raycast(tar_j, R, obs)
-                dᵢ = norm(R)                          # distance to i-th mesh
-                dⱼ = norm(tar_j.center - obs.center)  # distance to j-th mesh
-                dᵢ < dⱼ ? filter!(x->x≠j, ids) : filter!(x->x≠i, ids)
-            end
+            tar_j = meshes[j]
+            Rⱼ = tar_j.center - obs.center
+            dⱼ = norm(Rⱼ)  # distance to j-th mesh
+
+            raycast(tar_j, Rᵢ, obs) && (dᵢ < dⱼ ? filter!(x->x≠j, ids) : filter!(x->x≠i, ids))
         end
     end
     
