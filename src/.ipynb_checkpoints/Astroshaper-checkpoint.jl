@@ -35,10 +35,16 @@ export getNetTorque, getNetTorque_shadowing, torque2rate, getTimeScale
 
 include("thermophysics.jl")
 
+################################################################
+
 include("nbody.jl")
 export Particle
 
-include("hermite4.jl")
-export run_sim
+include("Hermite4.jl")
+export run_sim, forward!, predict!, evaluate!, evaluate_by_predictor!, evaluate_by_corrector!, initialize!
+export collect!, prepare!, get_Δt_Aarseth, get_Δt_initial
+
+include("Euler.jl")
+export run_Euler, getParticlesCOM
 
 end # module Astroshaper
