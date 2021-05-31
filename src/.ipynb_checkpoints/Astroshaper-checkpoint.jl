@@ -7,7 +7,7 @@ using StructArrays
 using GLMakie  # 3D visulaization
 
 include("constants.jl")
-export AU, G, GM☉, SOLAR_CONST, c₀, σ_SB
+export AU, G, GM☉, M☉, SOLAR_CONST, c₀, σ_SB
 
 include("obj.jl")
 export loadobj
@@ -38,13 +38,14 @@ include("thermophysics.jl")
 ################################################################
 
 include("nbody.jl")
-export Particle
+export Particle, setParticles, setOrigin!, getBaryCenter, setOrigin2BaryCenter!
 
 include("Hermite4.jl")
-export run_sim, forward!, predict!, evaluate!, evaluate_by_predictor!, evaluate_by_corrector!, initialize!
+export run_Hermite4, Initialize!
+export run_sim, forward!, predict!, evaluate!, evaluate_by_predictor!, evaluate_by_corrector!
 export collect!, prepare!, get_Δt_Aarseth, get_Δt_initial
 
 include("Euler.jl")
-export run_Euler, getParticlesCOM
+export run_Euler, getParticlesCOM, setOrigin2COM!
 
 end # module Astroshaper

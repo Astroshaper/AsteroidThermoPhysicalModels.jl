@@ -13,80 +13,35 @@ Paticle for N-body simulation
 - `a¹`  # 1st dervative of acceleration
 - `a²`  # 2nd dervative of acceleration
 - `a³`  # 3rd dervative of acceleration
-    
-- `ᵖr`  # Predicted position at next timestep
-- `ᵖv`  # Predicted velocity at next timestep
-
-- `ᶜr`  # Corrected position at next timestep
-- `ᶜv`  # Corrected position at next timestep
 
 - `m`   # Mass of the particle
 - `R`   # Radius of the particle
 """
 struct Particle{T1 <: AbstractVector, T2 <: Real}
-    r::T1   # Position
-    v::T1   # Velocity
-    a::T1   # Acceleration
+    r::T1
+    v::T1
+    a::T1
     
-    a¹::T1  # 1st dervative of acceleration
-    a²::T1  # 2nd dervative of acceleration
-    a³::T1  # 3rd dervative of acceleration
-    
-    ᵖr::T1  # Predicted position at next timestep
-    ᵖv::T1  # Predicted velocity at next timestep
-    
-    ⁺a⁰::T1  # Acceleration at next timestep
-    ⁺a¹::T1  # 1st dervative of acceleration at next timestep
-    # ⁺a²::T1  # 2nd dervative of acceleration at next timestep
-    # ⁺a³::T1  # 3rd dervative of acceleration at next timestep
-    
-    ᶜr::T1  # Corrected position at next timestep
-    ᶜv::T1  # Corrected position at next timestep
+    a¹::T1
+    a²::T1
+    a³::T1
 
-    m::T2  # Mass of the particle
-    R::T2  # Radius of the particle
+    m::T2
+    R::T2
 end
-
-# struct Particle{T1 <: AbstractVector, T2 <: Real}
-#     r::T1  # Position
-#     v::T1  # Velocity
-
-#     a⁰::T1  # Acceleration
-#     a¹::T1  # 1st dervative of acceleration
-#     a²::T1  # 2nd dervative of acceleration
-#     a³::T1  # 3rd dervative of acceleration
-    
-#     ᵖr::T1  # Predicted position at next timestep
-#     ᵖv::T1  # Predicted velocity at next timestep
-    
-#     ⁺a⁰::T1  # Acceleration at next timestep
-#     ⁺a¹::T1  # 1st dervative of acceleration at next timestep
-#     # ⁺a²::T1  # 2nd dervative of acceleration at next timestep
-#     # ⁺a³::T1  # 3rd dervative of acceleration at next timestep
-    
-#     ᶜr::T1  # Corrected position at next timestep
-#     ᶜv::T1  # Corrected position at next timestep
-
-#     m::T2  # Mass of the particle
-#     R::T2  # Radius of the particle
-# end
 
 
 function Particle(r, v, m, R)
+    a   = similar(r) ; a  .= 0.
+    a¹  = similar(r) ; a¹ .= 0.
+    a²  = similar(r) ; a² .= 0.
+    a³  = similar(r) ; a³ .= 0.
     
-    a   = similar(r) ; a   .= 0
-    a¹  = similar(r) ; a¹  .= 0
-    a²  = similar(r) ; a²  .= 0
-    a³  = similar(r) ; a³  .= 0
-    ᵖr  = similar(r) ; ᵖr  .= 0
-    ᵖv  = similar(r) ; ᵖv  .= 0
-    ⁺a⁰ = similar(r) ; ⁺a⁰ .= 0
-    ⁺a¹ = similar(r) ; ⁺a¹ .= 0
-    ᶜr  = similar(r) ; ᶜr  .= 0
-    ᶜv  = similar(r) ; ᶜv  .= 0
-    
-    Particle(r, v, a, a¹, a², a³, ᵖr, ᵖv, ⁺a⁰, ⁺a¹, ᶜr, ᶜv, m, R)
+    Particle(r, v, a, a¹, a², a³, m, R)
 end
+
+
+setParticles(ps...) = StructArray([ps...])
 
 
 function Base.show(io::IO, p::Particle)
@@ -99,15 +54,6 @@ function Base.show(io::IO, p::Particle)
     println(" a¹ : ", p.a¹)
     println(" a² : ", p.a²)
     println(" a³ : ", p.a³)
-    
-    println("ᵖr  : ", p.ᵖr)
-    println("ᵖv  : ", p.ᵖv)
-    
-    println("⁺a⁰ : ", p.⁺a⁰)
-    println("⁺a¹ : ", p.⁺a¹)
-    
-    println("ᶜr  : ", p.ᶜr)
-    println("ᶜv  : ", p.ᶜv)
 
     println("m   : ", p.m)
     println("R   : ", p.R)
@@ -120,6 +66,7 @@ end
 
 
 get_rs(snapshots, i) = [ps[i].r for ps in snapshots]
+get_vs(snapshots, i) = [ps[i].v for ps in snapshots]
 
 get_xs(snapshots, i) = [r[1] for r in get_rs(snapshots, i)]
 get_ys(snapshots, i) = [r[2] for r in get_rs(snapshots, i)]
@@ -127,6 +74,37 @@ get_zs(snapshots, i) = [r[3] for r in get_rs(snapshots, i)]
 
 
 """
-Center-of-mass of particles
 """
-getParticlesCOM(ps) = sum(ps.m .* ps.r) / sum(ps.m)
+function setOrigin!(ps, origin::Particle)
+    for p in ps
+        p.r .-= origin.r
+        p.v .-= origin.v
+        p.a .-= origin.a
+    end
+end
+
+
+"""
+    getBaryCenter(ps) -> r, v, a
+
+Position, velocity and acceleration of the system's barycenter
+"""
+function getBaryCenter(ps)
+    Σm = sum(ps.m)
+    r = sum(ps.m .* ps.r) / Σm
+    v = sum(ps.m .* ps.v) / Σm
+    a = sum(ps.m .* ps.a) / Σm
+    
+    r, v, a
+end
+
+
+function setOrigin2BaryCenter!(ps)
+    r_G, v_G, a_G = getBaryCenter(ps)
+    for p in ps
+        p.r .-= r_G
+        p.v .-= v_G
+        p.a .-= a_G
+    end
+end
+

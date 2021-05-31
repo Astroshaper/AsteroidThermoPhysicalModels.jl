@@ -6,19 +6,33 @@
 #                       Orbital elements
 ###################################################################
 
+"""
+# Orbital elements
 
+- `a` : Semi-major axis
+- `e` : Eccentricity
+- `I` : Inclination
+- `ω` : Argument of periapsis
+- `Ω` : Longitude of ascending node
+- `Φ` : Mean anomaly : tₚ = - Φ / n
+- `tₚ` : Periapsis passage time
+
+- `μ` : Standard gravitational parameter of the system (GM)
+- `n` : Mean motion    : n = √(μ / a^3)
+- `T` : Orbital period : T = 2π / n
+"""
 struct OrbitalElements{T}
-    a::T  # semi-major axis
-    e::T  # eccentricity
-    I::T  # inclination
-    ω::T  # argument of periapsis
-    Ω::T  # longitude of ascending node
-    Φ::T  # mean anomaly   : tₚ = - Φ / n
-    tₚ::T  # periapsis passage time
+    a::T
+    e::T
+    I::T
+    ω::T
+    Ω::T
+    Φ::T
+    tₚ::T
 
-    μ::T  # standard gravitational parameter of the system (GM)
-    n::T  # mean motion    : n = √(μ / a^3)
-    T::T  # orbital period : T = 2π / n
+    μ::T
+    n::T
+    T::T
 end
 
 
@@ -144,6 +158,7 @@ end
 
 OrbitalElements(R, V, M, m, t) = OrbitalElements(R, V, G*(M+m), t)
 
+
 function OrbitalElements(R, V, μ, t)
 
     h = R × V
@@ -164,6 +179,13 @@ function OrbitalElements(R, V, μ, t)
     M = - n * tₚ              # mean anomaly (M or Φ)
 
     OrbitalElements(a, e, I, ω, Ω, M, tₚ, μ, n, T)
+end
+
+
+function OrbitalElements(p1, p2, t)
+    ps = setParticles(p1, p2)
+    r_G, v_G, a_G = getBaryCenter(ps)
+    OrbitalElements(p2.r - r_G, p2.v - v_G, p1.m, p2.m, t)
 end
 
 
@@ -192,7 +214,7 @@ function get_ω(R, V, a, e, I, Ω)
     f = get_f(R, V, a, e)
     
     ω = ω₊f - f
-    ω ≥ 0 ? ω : ω+2π
+    # ω ≥ 0 ? ω : ω+2π
 end
 
 function get_ω₊f(R, V, I, Ω)
@@ -202,7 +224,7 @@ function get_ω₊f(R, V, I, Ω)
     cos_ω₊f = sec(Ω) * (R[1]/norm(R) + sin(Ω)*sin_ω₊f*cos(I))
 
     ω₊f = atan(sin_ω₊f, cos_ω₊f)
-    ω₊f ≥ 0 ? ω₊f : ω₊f + 2π
+    # ω₊f ≥ 0 ? ω₊f : ω₊f + 2π
 end
 
 function get_f(R, V, a, e)
@@ -213,12 +235,12 @@ function get_f(R, V, a, e)
     cosf = (a*(1-e*e) / norm(R) - 1) / e
     
     f = atan(sinf, cosf)
-    f ≥ 0 ? f : f+2π
+    # f ≥ 0 ? f : f+2π
 end
 
 function get_E(R, a, e)
     E = acos((a - norm(R)) / (a*e))  # eccentric anomaly (E or u)
-    E ≥ 0 ? E : E+2π
+    # E ≥ 0 ? E : E+2π
 end
 
 E2f(E, e) = 2 * atan(√((1+e)/(1-e)) * sin(E/2), cos(E/2))
