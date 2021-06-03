@@ -49,8 +49,8 @@ function run_Euler(ps, params_sim)  # t = 0 での加速度を先に計算する
     snapshots = Vector{typeof(ps)}(undef, length(0:Δt*save_interval:t_end))
     
     for (i, t) in enumerate(times)
-        (i-1)%save_interval == 0 && (snapshots[i ÷ save_interval + 1] = deepcopy(ps))
         evaluate_Euler!(ps, ϵ)
+        (i-1)%save_interval == 0 && (snapshots[i ÷ save_interval + 1] = deepcopy(ps))
         update!(ps, Δt)
     end
     times[begin:save_interval:end], snapshots

@@ -3,6 +3,7 @@ module Astroshaper
 using LinearAlgebra
 using StaticArrays
 using StructArrays
+using DataFrames
 
 using GLMakie  # 3D visulaization
 
@@ -39,6 +40,7 @@ include("thermophysics.jl")
 
 include("nbody.jl")
 export Particle, setParticles, setOrigin!, getBaryCenter, setOrigin2BaryCenter!
+export getTotalEnergy, getKineticEnergy, sumKineticEnergy, getPotentialEnergy, sumPotentialEnergy
 
 include("Hermite4.jl")
 export run_Hermite4, Initialize!
@@ -47,5 +49,8 @@ export collect!, prepare!, get_Δt_Aarseth, get_Δt_initial
 
 include("Euler.jl")
 export run_Euler, getParticlesCOM, setOrigin2COM!
+
+include("RungeKutta.jl")
+export run_RungeKutta
 
 end # module Astroshaper

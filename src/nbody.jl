@@ -108,3 +108,22 @@ function setOrigin2BaryCenter!(ps)
     end
 end
 
+
+getTotalEnergy(ps) = sumKineticEnergy(ps) + sumPotentialEnergy(ps)
+
+getKineticEnergy(p::Particle) = 0.5 * p.m * norm(p.v)^2
+sumKineticEnergy(ps) = sum(getKineticEnergy(p) for p in ps)
+
+getPotentialEnergy(pᵢ::Particle, pⱼ::Particle) = - G * pᵢ.m * pⱼ.m / norm(pᵢ.r .- pⱼ.r)
+
+function sumPotentialEnergy(ps)
+    E = 0.
+    for i in eachindex(ps)
+        for j in eachindex(ps)
+            i ≥ j && continue
+            E += getPotentialEnergy(ps[i], ps[j])
+        end
+    end
+    E
+end
+

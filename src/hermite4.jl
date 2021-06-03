@@ -13,18 +13,18 @@ function run_Hermite4(ps, params_sim)
     else
         Δt = Initialize!(ps, ϵ, η)
     end
-    
-    @show Δt
 
     times = (0:Δt:t_end)
     ⁺ps = deepcopy(ps)
 
-    num_snapshot = length(0:Δt*save_interval:t_end)
-    times_save = Vector{Float64}(undef, num_snapshot)
-    snapshots = Vector{typeof(ps)}(undef, num_snapshot)
+    times_save, snapshots = prep_snapshot!(ps, Δt, t_end, save_interval)
+    
+    @show Δt
+    @show t_end
+    println(length(times), " timesteps (", length(times_save), " to be saved)")
     
     for (i, t) in enumerate(times)
-        save_snapshot!(i, save_interval, times_save, t, snapshots, ps)
+        (i-1)%save_interval == 0 && save_snapshot!(i, save_interval, times_save, t, snapshots, ps)
         
         predict!(ps, ⁺ps, Δt)
         evaluate!(ps, ⁺ps, ϵ)
@@ -36,12 +36,18 @@ function run_Hermite4(ps, params_sim)
 end
 
 
+function prep_snapshot!(ps, Δt, t_end, save_interval)
+    num_snapshot = length(0:Δt*save_interval:t_end)
+    times_save = Vector{Float64}(undef, num_snapshot)
+    snapshots = Vector{typeof(ps)}(undef, num_snapshot)
+    
+    times_save, snapshots
+end
+
 function save_snapshot!(i, save_interval, times_save, t, snapshots, ps)
-    if (i-1)%save_interval == 0
-        i_save = i ÷ save_interval + 1
-        times_save[i_save] = t
-        snapshots[i_save] = deepcopy(ps)
-    end
+    idx_save = i ÷ save_interval + 1
+    times_save[idx_save] = t
+    snapshots[idx_save] = deepcopy(ps)
 end
 
 
@@ -74,7 +80,7 @@ function Initialize!(ps, ϵ)
             @. pᵢ.a  -= G * pⱼ.m * r⁻³ * r
             @. pᵢ.a¹ -= G * pⱼ.m * (r⁻³*v - 3*r⁻⁵*(v ⋅ r)*r)         
         end
-    end 
+    end
 end
 
 """
@@ -115,8 +121,8 @@ function evaluate!(ps, ⁺ps, ϵ)
             v = ⁺pᵢ.v - ⁺pⱼ.v
 
             r_norm = sqrt(norm(r)^2 + ϵ^2)
-            r⁻³ = r_norm^-3
-            r⁻⁵ = r_norm^-5
+            r⁻³ = r_norm^(-3)
+            r⁻⁵ = r_norm^(-5)
             
             @. ⁺pᵢ.a  -= G * pⱼ.m * r⁻³ * r
             @. ⁺pᵢ.a¹ -= G * pⱼ.m * (r⁻³*v - 3*r⁻⁵*(v ⋅ r)*r)
@@ -158,7 +164,7 @@ function prepare!(p::Particle, ⁺p::Particle, Δt, η)
     
     @. ⁺p.a³ = p.a³
     @. ⁺p.a² = p.a² + Δt*p.a³
-    
+
     Δt = get_Δt_Aarseth(⁺p, η)
 end
 
