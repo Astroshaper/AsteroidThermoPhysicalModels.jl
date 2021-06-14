@@ -1,5 +1,154 @@
 
 
+
+"""
+"""
+function run_YORP(shape, orbit, spin, times, params_thermo)
+    @unpack A_B, A_TH, k, ρ, Cₚ, ϵ, P, l, Γ, Δt, t_bgn, t_end, Nt, Δz, z_max, Nz, λ = params_thermo
+    
+    for smesh in shape.smeshes
+        append!(smesh.Tz, zeros(Nz))
+    end
+    
+    τ̄ = zeros(3)  # Net YORP torque
+
+    for t in (t_bgn:Δt:t_end)*P
+        spin_phase = spin.ω * t
+        F☉, r̂☉ = getSolarCondition(orbit, spin, t)
+        
+        update_flux_sun!(shape, F☉, r̂☉)
+        update_flux_scat_single!(shape, params_thermo)
+        update_flux_rad_single!(shape, params_thermo)
+        
+        update_force!(shape, params_thermo)
+        # update_force_Rubincam!(shape, params_thermo)
+        
+        τ̄ .+= body_to_orbit(SVector{3}(shape.τ), spin.γ, spin.ε, spin_phase)
+        
+        update_temperature!(shape, params_thermo)
+    end
+    τ̄ /= Nt
+end
+
+
+# ****************************************************************
+#        Energy flux of sunlight, scattering, and radiation
+# ****************************************************************
+
+
+"""
+"""
+function update_flux_sun!(shape, F☉, r̂☉)
+    for smesh in shape.smeshes
+        if isIlluminated(smesh, r̂☉, shape.smeshes)
+            smesh.flux.sun = F☉ * (smesh.normal ⋅ r̂☉)
+        else
+            smesh.flux.sun = 0.
+        end
+    end
+end
+
+
+"""
+Single scattering of sunlight is considered.
+"""
+function update_flux_scat_single!(shape, params_thermo)
+    A_B = params_thermo.A_B
+    
+    for m in shape.smeshes
+        m.flux.scat = 0.
+        for (id, f) in zip(m.visiblefaces.id, m.visiblefaces.f)
+            m.flux.scat += f * shape.smeshes[id].flux.sun
+        end
+        m.flux.scat *= A_B
+    end
+end
+
+
+"""
+Multiple scattering of sunlight is considered.
+"""
+function update_flux_scat_mult!(shape, params_thermo)
+    A_B = params_thermo.A_B
+    
+    # for m in shape.smeshes
+    #     m.flux.scat = 0.
+    #     for (id, f) in zip(m.visiblefaces.id, m.visiblefaces.f)
+    #         m.flux.scat += f * shape.smeshes[id].flux.sun
+    #     end
+    #     m.flux.scat *= A_B
+    # end
+end
+
+
+"""
+Single radiation-reabsorption is considered,
+assuming albedo is close to zero at thermal infrared wavelength.
+"""
+function update_flux_rad_single!(shape, params_thermo)
+    ϵ    = params_thermo.ϵ
+    A_TH = params_thermo.A_TH
+        
+    for m in shape.smeshes
+        m.flux.rad = 0.
+        for (id, f) in zip(m.visiblefaces.id, m.visiblefaces.f)
+            T = shape.smeshes[id].Tz[begin]
+            m.flux.rad += f * T^4
+        end
+        # m.flux.rad = sum(vf.f * shape.smeshes[vf.id].Tz[begin]^4 for vf in m.visiblefaces)
+        m.flux.rad *= ϵ * σ_SB * (1 - A_TH)
+    end
+end
+
+
+# ****************************************************************
+#                  Photon recoil force / torque
+# ****************************************************************
+
+"""
+    update_force!(shape, params_thermo)
+
+Update photon recoil force on every facet (df)
+"""
+function update_force!(shape, params_thermo)
+    A_B = params_thermo.A_B
+    ϵ   = params_thermo.ϵ
+    
+    shape.τ .= 0.
+    for smesh in shape.smeshes
+        E = A_B * smesh.flux.scat + ϵ * σ_SB * smesh.Tz[begin]^4
+
+        @. smesh.df = smesh.normal
+        for vf in smesh.visiblefaces
+            @. smesh.df -= 1.5 * vf.f * vf.d̂
+        end
+        @. smesh.df *= - 2*E*smesh.area / (3*c₀)
+
+        shape.τ .+= smesh.center × smesh.df
+    end
+end
+
+
+"""
+    update_force_Rubincam!(shape, params_thermo)
+
+Update photon recoil force on every facet (df) based on Rubincam (2000) approximation
+"""
+function update_force_Rubincam!(shape, params_thermo)
+    shape.τ .= 0.
+    for smesh in shape.smeshes
+        smesh.df .= - 2 * smesh.flux.sun * smesh.area / (3*c₀) .* smesh.normal
+        shape.τ .+= smesh.center × smesh.df
+    end
+end
+
+
+
+# ****************************************************************
+#
+# ****************************************************************
+
+
 """
     getSolarIrradiation(distance) -> solar_irrad
 
@@ -133,23 +282,6 @@ end
 # ****************************************************************
 #
 # ****************************************************************
-
-# getforce(mesh, ϵ, σ, T) = - 2/3 * (ϵ * σ * T^4) / c₀ * mesh.area * mesh.normal
-
-
-"""
-Rubincam (2000) model
-- Zero-conductivity
-- Lambert radiation
-"""
-getforce(mesh, incidence) = - 2/3 * incidence / c₀ * mesh.area * mesh.normal
-
-gettorque(mesh, incidence) = mesh.center × getforce(mesh, incidence)
-
-# function addtorque!(τ, mesh, incidence)
-#     τ .+= mesh.center × getforce(mesh, incidence)
-# end
-
 
 
 """

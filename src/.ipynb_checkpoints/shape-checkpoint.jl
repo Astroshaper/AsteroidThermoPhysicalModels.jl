@@ -18,8 +18,10 @@ A polyhedral shape model of an asteroid.
 - `VOLUME`   : Volume
 - `COF`      : Center-of-figure
 - `I`        : Moment of inertia tensor
+
+- `τ`        : Thermal recoil torque at body-fixed frame
 """
-struct Shape{T1, T2, T3, T4, T5, T6, T7}
+struct Shape{T1, T2, T3, T4, T5, T6, T7, T8}
     num_node::T1
     num_face::T1
     nodes::T2
@@ -31,12 +33,14 @@ struct Shape{T1, T2, T3, T4, T5, T6, T7}
     VOLUME::T5
     COF::T6
     I::T7
+
+    τ::T8
 end
 
 
 function Base.show(io::IO, shape::Shape)
     println(io, "Shape model")
-    println(io, "-----------")
+    println("-----------")
 
     println("Nodes            : ", shape.num_node)
     println("Faces            : ", shape.num_face)
@@ -63,8 +67,10 @@ function setShapeModel(shapepath::AbstractString; scale=1, find_visible_faces=fa
     VOLUME = getvolume(smeshes)
     COF = getCOF(smeshes)
     I = getMOI(smeshes)
+    
+    τ = zeros(3)
 
-    Shape(num_node, num_face, nodes, faces, smeshes, AREA, VOLUME, COF, I)
+    Shape(num_node, num_face, nodes, faces, smeshes, AREA, VOLUME, COF, I, τ)
 end
 
 

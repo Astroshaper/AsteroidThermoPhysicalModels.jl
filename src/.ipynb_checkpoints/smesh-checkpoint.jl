@@ -5,20 +5,20 @@
 ################################################################
 
 """
-    ViewFactor
+    VisibleFace
 
-Index of an interfacing mesh and its view factor
+Index of an interfacing facet and its view factor
 
 # Fields
 
-- `id`  : Index of the interfacing mesh
-- `fᵢⱼ` : View factor from mesh i to mesh j
-
-`d̂ᵢⱼ`, dᵢⱼ も保持させる？
+- `id` : Index of the interfacing mesh
+- `f`  : View factor from mesh i to mesh j
+- `d̂`  : Normal vector from mesh i to mesh j
 """
-struct ViewFactor
+struct VisibleFace
     id::Int64
-    fᵢⱼ::Float64
+    f::Float64
+    d̂::SVector{3, Float64}
 end
 
 
@@ -36,6 +36,7 @@ function getViewFactor(mᵢ, mⱼ)
     cosθⱼ = mⱼ.normal ⋅ (-d̂ᵢⱼ)
 
     fᵢⱼ = getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, mⱼ.area)
+    fᵢⱼ, d̂ᵢⱼ
 end
 
 getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * dᵢⱼ^2) * aⱼ
@@ -50,13 +51,6 @@ getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * d
 
 Energy flux from/to a mesh
 
-SMeshにfluxesを保持させる
-
-NamedTuple : 作るのは早い (immutable)
-Dict : 作るのは遅い。その後に計算で使う分には遅くないかも？ (mutable)
-それならmutable structがいいか（使い方次第では、遅くならない？）
-サイズが小さいなら、Dictより、mutable structが良さそう
-
 フィールドの値を更新すると、allocationがかなり発生するかもしれない
 遅くなりそうなら、Vector{Float64}で代用する
 https://bkamins.github.io/julialang/2020/10/16/gctime.html
@@ -65,8 +59,6 @@ https://bkamins.github.io/julialang/2020/10/16/gctime.html
 - `sun`  : F_sun
 - `scat` : F_scat
 - `rad`  : F_rad
-- `cond` : k(dT/dx)
-- `ϵσT⁴` : ϵσT⁴
 
 surface roughness infrared beamingの効果も実装する
 """
@@ -74,9 +66,11 @@ mutable struct Flux{T}
     sun::T
     scat::T
     rad::T
-    cond::T
-    ϵσT⁴::T
 end
+
+
+sum_incidence(flux::Flux, A_B, A_TH) = (1 - A_B)*(flux.sun + flux.scat) + (1 - A_TH)*flux.rad
+sum_incidence(flux::Flux, params_thermo) = sum_incidence(flux, params_thermo.A_B, params_thermo.A_TH)
 
 
 ################################################################
@@ -101,9 +95,11 @@ Note that the mesh normal indicates outward the polyhedron.
 - `area`   : Area of mesh
     
 - `viewfactors` : 1-D array of `ViewFactor`
-- # fluxes::T4  # 
+- `flux`        :
+- `Tz`          : Temperature profile in depth direction
+- `df`          : Photon recoil force
 """
-struct SMesh{T1, T2, T3, T4}
+struct SMesh{T1, T2, T3, T4, T5, T6}
     A::T1
     B::T1
     C::T1
@@ -112,14 +108,16 @@ struct SMesh{T1, T2, T3, T4}
     normal::T1
     area::T2
     
-    viewfactors::T3
+    visiblefaces::T3
     flux::T4
+    Tz::T5
+    df::T6
 end
 
 
 function Base.show(io::IO, smesh::SMesh)
     println(io, "Surface mesh")
-    println(io, "------------")
+    println("------------")
 
     println("Vertices")
     println("    A : ", smesh.A)
@@ -130,14 +128,16 @@ function Base.show(io::IO, smesh::SMesh)
     println("Normal : ", smesh.normal)
     println("Area   : ", smesh.area)
 
-    length(smesh.viewfactors) != 0 && println("Visible faces")
-    length(smesh.viewfactors) != 0 && println(smesh.viewfactors.id)
-    length(smesh.viewfactors) != 0 && println(smesh.viewfactors.fᵢⱼ)
+    length(smesh.visiblefaces) != 0 && println("Visible faces")
+    length(smesh.visiblefaces) != 0 && println(smesh.visiblefaces.id)
+    length(smesh.visiblefaces) != 0 && println(smesh.visiblefaces.f)
+    
+    length(smesh.visiblefaces) == 0 && println("No visible faces")
 end
 
 
 SMesh(A, B, C) = SMesh([A, B, C])
-SMesh(vs) = SMesh(vs[1], vs[2], vs[3], getcenter(vs), getnormal(vs), getarea(vs), StructArray(ViewFactor[]), Flux(0.,0.,0.,0.,0.))
+SMesh(vs) = SMesh(vs[1], vs[2], vs[3], getcenter(vs), getnormal(vs), getarea(vs), StructArray(VisibleFace[]), Flux(0.,0.,0.), Float64[], zeros(3))
 
 getmeshes(nodes, faces) = StructArray([SMesh(nodes[face]) for face in faces])
 
@@ -258,8 +258,8 @@ function findVisibleFaces!(obs::SMesh, meshes)
     end
     
     for id in ids
-        fᵢⱼ = getViewFactor(obs, meshes[id])
-        push!(obs.viewfactors, ViewFactor(id, fᵢⱼ))
+        f, d̂ = getViewFactor(obs, meshes[id])
+        push!(obs.visiblefaces, VisibleFace(id, f, d̂))
     end
 end
 
@@ -283,7 +283,8 @@ end
 Return true if the observing mesh is illuminated by the direct sunlight, false if not
 """
 function isIlluminated(obs::SMesh, r̂☉, meshes)
-    for id in obs.viewfactors.id
+    obs.normal ⋅ r̂☉ < 0 && return false
+    for id in obs.visiblefaces.id
         raycast(meshes[id], r̂☉, obs) && return false
     end
     return true

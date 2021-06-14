@@ -17,7 +17,7 @@ function run_Hermite4(ps, params_sim)
     times = (0:Δt:t_end)
     ⁺ps = deepcopy(ps)
 
-    times_save, snapshots = prep_snapshot!(ps, Δt, t_end, save_interval)
+    times_save, snapshots = prep_snapshot(ps, Δt, t_end, save_interval)
     
     @show Δt
     @show t_end
@@ -36,7 +36,7 @@ function run_Hermite4(ps, params_sim)
 end
 
 
-function prep_snapshot!(ps, Δt, t_end, save_interval)
+function prep_snapshot(ps, Δt, t_end, save_interval)
     num_snapshot = length(0:Δt*save_interval:t_end)
     times_save = Vector{Float64}(undef, num_snapshot)
     snapshots = Vector{typeof(ps)}(undef, num_snapshot)

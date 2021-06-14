@@ -39,7 +39,7 @@ function update!(ps, Δt)
 end
 
 
-function run_Euler(ps, params_sim)  # t = 0 での加速度を先に計算する必要あり
+function run_Euler(ps, params_sim)
     ϵ             = params_sim.ϵ
     Δt            = params_sim.Δt
     t_end         = params_sim.t_end
@@ -47,12 +47,15 @@ function run_Euler(ps, params_sim)  # t = 0 での加速度を先に計算する
     
     times = (0:Δt:t_end)
     snapshots = Vector{typeof(ps)}(undef, length(0:Δt*save_interval:t_end))
+    # ts, rs, vs, as = _prep_snapshot(ps, Δt, t_end, save_interval)
     
     for (i, t) in enumerate(times)
         evaluate_Euler!(ps, ϵ)
         (i-1)%save_interval == 0 && (snapshots[i ÷ save_interval + 1] = deepcopy(ps))
+        # (i-1)%save_interval == 0 && _save_snapshot!(ts, rs, vs, as, i, save_interval, t, ps)
         update!(ps, Δt)
     end
     times[begin:save_interval:end], snapshots
+    # ts, rs, vs, as
 end
 

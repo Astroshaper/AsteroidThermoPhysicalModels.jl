@@ -4,6 +4,7 @@ using LinearAlgebra
 using StaticArrays
 using StructArrays
 using DataFrames
+using Parameters
 
 using GLMakie  # 3D visulaization
 
@@ -32,9 +33,10 @@ include("shape.jl")
 export Shape, setShapeModel, findVisibleFaces!, showshape
 
 include("YORP.jl")
-export getNetTorque, getNetTorque_shadowing, torque2rate, getTimeScale
+export getNetTorque, getNetTorque_shadowing, torque2rate, getTimeScale, run_YORP
 
 include("thermophysics.jl")
+export ParamsThermo
 
 ################################################################
 

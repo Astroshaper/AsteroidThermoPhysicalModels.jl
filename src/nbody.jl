@@ -55,8 +55,32 @@ function Base.show(io::IO, p::Particle)
     println(" a² : ", p.a²)
     println(" a³ : ", p.a³)
 
-    println("m   : ", p.m)
-    println("R   : ", p.R)
+    println(" m  : ", p.m)
+    println(" R  : ", p.R)
+end
+
+
+function _prep_snapshot(ps, Δt, t_end, save_interval)
+    num_body = length(ps)
+    num_save = length(0:Δt*save_interval:t_end)
+    
+    ts = Array{Float64}(undef, num_save)    
+    rs = Array{Float64}(undef, num_save, 3, num_body)
+    vs = Array{Float64}(undef, num_save, 3, num_body)
+    as = Array{Float64}(undef, num_save, 3, num_body)
+    
+    ts, rs, vs, as
+end
+
+
+function _save_snapshot!(ts, rs, vs, as, i, save_interval, t, ps)
+    idx_save = i ÷ save_interval + 1
+    ts[idx_save] = t
+    for (i, p) in enumerate(ps)
+        rs[idx_save, :, i] .= p.r
+        vs[idx_save, :, i] .= p.v
+        as[idx_save, :, i] .= p.a
+    end
 end
 
 
