@@ -3,10 +3,14 @@ module Astroshaper
 using LinearAlgebra
 using StaticArrays
 using StructArrays
+
 using DataFrames
 using Parameters
-
 using GLMakie  # 3D visulaization
+
+using FileIO
+using JLD2
+
 
 include("constants.jl")
 export AU, G, GM☉, M☉, SOLAR_CONST, c₀, σ_SB
@@ -33,7 +37,7 @@ include("shape.jl")
 export Shape, setShapeModel, findVisibleFaces!, showshape
 
 include("YORP.jl")
-export getNetTorque, getNetTorque_shadowing, torque2rate, getTimeScale, run_YORP
+export getNetTorque, getNetTorque_shadowing, torque2rate, getTimeScale, run_YORP, get_surface_temperature
 
 include("thermophysics.jl")
 export ParamsThermo

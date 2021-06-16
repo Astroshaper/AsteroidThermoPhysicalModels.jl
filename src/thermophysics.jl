@@ -17,9 +17,12 @@
 - `Γ`     : Thermal inertia
 - `Δt`    : Time step
 - `t_bgn` : Start time of the simulation
-- `t_end` : End time of the simulation 
+- `t_end` : End time of the simulation
+- `Nt`    : Number of time step
 - `Δz`    : Depth step
 - `z_max` : Maximum depth for themal simualtion
+- `Nz`    : Number of depth step
+- `λ`     : Non-dimensional coefficient for heat diffusion equation
 """
 struct ParamsThermo{T}
     A_B::T
@@ -119,19 +122,15 @@ getThermalInertia(params) = getThermalInertia(params.k, params.ρ, params.Cₚ)
 
 
 """
-    forward!(T, F, Δτ, Δz, λ, Γ, P, ϵ)
-    forward!(T, F, params_thermo)
-    forward!(shape::Shape, params_thermo)
-    
-- `Tⱼ`      : Temperatures
-- `Tⱼ₊₁`    : Temperatures at the next time step
-- `F_total` : 
-- `Δτ`      :
-- `Δz`      :
-- `λ`       : λ = 1/4π * (Δτ/Δz^2)
-- `Γ`       :
-- `P`       :
-- `ϵ`       :
+    update_temperature!(Tⱼ, Tⱼ₊₁, F, params_thermo)
+
+Update temerature profie based on 1-D heat diffusion
+
+# Arguments
+- `Tⱼ`            : Temperatures
+- `Tⱼ₊₁`          : Temperatures at the next time step
+- `F`             : Energy flux to the surface 
+- `params_thermo` : Thermophysical parameters
 
 i : index of depth
 j : index of time step
@@ -140,33 +139,39 @@ for i in 2:length(Tⱼ)-1
     Tⱼ₊₁[i] = (1-2λ)*Tⱼ[i] + λ*(Tⱼ[i+1] + Tⱼ[i-1])
 end
 """
-function update_temperature!(T, F, Δz, λ, Γ, P, ϵ)
+function update_temperature!(Tⱼ, Tⱼ₊₁, F, params_thermo)
+    @unpack λ = params_thermo
     
-    @. T[begin+1:end-1] = @views (1-2λ)*T[begin+1:end-1] + λ*(T[begin+2:end] + T[begin:end-2])
+    @. Tⱼ₊₁[begin+1:end-1] = @views (1-2λ)*Tⱼ[begin+1:end-1] + λ*(Tⱼ[begin+2:end] + Tⱼ[begin:end-2])
     
-    T[end] = T[end-1]                             # Internal boundary condition (Insulation)
-    updateSurfaceTemperature!(T, F, Δz, Γ, P, ϵ)  # Sourface boundary condition (Radiation)
+    update_surface_temperature!(Tⱼ₊₁, F, params_thermo)  # Sourface boundary condition (Radiation)
+    Tⱼ₊₁[end] = Tⱼ₊₁[end-1]                              # Internal boundary condition (Insulation)
+    
+    Tⱼ .= Tⱼ₊₁
 end
 
 
-update_temperature!(T, F, params_thermo) = update_temperature!(T, F, params_thermo.Δz, params_thermo.λ, params_thermo.Γ, params_thermo.P, params_thermo.ϵ)
-
-
-function update_temperature!(shape::Shape, params_thermo)
+function update_temperature!(shape, params_thermo)
+    @unpack A_B, A_TH = params_thermo
+    # T⁺ = similar(shape.smeshes[1].Tz)
+                    
     for smesh in shape.smeshes
-        F_total = sum_incidence(smesh.flux, params_thermo)
-        update_temperature!(smesh.Tz, F_total, params_thermo)
+        @unpack sun, scat, rad = smesh.flux
+        F_total = (1 - A_B)*(sun + scat) + (1 - A_TH)*rad
+
+        update_temperature!(smesh.Tz, shape.Tz⁺, F_total, params_thermo)
     end
 end
 
 
 """
-    updateSurfaceTemperature!(T, F, Δz, Γ, P, ϵ)
     updateSurfaceTemperature!(T, F, params_thermo)
 
 Solve Newton's method to get surface temperature 
 """
-function updateSurfaceTemperature!(T, F, Δz, Γ, P, ϵ)
+function update_surface_temperature!(T, F, params_thermo)
+    @unpack Δz, Γ, P, ϵ = params_thermo
+
     for _ in 1:20
         T_pri = T[begin]
 

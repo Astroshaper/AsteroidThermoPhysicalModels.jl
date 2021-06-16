@@ -51,26 +51,16 @@ getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * d
 
 Energy flux from/to a mesh
 
-フィールドの値を更新すると、allocationがかなり発生するかもしれない
-遅くなりそうなら、Vector{Float64}で代用する
-https://bkamins.github.io/julialang/2020/10/16/gctime.html
-
 # Fields
 - `sun`  : F_sun
 - `scat` : F_scat
 - `rad`  : F_rad
-
-surface roughness infrared beamingの効果も実装する
 """
-mutable struct Flux{T}
-    sun::T
-    scat::T
-    rad::T
+mutable struct Flux{T1, T2, T3}
+    sun::T1
+    scat::T2
+    rad::T3
 end
-
-
-sum_incidence(flux::Flux, A_B, A_TH) = (1 - A_B)*(flux.sun + flux.scat) + (1 - A_TH)*flux.rad
-sum_incidence(flux::Flux, params_thermo) = sum_incidence(flux, params_thermo.A_B, params_thermo.A_TH)
 
 
 ################################################################
@@ -138,6 +128,7 @@ end
 
 SMesh(A, B, C) = SMesh([A, B, C])
 SMesh(vs) = SMesh(vs[1], vs[2], vs[3], getcenter(vs), getnormal(vs), getarea(vs), StructArray(VisibleFace[]), Flux(0.,0.,0.), Float64[], zeros(3))
+
 
 getmeshes(nodes, faces) = StructArray([SMesh(nodes[face]) for face in faces])
 

@@ -3,12 +3,10 @@
 
 """
 """
-function run_YORP(shape, orbit, spin, times, params_thermo)
-    @unpack A_B, A_TH, k, ρ, Cₚ, ϵ, P, l, Γ, Δt, t_bgn, t_end, Nt, Δz, z_max, Nz, λ = params_thermo
+function run_YORP(shape, orbit, spin, params_thermo)
+    @unpack P, Δt, t_bgn, t_end, Nt, Nz = params_thermo
     
-    for smesh in shape.smeshes
-        append!(smesh.Tz, zeros(Nz))
-    end
+    initialize_temperature!(shape, orbit, spin, params_thermo)
     
     τ̄ = zeros(3)  # Net YORP torque
 
@@ -31,12 +29,25 @@ function run_YORP(shape, orbit, spin, times, params_thermo)
 end
 
 
+function initialize_temperature!(shape, orbit, spin, params_thermo)
+    @unpack P, Δt, t_bgn, t_end, Nt, Nz = params_thermo
+    
+    for smesh in shape.smeshes
+        length(smesh.Tz) == 0 ? append!(smesh.Tz, zeros(Nz)) : smesh.Tz .= 0
+    end
+    length(shape.Tz⁺) == 0 ? append!(shape.Tz⁺, zeros(Nz)) : shape.Tz⁺ .= 0
+end
+
+
 # ****************************************************************
 #        Energy flux of sunlight, scattering, and radiation
 # ****************************************************************
 
 
 """
+    update_flux_sun!(shape, F☉, r̂☉)
+
+Update illumination
 """
 function update_flux_sun!(shape, F☉, r̂☉)
     for smesh in shape.smeshes
@@ -50,6 +61,8 @@ end
 
 
 """
+    update_flux_scat_single!(shape, params_thermo)
+
 Single scattering of sunlight is considered.
 """
 function update_flux_scat_single!(shape, params_thermo)
@@ -66,6 +79,8 @@ end
 
 
 """
+    update_flux_scat_mult!(shape, params_thermo)
+
 Multiple scattering of sunlight is considered.
 """
 function update_flux_scat_mult!(shape, params_thermo)
@@ -82,6 +97,8 @@ end
 
 
 """
+    update_flux_rad_single!(shape, params_thermo)
+
 Single radiation-reabsorption is considered,
 assuming albedo is close to zero at thermal infrared wavelength.
 """
@@ -95,7 +112,6 @@ function update_flux_rad_single!(shape, params_thermo)
             T = shape.smeshes[id].Tz[begin]
             m.flux.rad += f * T^4
         end
-        # m.flux.rad = sum(vf.f * shape.smeshes[vf.id].Tz[begin]^4 for vf in m.visiblefaces)
         m.flux.rad *= ϵ * σ_SB * (1 - A_TH)
     end
 end
@@ -124,7 +140,7 @@ function update_force!(shape, params_thermo)
         end
         @. smesh.df *= - 2*E*smesh.area / (3*c₀)
 
-        shape.τ .+= smesh.center × smesh.df
+        shape.τ .+= smesh.center × SVector{3}(smesh.df)
     end
 end
 
@@ -138,7 +154,7 @@ function update_force_Rubincam!(shape, params_thermo)
     shape.τ .= 0.
     for smesh in shape.smeshes
         smesh.df .= - 2 * smesh.flux.sun * smesh.area / (3*c₀) .* smesh.normal
-        shape.τ .+= smesh.center × smesh.df
+        shape.τ .+= smesh.center × SVector{3}(smesh.df)
     end
 end
 
