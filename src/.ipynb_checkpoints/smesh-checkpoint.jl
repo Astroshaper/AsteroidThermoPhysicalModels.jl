@@ -287,7 +287,7 @@ end
 
 The mesh is above its local horizon or not
 """
-isAboveHorizon(mesh) = length(mesh.viewfactors) == 0
+isAboveHorizon(smesh) = length(smesh.visiblefaces) == 0
 
 
 

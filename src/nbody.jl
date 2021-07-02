@@ -45,7 +45,7 @@ setParticles(ps...) = StructArray([ps...])
 
 
 function Base.show(io::IO, p::Particle)
-    println(io, "Particle")
+    println(io, typeof(p))
 
     println(" r  : ", p.r)
     println(" v  : ", p.v)
@@ -60,7 +60,9 @@ function Base.show(io::IO, p::Particle)
 end
 
 
-function _prep_snapshot(ps, Δt, t_end, save_interval)
+function prep_snapshot(ps, params_sim)
+    @unpack Δt, t_end, save_interval = params_sim
+
     num_body = length(ps)
     num_save = length(0:Δt*save_interval:t_end)
     
@@ -73,7 +75,10 @@ function _prep_snapshot(ps, Δt, t_end, save_interval)
 end
 
 
-function _save_snapshot!(ts, rs, vs, as, i, save_interval, t, ps)
+function save_snapshot!(ts, rs, vs, as, i, t, ps, params_sim)
+    @unpack save_interval = params_sim
+    (i-1)%save_interval != 0 && return
+    
     idx_save = i ÷ save_interval + 1
     ts[idx_save] = t
     for (i, p) in enumerate(ps)
@@ -85,41 +90,22 @@ end
 
 
 ###################################################################
-#                  　　　　 Visualization
+#                    Barycenter of particles
 ###################################################################
 
 
-get_rs(snapshots, i) = [ps[i].r for ps in snapshots]
-get_vs(snapshots, i) = [ps[i].v for ps in snapshots]
-
-get_xs(snapshots, i) = [r[1] for r in get_rs(snapshots, i)]
-get_ys(snapshots, i) = [r[2] for r in get_rs(snapshots, i)]
-get_zs(snapshots, i) = [r[3] for r in get_rs(snapshots, i)]
-
-
 """
-"""
-function setOrigin!(ps, origin::Particle)
-    for p in ps
-        p.r .-= origin.r
-        p.v .-= origin.v
-        p.a .-= origin.a
-    end
-end
-
-
-"""
-    getBaryCenter(ps) -> r, v, a
+    getBaryCenter(ps) -> r_G, v_G, a_G
 
 Position, velocity and acceleration of the system's barycenter
 """
 function getBaryCenter(ps)
     Σm = sum(ps.m)
-    r = sum(ps.m .* ps.r) / Σm
-    v = sum(ps.m .* ps.v) / Σm
-    a = sum(ps.m .* ps.a) / Σm
+    r_G = sum(ps.m .* ps.r) / Σm
+    v_G = sum(ps.m .* ps.v) / Σm
+    a_G = sum(ps.m .* ps.a) / Σm
     
-    r, v, a
+    r_G, v_G, a_G
 end
 
 
@@ -131,6 +117,42 @@ function setOrigin2BaryCenter!(ps)
         p.a .-= a_G
     end
 end
+
+
+function getBaryCenter(ps, rs, vs, as)
+    rs_G = zeros(size(rs[:,:,end]))
+    vs_G = zeros(size(vs[:,:,end]))
+    as_G = zeros(size(as[:,:,end]))
+
+    for i in 1:size(rs, 3)
+        @. rs_G += ps.m[i] * rs[:, :, i]
+        @. vs_G += ps.m[i] * vs[:, :, i]
+        @. as_G += ps.m[i] * as[:, :, i]
+    end
+
+    Σm = sum(ps.m)
+    rs_G /= Σm
+    vs_G /= Σm
+    as_G /= Σm
+    
+    rs_G, vs_G, as_G
+end
+
+
+function setOrigin2BaryCenter!(ps, rs, vs, as)
+    rs_G, vs_G, as_G = getBaryCenter(ps, rs, vs, as)
+    
+    for i in 1:size(rs, 3)
+        @. rs[:,:,i] -= rs_G
+        @. vs[:,:,i] -= vs_G
+        @. as[:,:,i] -= as_G
+    end
+end
+
+
+###################################################################
+#                     
+###################################################################
 
 
 getTotalEnergy(ps) = sumKineticEnergy(ps) + sumPotentialEnergy(ps)

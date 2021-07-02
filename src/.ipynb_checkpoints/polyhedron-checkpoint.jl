@@ -180,7 +180,7 @@ function getHalfEdgeTerm(r_i, r_j, E_he, pos)
     r_he = r_i - pos
     L_he = getEdgeFactor(r_i, r_j, pos)
 
-    acc = E_he * r_he * L_he  # dyad, vectorの積でallocationが発生する
+    acc = E_he * r_he .* L_he  # dyad, vectorの積でallocationが発生する
     pot = r_he ⋅ acc
 
     return pot, acc
@@ -191,7 +191,7 @@ function getFaceTerm(r_i, r_j, r_k, F_f, pos)
     r_f = r_i - pos
     ω_f = getFaceFactor(r_i, r_j, r_k, pos)
     
-    acc = F_f * r_f * ω_f  # vector, dyadの積でallocationが発生する
+    acc = F_f * r_f .* ω_f  # vector, dyadの積でallocationが発生する
     pot = r_f ⋅ acc
 
     return pot, acc

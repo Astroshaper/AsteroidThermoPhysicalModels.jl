@@ -40,22 +40,16 @@ end
 
 
 function run_Euler(ps, params_sim)
-    ϵ             = params_sim.ϵ
-    Δt            = params_sim.Δt
-    t_end         = params_sim.t_end
-    save_interval = params_sim.save_interval
+    @unpack ϵ, Δt, t_end = params_sim
     
     times = (0:Δt:t_end)
-    snapshots = Vector{typeof(ps)}(undef, length(0:Δt*save_interval:t_end))
-    # ts, rs, vs, as = _prep_snapshot(ps, Δt, t_end, save_interval)
+    ts, rs, vs, as = prep_snapshot(ps, params_sim)
     
     for (i, t) in enumerate(times)
         evaluate_Euler!(ps, ϵ)
-        (i-1)%save_interval == 0 && (snapshots[i ÷ save_interval + 1] = deepcopy(ps))
-        # (i-1)%save_interval == 0 && _save_snapshot!(ts, rs, vs, as, i, save_interval, t, ps)
+        save_snapshot!(ts, rs, vs, as, i, t, ps, params_sim)
         update!(ps, Δt)
     end
-    times[begin:save_interval:end], snapshots
-    # ts, rs, vs, as
+    ts, rs, vs, as
 end
 

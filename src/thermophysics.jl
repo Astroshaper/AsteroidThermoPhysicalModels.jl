@@ -58,7 +58,8 @@ function ParamsThermo(; A_B, A_TH, k, ρ, Cₚ, ϵ, P, Δt, t_bgn, t_end, Δz, z
     z_max /= l
     Nz = length(0:Δz:z_max)
     
-    λ = 1/4π * (Δt/Δz^2)  # should be λ < 0.5
+    λ = 1/4π * (Δt/Δz^2)
+    λ > 0.5 && println("λ should be smaller than 0.5 for convergence.")
     
     ParamsThermo(A_B, A_TH, k, ρ, Cₚ, ϵ, P, l, Γ, Δt, t_bgn, t_end, Nt, Δz, z_max, Nz, λ)
 end
@@ -153,7 +154,6 @@ end
 
 function update_temperature!(shape, params_thermo)
     @unpack A_B, A_TH = params_thermo
-    # T⁺ = similar(shape.smeshes[1].Tz)
                     
     for smesh in shape.smeshes
         @unpack sun, scat, rad = smesh.flux
