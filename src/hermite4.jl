@@ -21,9 +21,11 @@ function run_Hermite4(ps, params_sim)
     @show t_end
     println(length(times), " timesteps (", length(ts), " to be saved)")
     
+    snapshots = StructArray(Particle[])
+        
     for (i, t) in enumerate(times)
         save_snapshot!(ts, rs, vs, as, i, t, ps, params_sim)
-        
+    
         predict!(ps, ⁺ps, Δt)
         evaluate!(ps, ⁺ps, ϵ)
         collect!(ps, ⁺ps, Δt, α)
@@ -32,6 +34,13 @@ function run_Hermite4(ps, params_sim)
         prepare!(ps, ⁺ps, Δt)
     end
     ts, rs, vs, as
+end
+
+
+
+function Hermite4_shared()
+    
+    
 end
 
 
@@ -51,8 +60,10 @@ function predict!(ps, ⁺ps, Δt)
     Δt³ = Δt * Δt²
 
     for (p, ⁺p) in zip(ps, ⁺ps)
-        @. ⁺p.r = p.r + Δt*p.v + Δt²/2*p.a + Δt³/6*p.a¹
-        @. ⁺p.v = p.v + Δt*p.a + Δt²/2*p.a¹
+        r, v, a, a¹ = SVector{3}(p.r), SVector{3}(p.v), SVector{3}(p.a), SVector{3}(p.a¹)
+        
+        ⁺p.r .= r + Δt*v + Δt²/2*a + Δt³/6*a¹
+        ⁺p.v .= v + Δt*a + Δt²/2*a¹
     end
 end
 
@@ -86,11 +97,16 @@ function collect!(ps, ⁺ps, Δt, α)
     Δt⁵ = Δt * Δt⁴
 
     for (p, ⁺p) in zip(ps, ⁺ps)
-        @. p.a² = ( -6(p.a - ⁺p.a) - Δt*(4p.a¹ + 2⁺p.a¹) ) / Δt²
-        @. p.a³ = ( 12(p.a - ⁺p.a) + Δt*6(p.a¹ +  ⁺p.a¹) ) / Δt³
+         a,  a¹ = SVector{3}( p.a), SVector{3}( p.a¹)
+        ⁺a, ⁺a¹ = SVector{3}(⁺p.a), SVector{3}(⁺p.a¹)
+        
+        p.a² .= ( -6(a - ⁺a) - Δt*(4a¹ + 2⁺a¹) ) / Δt²
+        p.a³ .= ( 12(a - ⁺a) + Δt*6(a¹ +  ⁺a¹) ) / Δt³
+        
+        a², a³ = SVector{3}(p.a²), SVector{3}(p.a³)
                 
-        @. ⁺p.r += Δt⁴/24*p.a² + α*Δt⁵/120*p.a³
-        @. ⁺p.v += Δt³/ 6*p.a² +   Δt⁴/ 24*p.a³
+        ⁺p.r .+= Δt⁴/24*a² + α*Δt⁵/120*a³
+        ⁺p.v .+= Δt³/ 6*a² +   Δt⁴/ 24*a³
     end
 end
 
@@ -103,7 +119,7 @@ function prepare!(ps, ⁺ps, Δt)
         @. p.a¹ = ⁺p.a¹
     
         # @. ⁺p.a³ = p.a³
-        # @. ⁺p.a² = p.a² + Δt*p.a³
+        @. ⁺p.a² = p.a² + Δt*p.a³
     end
 end
 

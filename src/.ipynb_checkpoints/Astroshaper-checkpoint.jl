@@ -57,6 +57,5 @@ include("Euler.jl")
 export run_Euler, getParticlesCOM, setOrigin2COM!
 
 include("RungeKutta.jl")
-export run_RungeKutta
 
 end # module Astroshaper
