@@ -17,8 +17,8 @@ You can update the module and run tests as follows.
 
 ## Orbital dynamics
 You can simulate orbital evolution of planets and small bodies under gravity interaction and various perturbations.
-As for the orbital integrators, you can choose from Euler, leapfrog,  4th-degree Hermite methods.
-(Note that my implementation of the Hermite method is being verified.)
+As for the orbital integrators, you can choose from Euler, leapfrog,  4th-degree Hermite methods (Note that my implementation of the Hermite method is being verified).
+
 
 ## Spin dynamics
 Thermal recoil torque (i.e. YORP effect) can be calculated based on a 3-dimensional shape of an asteroid.
