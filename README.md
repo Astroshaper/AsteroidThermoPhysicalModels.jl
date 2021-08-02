@@ -21,7 +21,7 @@ As for the orbital integrators, you can choose from Euler, leapfrog,  4th-degree
 
 
 ## Spin dynamics
-Thermal recoil torque (i.e. YORP effect) can be calculated based on a 3-dimensional shape of an asteroid.
+Based on the thermophysics of an airless rocky body, you can simulate the distribution of the surface temperature and thermal recoil torque on the body (i.e. YORP effect). The simulation can receive a 3-dimensional shape model of an asteroid (or local elevation model) in the Wavefront OBJ format (*.obj).
 
 ## Gravity calculation for asteoids
 Gravity filed of a constant-density polyhedron.
