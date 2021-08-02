@@ -11,6 +11,7 @@ Julia-based toolkit for dynamical simulations of planets and small solar system 
     using Astroshaper
 
 You can update and run tests as follows.
+
     Pkg.update("Astroshaper")
     Pkg.test("Astroshaper")
 
