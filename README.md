@@ -25,7 +25,7 @@ Based on the thermophysics of an airless rocky body, you can simulate the distri
 
 The code currently includes the thermophysical effects as follows:
 - 1-dimensional heat diffusion in depth direction
-- Self-shadowing: Detection of facets blocking solar rays)
+- Self-shadowing: Detection of facets blocking solar rays
 - Self-heating: Re-absorption of scatterd and radiated photons by surrounding facets. Only sigle scattering is implemented.
 
 ## Gravity calculation for asteoids
