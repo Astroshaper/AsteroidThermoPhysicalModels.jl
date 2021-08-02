@@ -8,10 +8,11 @@ Julia-based toolkit for dynamical simulations of planets and small solar system 
 
     using Pkg
     Pkg.add("https://github.com/MasanoriKanamaru/Astroshaper")
-    Pkg.update("Astroshaper")
-    Pkg.test("Astroshaper")
     using Astroshaper
 
+You can update and run tests as follows.
+    Pkg.update("Astroshaper")
+    Pkg.test("Astroshaper")
 
 ## Orbital dynamics
 N-body integrators will be implemeted.
