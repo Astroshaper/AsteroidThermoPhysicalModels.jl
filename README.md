@@ -25,8 +25,9 @@ Based on the thermophysics of an airless rocky body, you can simulate the distri
 
 The code currently includes the thermophysical effects as follows:
 - 1-dimensional heat diffusion in depth direction
-- Self-shadowing (detection of facets blocking solar rays)
-- Self-heating (re-absorption of scatterd and radiated photons by surrounding facets. Only sigle scattering is implemented.)
+- Self-shadowing: Detection of facets blocking solar rays)
+- Self-heating: Re-absorption of scatterd and radiated photons by surrounding facets. Only sigle scattering is implemented.
 
 ## Gravity calculation for asteoids
-Gravity filed of a constant-density polyhedron.
+You can calculate the precise gravity field of an irregularly shaped body, based on the constant-density polyhedron method (Werner & Scheeres, 1997).
+
