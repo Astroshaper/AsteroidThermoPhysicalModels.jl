@@ -23,5 +23,10 @@ As for the orbital integrators, you can choose from Euler, leapfrog,  4th-degree
 ## Spin dynamics
 Based on the thermophysics of an airless rocky body, you can simulate the distribution of the surface temperature and thermal recoil torque on the body, i.e. YORP effect (Rubincam, 2000; Bottke et al., 2006). The simulation can receive a 3-dimensional shape model of an asteroid (or local elevation model) in the Wavefront OBJ format (*.obj).
 
+The code currently includes the thermophysical effects as follows:
+- 1-dimensional heat diffusion in depth direction
+- Self-shadowing (detection of facets blocking solar rays)
+- Self-heating (re-absorption of scatterd and radiated photons by surrounding facets. Only sigle scattering is implemented.)
+
 ## Gravity calculation for asteoids
 Gravity filed of a constant-density polyhedron.
