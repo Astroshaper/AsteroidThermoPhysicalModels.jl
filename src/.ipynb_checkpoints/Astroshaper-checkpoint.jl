@@ -34,7 +34,7 @@ include("smesh.jl")
 export SMesh
 
 include("shape.jl")
-export Shape, setShapeModel, findVisibleFaces!, showshape
+export Shape, setShapeModel, findVisibleFaces!, showshape, equivalent_radius
 
 include("YORP.jl")
 export getNetTorque, getNetTorque_shadowing, torque2rate, getTimeScale, run_YORP, get_surface_temperature
