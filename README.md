@@ -1,8 +1,8 @@
-# Astroshaper
+# Astroshaper.jl
 
 [![Build Status](https://travis-ci.com/MasanoriKanamaru/Astroshaper.svg?branch=main)](https://travis-ci.com/MasanoriKanamaru/Astroshaper)
 
-Julia-based toolkit for dynamical simulations of planets and small solar system bodies.
+Julia-based toolkit for dynamical simulations of planets and small solar system bodies. Tutorials that you can easily try will be prepared soon.
 
 ## Installation
 
