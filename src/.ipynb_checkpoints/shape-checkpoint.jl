@@ -95,6 +95,9 @@ getFaceCenters(shape::Shape) = getcenters(shape.smeshes)
 getFaceNormals(shape::Shape) = getnormals(shape.smeshes)
 getFaceAreas(shape::Shape) = getareas(shape.smeshes)
 
+equivalent_radius(VOLUME) = (3VOLUME/4π)^(1/3)
+equivalent_radius(shape::Shape) = equivalent_radius(shape.VOLUME)
+
 findVisibleFaces!(shape::Shape) = findVisibleFaces!(shape.smeshes)
 isIlluminated(obs::SMesh, r̂☉, shape::Shape) = isIlluminated(obs, r̂☉, shape.smeshes)
 
