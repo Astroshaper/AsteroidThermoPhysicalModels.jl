@@ -19,10 +19,11 @@ A polyhedral shape model of an asteroid.
 - `COF`      : Center-of-figure
 - `I`        : Moment of inertia tensor
 
-- `τ`        : Thermal recoil torque at body-fixed frame
+– `F`        : Thermal recoil force at body-fixed frame (Yarkovsky effect)
+- `τ`        : Thermal recoil torque at body-fixed frame (YORP effect)
 - `Tz⁺`      : Pre-allocated vector for update of temperature profile on every facets (`SMesh`)
 """
-struct Shape{T1, T2, T3, T4, T5, T6, T7, T8, T9}
+struct Shape{T1, T2, T3, T4, T5, T6, T7, T8, T9, T10}
     num_node::T1
     num_face::T1
     nodes::T2
@@ -35,8 +36,9 @@ struct Shape{T1, T2, T3, T4, T5, T6, T7, T8, T9}
     COF::T6
     I::T7
 
-    τ::T8
-    Tz⁺::T9
+    F::T8
+    τ::T9
+    Tz⁺::T10
 end
 
 
@@ -74,10 +76,11 @@ function setShapeModel(shapepath; scale=1, find_visible_faces=false, save_shape=
         COF = getCOF(smeshes)
         I = getMOI(smeshes)
         
+        F = zeros(3)
         τ = zeros(3)
         Tz⁺ = similar(smeshes[begin].Tz)
         
-        shape = Shape(num_node, num_face, nodes, faces, smeshes, AREA, VOLUME, COF, I, τ, Tz⁺)
+        shape = Shape(num_node, num_face, nodes, faces, smeshes, AREA, VOLUME, COF, I, F, τ, Tz⁺)
         save_shape && save(splitext(shapepath)[1] * ".jld2", Dict("shape" => shape))
 
     elseif ext == ".jld2"

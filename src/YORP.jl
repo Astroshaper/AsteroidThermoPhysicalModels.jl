@@ -29,6 +29,44 @@ function run_YORP(shape, orbit, spin, params_thermo)
 end
 
 
+"""
+"""
+function run_Yarkovsky(shape, orbit, spin, params_thermo)
+    @unpack P, Δt, t_bgn, t_end, Nt, Nz = params_thermo
+    
+    initialize_temperature!(shape, orbit, spin, params_thermo)
+    shape.smeshes
+    
+    Fs = typeof(shape.F)[]
+    # τ̄ = zeros(3)  # Net YORP torque
+
+    for t in (t_bgn:Δt:t_end)*P
+        spin_phase = spin.ω * t
+        F☉, r̂☉ = getSolarCondition(orbit, spin, t)
+        
+        update_flux_sun!(shape, F☉, r̂☉)
+        update_flux_scat_single!(shape, params_thermo)
+        update_flux_rad_single!(shape, params_thermo)
+        
+        update_force!(shape, params_thermo)
+        # update_force_Rubincam!(shape, params_thermo)
+        
+        F = SVector{3}(shape.F)
+        # τ = SVector{3}(shape.τ)
+        
+        F = body_to_orbit(F, spin.γ, spin.ε, spin_phase)
+        # τ̄ .+= body_to_orbit(τ, spin.γ, spin.ε, spin_phase)
+        push!(Fs, F)
+        
+        update_temperature!(shape, params_thermo)
+    end
+    Fs
+    # τ̄ /= Nt
+end
+
+
+
+
 function initialize_temperature!(shape, orbit, spin, params_thermo)
     @unpack P, Δt, t_bgn, t_end, Nt, Nz = params_thermo
     
@@ -66,7 +104,7 @@ end
 Single scattering of sunlight is considered.
 """
 function update_flux_scat_single!(shape, params_thermo)
-    A_B = params_thermo.A_B
+    @unpack A_B = params_thermo
     
     for m in shape.smeshes
         m.flux.scat = 0.
@@ -84,7 +122,7 @@ end
 Multiple scattering of sunlight is considered.
 """
 function update_flux_scat_mult!(shape, params_thermo)
-    A_B = params_thermo.A_B
+    @unpack A_B = params_thermo
     
     # for m in shape.smeshes
     #     m.flux.scat = 0.
@@ -103,8 +141,7 @@ Single radiation-reabsorption is considered,
 assuming albedo is close to zero at thermal infrared wavelength.
 """
 function update_flux_rad_single!(shape, params_thermo)
-    ϵ    = params_thermo.ϵ
-    A_TH = params_thermo.A_TH
+    @unpack ϵ, A_TH = params_thermo
         
     for m in shape.smeshes
         m.flux.rad = 0.
@@ -127,10 +164,10 @@ end
 Update photon recoil force on every facet (df)
 """
 function update_force!(shape, params_thermo)
-    A_B = params_thermo.A_B
-    ϵ   = params_thermo.ϵ
+    @unpack A_B, ϵ = params_thermo
     
-    shape.τ .= 0.
+    shape.F .= 0
+    shape.τ .= 0
     for smesh in shape.smeshes
         E = A_B * smesh.flux.scat + ϵ * σ_SB * smesh.Tz[begin]^4
 
@@ -140,7 +177,12 @@ function update_force!(shape, params_thermo)
         end
         @. smesh.df *= - 2*E*smesh.area / (3*c₀)
 
-        shape.τ .+= smesh.center × SVector{3}(smesh.df)
+        r  = SVector{3}(smesh.center)
+        r̂  = normalize(r)
+        df = SVector{3}(smesh.df)
+        
+        shape.F .+= (r̂ ⋅ df) * r̂  # Photon recoil force
+        shape.τ .+= r × df        # Photon recoil torque
     end
 end
 
