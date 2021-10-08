@@ -26,7 +26,7 @@ function evaluate_Euler!(ps, ϵ)
 end
 
 
-function update!(p::Particle, Δt)
+function update!(p::AbstractParticle, Δt)
     @. p.v += p.a * Δt
     @. p.r += p.v * Δt
 end

@@ -14,6 +14,18 @@ using JLD2
 
 include("constants.jl")
 export AU, G, GM☉, M☉, SOLAR_CONST, c₀, σ_SB
+export M_Mercury, GM_Mercury
+export M_Venus,   GM_Venus
+export M_Earth,   GM_Earth
+export M_Moon,    GM_Moon
+export M_Mars,    GM_Mars
+export M_Ceres,   GM_Ceres
+export M_Jupiter, GM_Jupiter
+export M_Saturn,  GM_Saturn
+export M_Uranus,  GM_Uranus
+export M_Neptune, GM_Neptune
+export M_Pluto,   GM_Pluto
+export M_Eris,    GM_Eris
 
 include("obj.jl")
 export loadobj
@@ -45,17 +57,21 @@ export ParamsThermo
 ################################################################
 
 include("nbody.jl")
-export Particle, setParticles, setOrigin!, getBaryCenter, setOrigin2BaryCenter!
+export AbstractParticle, SimpleParticle, HermiteParticle
+export run_nbody!
+export load_snapshot
+export setParticles, addParticle!, setOrigin!, getBaryCenter, setOrigin2BaryCenter!
 export getTotalEnergy, getKineticEnergy, sumKineticEnergy, getPotentialEnergy, sumPotentialEnergy
 
 include("Hermite4.jl")
-export run_Hermite4, Initialize!
-export run_sim, forward!, predict!, evaluate!, evaluate_by_predictor!, evaluate_by_corrector!
-export collect!, prepare!, get_Δt_Aarseth, get_Δt_initial
+export run_Hermite4, run_Hermite4_test, initialize!
 
 include("Euler.jl")
-export run_Euler, getParticlesCOM, setOrigin2COM!
+export run_Euler
 
-include("RungeKutta.jl")
+include("leapfrog.jl")
+export run_leapfrog
+
+# include("RungeKutta.jl")
 
 end # module Astroshaper

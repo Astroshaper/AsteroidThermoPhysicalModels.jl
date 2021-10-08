@@ -45,8 +45,8 @@ function OrbitalElements(params)
     ω = deg2rad(params[:ω])  # argument of periapsis [rad]
     
     μ = params[:μ]  # Gravitational parameter
-    n = √(μ / a^3)   # mean motion  [rad/sec]
-    T = 2π / n       # orbital period [sec]
+    n = √(μ / a^3)  # mean motion  [rad/sec]
+    T = 2π / n      # orbital period [sec]
     
     if haskey(params, :Φ)
         Φ  = deg2rad(params[:Φ])  # mean anomaly at the epoch [rad]
@@ -58,6 +58,21 @@ function OrbitalElements(params)
         println("Give [:Φ] or [:tp] in Dict.")
     end
 
+    OrbitalElements(a, e, I, ω, Ω, Φ, tₚ, μ, n, T)
+end
+
+
+function OrbitalElements(a, e, I, μ)
+    a *= AU
+    I = deg2rad(I)
+    ω = 2π * rand()
+    Ω = 2π * rand()
+    Φ = 2π * rand()
+    
+    n = √(μ / a^3)
+    T = 2π / n
+    tₚ = - Φ / n
+    
     OrbitalElements(a, e, I, ω, Ω, Φ, tₚ, μ, n, T)
 end
 
@@ -159,7 +174,7 @@ end
 OrbitalElements(R, V, M, m, t) = OrbitalElements(R, V, G*(M+m), t)
 
 
-function OrbitalElements(R, V, μ, t)
+function OrbitalElements(R::AbstractVector, V::AbstractVector, μ, t)
 
     h = R × V
     

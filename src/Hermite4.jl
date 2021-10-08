@@ -1,125 +1,159 @@
 
-
-function run_Hermite4(ps, params_sim)
-    @unpack Δt, t_end, ϵ, α = params_sim
-    
-#     if haskey(params_sim, :Δt)
-#         @unpack Δt = params_sim
-#         Initialize!(ps, params_sim)
-#     else
-#         Initialize!(ps, ϵ)
-#         Δt = get_Δt_Aarseth(⁺p, params_sim)
-#     end
+function run_Hermite4(ps, params_sim, filepath)
+    @unpack Δt, t_end, ϵ, α, save_interval = params_sim
 
     times = (0:Δt:t_end)
-    ⁺ps = deepcopy(ps)
-    Initialize!(ps, ⁺ps, Δt, ϵ)
-
-    ts, rs, vs, as = prep_snapshot(ps, params_sim)
+    initialize!(ps)
     
     @show Δt
     @show t_end
-    println(length(times), " timesteps (", length(ts), " to be saved)")
+    println(length(times))
     
-    snapshots = StructArray(Particle[])
+    open(filepath, "w") do io
         
-    for (i, t) in enumerate(times)
-        save_snapshot!(ts, rs, vs, as, i, t, ps, params_sim)
-    
-        predict!(ps, ⁺ps, Δt)
-        evaluate!(ps, ⁺ps, ϵ)
-        collect!(ps, ⁺ps, Δt, α)
-        evaluate!(ps, ⁺ps, ϵ)
+        E₀ = getTotalEnergy(ps)
+        for (i, t) in enumerate(times)
+            (i-1)%save_interval == 0 && save_snapshot_txt(io, t, ps)
+                        
+            predict!(ps, Δt)
+            evaluate!(ps, ϵ)
+            collect!(ps, Δt)
+            evaluate!(ps, ϵ)
 
-        prepare!(ps, ⁺ps, Δt)
+            prepare!(ps, Δt)
+        end
+        E₁ = getTotalEnergy(ps)
+        ΔE = (E₁ - E₀)/E₀
+        @show E₀
+        @show E₁
+        @show ΔE
     end
-    ts, rs, vs, as
+end
+
+#############################################################
+
+function run_Hermite4_test(ps, params_sim, filepath)
+    open(filepath, "w") do io
+    
+        @unpack η, t_end, save_interval = params_sim
+
+        initialize!(ps)
+        Δt = η * minimum(norm(p.a)/norm(p.a¹) for p in ps)
+        t = 0.
+        i = 0
+        
+        E₀ = getTotalEnergy(ps)
+        while t < t_end
+            i%save_interval == 0 && save_snapshot_txt(io, t, ps)
+            collide(ps) != (0, 0) && break
+            
+            Hermite4_shared!(ps, params_sim, Δt)
+            Δt = get_Δt_Aarseth(ps, params_sim)
+            t += Δt
+            i += 1
+        end
+        E₁ = getTotalEnergy(ps)
+        ΔE = (E₁ - E₀)/E₀
+        @show E₀
+        @show E₁
+        @show ΔE
+        println("Collision: ", collide(ps))
+    end
 end
 
 
 
-function Hermite4_shared()
+function Hermite4_shared!(ps, params_sim, Δt)
+    # @unpack ϵ, α = params_sim
     
-    
+    predict!(ps, Δt)
+    evaluate!(ps)
+    collect!(ps, Δt)
+    evaluate!(ps)
+
+    prepare!(ps, Δt)
 end
 
 
 #############################################################
-#                      
+#                   Predict & collect
 #############################################################
 
 
-function Initialize!(ps, ⁺ps, Δt, ϵ)
-    evaluate!(ps, ⁺ps, ϵ)
-    prepare!(ps, ⁺ps, Δt)
-end
-
-
-function predict!(ps, ⁺ps, Δt)
+function predict!(ps, Δt)
     Δt² = Δt * Δt
     Δt³ = Δt * Δt²
-
-    for (p, ⁺p) in zip(ps, ⁺ps)
+    
+    for p in ps
         r, v, a, a¹ = SVector{3}(p.r), SVector{3}(p.v), SVector{3}(p.a), SVector{3}(p.a¹)
         
-        ⁺p.r .= r + Δt*v + Δt²/2*a + Δt³/6*a¹
-        ⁺p.v .= v + Δt*a + Δt²/2*a¹
+        p.⁺r .= r + Δt*v + Δt²/2*a + Δt³/6*a¹
+        p.⁺v .= v + Δt*a + Δt²/2*a¹
     end
 end
 
 
-function evaluate!(ps, ⁺ps, ϵ)
-    for (pᵢ, ⁺pᵢ) in zip(ps, ⁺ps)
-        ⁺pᵢ.a  .= 0.
-        ⁺pᵢ.a¹ .= 0.
-        for (pⱼ, ⁺pⱼ) in zip(ps, ⁺ps)
-            pⱼ == pᵢ && continue
-            pⱼ.m == 0 && continue 
+function evaluate!(ps, ϵ)
+    for p in ps
+        p.⁺a  .= 0
+        p.⁺a¹ .= 0
+    end
+    
+    for i in eachindex(ps)
+        for j in eachindex(ps)
+            i == j && continue
+            ps[j].m == 0 && continue
             
-            r = SVector{3}(⁺pᵢ.r) - SVector{3}(⁺pⱼ.r)
-            v = SVector{3}(⁺pᵢ.v) - SVector{3}(⁺pⱼ.v)
+            r = SVector{3}(ps[j].⁺r) - SVector{3}(ps[i].⁺r)
+            v = SVector{3}(ps[j].⁺v) - SVector{3}(ps[i].⁺v)
             
             r² = norm(r)^2 + ϵ^2
             r⁻³ = r²^(-3/2)
             r⁻⁵ = r²^(-5/2)
             
-            ⁺pᵢ.a  .-= G * pⱼ.m * r⁻³ * r
-            ⁺pᵢ.a¹ .-= G * pⱼ.m * (r⁻³*v - 3*r⁻⁵*(v ⋅ r)*r)
+            ps[i].⁺a  .+= G * ps[j].m * r * r⁻³
+            ps[i].⁺a¹ .+= G * ps[j].m * (v*r⁻³ - 3(v ⋅ r)*r*r⁻⁵)     
         end
     end
 end
 
 
-function collect!(ps, ⁺ps, Δt, α)
+evaluate!(ps) = evaluate!(ps, 0)
+
+
+function collect!(ps, Δt, α)
     Δt² = Δt * Δt
     Δt³ = Δt * Δt²
     Δt⁴ = Δt * Δt³
     Δt⁵ = Δt * Δt⁴
 
-    for (p, ⁺p) in zip(ps, ⁺ps)
-         a,  a¹ = SVector{3}( p.a), SVector{3}( p.a¹)
-        ⁺a, ⁺a¹ = SVector{3}(⁺p.a), SVector{3}(⁺p.a¹)
+    for p in ps
+         a,  a¹ = SVector{3}(p.a),  SVector{3}(p.a¹)
+        ⁺a, ⁺a¹ = SVector{3}(p.⁺a), SVector{3}(p.⁺a¹)
         
         p.a² .= ( -6(a - ⁺a) - Δt*(4a¹ + 2⁺a¹) ) / Δt²
-        p.a³ .= ( 12(a - ⁺a) + Δt*6(a¹ +  ⁺a¹) ) / Δt³
+        p.a³ .= ( 12(a - ⁺a) + 6Δt*(a¹ +  ⁺a¹) ) / Δt³
         
         a², a³ = SVector{3}(p.a²), SVector{3}(p.a³)
-                
-        ⁺p.r .+= Δt⁴/24*a² + α*Δt⁵/120*a³
-        ⁺p.v .+= Δt³/ 6*a² +   Δt⁴/ 24*a³
+        
+        p.⁺r .+= Δt⁴/24*a² + α*Δt⁵/120*a³
+        p.⁺v .+= Δt³/ 6*a² +   Δt⁴/ 24*a³
     end
 end
 
 
-function prepare!(ps, ⁺ps, Δt)
-    for (p, ⁺p) in zip(ps, ⁺ps)
-        @. p.r  = ⁺p.r
-        @. p.v  = ⁺p.v
-        @. p.a  = ⁺p.a
-        @. p.a¹ = ⁺p.a¹
+collect!(ps, Δt) = collect!(ps, Δt, 7/6)
+
+
+function prepare!(ps, Δt)
+    for p in ps
+        @. p.r  = p.⁺r
+        @. p.v  = p.⁺v
+        @. p.a  = p.⁺a
+        @. p.a¹ = p.⁺a¹
     
-        # @. ⁺p.a³ = p.a³
-        @. ⁺p.a² = p.a² + Δt*p.a³
+        # @. p.⁺a³ = p.a³
+        @. p.a² += Δt*p.a³
     end
 end
 
@@ -129,18 +163,18 @@ end
 #############################################################
 
 
-get_Δt_Aarseth!(⁺ps, params_sim) = minimum(get_Δt_Aarseth(⁺p, params_sim) for ⁺p in ⁺ps)
+get_Δt_Aarseth(ps, params_sim) = minimum(get_Δt_Aarseth(p, params_sim) for p in ps)
 
 
-function get_Δt_Aarseth(⁺p::Particle, params_sim)
+function get_Δt_Aarseth(p::AbstractParticle, params_sim)
     @unpack η = params_sim
 
-    s  = norm(⁺p.a)
-    s¹ = norm(⁺p.a¹)
-    s² = norm(⁺p.a²)
-    s³ = norm(⁺p.a³)
+    a  = norm(SVector{3}(p.a ))
+    a¹ = norm(SVector{3}(p.a¹))
+    a² = norm(SVector{3}(p.a²))
+    a³ = norm(SVector{3}(p.a³))
     
-    Δt = η * sqrt((s*s² + s¹*s¹) / (s¹*s³ + s²*s²))
+    Δt = η * sqrt((a*a² + a¹*a¹) / (a¹*a³ + a²*a²))
 end
 
 

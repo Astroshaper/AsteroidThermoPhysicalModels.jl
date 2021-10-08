@@ -227,7 +227,6 @@ getSolarIrradiation(rₕ) = SOLAR_CONST / (rₕ / AU)^2
 Get the solar irradition and the direction of the Sun
 
 # Parameters
-
 - `orbit` :
 - `spin`  :
 - `time`  : [sec]
@@ -413,7 +412,7 @@ getτψ(τ, spin) = τ ⋅ getSpinUnit2(spin)
 
 
 """
-    getYORPeffect(τ, spin, C) -> ω̇, ωε̇, ωψ̇
+    torque2rate(τ, spin, C) -> ω̇, ωε̇, ωψ̇
 
 # Parameters
 - `τ`    : torque in a body's orbital plane frame
