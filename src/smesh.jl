@@ -1,8 +1,9 @@
 
 
 ################################################################
-#                      View factor
+#                 Face-to-face interactions
 ################################################################
+
 
 """
     VisibleFace
@@ -10,7 +11,6 @@
 Index of an interfacing facet and its view factor
 
 # Fields
-
 - `id` : Index of the interfacing mesh
 - `f`  : View factor from mesh i to mesh j
 - `d̂`  : Normal vector from mesh i to mesh j
@@ -23,7 +23,7 @@ end
 
 
 """
-    getViewFactor(mᵢ, mⱼ) -> fᵢⱼ
+    getViewFactor(mᵢ, mⱼ) -> fᵢⱼ, d̂ᵢⱼ
 
 View factor from mesh i to mesh j, assuming Lambertian emission
 """
@@ -42,12 +42,8 @@ end
 getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * dᵢⱼ^2) * aⱼ
 
 
-################################################################
-#                 Face-to-face interactions
-################################################################
-
 """
-    Flux{T}
+    Flux{T1, T2, T3}
 
 Energy flux from/to a mesh
 
