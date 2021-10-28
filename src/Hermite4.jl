@@ -1,6 +1,6 @@
 
-function run_Hermite4(ps, params_sim, filepath)
-    @unpack Δt, t_end, ϵ, α, save_interval = params_sim
+function run_Hermite4(ps, params_nbody, filepath)
+    @unpack Δt, t_end, ϵ, α, save_interval = params_nbody
 
     times = (0:Δt:t_end)
     initialize!(ps)
@@ -32,10 +32,10 @@ end
 
 #############################################################
 
-function run_Hermite4_test(ps, params_sim, filepath)
+function run_Hermite4_test(ps, params_nbody, filepath)
     open(filepath, "w") do io
     
-        @unpack η, t_end, save_interval = params_sim
+        @unpack η, t_end, save_interval = params_nbody
 
         initialize!(ps)
         Δt = η * minimum(norm(p.a)/norm(p.a¹) for p in ps)
@@ -63,8 +63,8 @@ end
 
 
 
-function Hermite4_shared!(ps, params_sim, Δt)
-    # @unpack ϵ, α = params_sim
+function Hermite4_shared!(ps, params_nbody, Δt)
+    # @unpack ϵ, α = params_nbody
     
     predict!(ps, Δt)
     evaluate!(ps)
@@ -151,9 +151,9 @@ function prepare!(ps, Δt)
         @. p.v  = p.⁺v
         @. p.a  = p.⁺a
         @. p.a¹ = p.⁺a¹
-    
+        
         # @. p.⁺a³ = p.a³
-        @. p.a² += Δt*p.a³
+        @. p.a² += Δt*p.a³  # for calculating time step
     end
 end
 
@@ -163,11 +163,11 @@ end
 #############################################################
 
 
-get_Δt_Aarseth(ps, params_sim) = minimum(get_Δt_Aarseth(p, params_sim) for p in ps)
+get_Δt_Aarseth(ps, params_nbody) = minimum(get_Δt_Aarseth(p, params_nbody) for p in ps)
 
 
-function get_Δt_Aarseth(p::AbstractParticle, params_sim)
-    @unpack η = params_sim
+function get_Δt_Aarseth(p::AbstractParticle, params_nbody)
+    @unpack η = params_nbody
 
     a  = norm(SVector{3}(p.a ))
     a¹ = norm(SVector{3}(p.a¹))
