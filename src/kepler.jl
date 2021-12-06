@@ -287,12 +287,18 @@ end
 # ****************************************************************
 
 
+solveKeplerEquation1(elms, ts::T) where T<:AbstractArray = [solveKeplerEquation1(elms, t) for t in ts]
+solveKeplerEquation2(elms, ts::T) where T<:AbstractArray = [solveKeplerEquation2(elms, t) for t in ts]
+
 solveKeplerEquation1(elms, t) = solveKeplerEquation1(elms.e, elms.n, elms.tₚ, t)
 solveKeplerEquation2(elms, t) = solveKeplerEquation2(elms.e, elms.n, elms.tₚ, t)
 
 get_rv(elms, u) = get_rv(elms.a, elms.e, elms.n, u)
 get_r(elms, u) = get_r(elms.a, elms.e, u)
 get_v(elms, u) = get_v(elms.a, elms.e, elms.n, u)
+
+heliocentric_distance(elms, u) = norm(get_r(elms, u))
+heliocentric_distance(elms, us::T) where T<:AbstractArray = [heliocentric_distance(elms, u) for u in us]
 
 
 """
@@ -371,6 +377,10 @@ Calculate true anomaly ν from eccentric anomaly u and eccentricity e
 
 """
 u2ν(u, e) = 2 * atan(√((1+e)/(1-e)) * sin(u*0.5), cos(u*0.5))
+u2ν(u, elms::OrbitalElements) = u2ν(u, elms.e)
+
+u2ν(us::T, e) where T<:AbstractArray = [u2ν(u, e) for u in us]
+u2ν(us::T, elms::OrbitalElements) where T<:AbstractArray = u2ν(us, elms.e)
 
 
 """

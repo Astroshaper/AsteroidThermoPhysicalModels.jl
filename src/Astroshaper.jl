@@ -38,6 +38,7 @@ include("kepler.jl")
 export OrbitalElements
 export ref_to_orb!, ref_to_orb
 export orb_to_ref!, orb_to_ref
+export solveKeplerEquation1, solveKeplerEquation2, u2ν, heliocentric_distance
 
 include("spin.jl")
 export Spin, setSpinParams
