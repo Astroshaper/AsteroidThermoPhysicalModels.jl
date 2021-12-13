@@ -45,6 +45,8 @@ export Spin, setSpinParams
 include("smesh.jl")
 export SMesh
 
+include("Facet.jl") ## <-------------------------------------
+
 include("shape.jl")
 export Shape, setShapeModel, findVisibleFaces!, showshape, equivalent_radius, get_surface_temperature
 
