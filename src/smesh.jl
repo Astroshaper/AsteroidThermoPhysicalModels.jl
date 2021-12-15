@@ -343,16 +343,16 @@ c.f. L'Huilier's Theorem
 # Arguments
 - `a`, `b`, `c` : side length of a spherical traiangle
 """
-function getSphericalExcess(a, b, c)
-    s = (a + b + c) * 0.5  # semiperimeter
+# function getSphericalExcess(a, b, c)
+#     s = (a + b + c) * 0.5  # semiperimeter
         
-    E = tan(s*0.5)
-    E *= tan((s - a)*0.5)
-    E *= tan((s - b)*0.5)
-    E *= tan((s - c)*0.5)
-    E = sqrt(E)
-    E = 4 * atan(E)
-end
+#     E = tan(s*0.5)
+#     E *= tan((s - a)*0.5)
+#     E *= tan((s - b)*0.5)
+#     E *= tan((s - c)*0.5)
+#     E = sqrt(E)
+#     E = 4 * atan(E)
+# end
 
 
-getangle(v1, v2) = acos(normalize(v1) ⋅ normalize(v2))
+# getangle(v1, v2) = acos(normalize(v1) ⋅ normalize(v2))

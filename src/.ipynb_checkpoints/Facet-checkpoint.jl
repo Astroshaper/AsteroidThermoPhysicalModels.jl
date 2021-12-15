@@ -3,7 +3,6 @@
 #                  Triangular surface facet
 ################################################################
 
-
 """
     struct Face{T1, T2, T3, T4, T5, T6}
 
@@ -43,7 +42,7 @@ end
 
 function Base.show(io::IO, facet::Facet)
     println(io, "Surface facet")
-    println("------------")
+    println("-------------")
 
     println("Vertices")
     println("    A : ", facet.A)
@@ -58,8 +57,8 @@ function Base.show(io::IO, facet::Facet)
         println("No visible facets.")
     else
         println(length(facet.visiblefacets), " facets are visible:")
-        println(facet.visiblefacets.id)
-        println(facet.visiblefacets.f)
+        df = DataFrame(id=facet.visiblefacets.id, f=facet.visiblefacets.f, d=facet.visiblefacets.d)
+        println(df)
     end
 end
 
@@ -109,11 +108,11 @@ Index of an interfacing facet and its view factor
 - `d`  : Distance from facet i to j
 - `d̂`  : Normal vector from facet i to j
 """
-struct VisibleFacet{T1, T2, T3}
-    id::T1
-    f ::T2
-    d ::T2
-    d̂ ::T3
+struct VisibleFacet
+    id::Int64
+    f ::Float64
+    d ::Float64
+    d̂ ::SVector{3, Float64}
 end
 
 
@@ -146,9 +145,9 @@ getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * d
 Energy flux from/to a facet
 
 # Fields
-- `sun::T`  : Flux of solar radiation,    F_sun
+- `sun ::T`  : Flux of solar radiation,   F_sun
 - `scat::T` : Flux of scattered sunlight, F_scat
-- `rad::T`  : Flux of thermal radiation,  F_rad
+- `rad ::T`  : Flux of thermal radiation, F_rad
 """
 mutable struct Flux{T}
     sun ::T
@@ -171,7 +170,6 @@ Determine if the two facets are facing each other
 """
 isFace(obs::Facet, tar::Facet) = (tar.center - obs.center) ⋅ tar.normal < 0 ? true : false
 
-
 """
     isAbove(A, B, C, D)             -> Bool
     isAbove(facet::Facet, D)        -> Bool
@@ -189,7 +187,6 @@ function isAbove(A, B, C, D)
     det(G) < 0 ? true : false
 end
 
-
 """
     isBelow(A, B, C, D)             -> Bool
     isBelow(facet::Facet, D)        -> Bool
@@ -206,7 +203,6 @@ function isBelow(A, B, C, D)
 
     det(G) > 0 ? true : false
 end
-
 
 isAbove(facet::Facet, D) = isAbove(facet.A, facet.B, facet.C, D)
 isBelow(facet::Facet, D) = isBelow(facet.A, facet.B, facet.C, D)
@@ -246,11 +242,9 @@ function raycast(A, B, C, R)
     0 ≤ u ≤ 1 && 0 ≤ v ≤ 1 && 0 ≤ u + v ≤ 1 && t > 0 ? true : false
 end
 
-
 raycast(facet::Facet, R) = raycast(facet.A, facet.B, facet.C, R)
 raycast(facet::Facet, R, obs::AbstractVector) = raycast(facet.A - obs, facet.B - obs, facet.C - obs, R)
 raycast(facet::Facet, R, obs::Facet) = raycast(facet, R, obs.center)
-
 
 """
     findVisibleFacets!(obs::Facet, facets)

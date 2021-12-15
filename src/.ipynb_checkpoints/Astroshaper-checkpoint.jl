@@ -42,8 +42,8 @@ export orb_to_ref!, orb_to_ref
 include("spin.jl")
 export Spin, setSpinParams
 
-include("smesh.jl")
-export SMesh
+# include("smesh.jl")
+# export SMesh
 
 include("Facet.jl") ## <-------------------------------------
 

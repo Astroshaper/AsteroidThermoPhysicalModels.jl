@@ -4,7 +4,6 @@
 #                      1D heat conduction
 # ****************************************************************
 
-
 """
 - `A_B`   : Bond albedo
 - `A_TH`  : Albedo at thermal radiation wavelength
@@ -155,11 +154,11 @@ end
 function update_temperature!(shape, params_thermo)
     @unpack A_B, A_TH = params_thermo
                     
-    for smesh in shape.smeshes
-        @unpack sun, scat, rad = smesh.flux
+    for facet in shape.facets
+        @unpack sun, scat, rad = facet.flux
         F_total = (1 - A_B)*(sun + scat) + (1 - A_TH)*rad
 
-        update_temperature!(smesh.Tz, shape.Tz⁺, F_total, params_thermo)
+        update_temperature!(facet.Tz, shape.Tz⁺, F_total, params_thermo)
     end
 end
 
