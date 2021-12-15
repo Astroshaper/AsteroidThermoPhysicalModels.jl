@@ -155,8 +155,11 @@ function update_temperature!(shape, params_thermo)
     @unpack A_B, A_TH = params_thermo
                     
     for facet in shape.facets
-        @unpack sun, scat, rad = facet.flux
-        F_total = (1 - A_B)*(sun + scat) + (1 - A_TH)*rad
+        F_sun  = facet.flux.sun
+        F_scat = facet.flux.scat
+        F_rad  = facet.flux.rad
+        
+        F_total = (1 - A_B)*(F_sun + F_scat) + (1 - A_TH)*F_rad
 
         update_temperature!(facet.Tz, shape.Tz⁺, F_total, params_thermo)
     end

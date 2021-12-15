@@ -110,12 +110,11 @@ function update_flux_scat_single!(shape, params_thermo)
     @unpack A_B = params_thermo
     
     for facet in shape.facets
-        @unpack flux, visiblefacets = facet
-        flux.scat = 0.
-        for (id, f) in zip(visiblefacets.id, visiblefacets.f)
-            flux.scat += f * shape.facets[id].flux.sun
+        facet.flux.scat = 0.
+        for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
+            facet.flux.scat += f * shape.facets[id].flux.sun
         end
-        flux.scat *= A_B
+        facet.flux.scat *= A_B
     end
 end
 
@@ -148,13 +147,12 @@ function update_flux_rad_single!(shape, params_thermo)
     @unpack ϵ, A_TH = params_thermo
         
     for facet in shape.facets
-        @unpack flux, visiblefacets = facet
-        flux.rad = 0.
-        for (id, f) in zip(visiblefacets.id, visiblefacets.f)
-            T = shape.facets[id].Tz[begin]  # Surfacr temperature
-            flux.rad += f * T^4
+        facet.flux.rad = 0.
+        for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
+            T = shape.facets[id].Tz[begin]
+            facet.flux.rad += f * T^4
         end
-        flux.rad *= ϵ * σ_SB * (1 - A_TH)
+        facet.flux.rad *= ϵ * σ_SB * (1 - A_TH)
     end
 end
 
@@ -175,13 +173,12 @@ function update_force!(shape, params_thermo)
         E = A_B * facet.flux.scat + ϵ * σ_SB * facet.Tz[begin]^4
 
         @. facet.force = facet.normal
-        for visiblefacet in facet.visiblefacets
-            @unpack f, d̂ = visiblefacet
-            @. facet.force -= 3/2 * f * d̂
+        for vf in facet.visiblefacets
+            @. facet.force -= 1.5 * vf.f * vf.d̂
         end
         @. facet.force *= - 2*E*facet.area / (3*c₀)
     end
-            
+
     shape.force  .= 0
     shape.torque .= 0
     for facet in shape.facets
@@ -204,7 +201,7 @@ function update_force_Rubincam!(shape, params_thermo)
     shape.torque .= 0.
     for facet in shape.facets
         facet.force .= - 2 * facet.flux.sun * facet.area / (3*c₀) .* facet.normal
-        shape.torque .+= smesh.center × SVector{3}(smesh.df)
+        shape.torque .+= facet.center × SVector{3}(facet.force)
     end
 end
 
