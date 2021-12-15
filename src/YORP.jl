@@ -24,7 +24,6 @@ function run_YORP(shape, orbit, spin, params_thermo)
         τ̄ .+= body_to_orbit(SVector{3}(shape.torque), spin.γ, spin.ε, spin_phase)
         
         update_temperature!(shape, params_thermo)
-        println(shape.facets[begin].Tz[begin])
     end
     τ̄ /= Nt
 end
@@ -149,7 +148,7 @@ function update_flux_rad_single!(shape, params_thermo)
         @unpack flux, visiblefacets = facet
         flux.rad = 0.
         for (id, f) in zip(visiblefacets.id, visiblefacets.f)
-            T = shape.facets[id].Tz[begin]
+            T = shape.facets[id].Tz[begin]  # Surfacr temperature
             flux.rad += f * T^4
         end
         flux.rad *= ϵ * σ_SB * (1 - A_TH)
@@ -169,8 +168,6 @@ Update photon recoil force on every facet (df)
 function update_force!(shape, params_thermo)
     @unpack A_B, ϵ = params_thermo
     
-    shape.force  .= 0
-    shape.torque .= 0
     for facet in shape.facets
         E = A_B * facet.flux.scat + ϵ * σ_SB * facet.Tz[begin]^4
 
@@ -180,7 +177,11 @@ function update_force!(shape, params_thermo)
             @. facet.force -= 3/2 * f * d̂
         end
         @. facet.force *= - 2*E*facet.area / (3*c₀)
-
+    end
+            
+    shape.force  .= 0
+    shape.torque .= 0
+    for facet in shape.facets
         r  = SVector{3}(facet.center)
         r̂  = normalize(r)
         df = SVector{3}(facet.force)
@@ -188,6 +189,7 @@ function update_force!(shape, params_thermo)
         shape.force  .+= (r̂ ⋅ df) * r̂  # Photon recoil force
         shape.torque .+= r × df        # Photon recoil torque
     end
+    println(shape.torque)
 end
 
 
