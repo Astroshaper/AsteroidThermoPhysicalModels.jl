@@ -24,6 +24,7 @@ function run_YORP(shape, orbit, spin, params_thermo)
         τ̄ .+= body_to_orbit(SVector{3}(shape.torque), spin.γ, spin.ε, spin_phase)
         
         update_temperature!(shape, params_thermo)
+        println(shape.facets[begin].Tz[begin])
     end
     τ̄ /= Nt
 end
@@ -176,7 +177,7 @@ function update_force!(shape, params_thermo)
         @. facet.force = facet.normal
         for visiblefacet in facet.visiblefacets
             @unpack f, d̂ = visiblefacet
-            @. facet.force -= 3/2 * f * d̂
+            @. facet.force -= 1.5 * f * d̂
         end
         @. facet.force *= - 2*E*facet.area / (3*c₀)
 

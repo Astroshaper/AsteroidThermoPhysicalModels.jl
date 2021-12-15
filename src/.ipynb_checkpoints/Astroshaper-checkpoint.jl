@@ -42,10 +42,7 @@ export orb_to_ref!, orb_to_ref
 include("spin.jl")
 export Spin, setSpinParams
 
-# include("smesh.jl")
-# export SMesh
-
-include("facet.jl") ## <-------------------------------------
+include("facet.jl")
 
 include("shape.jl")
 export Shape, setShapeModel, findVisibleFaces!, showshape, equivalent_radius, get_surface_temperature

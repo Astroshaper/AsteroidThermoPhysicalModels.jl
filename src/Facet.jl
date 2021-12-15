@@ -39,6 +39,12 @@ struct Facet{T1, T2, T3, T4, T5, T6}
     force        ::T6
 end
 
+Facet(A, B, C) = Facet([A, B, C])
+Facet(vs) = Facet(
+    vs[1], vs[2], vs[3],
+    getcenter(vs), getnormal(vs), getarea(vs),
+    StructArray(VisibleFacet[]), Flux(), Float64[], zeros(3)
+)
 
 function Base.show(io::IO, facet::Facet)
     println(io, "Surface facet")
@@ -61,16 +67,6 @@ function Base.show(io::IO, facet::Facet)
         println(df)
     end
 end
-
-
-Facet(A, B, C) = Facet([A, B, C])
-Facet(vs) = Facet(
-    vs[1], vs[2], vs[3],
-    getcenter(vs), getnormal(vs), getarea(vs),
-    StructArray(VisibleFacet[]), Flux(), Float64[], zeros(3)
-)
-# StructArray(VisibleFacet[])だと型が決まらない
-
 
 """
 Array of `Facet`, converted from arrays of nodes and faces of a shape model
@@ -260,12 +256,14 @@ function findVisibleFacets!(obs::Facet, facets)
     for (id, tar) in enumerate(facets)
         isAbove(obs, tar) && isFace(obs, tar) && push!(ids, id)
     end
+    
+    ii = copy(ids)
 
-    for i in copy(ids)
+    for i in ii
         tar_i = facets[i]
         Rᵢ = tar_i.center - obs.center
         dᵢ = norm(Rᵢ)      # distance to facet i
-        for j in copy(ids)
+        for j in ii
             i == j && continue
 
             tar_j = facets[j]
@@ -273,7 +271,6 @@ function findVisibleFacets!(obs::Facet, facets)
             dⱼ = norm(Rⱼ)  # distance to facet j
 
             raycast(tar_j, Rᵢ, obs) && (dᵢ < dⱼ ? filter!(x->x≠j, ids) : filter!(x->x≠i, ids))
-            ## dᵢ < dⱼは、先に判定した方が早そう
         end
     end
     

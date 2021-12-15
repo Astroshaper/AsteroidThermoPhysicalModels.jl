@@ -96,11 +96,6 @@ function setShapeModel(shapepath; scale=1, find_visible_facets=false, save_shape
     return shape
 end
 
-
-getFaceCenters(shape::Shape) = getcenters(shape.smeshes)
-getFaceNormals(shape::Shape) = getnormals(shape.smeshes)
-getFaceAreas(shape::Shape) = getareas(shape.smeshes)
-
 equivalent_radius(VOLUME) = (3VOLUME/4π)^(1/3)
 equivalent_radius(shape::Shape) = equivalent_radius(shape.VOLUME)
 
