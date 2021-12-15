@@ -177,7 +177,7 @@ function update_force!(shape, params_thermo)
         @. facet.force = facet.normal
         for visiblefacet in facet.visiblefacets
             @unpack f, d̂ = visiblefacet
-            @. facet.force -= 1.5 * f * d̂
+            @. facet.force -= 3/2 * f * d̂
         end
         @. facet.force *= - 2*E*facet.area / (3*c₀)
 
