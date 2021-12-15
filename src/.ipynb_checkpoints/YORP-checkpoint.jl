@@ -24,6 +24,9 @@ function run_YORP(shape, orbit, spin, params_thermo)
         τ̄ .+= body_to_orbit(SVector{3}(shape.torque), spin.γ, spin.ε, spin_phase)
         
         update_temperature!(shape, params_thermo)
+
+        # @unpack Tz, flux, force = shape.facets[1]
+        # println(Tz[begin], ", ", flux.sun, ", ", flux.scat, ", ", flux.rad, ", ", force)
     end
     τ̄ /= Nt
 end
@@ -189,7 +192,6 @@ function update_force!(shape, params_thermo)
         shape.force  .+= (r̂ ⋅ df) * r̂  # Photon recoil force
         shape.torque .+= r × df        # Photon recoil torque
     end
-    println(shape.torque)
 end
 
 
