@@ -167,7 +167,7 @@ end
 
 
 """
-    updateSurfaceTemperature!(T, F, params_thermo)
+    update_surface_temperature!(T, F, params_thermo)
 
 Solve Newton's method to get surface temperature 
 """
@@ -193,10 +193,12 @@ end
 
 
 """
+    intensity(λ, T) -> I
+
 Intensity of radiation at a wavelength λ and tempertature T
 according to the Planck function
 """
-function getintensity(λ, T)
+function intensity(λ, T)
     h = 6.62607015e-34  # Planck constant [J⋅s]
     k = 1.380649e-23    # Boltzmann's constant [J/K]
 
