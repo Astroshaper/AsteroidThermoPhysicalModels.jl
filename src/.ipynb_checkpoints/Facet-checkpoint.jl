@@ -62,8 +62,9 @@ function Base.show(io::IO, facet::Facet)
     if length(facet.visiblefacets) == 0
         println("No visible facets.")
     else
-        println(length(facet.visiblefacets), " facets are visible:")
-        df = DataFrame(id=facet.visiblefacets.id, f=facet.visiblefacets.f, d=facet.visiblefacets.d)
+        @unpack visiblefacets = facet
+        println(length(visiblefacets), " facets are visible:")
+        df = DataFrame(id=visiblefacets.id, f=visiblefacets.f, d=visiblefacets.d)
         println(df)
     end
 end

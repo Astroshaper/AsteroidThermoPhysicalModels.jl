@@ -45,8 +45,8 @@ end
 
 
 function ParamsThermo(; A_B, A_TH, k, ρ, Cₚ, ϵ, P, Δt, t_bgn, t_end, Δz, z_max)
-    l = getThermalSkinDepth(P, k, ρ, Cₚ)
-    Γ = getThermalInertia(k, ρ, Cₚ)
+    l = thermal_skin_depth(P, k, ρ, Cₚ)
+    Γ = thermal_inertia(k, ρ, Cₚ)
     
     Δt /= P
     t_bgn /= P
@@ -91,7 +91,7 @@ end
 
 
 """
-    getThermalSkinDepth(P, k, ρ, Cₚ) -> l_2π
+    thermal_skin_depth(P, k, ρ, Cₚ) -> l_2π
 
 # Arguments
 - `P`  :
@@ -102,12 +102,12 @@ end
 # Return
 `l_2π` : Thermal skin depth
 """
-getThermalSkinDepth(P, k, ρ, Cₚ) = √(4π * P * k / (ρ * Cₚ))
-getThermalSkinDepth(params) = getThermalSkinDepth(params.P, params.k, params.ρ, params.Cₚ)
+thermal_skin_depth(P, k, ρ, Cₚ) = √(4π * P * k / (ρ * Cₚ))
+thermal_skin_depth(params) = thermal_skin_depth(params.P, params.k, params.ρ, params.Cₚ)
 
 
 """
-    getThermalInertia(k, ρ, Cₚ) -> Γ
+    thermal_inertia(k, ρ, Cₚ) -> Γ
 
 # Arguments
 - `k`  :
@@ -117,8 +117,8 @@ getThermalSkinDepth(params) = getThermalSkinDepth(params.P, params.k, params.ρ,
 # Return
 `Γ` : Thermal inertia
 """
-getThermalInertia(k, ρ, Cₚ) = √(k * ρ * Cₚ)
-getThermalInertia(params) = getThermalInertia(params.k, params.ρ, params.Cₚ)
+thermal_inertia(k, ρ, Cₚ) = √(k * ρ * Cₚ)
+thermal_inertia(params) = thermal_inertia(params.k, params.ρ, params.Cₚ)
 
 
 """
