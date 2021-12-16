@@ -173,12 +173,15 @@ function showshape(shape)
     nodes = VectorVector2Matrix(shape.nodes)
     faces = VectorVector2Matrix(shape.faces)
     
-    colors = :gray
-    # colors = isIlluminated([1,0,0], shape)  # 色付けは、nodeベースしかできない？
+    scene = mesh(nodes, faces, color=:gray)
     
-    # scene = mesh(nodes, faces, color = colors, shading = false)
-    set_theme!(backgroundcolor = :black)
-    scene = mesh(nodes, faces, color=colors)
+    # colors = isIlluminated([1,0,0], shape)  # 色付けは、nodeベースしかできない？
+    # scene = mesh(nodes, faces, color=color, shading=false)
+    
+    color = [norm(v) for v in eachrow(nodes)]
+    scene = mesh(nodes, faces, color=color)
+    
+    set_theme!(backgroundcolor=:black)
     display(scene)
 end
 
