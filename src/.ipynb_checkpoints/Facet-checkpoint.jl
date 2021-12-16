@@ -112,15 +112,15 @@ struct VisibleFacet
 end
 
 
-VisibleFacet(i::Facet, j::Facet, id) = VisibleFacet(id, getViewFactor(i, j)...)
+VisibleFacet(i::Facet, j::Facet, id) = VisibleFacet(id, view_factor(i, j)...)
 
 
 """
-    getViewFactor(i::Facet, j::Facet) -> fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
+    view_factor(i::Facet, j::Facet) -> fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
 
 View factor from facet i to j, assuming Lambertian emission
 """
-function getViewFactor(i::Facet, j::Facet)
+function view_factor(i::Facet, j::Facet)
     d⃗ᵢⱼ = i.center - j.center  # vector from facet i to j
     dᵢⱼ = norm(d⃗ᵢⱼ)
     d̂ᵢⱼ = normalize(d⃗ᵢⱼ)
@@ -128,11 +128,11 @@ function getViewFactor(i::Facet, j::Facet)
     cosθᵢ = i.normal ⋅ d̂ᵢⱼ
     cosθⱼ = j.normal ⋅ (-d̂ᵢⱼ)
 
-    fᵢⱼ = getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, j.area)
+    fᵢⱼ = view_factor(cosθᵢ, cosθⱼ, dᵢⱼ, j.area)
     fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
 end
 
-getViewFactor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * dᵢⱼ^2) * aⱼ
+view_factor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * dᵢⱼ^2) * aⱼ
 
 
 """
