@@ -295,10 +295,18 @@ function findVisibleFacets!(facets)
 end
 
 """
+    isIlluminated(obs::AbstractVector, r̂☉, facets)
     isIlluminated(obs::Facet, r̂☉, facets) -> Bool
 
-Return if the observation facet is illuminated by the direct sunlight or not
+Return if the observation point/facet is illuminated by the direct sunlight or not
 """
+function isIlluminated(obs::AbstractVector, r̂☉, facets)
+    for facet in facets
+        raycast(facet, r̂☉, obs) && return false
+    end
+    return true
+end
+
 function isIlluminated(obs::Facet, r̂☉, facets)
     obs.normal ⋅ r̂☉ < 0 && return false
     for id in obs.visiblefacets.id

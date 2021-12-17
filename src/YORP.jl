@@ -6,7 +6,7 @@
 function run_YORP(shape, orbit, spin, params_thermo)
     @unpack P, Δt, t_bgn, t_end, Nt, Nz = params_thermo
     
-    initialize_temperature!(shape, orbit, spin, params_thermo)
+    init_temperature!(shape, orbit, spin, params_thermo)
     
     τ̄ = zeros(3)  # Net YORP torque
 
@@ -37,7 +37,7 @@ end
 function run_Yarkovsky(shape, orbit, spin, params_thermo)
     @unpack P, Δt, t_bgn, t_end, Nt, Nz = params_thermo
     
-    initialize_temperature!(shape, orbit, spin, params_thermo)
+    init_temperature!(shape, orbit, spin, params_thermo)
     shape.smeshes
     
     Fs = typeof(shape.F)[]
@@ -70,7 +70,7 @@ end
 
 
 
-function initialize_temperature!(shape, orbit, spin, params_thermo)
+function init_temperature!(shape, orbit, spin, params_thermo)
     @unpack P, Δt, t_bgn, t_end, Nt, Nz = params_thermo
     
     for facet in shape.facets

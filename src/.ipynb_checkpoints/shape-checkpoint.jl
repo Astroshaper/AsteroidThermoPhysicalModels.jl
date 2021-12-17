@@ -105,6 +105,8 @@ findVisibleFacets!(shape::Shape) = findVisibleFacets!(shape.facets)
 isIlluminated(obs::Facet, r̂☉, shape::Shape) = isIlluminated(obs, r̂☉, shape.facets)
 isIlluminated(r̂☉, shape::Shape) = [isIlluminated(obs, r̂☉, shape) for obs in shape.facets]
 
+surface_temperature(shape) = [facet.Tz[begin] for facet in shape.facets]
+
 
 ################################################################
 #                      Shape properites
@@ -200,7 +202,7 @@ end
 
 
 """
-function showshape(shape; data=nothing)
+function draw(shape::Shape; data=nothing, r̂☉=[1,0,0.])
     nodes = VectorVector2Matrix(shape.nodes)
     faces = VectorVector2Matrix(shape.faces)
 
@@ -210,6 +212,12 @@ function showshape(shape; data=nothing)
         color = :gray
     elseif data == :radius
         color = [norm(v) for v in eachrow(nodes)]
+    elseif data == :temperature
+        surf_temps = surface_temperature(shape)
+        color = face2node(nodes, faces, surf_temps)
+    elseif data == :illumination
+        illumination = Float64.(isIlluminated(r̂☉, shape))
+        color = face2node(nodes, faces, illumination)
     else
         color = face2node(nodes, faces, data)
     end
@@ -217,7 +225,4 @@ function showshape(shape; data=nothing)
     scene = mesh(nodes, faces, color=color)
     display(scene)
 end
-
-
-get_surface_temperature(shape) = [facet.Tz[begin] for facet in shape.facets]
 
