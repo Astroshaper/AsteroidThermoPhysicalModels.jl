@@ -3,6 +3,7 @@ module Astroshaper
 using LinearAlgebra
 using StaticArrays
 using StructArrays
+using Statistics
 
 using DataFrames
 using Parameters

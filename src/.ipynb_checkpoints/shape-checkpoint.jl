@@ -158,7 +158,7 @@ end
 ################################################################
 
 """
-Vector of vector to 2D Matrix
+Vector of vector to 2-D matrix
 """
 function VectorVector2Matrix(v)
     m = Matrix{eltype(v[end])}(undef, length(v), 3)
@@ -168,20 +168,53 @@ function VectorVector2Matrix(v)
     m
 end
 
+"""
+    face2node(nodes, faces, data) -> node_data
 
-function showshape(shape)
+Convert face-based data to node-based data
+
+# Arguments
+- `nodes` : 2-D matrix of nodes
+- `faces` : 2-D matrix of faces
+- `data`  : Face-based data
+
+# Return
+- `node_data` : Node-based data
+"""
+function face2node(nodes, faces, data)
+    node_data = Vector{eltype(data)}(undef, size(nodes, 1))
+    
+    for node_index in eachindex(node_data)
+        face_indices = findall(faces.==node_index)
+        if length(face_indices) == 0
+            node_data[node_index] = NaN
+            continue
+        end
+        node_data[node_index] = mean(data[face_index[1]] for face_index in face_indices)
+    end
+    node_data
+end
+
+"""
+    showshape(shape; data=nothing)
+
+
+"""
+function showshape(shape; data=nothing)
     nodes = VectorVector2Matrix(shape.nodes)
     faces = VectorVector2Matrix(shape.faces)
-    
-    scene = mesh(nodes, faces, color=:gray)
-    
-    # colors = isIlluminated([1,0,0], shape)  # 色付けは、nodeベースしかできない？
-    # scene = mesh(nodes, faces, color=color, shading=false)
-    
-    color = [norm(v) for v in eachrow(nodes)]
-    scene = mesh(nodes, faces, color=color)
-    
+
     set_theme!(backgroundcolor=:black)
+    
+    if data == nothing
+        color = :gray
+    elseif data == :radius
+        color = [norm(v) for v in eachrow(nodes)]
+    else
+        color = face2node(nodes, faces, data)
+    end
+
+    scene = mesh(nodes, faces, color=color)
     display(scene)
 end
 
