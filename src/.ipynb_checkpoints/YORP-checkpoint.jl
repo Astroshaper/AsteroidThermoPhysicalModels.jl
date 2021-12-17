@@ -24,6 +24,8 @@ function run_YORP(shape, orbit, spin, params_thermo)
         τ̄ .+= body_to_orbit(SVector{3}(shape.τ), spin.γ, spin.ε, spin_phase)
         
         update_temperature!(shape, params_thermo)
+        
+        println(shape.smeshes[1].Tz[begin])
     end
     τ̄ /= Nt
 end
