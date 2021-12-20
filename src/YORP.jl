@@ -36,10 +36,12 @@ function run_Yarkovsky(shape, orbit, spin, params_thermo)
     
     init_temperature!(shape, orbit, spin, params_thermo)
     
-    Fs = typeof(shape.force)[]
-    # τ̄ = zeros(3)  # Net YORP torque
+    ts = (t_bgn:Δt:t_end)*P
+    # Fs = typeof(shape.force)[]
+    # Fs = Vector{typeof(shape.force)}(undef, length(ts))
+    Fs = [zeros(3) for _ in 1:length(ts)]
 
-    for t in (t_bgn:Δt:t_end)*P
+    for (i, t) in enumerate(ts)
         spin_phase = spin.ω * t
         F☉, r̂☉ = getSolarCondition(orbit, spin, t)
         
@@ -50,12 +52,9 @@ function run_Yarkovsky(shape, orbit, spin, params_thermo)
         update_force!(shape, params_thermo)
         # update_force_Rubincam!(shape, params_thermo)
         
-        F = SVector{3}(shape.force)
-        # τ = SVector{3}(shape.τ)
-        
-        F = body_to_orbit(F, spin.γ, spin.ε, spin_phase)
-        # τ̄ .+= body_to_orbit(τ, spin.γ, spin.ε, spin_phase)
-        push!(Fs, F)
+        F = body_to_orbit(SVector{3}(shape.force), spin.γ, spin.ε, spin_phase)
+        Fs[i] .= F
+        # push!(Fs, F)
         
         update_temperature!(shape, params_thermo)
     end
