@@ -166,8 +166,6 @@ Update photon recoil force on every facet (df)
 function update_force!(shape, params_thermo)
     @unpack A_B, ϵ = params_thermo
     
-    shape.F .= 0
-    shape.τ .= 0
     for smesh in shape.smeshes
         E = A_B * smesh.flux.scat + ϵ * σ_SB * smesh.Tz[begin]^4
 
@@ -176,7 +174,11 @@ function update_force!(shape, params_thermo)
             @. smesh.df -= 1.5 * vf.f * vf.d̂
         end
         @. smesh.df *= - 2*E*smesh.area / (3*c₀)
+    end
 
+    shape.F .= 0
+    shape.τ .= 0
+    for smesh in shape.smeshes
         r  = SVector{3}(smesh.center)
         r̂  = normalize(r)
         df = SVector{3}(smesh.df)
