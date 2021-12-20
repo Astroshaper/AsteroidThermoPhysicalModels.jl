@@ -122,7 +122,7 @@ VisibleFacet(i::Facet, j::Facet, id) = VisibleFacet(id, view_factor(i, j)...)
 View factor from facet i to j, assuming Lambertian emission
 """
 function view_factor(i::Facet, j::Facet)
-    d⃗ᵢⱼ = i.center - j.center  # vector from facet i to j
+    d⃗ᵢⱼ = j.center - i.center  # vector from facet i to j
     dᵢⱼ = norm(d⃗ᵢⱼ)
     d̂ᵢⱼ = normalize(d⃗ᵢⱼ)
 
