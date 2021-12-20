@@ -14,11 +14,11 @@ function run_YORP(shape, orbit, spin, params_thermo)
         spin_phase = spin.ω * t
         F☉, r̂☉ = getSolarCondition(orbit, spin, t)
         
-        update_flux_sun!(shape, F☉, r̂☉)  # あってる
-        update_flux_scat_single!(shape, params_thermo)  # ほんのちょっと違う。
-        update_flux_rad_single!(shape, params_thermo)  # ほんのちょっと違う。
+        update_flux_sun!(shape, F☉, r̂☉)
+        update_flux_scat_single!(shape, params_thermo)
+        update_flux_rad_single!(shape, params_thermo)
         
-        update_force!(shape, params_thermo)  # ここからけっこう違う！
+        update_force!(shape, params_thermo)
         # update_force_Rubincam!(shape, params_thermo)
         
         τ̄ .+= body_to_orbit(SVector{3}(shape.torque), spin.γ, spin.ε, spin_phase)
@@ -163,7 +163,7 @@ end
 
 Update photon recoil force on every facet (df)
 """
-function update_force!(shape, params_thermo)  # ここが何か変わってしまったはず！
+function update_force!(shape, params_thermo)
     @unpack A_B, ϵ = params_thermo
     
     for facet in shape.facets
