@@ -4,7 +4,6 @@
 #                      1D heat conduction
 # ****************************************************************
 
-
 """
 - `A_B`   : Bond albedo
 - `A_TH`  : Albedo at thermal radiation wavelength
@@ -46,8 +45,8 @@ end
 
 
 function ParamsThermo(; A_B, A_TH, k, ρ, Cₚ, ϵ, P, Δt, t_bgn, t_end, Δz, z_max)
-    l = getThermalSkinDepth(P, k, ρ, Cₚ)
-    Γ = getThermalInertia(k, ρ, Cₚ)
+    l = thermal_skin_depth(P, k, ρ, Cₚ)
+    Γ = thermal_inertia(k, ρ, Cₚ)
     
     Δt /= P
     t_bgn /= P
@@ -92,7 +91,7 @@ end
 
 
 """
-    getThermalSkinDepth(P, k, ρ, Cₚ) -> l_2π
+    thermal_skin_depth(P, k, ρ, Cₚ) -> l_2π
 
 # Arguments
 - `P`  :
@@ -103,12 +102,12 @@ end
 # Return
 `l_2π` : Thermal skin depth
 """
-getThermalSkinDepth(P, k, ρ, Cₚ) = √(4π * P * k / (ρ * Cₚ))
-getThermalSkinDepth(params) = getThermalSkinDepth(params.P, params.k, params.ρ, params.Cₚ)
+thermal_skin_depth(P, k, ρ, Cₚ) = √(4π * P * k / (ρ * Cₚ))
+thermal_skin_depth(params) = thermal_skin_depth(params.P, params.k, params.ρ, params.Cₚ)
 
 
 """
-    getThermalInertia(k, ρ, Cₚ) -> Γ
+    thermal_inertia(k, ρ, Cₚ) -> Γ
 
 # Arguments
 - `k`  :
@@ -118,8 +117,8 @@ getThermalSkinDepth(params) = getThermalSkinDepth(params.P, params.k, params.ρ,
 # Return
 `Γ` : Thermal inertia
 """
-getThermalInertia(k, ρ, Cₚ) = √(k * ρ * Cₚ)
-getThermalInertia(params) = getThermalInertia(params.k, params.ρ, params.Cₚ)
+thermal_inertia(k, ρ, Cₚ) = √(k * ρ * Cₚ)
+thermal_inertia(params) = thermal_inertia(params.k, params.ρ, params.Cₚ)
 
 
 """
@@ -155,17 +154,20 @@ end
 function update_temperature!(shape, params_thermo)
     @unpack A_B, A_TH = params_thermo
                     
-    for smesh in shape.smeshes
-        @unpack sun, scat, rad = smesh.flux
-        F_total = (1 - A_B)*(sun + scat) + (1 - A_TH)*rad
+    for facet in shape.facets
+        F_sun  = facet.flux.sun
+        F_scat = facet.flux.scat
+        F_rad  = facet.flux.rad
+        
+        F_total = (1 - A_B)*(F_sun + F_scat) + (1 - A_TH)*F_rad
 
-        update_temperature!(smesh.Tz, shape.Tz⁺, F_total, params_thermo)
+        update_temperature!(facet.Tz, shape.Tz⁺, F_total, params_thermo)
     end
 end
 
 
 """
-    updateSurfaceTemperature!(T, F, params_thermo)
+    update_surface_temperature!(T, F, params_thermo)
 
 Solve Newton's method to get surface temperature 
 """
@@ -191,10 +193,12 @@ end
 
 
 """
+    intensity(λ, T) -> I
+
 Intensity of radiation at a wavelength λ and tempertature T
 according to the Planck function
 """
-function getintensity(λ, T)
+function intensity(λ, T)
     h = 6.62607015e-34  # Planck constant [J⋅s]
     k = 1.380649e-23    # Boltzmann's constant [J/K]
 
