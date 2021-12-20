@@ -60,7 +60,7 @@ function Base.show(io::IO, shape::Shape)
 end
 
 
-function setShapeModel(shapepath; scale=1, find_visible_facets=false, save_shape=false)
+function Shape(shapepath; scale=1, find_visible_facets=false, save_shape=false)
     
     ext = splitext(shapepath)[2]
     
