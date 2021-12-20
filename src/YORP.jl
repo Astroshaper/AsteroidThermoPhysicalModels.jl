@@ -35,9 +35,8 @@ function run_Yarkovsky(shape, orbit, spin, params_thermo)
     @unpack P, Δt, t_bgn, t_end, Nt, Nz = params_thermo
     
     init_temperature!(shape, orbit, spin, params_thermo)
-    shape.smeshes
     
-    Fs = typeof(shape.F)[]
+    Fs = typeof(shape.force)[]
     # τ̄ = zeros(3)  # Net YORP torque
 
     for t in (t_bgn:Δt:t_end)*P
@@ -51,7 +50,7 @@ function run_Yarkovsky(shape, orbit, spin, params_thermo)
         update_force!(shape, params_thermo)
         # update_force_Rubincam!(shape, params_thermo)
         
-        F = SVector{3}(shape.F)
+        F = SVector{3}(shape.force)
         # τ = SVector{3}(shape.τ)
         
         F = body_to_orbit(F, spin.γ, spin.ε, spin_phase)
@@ -64,9 +63,11 @@ function run_Yarkovsky(shape, orbit, spin, params_thermo)
     # τ̄ /= Nt
 end
 
+"""
+    init_temperature!(shape, orbit, spin, params_thermo)
 
-
-
+Initialize temperature distribution of every facet
+"""
 function init_temperature!(shape, orbit, spin, params_thermo)
     @unpack P, Δt, t_bgn, t_end, Nt, Nz = params_thermo
     
@@ -80,7 +81,6 @@ end
 # ****************************************************************
 #        Energy flux of sunlight, scattering, and radiation
 # ****************************************************************
-
 
 """
     update_flux_sun!(shape, F☉, r̂☉)
@@ -96,7 +96,6 @@ function update_flux_sun!(shape, F☉, r̂☉)
         end
     end
 end
-
 
 """
     update_flux_scat_single!(shape, params_thermo)
@@ -115,7 +114,6 @@ function update_flux_scat_single!(shape, params_thermo)
     end
 end
 
-
 """
     update_flux_scat_mult!(shape, params_thermo)
 
@@ -132,7 +130,6 @@ function update_flux_scat_mult!(shape, params_thermo)
     #     m.flux.scat *= A_B
     # end
 end
-
 
 """
     update_flux_rad_single!(shape, params_thermo)
@@ -188,7 +185,6 @@ function update_force!(shape, params_thermo)
     end
 end
 
-
 """
     update_force_Rubincam!(shape, params_thermo)
 
@@ -201,7 +197,6 @@ function update_force_Rubincam!(shape, params_thermo)
         shape.torque .+= facet.center × SVector{3}(facet.force)
     end
 end
-
 
 
 # ****************************************************************
