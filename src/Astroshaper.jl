@@ -3,6 +3,7 @@ module Astroshaper
 using LinearAlgebra
 using StaticArrays
 using StructArrays
+using Statistics
 
 using DataFrames
 using Parameters
@@ -43,11 +44,10 @@ export solveKeplerEquation1, solveKeplerEquation2, u2ν, heliocentric_distance
 include("spin.jl")
 export Spin, setSpinParams
 
-include("smesh.jl")
-export SMesh
+include("facet.jl")
 
 include("shape.jl")
-export Shape, setShapeModel, findVisibleFaces!, showshape, equivalent_radius, get_surface_temperature
+export Shape, draw
 
 include("YORP.jl")
 export getNetTorque, getNetTorque_shadowing, torque2rate, getTimeScale, run_YORP, run_Yarkovsky
