@@ -1,4 +1,4 @@
-# Astroshaper.jl
+# Astroshaper
 
 [![Build Status](https://travis-ci.com/MasanoriKanamaru/Astroshaper.svg?branch=main)](https://travis-ci.com/MasanoriKanamaru/Astroshaper)
 
