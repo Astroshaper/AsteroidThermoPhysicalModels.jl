@@ -28,7 +28,6 @@ function run_YORP(shape, orbit, spin, params_thermo)
     τ̄ /= Nt
 end
 
-
 """
 """
 function run_Yarkovsky(shape, orbit, spin, params_thermo)
