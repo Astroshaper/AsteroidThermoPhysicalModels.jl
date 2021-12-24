@@ -171,6 +171,21 @@ function update_force!(shape, params_thermo)
         @. facet.force *= - 2*E*facet.area / (3*c₀)
     end
 
+    # shape.force  .= 0
+    # shape.torque .= 0
+    # for facet in shape.facets
+    #     r  = SVector{3}(facet.center)
+    #     r̂  = normalize(r)
+    #     df = SVector{3}(facet.force)
+        
+    #     shape.force  .+= (r̂ ⋅ df) * r̂  # Photon recoil force
+    #     shape.torque .+= r × df        # Photon recoil torque
+    # end
+
+    sum_force_torque!(shape)
+end
+
+function sum_force_torque!(shape)
     shape.force  .= 0
     shape.torque .= 0
     for facet in shape.facets

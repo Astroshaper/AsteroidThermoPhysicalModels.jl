@@ -5,6 +5,8 @@ using StaticArrays
 using StructArrays
 using Statistics
 
+using Distributed
+
 using DataFrames
 using Parameters
 using GLMakie  # 3D visulaization
