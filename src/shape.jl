@@ -121,7 +121,7 @@ Calculate volume of a polyhedral
 getvolume(facets) = sum(((facet.A × facet.B) ⋅ facet.C) / 6 for facet in facets)
 
 """
-    getCOF(facets) -> COF
+    center_of_figure(facets) -> COF
 
 Calculate center-of-figure position of a polyhedral
 """
@@ -139,7 +139,7 @@ function center_of_figure(facets)
 end
 
 """
-    getMOI(facets) -> MOI
+    moment_of_inertia(facets) -> MOI
 
 Calculate moment of inertia tensor of a polyhedron
 """
