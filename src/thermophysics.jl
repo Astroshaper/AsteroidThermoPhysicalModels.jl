@@ -9,7 +9,7 @@
 - `A_TH`  : Albedo at thermal radiation wavelength
 - `k`     : Thermal conductivity
 - `ρ`     : Density [kg/m³]
-- `Cₚ`    : Heat capacity [J/kg/K]
+- `Cp`    : Heat capacity [J/kg/K]
 - `ϵ`     : Emissivity
 - `P`     : Rotation period [s]
 - `l`     : Thermal skin depth
@@ -23,30 +23,30 @@
 - `Nz`    : Number of depth step
 - `λ`     : Non-dimensional coefficient for heat diffusion equation
 """
-struct ParamsThermo{T}
-    A_B::T
-    A_TH::T
-    k::T
-    ρ::T
-    Cₚ::T
-    ϵ::T
-    P::T
-    l::T
-    Γ::T
-    Δt::T
-    t_bgn::T
-    t_end::T
-    Nt::Int64
-    Δz::T
-    z_max::T
-    Nz::Int64
-    λ::T
+struct ParamsThermo{T1, T2}
+    A_B  ::T1
+    A_TH ::T1
+    k    ::T1
+    ρ    ::T1
+    Cp   ::T1
+    ϵ    ::T1
+    P    ::T1
+    l    ::T1
+    Γ    ::T1
+    Δt   ::T1
+    t_bgn::T1
+    t_end::T1
+    Nt   ::T2
+    Δz   ::T1
+    z_max::T1
+    Nz   ::T2
+    λ    ::T1
 end
 
 
-function ParamsThermo(; A_B, A_TH, k, ρ, Cₚ, ϵ, P, Δt, t_bgn, t_end, Δz, z_max)
-    l = thermal_skin_depth(P, k, ρ, Cₚ)
-    Γ = thermal_inertia(k, ρ, Cₚ)
+function ParamsThermo(; A_B, A_TH, k, ρ, Cp, ϵ, P, Δt, t_bgn, t_end, Δz, z_max)
+    l = thermal_skin_depth(P, k, ρ, Cp)
+    Γ = thermal_inertia(k, ρ, Cp)
     
     Δt /= P
     t_bgn /= P
@@ -60,12 +60,12 @@ function ParamsThermo(; A_B, A_TH, k, ρ, Cₚ, ϵ, P, Δt, t_bgn, t_end, Δz, z
     λ = 1/4π * (Δt/Δz^2)
     λ > 0.5 && println("λ should be smaller than 0.5 for convergence.")
     
-    ParamsThermo(A_B, A_TH, k, ρ, Cₚ, ϵ, P, l, Γ, Δt, t_bgn, t_end, Nt, Δz, z_max, Nz, λ)
+    ParamsThermo(A_B, A_TH, k, ρ, Cp, ϵ, P, l, Γ, Δt, t_bgn, t_end, Nt, Δz, z_max, Nz, λ)
 end
 
 
 function Base.show(io::IO, params_thermo::ParamsThermo)
-    @unpack A_B, A_TH, k, ρ, Cₚ, ϵ, P, l, Γ, Δt, t_bgn, t_end, Nt, Δz, z_max, Nz, λ = params_thermo
+    @unpack A_B, A_TH, k, ρ, Cp, ϵ, P, l, Γ, Δt, t_bgn, t_end, Nt, Δz, z_max, Nz, λ = params_thermo
     
     println(io, "Thermophysical parameters")
     println("-------------------------")
@@ -74,7 +74,7 @@ function Base.show(io::IO, params_thermo::ParamsThermo)
     println("A_TH  : ", A_TH)
     println("k     : ", k)
     println("ρ     : ", ρ)
-    println("Cₚ    : ", Cₚ)
+    println("Cp    : ", Cp)
     println("ϵ     : ", ϵ)
     println("P     : ", P)
     println("l     : ", l)
@@ -91,7 +91,7 @@ end
 
 
 """
-    thermal_skin_depth(P, k, ρ, Cₚ) -> l_2π
+    thermal_skin_depth(P, k, ρ, Cp) -> l_2π
 
 # Arguments
 - `P`  :
@@ -102,23 +102,23 @@ end
 # Return
 `l_2π` : Thermal skin depth
 """
-thermal_skin_depth(P, k, ρ, Cₚ) = √(4π * P * k / (ρ * Cₚ))
-thermal_skin_depth(params) = thermal_skin_depth(params.P, params.k, params.ρ, params.Cₚ)
+thermal_skin_depth(P, k, ρ, Cp) = √(4π * P * k / (ρ * Cp))
+thermal_skin_depth(params) = thermal_skin_depth(params.P, params.k, params.ρ, params.Cp)
 
 
 """
-    thermal_inertia(k, ρ, Cₚ) -> Γ
+    thermal_inertia(k, ρ, Cp) -> Γ
 
 # Arguments
 - `k`  :
 - `ρ`  :
-- `Cₚ` :
+- `Cp` :
 
 # Return
 `Γ` : Thermal inertia
 """
-thermal_inertia(k, ρ, Cₚ) = √(k * ρ * Cₚ)
-thermal_inertia(params) = thermal_inertia(params.k, params.ρ, params.Cₚ)
+thermal_inertia(k, ρ, Cp) = √(k * ρ * Cp)
+thermal_inertia(params) = thermal_inertia(params.k, params.ρ, params.Cp)
 
 
 """

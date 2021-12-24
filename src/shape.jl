@@ -75,8 +75,8 @@ function Shape(shapepath; scale=1, find_visible_facets=false, save_shape=false)
         
         AREA   = sum(facets.area)
         VOLUME = getvolume(facets)
-        COF    = getCOF(facets)
-        MOI    = getMOI(facets)
+        COF    = center_of_figure(facets)
+        MOI    = moment_of_inertia(facets)
         
         force  = zeros(3)
         torque = zeros(3)
@@ -125,7 +125,7 @@ getvolume(facets) = sum(((facet.A × facet.B) ⋅ facet.C) / 6 for facet in face
 
 Calculate center-of-figure position of a polyhedral
 """
-function getCOF(facets)
+function center_of_figure(facets)
     VOLUME = getvolume(facets)
     COF = zeros(3)
 
@@ -143,7 +143,7 @@ end
 
 Calculate moment of inertia tensor of a polyhedron
 """
-function getMOI(facets)
+function moment_of_inertia(facets)
     MOI = zeros(3, 3)
 
     for facet in facets
