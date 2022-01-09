@@ -1,4 +1,5 @@
-![test](https://github.com/MasanoriKanamaru/Astroshaper/files/7834705/logo_astroshaper.pdf)
+![test](https://github.com/MasanoriKanamaru/Astroshaper/logo_astroshaper.pdf)
+
 # Astroshaper
 
 [![Build Status](https://travis-ci.com/MasanoriKanamaru/Astroshaper.svg?branch=main)](https://travis-ci.com/MasanoriKanamaru/Astroshaper)
