@@ -33,3 +33,13 @@ The code currently includes the thermophysical effects as follows:
 ## Gravity calculation for asteoids
 You can calculate the precise gravity field of an irregularly shaped body, based on the constant-density polyhedron method (Werner & Scheeres, 1997).
 
+## Start to play
+Let's visualize a shape model of asteroid Ryugu.
+
+    shapepath = "./ryugu_test.obj"
+    shape = Shape(shapepath; scale=1000, find_visible_facets=true)
+
+    draw(shape)
+    draw(shape, data=:radius)                     # Radius of each surface facet
+    draw(shape; data=:illumination, r̂☉=[1,0,0.])  # Illumination when the Sun is in the direction of r̂☉
+

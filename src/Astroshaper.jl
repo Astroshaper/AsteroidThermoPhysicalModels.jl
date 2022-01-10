@@ -58,6 +58,8 @@ export getNetTorque, getNetTorque_shadowing, torque2rate, getTimeScale, run_YORP
 include("thermophysics.jl")
 export ParamsThermo
 
+include("polyhedron.jl")
+
 ################################################################
 
 include("nbody.jl")
