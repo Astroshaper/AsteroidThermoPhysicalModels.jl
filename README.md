@@ -1,5 +1,5 @@
-[Astroshaper_logo.pdf](https://github.com/MasanoriKanamaru/Astroshaper/files/7840320/Astroshaper_logo.pdf)
-![test](https://github.com/MasanoriKanamaru/Astroshaper/files/7834710/logo_astroshaper.pdf)
+![test](https://github.com/MasanoriKanamaru/Astroshaper/files/7840328/Astroshaper_logo.pdf)
+
 
 # Astroshaper
 
