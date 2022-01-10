@@ -35,11 +35,11 @@ You can calculate the precise gravity field of an irregularly shaped body, based
 
 ## Start to play
 Let's visualize a shape model of asteroid Ryugu.
-You can find a Ryugu model for test in `test` > `ryugu_test.obj`.
+Please downliad a Ryugu model from Astroshaper/test/ryugu_test.obj.
 
     using Astroshaper
 
-    shapepath = download("https://github.com/MasanoriKanamaru/Astroshaper/tree/main/test/ryugu_test.obj")
+    shapepath = "ryugu_test.obj"                  # Path to the shape model
     shape = Shape(shapepath; scale=1000, find_visible_facets=true)
 
     draw(shape)
