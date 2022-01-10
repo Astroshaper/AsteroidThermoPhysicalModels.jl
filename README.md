@@ -36,7 +36,7 @@ You can calculate the precise gravity field of an irregularly shaped body, based
 
 ## Start to play
 Let's visualize a shape model of asteroid Ryugu.
-Please downliad a Ryugu model from Astroshaper/test/ryugu_test.obj.
+Please downlad a Ryugu model from Astroshaper/test/ryugu_test.obj.
 
     using Astroshaper
 
