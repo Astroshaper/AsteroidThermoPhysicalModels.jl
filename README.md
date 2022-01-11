@@ -41,7 +41,7 @@ Please downlad a Ryugu model from Astroshaper/test/ryugu_test.obj.
 
     using Astroshaper
 
-    shapepath = "ryugu_test.obj"                  # Path to the shape model
+    shapepath = "ryugu_test.obj"  # Path to the shape model
     shape = Shape(shapepath; scale=1000, find_visible_facets=true)
 
     draw(shape)
