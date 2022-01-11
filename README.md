@@ -1,3 +1,4 @@
+
 ![test](https://github.com/MasanoriKanamaru/Astroshaper/files/7840328/Astroshaper_logo.pdf)
 
 
@@ -47,3 +48,4 @@ Please downlad a Ryugu model from Astroshaper/test/ryugu_test.obj.
     draw(shape, data=:radius)                     # Radius of each surface facet
     draw(shape; data=:illumination, r̂☉=[1,0,0.])  # Illumination when the Sun is in the direction of r̂☉
 
+<img width="853" alt="start_to_play" src="https://user-images.githubusercontent.com/21192162/148867718-3b3bc681-c210-4631-9c64-263be16161a7.png">
