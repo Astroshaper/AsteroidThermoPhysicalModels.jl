@@ -1,7 +1,6 @@
 
 ![test](https://github.com/MasanoriKanamaru/Astroshaper/files/7840328/Astroshaper_logo.pdf)
 
-
 # Astroshaper
 
 [![Build Status](https://travis-ci.com/MasanoriKanamaru/Astroshaper.svg?branch=main)](https://travis-ci.com/MasanoriKanamaru/Astroshaper)
@@ -25,9 +24,14 @@ As for the orbital integrators, you can choose from Euler, leapfrog,  4th-degree
 
 
 ## Spin dynamics
-Based on the thermophysics of an airless rocky body, you can simulate the distribution of the surface temperature and thermal recoil torque on the body, i.e. YORP effect (Rubincam, 2000; Bottke et al., 2006). The simulation can receive a 3-dimensional shape model of an asteroid (or local elevation model) in the Wavefront OBJ format (*.obj).
 
-The code currently includes the thermophysical effects as follows:
+## Themophysical modeling
+Based on orbit, spin, and 3-D shape, you can calculate the distribution of the surface temperature on an asteroid. The temperature distribution can be used to calculate the non-gravitational perturbations on its orbital and rotational motion (Yarkovsky and YORP effects, respectively).
+
+### Available format for shape model
+- Wavefront OBJ format (\*.obj)
+
+### Thermophysics included
 - 1-dimensional heat diffusion in depth direction
 - Self-shadowing: Detection of facets blocking solar rays
 - Self-heating: Re-absorption of scatterd and radiated photons by surrounding facets. Only sigle scattering is implemented.
