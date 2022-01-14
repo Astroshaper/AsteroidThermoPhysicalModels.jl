@@ -30,7 +30,7 @@ Based on orbit, spin, and 3-D shape, you can calculate the distribution of the s
 
 ### Thermophysics included
 - 1-dimensional heat diffusion in depth direction
-- Self-shadowing: Detection of facets blocking solar rays
+- Self-shadowing: Local shadows casted by topography
 - Self-heating: Re-absorption of scatterd and radiated photons by surrounding facets. Only sigle scattering is implemented.
 
 ## Gravity calculation for asteoids
