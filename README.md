@@ -33,7 +33,11 @@ Based on orbit, spin, and 3-D shape, you can calculate the distribution of the s
 - Self-shadowing: Local shadows casted by topography
 - Self-heating: Re-absorption of scatterd and radiated photons by surrounding facets. Only sigle scattering is implemented.
 
-e.g., Distribution of surface temperature on asteroid Ryugu. The color map ranges from 200 to 400 K.
+### Thermophysics to be implemted
+- Surface roughness (smaller than facets of the shape model)
+
+### Example
+Distribution of surface temperature on asteroid Ryugu. The color map ranges from 200 to 400 K.
 
 ![Thermophysics_Ryugu](https://user-images.githubusercontent.com/21192162/149468024-f403011f-b3d3-47ce-a69c-7daf78a40658.png)
 
@@ -41,7 +45,8 @@ e.g., Distribution of surface temperature on asteroid Ryugu. The color map range
 ## Gravity calculation for asteoids
 You can calculate the precise gravity field of an irregularly shaped body, based on the constant-density polyhedron method (Werner & Scheeres, 1997).
 
-e.g., Distribution of dynamical elevation on asteroid Itokawa. The color map ranges from -25 to 55 m.
+### Example
+Distribution of dynamical elevation on asteroid Itokawa. The color map ranges from -25 to 55 m.
 
 ![Gravity_Itokawa](https://user-images.githubusercontent.com/21192162/149465150-6cead63e-6027-402f-b866-5111dc5321a7.png)
 
