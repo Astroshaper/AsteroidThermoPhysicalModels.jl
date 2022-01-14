@@ -23,7 +23,7 @@ You can simulate orbital evolution of planets and small bodies under gravity int
 As for the orbital integrators, you can choose from Euler, leapfrog,  4th-degree Hermite methods (Note that my implementation of the Hermite method is being verified). Thermophysical perturbation on orbital motion of an asteroid, that is, Yarkovsky effect will be implemented.
 
 ### Example
-Orbital calculation of the solar system: 8 planets and Pluto.
+Orbital calculation of the solar system. The gravity of 8 planets and Pluto are considered.
 
 <img src="https://user-images.githubusercontent.com/21192162/149469835-42fed69f-f93e-4123-80ea-baa6497aebca.gif" width="400">
 
