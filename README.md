@@ -36,6 +36,7 @@ The code currently includes the thermophysical effects as follows:
 You can calculate the precise gravity field of an irregularly shaped body, based on the constant-density polyhedron method (Werner & Scheeres, 1997).
 
 e.g., Distribution of dynamical elevation on asteroid Itokawa.
+
 ![Gravity_Itokawa](https://user-images.githubusercontent.com/21192162/149465150-6cead63e-6027-402f-b866-5111dc5321a7.png)
 
 ## Start to play
