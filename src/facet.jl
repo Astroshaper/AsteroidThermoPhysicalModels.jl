@@ -353,7 +353,7 @@ end
 Solid angle of a triangular facet,
 equal to area of the corresponding spherical triangle
 """
-function getSolidAngle(facet::Facet, obs::AbstractVector)
+function solid_angle(facet::Facet, obs::AbstractVector)
 
     ## Vectors from observer to facet vertices
     A = facet.A - obs
@@ -364,12 +364,12 @@ function getSolidAngle(facet::Facet, obs::AbstractVector)
     BOC = getangle(B, C)
     COA = getangle(C, A)
     
-    Ω = getSphericalExcess(AOB, BOC, COA)
+    Ω = spherical_excess(AOB, BOC, COA)
 end
 
 
 """
-    getSphericalExcess(a, b, c) -> E
+    spherical_excess(a, b, c) -> E
 
 Area of a spherical triangle
 c.f. L'Huilier's Theorem
@@ -377,7 +377,7 @@ c.f. L'Huilier's Theorem
 # Arguments
 - `a`, `b`, `c` : side lengths of a spherical traiangle
 """
-function getSphericalExcess(a, b, c)
+function spherical_excess(a, b, c)
     s = (a + b + c) * 0.5  # semiperimeter
         
     E = tan(s*0.5)

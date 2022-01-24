@@ -91,7 +91,7 @@ perturbnodes(nodes, noise_weight) = perturbnodes!(deepcopy(nodes), noise_weight)
 
 # ****************************************************************
 
-getFaceCenters(nodes, faces) = [getcenter(nodes[face]) for face in faces]
-getFaceNormals(nodes, faces) = [getnormal(nodes[face]) for face in faces]
-getFaceAreas(nodes, faces) = [getarea(nodes[face]) for face in faces]
+# getFaceCenters(nodes, faces) = [getcenter(nodes[face]) for face in faces]
+# getFaceNormals(nodes, faces) = [getnormal(nodes[face]) for face in faces]
+# getFaceAreas(nodes, faces) = [getarea(nodes[face]) for face in faces]
 
