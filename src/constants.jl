@@ -25,17 +25,9 @@ EARTH      = Dict{Symbol, Float64}()
 EARTH[:GM] = 3.986004418e14
 EARTH[:M]  = EARTH[:GM] / G
 
-MOON      = Dict{Symbol, Float64}()
-MOON[:GM] = 4.9048695e12
-MOON[:M]  = MOON[:GM] / G
-
 MARS      = Dict{Symbol, Float64}()
 MARS[:GM] = 4.282837e13
 MARS[:M]  = MARS[:GM] / G
-
-CERES      = Dict{Symbol, Float64}()
-CERES[:GM] = 6.26325e10
-CERES[:M]  = CERES[:GM] / G
 
 JUPITER      = Dict{Symbol, Float64}()
 JUPITER[:GM] = 1.26686534e17
@@ -53,6 +45,15 @@ NEPTUNE      = Dict{Symbol, Float64}()
 NEPTUNE[:GM] = 6.836529e15
 NEPTUNE[:M]  = NEPTUNE[:GM] / G
 
+
+# ****************************************************************
+#                            Dwarf planets
+# ****************************************************************
+
+CERES      = Dict{Symbol, Float64}()
+CERES[:GM] = 6.26325e10
+CERES[:M]  = CERES[:GM] / G
+
 PLUTO      = Dict{Symbol, Float64}()
 PLUTO[:GM] = 8.71e11
 PLUTO[:M]  = PLUTO[:GM] / G
@@ -63,9 +64,24 @@ ERIS[:M]  = ERIS[:GM] / G
 
 
 # ****************************************************************
+#                            Satellites
+# ****************************************************************
+
+MOON      = Dict{Symbol, Float64}()
+MOON[:GM] = 4.9048695e12
+MOON[:M]  = MOON[:GM] / G
+
+
+# ****************************************************************
 #                            Asteroids
 # ****************************************************************
 
 RYUGU      = Dict{Symbol, Float64}()
 RYUGU[:GM] = 30.0
 RYUGU[:M]  = RYUGU[:GM] / G
+
+
+# ****************************************************************
+#                              Comets
+# ****************************************************************
+
