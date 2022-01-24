@@ -8,28 +8,64 @@ const SOLAR_CONST = 1366.0    # Solar constant, Φ☉ [W/m^2]
 const c₀ = 299792458.0        # speed of light [m/s]
 const σ_SB = 5.670374419e-8   # Stefan–Boltzmann constant [W/m^2/K^4]
 
-const GM_Mercury = 2.2032e13
-const GM_Venus   = 3.24859e14
-const GM_Earth   = 3.986004418e14
-const GM_Moon    = 4.9048695e12
-const GM_Mars    = 4.282837e13
-const GM_Ceres   = 6.26325e10
-const GM_Jupiter = 1.26686534e17
-const GM_Saturn  = 3.7931187e16
-const GM_Uranus  = 5.793939e15
-const GM_Neptune = 6.836529e15
-const GM_Pluto   = 8.71e11
-const GM_Eris    = 1.108e12
 
-const M_Mercury = GM_Mercury / G
-const M_Venus   = GM_Venus   / G
-const M_Earth   = GM_Earth   / G
-const M_Moon    = GM_Moon    / G
-const M_Mars    = GM_Mars    / G
-const M_Ceres   = GM_Ceres   / G
-const M_Jupiter = GM_Jupiter / G
-const M_Saturn  = GM_Saturn  / G
-const M_Uranus  = GM_Uranus  / G
-const M_Neptune = GM_Neptune / G
-const M_Pluto   = GM_Pluto   / G
-const M_Eris    = GM_Eris    / G
+# ****************************************************************
+#                              Planets
+# ****************************************************************
+
+MERCURY      = Dict{Symbol, Float64}()
+MERCURY[:GM] = 2.2032e13
+MERCURY[:M]  = MERCURY[:GM] / G
+
+VENUS      = Dict{Symbol, Float64}()
+VENUS[:GM] = 3.24859e14
+VENUS[:M]  = VENUS[:GM] / G
+
+EARTH      = Dict{Symbol, Float64}()
+EARTH[:GM] = 3.986004418e14
+EARTH[:M]  = EARTH[:GM] / G
+
+MOON      = Dict{Symbol, Float64}()
+MOON[:GM] = 4.9048695e12
+MOON[:M]  = MOON[:GM] / G
+
+MARS      = Dict{Symbol, Float64}()
+MARS[:GM] = 4.282837e13
+MARS[:M]  = MARS[:GM] / G
+
+CERES      = Dict{Symbol, Float64}()
+CERES[:GM] = 6.26325e10
+CERES[:M]  = CERES[:GM] / G
+
+JUPITER      = Dict{Symbol, Float64}()
+JUPITER[:GM] = 1.26686534e17
+JUPITER[:M]  = JUPITER[:GM] / G
+
+SATURN      = Dict{Symbol, Float64}()
+SATURN[:GM] = 3.7931187e16
+SATURN[:M]  = SATURN[:GM] / G
+
+URANUS      = Dict{Symbol, Float64}()
+URANUS[:GM] = 5.793939e15
+URANUS[:M]  = URANUS[:GM] / G
+
+NEPTUNE      = Dict{Symbol, Float64}()
+NEPTUNE[:GM] = 6.836529e15
+NEPTUNE[:M]  = NEPTUNE[:GM] / G
+
+PLUTO      = Dict{Symbol, Float64}()
+PLUTO[:GM] = 8.71e11
+PLUTO[:M]  = PLUTO[:GM] / G
+
+ERIS      = Dict{Symbol, Float64}()
+ERIS[:GM] = 1.108e12
+ERIS[:M]  = ERIS[:GM] / G
+
+
+# ****************************************************************
+#                            Asteroids
+# ****************************************************************
+
+RYUGU      = Dict{Symbol, Float64}()
+RYUGU[:GM] = 30.0
+RYUGU[:M]  = RYUGU[:GM] / G

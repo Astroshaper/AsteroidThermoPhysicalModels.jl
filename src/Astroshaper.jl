@@ -18,18 +18,8 @@ using JLD2
 
 include("constants.jl")
 export AU, G, GM☉, M☉, SOLAR_CONST, c₀, σ_SB
-export M_Mercury, GM_Mercury
-export M_Venus,   GM_Venus
-export M_Earth,   GM_Earth
-export M_Moon,    GM_Moon
-export M_Mars,    GM_Mars
-export M_Ceres,   GM_Ceres
-export M_Jupiter, GM_Jupiter
-export M_Saturn,  GM_Saturn
-export M_Uranus,  GM_Uranus
-export M_Neptune, GM_Neptune
-export M_Pluto,   GM_Pluto
-export M_Eris,    GM_Eris
+export MERCURY, VENUS, EARTH, MOON, MARS, CERES, JUPITER, SATURN, URANUS, NEPTUNE, PLUTO, ERIS
+export RYUGU
 
 include("obj.jl")
 export loadobj
