@@ -226,3 +226,26 @@ function draw(shape::Shape; data=nothing, r̂☉=[1,0,0.])
     display(scene)
 end
 
+
+function draw(shape1::Shape, shape2::Shape)
+    faces1 = VectorVector2Matrix(shape1.faces)
+    faces2 = VectorVector2Matrix(shape2.faces)
+
+    nodes1 = VectorVector2Matrix(shape1.nodes)
+
+    r = [2600, 0, 0.]  # 平行移動 + オイラー角変換
+    # ϕ1 =
+    # ϕ2 =
+    # ϕ3 =
+
+    nodes2 = [node + r for node in shape2.nodes]
+    nodes2 = VectorVector2Matrix(nodes2)
+    
+
+    set_theme!(backgroundcolor=:black)
+    
+
+    scene = poly(nodes1, faces1, color=:gray, strokecolor=:black, strokewidth=1)
+    poly!(nodes2, faces2, color=:gray, strokecolor=:black, strokewidth=1)
+    display(scene)
+end

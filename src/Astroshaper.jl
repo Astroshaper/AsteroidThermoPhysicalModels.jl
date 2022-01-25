@@ -18,7 +18,9 @@ using JLD2
 
 include("constants.jl")
 export AU, G, GM☉, M☉, SOLAR_CONST, c₀, σ_SB
-export MERCURY, VENUS, EARTH, MOON, MARS, CERES, JUPITER, SATURN, URANUS, NEPTUNE, PLUTO, ERIS
+export MERCURY, VENUS, EARTH, MARS, JUPITER, SATURN, URANUS, NEPTUNE
+export CERES, PLUTO, ERIS
+export MOON
 export RYUGU
 
 include("obj.jl")
