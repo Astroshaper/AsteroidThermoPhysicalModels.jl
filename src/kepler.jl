@@ -53,7 +53,7 @@ function OrbitalElements(params)
         tₚ = - Φ / n              # periapsis passage time [sec]
     elseif haskey(params, :tₚ)
         tₚ = params[:tₚ]
-        Φ  = - n * tp
+        Φ  = - n * tₚ
     else
         println("Give [:Φ] or [:tp] in Dict.")
     end

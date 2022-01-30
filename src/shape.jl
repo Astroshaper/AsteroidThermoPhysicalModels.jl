@@ -43,7 +43,6 @@ end
 
 
 function Base.show(io::IO, shape::Shape)
-    # println(io, "Shape model")
     println("Shape model")
     println("-----------")
 
