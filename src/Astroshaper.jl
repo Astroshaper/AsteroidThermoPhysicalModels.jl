@@ -5,6 +5,8 @@ using StaticArrays
 using StructArrays
 using Statistics
 
+import SPICE
+
 # using Distributed
 # using SharedArrays
 

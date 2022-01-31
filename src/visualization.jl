@@ -1,6 +1,67 @@
 
 ################################################################
-#                 Data format conversion
+#                         Plot orbits
+################################################################
+
+
+function spkpos_df(targ, ets::AbstractVector, ref, abcorr, obs)
+    df = DataFrame(et=Float64[], x=Float64[], y=Float64[], z=Float64[], lt=Float64[])
+ 
+    for et in ets
+        pos, lt = SPICE.spkpos(targ, et, ref, abcorr, obs)
+        push!(df, (et, pos..., lt))
+    end
+
+    df
+end
+
+
+function plot_orbits(kernels, bodies, orbit)
+
+    for kernel in kernels
+        SPICE.furnsh(kernel)
+    end
+
+    ref    = "ECLIPJ2000"
+    abcorr = "none"
+    obs    = "sun"
+
+    et_start = 0.
+    et_end   = SPICE.jyear() * 2
+    Δet      = SPICE.spd() * 10  # seconds per day
+    ets = collect(et_start:Δet:et_end);
+
+    df = spkpos_df("Earth", ets, ref, abcorr, obs)
+    df[:, [:x, :y, :z]] .= SPICE.convrt.(df[:, [:x, :y, :z]], "km", "au")
+    scene = meshscatter(df.x, df.y, df.z, markersize=0.01, color="blue")
+
+    # for body in bodies
+    #     # GM = SPICE.bodvrd(body, :GM)[1]
+    #     df = spkpos_df(body, ets, "J2000", "none", "sun")
+    #     df[:, [:x, :y, :z]] .= SPICE.convrt.(df[:, [:x, :y, :z]], "km", "au")
+    #     meshscatter!(df.x, df.y, df.z, markersize=0.01)
+    # end
+
+    ts = collect(0:orbit.T/400:orbit.T)
+    df = DataFrame(et=Float64[], x=Float64[], y=Float64[], z=Float64[])
+    for t in ts
+        u = solveKeplerEquation2(orbit, t)
+        r = get_r(orbit, u)
+        r = orbit_to_inertia(r, orbit)
+        push!(df, (t, r...))
+    end
+    df[:, [:x, :y, :z]] .= SPICE.convrt.(df[:, [:x, :y, :z]], "m", "au")
+    meshscatter!(df.x, df.y, df.z, markersize=0.01, color="orange")
+    
+    set_theme!(backgroundcolor=:black)
+    display(scene)
+end
+
+
+
+
+################################################################
+#                    Data format conversion
 ################################################################
 
 """
@@ -91,7 +152,6 @@ function draw(shape1::Shape, shape2::Shape)
     
 
     set_theme!(backgroundcolor=:black)
-    println("更新反映される？")
     
 
     scene = poly(nodes1, faces1, color=:gray, strokecolor=:black, strokewidth=1)

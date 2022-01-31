@@ -401,10 +401,6 @@ function getAnnualNetTorque(shape, orbit, spin, times, getTotalTorque)
 end
 
 
-
-
-
-
 # ****************************************************************
 #                            Analysis
 # ****************************************************************
