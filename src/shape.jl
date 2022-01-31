@@ -242,6 +242,7 @@ function draw(shape1::Shape, shape2::Shape)
     
 
     set_theme!(backgroundcolor=:black)
+    println("更新反映される？")
     
 
     scene = poly(nodes1, faces1, color=:gray, strokecolor=:black, strokewidth=1)

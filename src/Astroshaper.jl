@@ -52,6 +52,9 @@ export ParamsThermo
 
 include("polyhedron.jl")
 
+include("binary.jl")
+export run_binary
+
 ################################################################
 
 include("nbody.jl")
