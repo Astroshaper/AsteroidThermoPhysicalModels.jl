@@ -6,14 +6,18 @@ function run_binary(shape1, shape2, orbit1, orbit2, spin1, spin2, params_thermo)
     init_temperature!(shape1, orbit1, spin1, params_thermo)
     init_temperature!(shape2, orbit2, spin2, params_thermo)
 
+    tmp = []
     for t in (t_bgn:Δt:t_end)*P
         ϕ₁ = spin1.ω * t
         ϕ₂ = spin2.ω * t
 
         F☉, r̂☉ = getSolarCondition(orbit1, spin1, t)
-        println(r̂☉)
+
+        push!(tmp, r̂☉)
 
     end
+
+    tmp
 
     # τ̄ = zeros(3)  # Net YORP torque
 

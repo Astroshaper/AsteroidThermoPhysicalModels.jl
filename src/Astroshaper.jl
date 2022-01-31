@@ -44,6 +44,9 @@ include("facet.jl")
 include("shape.jl")
 export Shape, draw
 
+include("visualization.jl")
+export draw
+
 include("YORP.jl")
 export getNetTorque, getNetTorque_shadowing, torque2rate, getTimeScale, run_YORP, run_Yarkovsky
 
