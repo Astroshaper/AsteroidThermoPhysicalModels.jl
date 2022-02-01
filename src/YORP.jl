@@ -407,8 +407,8 @@ end
 
 
 getτω(τ, spin) = τ ⋅ spin.ŝ
-getτε(τ, spin) = τ ⋅ getSpinUnit1(spin)
-getτψ(τ, spin) = τ ⋅ getSpinUnit2(spin)
+getτε(τ, spin) = τ ⋅ spin_perp_unit1(spin)
+getτψ(τ, spin) = τ ⋅ spin_perp_unit2(spin)
 
 
 """

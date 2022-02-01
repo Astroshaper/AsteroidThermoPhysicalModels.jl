@@ -38,7 +38,7 @@ struct SpinParams{T1, T2}
 end
 
 
-function Base.show(io::IO, spin::Spin)
+function Base.show(io::IO, spin::SpinParams)
     println(io, "Spin parameters")
     println(io, "---------------")
 
@@ -54,7 +54,7 @@ function Base.show(io::IO, spin::Spin)
 end
 
 
-function Spin(params, orbit::OrbitalElements)
+function SpinParams(params, orbit::OrbitalElements)
 
     if haskey(params, :α) && haskey(params, :δ)
         α = deg2rad(params[:α])
@@ -75,11 +75,11 @@ function Spin(params, orbit::OrbitalElements)
     P = params[:P] * 3600
     ω = 2π / P
 
-    return Spin(α, δ, λ, β, P, ω, ŝ, ε, γ)
+    return SpinParams(α, δ, λ, β, P, ω, ŝ, ε, γ)
 end
 
 
-function Spin(P::AbstractFloat, ŝ::AbstractVector, orbit)
+function SpinParams(P::AbstractFloat, ŝ::AbstractVector, orbit)
     
     P *= 3600
     ω = 2π / P
@@ -90,7 +90,7 @@ function Spin(P::AbstractFloat, ŝ::AbstractVector, orbit)
     β = asin(ŝ[3])
     α, δ = ec2eq(λ, β)
 
-    return Spin(α, δ, λ, β, P, ω, ŝ, ε, γ) 
+    return SpinParams(α, δ, λ, β, P, ω, ŝ, ε, γ) 
 end
 
 
@@ -115,11 +115,11 @@ end
 
 
 """
-    spin_perp_units(spin::Spin) -> ê1, ê2
+    spin_perp_units(spin::SpinParams) -> ê1, ê2
 
 Get a unit vector ê⟂1 and ê⟂2, perpendicular to spin pole
 """
-function spin_perp_units(spin::Spin)
+function spin_perp_units(spin::SpinParams)
     N̂ = SA_F64[0, 0, 1]
     ê1 = (spin.ŝ * cos(spin.ε) - N̂) / sin(spin.ε)
     ê2 = (spin.ŝ × N̂) / sin(spin.ε)
@@ -129,34 +129,34 @@ end
 
 
 """
-    spin_perp_unit1(spin::Spin) -> ê1
+    spin_perp_unit1(spin::SpinParams) -> ê1
 
 Get a unit vector ê⟂1
 """
-function spin_perp_unit1(spin::Spin)
+function spin_perp_unit1(spin::SpinParams)
     N̂ = SA_F64[0, 0, 1]
     ê1 = (spin.ŝ * cos(spin.ε) - N̂) / sin(spin.ε)
 end
 
 
 """
-    spin_perp_unit2(spin::Spin) -> ê2
+    spin_perp_unit2(spin::SpinParams) -> ê2
 
 Get a unit vector ê⟂2
 """
-function spin_perp_unit2(spin::Spin)
+function spin_perp_unit2(spin::SpinParams)
     N̂ = SA_F64[0, 0, 1]
     ê2 = (spin.ŝ × N̂) / sin(spin.ε)
 end
 
 
 """
-    vernal_equinox_lon(spin::Spin)        -> γ
+    vernal_equinox_lon(spin::SpinParams)        -> γ
     vernal_equinox_lon(ŝ::AbstractVector) -> γ
 
 Get a longitude of the vernal equinox with respect to the perihelion
 """
-function vernal_equinox_lon(spin::Spin)
+function vernal_equinox_lon(spin::SpinParams)
     ê2 = spin_perp_unit2(spin)
     γ = atan(ê2[2], ê2[1]) + π
 end
@@ -169,11 +169,11 @@ end
 
 
 """
-    autumnal_equinox_lon(spin::Spin) -> γ_autum
+    autumnal_equinox_lon(spin::SpinParams) -> γ_autum
 
 Get a longitude of the autumnal equinox with respect to the perihelion
 """
-function autumnal_equinox_lon(spin::Spin)
+function autumnal_equinox_lon(spin::SpinParams)
     ê2 = spin_perp_unit2(spin)
     γ_autum = atan(ê2[2], ê2[1])
     γ_autum < 0 && (γ_autum += 2π)
