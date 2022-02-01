@@ -58,8 +58,6 @@ function plot_orbits(kernels, bodies, orbit)
 end
 
 
-
-
 ################################################################
 #                    Data format conversion
 ################################################################
@@ -157,4 +155,36 @@ function draw(shape1::Shape, shape2::Shape)
     scene = poly(nodes1, faces1, color=:gray, strokecolor=:black, strokewidth=1)
     poly!(nodes2, faces2, color=:gray, strokecolor=:black, strokewidth=1)
     display(scene)
+end
+
+
+function draw(shape1::Shape, shape2::Shape, savepath)
+
+    faces = VectorVector2Matrix(shape1.faces)
+    nodes = VectorVector2Matrix(shape1.nodes)
+
+    # limits = (-2000, 2000, -2000, 2000, -2000, 2000)
+    # aspect = (1, 1, 1)
+    fig, ax, l = poly(nodes, faces,
+        color=:gray, strokecolor=:black, strokewidth=0.1, transparency=false,
+        axis = (; type=Axis3, protrusions=(0,0,0,0), viewmode=:fit, aspect=:data)
+    )
+
+    # fig, ax, l = lines(points,
+    #     color=colors, colormap=:inferno, transparency=true,
+    #     axis = (; type=Axis3, protrusions=(0, 0, 0, 0), viewmode=:fit, limits=(-30, 30, -30, 30, 0, 50))
+    # )
+
+    set_theme!(theme_black())
+    
+    record(fig, savepath, 1:120) do frame
+        # for i in 1:50
+        #     push!(points[], step!(attractor))
+        #     push!(colors[], frame)
+        # end
+        # ax.azimuth[] = 1.7pi + 0.3 * sin(2pi * frame / 120)
+        ax.elevation[] = 0.3 * sin(2π * frame / 120)
+        # notify.((points, colors))
+        l.colorrange = (0, frame)
+    end
 end
