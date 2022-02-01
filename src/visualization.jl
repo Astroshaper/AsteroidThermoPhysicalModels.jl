@@ -129,7 +129,8 @@ function draw(shape::Shape; data=nothing, r̂☉=[1,0,0.])
         color = face2node(nodes, faces, data)
     end
 
-    scene = mesh(nodes, faces, color=color)
+    # scene = mesh(nodes, faces, color=color)
+    scene = poly(nodes, faces, color=color, strokecolor=:black, strokewidth=1)
     display(scene)
 end
 
