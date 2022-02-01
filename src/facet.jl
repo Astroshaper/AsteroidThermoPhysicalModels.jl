@@ -142,9 +142,9 @@ view_factor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * d�
 Energy flux from/to a facet
 
 # Fields
-- `sun ::T`  : Flux of solar radiation,   F_sun
+- `sun ::T` : Flux of solar radiation,   F_sun
 - `scat::T` : Flux of scattered sunlight, F_scat
-- `rad ::T`  : Flux of thermal radiation, F_rad
+- `rad ::T` : Flux of thermal radiation, F_rad
 """
 mutable struct Flux{T}
     sun ::T
