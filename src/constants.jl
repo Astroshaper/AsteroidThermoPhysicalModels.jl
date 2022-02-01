@@ -76,9 +76,42 @@ MOON[:M]  = MOON[:GM] / G
 #                            Asteroids
 # ****************************************************************
 
+"""
+# Asteroid 162173 Ryugu
+
+## Physical parameters
+- `:GM` : GM
+- `:M`  : Mass
+- `:μ`  : Standard gravitational parameter about Sun and Ryugu
+
+## Orbital elements
+- `:a`  : Semi-mojor axis [AU]
+- `:e`  : Eccentricity [-]
+- `:I`  : Inclination [deg]
+- `:Ω`  : Longitude of the ascending node [deg]
+- `:ω`  : Argument of periapsis [deg]
+- `:Φ`  : # Mean anomaly [deg]
+
+## Spin parameters
+- `:α`  : Right ascension (RA) in equatorial coordinate system [deg]
+- `:δ`  : Declination (Dec) in equatorial coordinate system [deg]
+- `:P`  : Rotation period [h]
+"""
 RYUGU      = Dict{Symbol, Float64}()
-RYUGU[:GM] = 30.0
-RYUGU[:M]  = RYUGU[:GM] / G
+RYUGU[:GM] = 30.0              # GM
+RYUGU[:M]  = RYUGU[:GM] / G    # Mass
+RYUGU[:μ]  = GM☉ + RYUGU[:GM]  # Standard gravitational parameter about Sun and Ryugu
+
+RYUGU[:a] = 1.18956373  # Semi-mojor axis [AU]
+RYUGU[:e] = 0.19027921  # Eccentricity
+RYUGU[:I] = 5.8840222   # Inclination [deg]
+RYUGU[:Ω] = 251.589203  # Longitude of the ascending node [deg]
+RYUGU[:ω] = 211.435963  # Argument of periapsis [deg]
+RYUGU[:Φ] = 21.9353799  # Mean anomaly [deg]
+
+RYUGU[:α] = 96.4        # Right ascension (RA)
+RYUGU[:δ] = -66.4       # Declination (Dec)
+RYUGU[:P] = 7.63262     # Rotation period
 
 
 # ****************************************************************
