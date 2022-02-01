@@ -13,34 +13,58 @@ const σ_SB = 5.670374419e-8   # Stefan–Boltzmann constant [W/m^2/K^4]
 #                              Planets
 # ****************************************************************
 
+"""
+# Mercury
+"""
 MERCURY      = Dict{Symbol, Float64}()
 MERCURY[:GM] = 2.2032e13
 MERCURY[:M]  = MERCURY[:GM] / G
 
+"""
+# Venus
+"""
 VENUS      = Dict{Symbol, Float64}()
 VENUS[:GM] = 3.24859e14
 VENUS[:M]  = VENUS[:GM] / G
 
+"""
+# Earth
+"""
 EARTH      = Dict{Symbol, Float64}()
 EARTH[:GM] = 3.986004418e14
 EARTH[:M]  = EARTH[:GM] / G
 
+"""
+# Mars
+"""
 MARS      = Dict{Symbol, Float64}()
 MARS[:GM] = 4.282837e13
 MARS[:M]  = MARS[:GM] / G
 
+"""
+# Jupiter
+"""
 JUPITER      = Dict{Symbol, Float64}()
 JUPITER[:GM] = 1.26686534e17
 JUPITER[:M]  = JUPITER[:GM] / G
 
+"""
+# Saturn
+"""
 SATURN      = Dict{Symbol, Float64}()
 SATURN[:GM] = 3.7931187e16
 SATURN[:M]  = SATURN[:GM] / G
 
+"""
+# Uranus
+"""
 URANUS      = Dict{Symbol, Float64}()
 URANUS[:GM] = 5.793939e15
 URANUS[:M]  = URANUS[:GM] / G
 
+"""
+# Neptune
+"""
 NEPTUNE      = Dict{Symbol, Float64}()
 NEPTUNE[:GM] = 6.836529e15
 NEPTUNE[:M]  = NEPTUNE[:GM] / G
@@ -50,14 +74,23 @@ NEPTUNE[:M]  = NEPTUNE[:GM] / G
 #                            Dwarf planets
 # ****************************************************************
 
+"""
+# Ceres
+"""
 CERES      = Dict{Symbol, Float64}()
 CERES[:GM] = 6.26325e10
 CERES[:M]  = CERES[:GM] / G
 
+"""
+# Pluto
+"""
 PLUTO      = Dict{Symbol, Float64}()
 PLUTO[:GM] = 8.71e11
 PLUTO[:M]  = PLUTO[:GM] / G
 
+"""
+# Eris
+"""
 ERIS      = Dict{Symbol, Float64}()
 ERIS[:GM] = 1.108e12
 ERIS[:M]  = ERIS[:GM] / G
@@ -67,6 +100,9 @@ ERIS[:M]  = ERIS[:GM] / G
 #                            Satellites
 # ****************************************************************
 
+"""
+# Moon
+"""
 MOON      = Dict{Symbol, Float64}()
 MOON[:GM] = 4.9048695e12
 MOON[:M]  = MOON[:GM] / G

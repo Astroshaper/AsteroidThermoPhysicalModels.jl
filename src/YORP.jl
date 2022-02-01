@@ -461,16 +461,16 @@ end
 Caluculate the YORP time scale given a constant acceleration/deceleration
 
 Parameters
-- `T_start` [hour]
-- `T_end`   [hour]
+- `P_start` [hour]
+- `P_end`   [hour]
 - `ω̇`       [deg/day/day]
 """
-function getTimeScale(T_start, T_end, ω̇)
-    T_start *= 3600  # [sec]
-    T_end   *= 3600  # [sec]
+function YORP_time_scale(P_start, P_end, ω̇)
+    P_start *= 3600  # [sec]
+    P_end   *= 3600  # [sec]
 
-    ω_start = 2π / T_start  # initial spin rate [rad/sec]
-    ω_end   = 2π / T_end    # final spin rate [rad/sec]
+    ω_start = 2π / P_start  # Initial spin rate [rad/sec]
+    ω_end   = 2π / P_end    # Final spin rate [rad/sec]
     
     Δω = ω_end - ω_start  # [rad/sec]
     Δω = rad2deg(Δω)      # [deg/sec]

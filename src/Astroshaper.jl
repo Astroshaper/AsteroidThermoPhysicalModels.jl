@@ -50,7 +50,7 @@ include("visualization.jl")
 export draw
 
 include("YORP.jl")
-export getNetTorque, getNetTorque_shadowing, torque2rate, getTimeScale, run_YORP, run_Yarkovsky
+export torque2rate, YORP_time_scale, run_YORP, run_Yarkovsky
 
 include("thermophysics.jl")
 export ParamsThermo
