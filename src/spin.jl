@@ -1,7 +1,7 @@
 
 
 """
-    Spin{T1, T2}
+    SpinParams{T1, T2}
 
 Spin parameters of an asteroid
 
@@ -22,7 +22,7 @@ Spin parameters of an asteroid
 - `ε`  # Obliquity
 - `γ`  # Vernal equinox lon. from the direction of perihelion
 """
-struct Spin{T1, T2}
+struct SpinParams{T1, T2}
     α::T1
     δ::T1
 
