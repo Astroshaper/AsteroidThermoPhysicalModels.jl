@@ -21,10 +21,8 @@ A polyhedral shape model of an asteroid.
 – `force`    : Thermal recoil force at body-fixed frame (Yarkovsky effect)
 - `torque`   : Thermal recoil torque at body-fixed frame (YORP effect)
 - `Tz⁺`      : Pre-allocated vector for update of temperature profile on each facets (`Facet`)
-
-- `property` : Properties based on global shape
 """
-struct Shape{T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11}
+struct Shape{T1, T2, T3, T4, T5, T6, T7, T8, T9, T10}
     num_node::T1
     num_face::T1
     nodes   ::T2
@@ -40,8 +38,6 @@ struct Shape{T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11}
     force   ::T8
     torque  ::T9
     Tz⁺     ::T10
-
-    property::T11
 end
 
 
@@ -83,14 +79,11 @@ function Shape(shapepath; scale=1, find_visible_facets=false, save_shape=false)
         force  = zeros(3)
         torque = zeros(3)
         Tz⁺    = similar(facets[begin].Tz)
-
-        property = Dict{Symbol, Any}()
         
         shape = Shape(
             num_node, num_face, nodes, faces, facets,
             AREA, VOLUME, COF, MOI,
-            force, torque, Tz⁺,
-            property
+            force, torque, Tz⁺
         )
         save_shape && save(splitext(shapepath)[1] * ".jld2", Dict("shape" => shape))
 

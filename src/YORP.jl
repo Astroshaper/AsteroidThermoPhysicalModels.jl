@@ -10,6 +10,11 @@ function run_YORP(shape, orbit, spin, params_thermo)
     
     τ̄ = zeros(3)  # Net YORP torque
 
+    # A_B = params_thermo.A_B
+    # A_B = fill(params_thermo.A_B, shape.num_face)
+    # ϵ = params_thermo.ϵ
+    # ϵ = fill(params_thermo.ϵ, shape.num_face)
+
     for t in (t_bgn:Δt:t_end)*P
         spin_phase = spin.ω * t
         F☉, r̂☉ = getSolarCondition(orbit, spin, t)
@@ -18,8 +23,9 @@ function run_YORP(shape, orbit, spin, params_thermo)
         update_flux_scat_single!(shape, params_thermo)
         update_flux_rad_single!(shape, params_thermo)
         
-        update_force!(shape, params_thermo)
         # update_force_Rubincam!(shape, params_thermo)
+        update_force!(shape, params_thermo)
+        sum_force_torque!(shape)
         
         τ̄ .+= body_to_orbit(SVector{3}(shape.torque), spin.γ, spin.ε, spin_phase)
         
@@ -50,6 +56,7 @@ function run_Yarkovsky(shape, orbit, spin, params_thermo)
         
         update_force!(shape, params_thermo)
         # update_force_Rubincam!(shape, params_thermo)
+        sum_force_torque!(shape)
         
         F = body_to_orbit(SVector{3}(shape.force), spin.γ, spin.ε, spin_phase)
         Fs[i] .= F
@@ -85,49 +92,49 @@ end
 
 Update illumination
 """
-function update_flux_sun!(shape, F☉, r̂☉)
-    for facet in shape.facets
-        if isIlluminated(facet, r̂☉, shape)
-            facet.flux.sun = F☉ * (facet.normal ⋅ r̂☉)
-        else
-            facet.flux.sun = 0.
-        end
-    end
-end
+# function update_flux_sun!(shape, F☉, r̂☉)
+#     for facet in shape.facets
+#         if isIlluminated(facet, r̂☉, shape)
+#             facet.flux.sun = F☉ * (facet.normal ⋅ r̂☉)
+#         else
+#             facet.flux.sun = 0.
+#         end
+#     end
+# end
 
 """
     update_flux_scat_single!(shape, params_thermo)
 
 Single scattering of sunlight is considered.
 """
-function update_flux_scat_single!(shape, params_thermo)
-    @unpack A_B = params_thermo
+# function update_flux_scat_single!(shape, params_thermo)
+#     @unpack A_B = params_thermo
     
-    for facet in shape.facets
-        facet.flux.scat = 0.
-        for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
-            facet.flux.scat += f * shape.facets[id].flux.sun
-        end
-        facet.flux.scat *= A_B
-    end
-end
+#     for facet in shape.facets
+#         facet.flux.scat = 0.
+#         for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
+#             facet.flux.scat += f * shape.facets[id].flux.sun
+#         end
+#         facet.flux.scat *= A_B
+#     end
+# end
 
 """
     update_flux_scat_mult!(shape, params_thermo)
 
 Multiple scattering of sunlight is considered.
 """
-function update_flux_scat_mult!(shape, params_thermo)
-    @unpack A_B = params_thermo
+# function update_flux_scat_mult!(shape, params_thermo)
+#     @unpack A_B = params_thermo
     
-    # for m in shape.smeshes
-    #     m.flux.scat = 0.
-    #     for (id, f) in zip(m.visiblefaces.id, m.visiblefaces.f)
-    #         m.flux.scat += f * shape.smeshes[id].flux.sun
-    #     end
-    #     m.flux.scat *= A_B
-    # end
-end
+#     # for m in shape.smeshes
+#     #     m.flux.scat = 0.
+#     #     for (id, f) in zip(m.visiblefaces.id, m.visiblefaces.f)
+#     #         m.flux.scat += f * shape.smeshes[id].flux.sun
+#     #     end
+#     #     m.flux.scat *= A_B
+#     # end
+# end
 
 """
     update_flux_rad_single!(shape, params_thermo)
@@ -135,18 +142,18 @@ end
 Single radiation-reabsorption is considered,
 assuming albedo is close to zero at thermal infrared wavelength.
 """
-function update_flux_rad_single!(shape, params_thermo)
-    @unpack ϵ, A_TH = params_thermo
+# function update_flux_rad_single!(shape, params_thermo)
+#     @unpack ϵ, A_TH = params_thermo
         
-    for facet in shape.facets
-        facet.flux.rad = 0.
-        for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
-            T = shape.facets[id].Tz[begin]
-            facet.flux.rad += f * T^4
-        end
-        facet.flux.rad *= ϵ * σ_SB * (1 - A_TH)
-    end
-end
+#     for facet in shape.facets
+#         facet.flux.rad = 0.
+#         for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
+#             T = shape.facets[id].Tz[begin]
+#             facet.flux.rad += f * T^4
+#         end
+#         facet.flux.rad *= ϵ * σ_SB * (1 - A_TH)
+#     end
+# end
 
 
 # ****************************************************************
@@ -154,30 +161,55 @@ end
 # ****************************************************************
 
 """
-    update_force!(shape, params_thermo)
+    update_force!(shape::Shape, params)
+    update_force!(shape::Shape, A_B::Real,           ϵ::Real)
+    update_force!(shape::Shape, A_B::AbstractVector, ϵ::Real)
+    update_force!(shape::Shape, A_B::Real,           ϵ::AbstractVector)
+    update_force!(shape::Shape, A_B::AbstractVector, ϵ::AbstractVector)
+    update_force!(facet::Facet, A_B::Real,           ϵ::Real)
 
-Update photon recoil force on every facet (df)
+Update photon recoil force on every facet (dfᵢ)
 """
-function update_force!(shape, params_thermo)
-    @unpack A_B, ϵ = params_thermo
-    
+update_force!(shape::Shape, params) = update_force!(shape, params.A_B, params.ϵ)
+
+function update_force!(shape::Shape, A_B::Real, ϵ::Real)
     for facet in shape.facets
-        E = A_B * facet.flux.scat + ϵ * σ_SB * facet.Tz[begin]^4
-
-        @. facet.force = facet.normal
-        for vf in facet.visiblefacets
-            @. facet.force -= 1.5 * vf.f * vf.d̂
-        end
-        @. facet.force *= - 2*E*facet.area / (3*c₀)
+        update_force!(facet, A_B, ϵ)
     end
+end
 
-    sum_force_torque!(shape)
+function update_force!(shape::Shape, A_B::AbstractVector, ϵ::Real)
+    for (i, facet) in enumerate(shape.facets)
+        update_force!(facet, A_B[i], ϵ)
+    end
+end
+
+function update_force!(shape::Shape, A_B::Real, ϵ::AbstractVector)
+    for (i, facet) in enumerate(shape.facets)
+        update_force!(facet, A_B, ϵ[i])
+    end
+end
+
+function update_force!(shape::Shape, A_B::AbstractVector, ϵ::AbstractVector)
+    for (i, facet) in enumerate(shape.facets)
+        update_force!(facet, A_B[i], ϵ[i])
+    end
+end
+
+function update_force!(facet::Facet, A_B::Real, ϵ::Real)
+    E = A_B * facet.flux.scat + ϵ * σ_SB * facet.Tz[begin]^4
+
+    @. facet.force = facet.normal
+    for vf in facet.visiblefacets
+        @. facet.force -= 3/2 * vf.f * vf.d̂
+    end
+    @. facet.force *= - 2/3 * E * facet.area / c₀
 end
 
 """
     sum_force_torque!(shape::Shape)
 
-Integrate the force and torque on every facet
+Integrate the force and torque over the global surface
 """
 function sum_force_torque!(shape::Shape)
     shape.force  .= 0
@@ -458,14 +490,16 @@ end
 
 
 """
+    YORP_timescale(P_start, P_end, ω̇) -> timescale
+
 Caluculate the YORP time scale given a constant acceleration/deceleration
 
-Parameters
+# Parameters
 - `P_start` [hour]
 - `P_end`   [hour]
 - `ω̇`       [deg/day/day]
 """
-function YORP_time_scale(P_start, P_end, ω̇)
+function YORP_timescale(P_start, P_end, ω̇)
     P_start *= 3600  # [sec]
     P_end   *= 3600  # [sec]
 
