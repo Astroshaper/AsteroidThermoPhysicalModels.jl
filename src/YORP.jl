@@ -270,38 +270,38 @@ In the future, we need to improve:
 - local shadow detection
 - Tangential YORP effect
 """
-function sumTorqueOverSurface(shape, F☉, r̂☉)
-    τ = MVector(0., 0., 0.)  # YORP torque
+# function sumTorqueOverSurface(shape, F☉, r̂☉)
+#     τ = MVector(0., 0., 0.)  # YORP torque
 
-    for mesh in shape.smeshes
-        Ψ = mesh.normal ⋅ r̂☉  # cosine of the Sun illumination angle
-        if Ψ > 0  # daytime hemisphere of the body
-            df = Ψ * mesh.area * mesh.normal  # force on each facet
-            dτ = mesh.center × df             # torque on each facet
-            τ .+= dτ
-        end
-    end
-    τ *= - 2/3 * F☉ / c₀
-    return SVector(τ)
-end
+#     for mesh in shape.smeshes
+#         Ψ = mesh.normal ⋅ r̂☉  # cosine of the Sun illumination angle
+#         if Ψ > 0  # daytime hemisphere of the body
+#             df = Ψ * mesh.area * mesh.normal  # force on each facet
+#             dτ = mesh.center × df             # torque on each facet
+#             τ .+= dτ
+#         end
+#     end
+#     τ *= - 2/3 * F☉ / c₀
+#     return SVector(τ)
+# end
 
 
-function sumTorqueOverSurface_shadowing(shape, F☉, r̂☉)
-    τ = MVector(0., 0., 0.)  # YORP torque
+# function sumTorqueOverSurface_shadowing(shape, F☉, r̂☉)
+#     τ = MVector(0., 0., 0.)  # YORP torque
 
-    for mesh in shape.smeshes
-        Ψ = mesh.normal ⋅ r̂☉  # cosine of the Sun illumination angle
-        if Ψ > 0  # daytime hemisphere of the body
-            if isIlluminated(mesh, r̂☉, shape.smeshes)
-                df = Ψ * mesh.area * mesh.normal  # force on each facet
-                dτ = mesh.center × df             # torque on each facet
-                τ .+= dτ
-            end
-        end
-    end
-    τ *= - 2/3 * F☉ / c₀
-    return SVector(τ)
-end
+#     for mesh in shape.smeshes
+#         Ψ = mesh.normal ⋅ r̂☉  # cosine of the Sun illumination angle
+#         if Ψ > 0  # daytime hemisphere of the body
+#             if isIlluminated(mesh, r̂☉, shape.smeshes)
+#                 df = Ψ * mesh.area * mesh.normal  # force on each facet
+#                 dτ = mesh.center × df             # torque on each facet
+#                 τ .+= dτ
+#             end
+#         end
+#     end
+#     τ *= - 2/3 * F☉ / c₀
+#     return SVector(τ)
+# end
 
 
 """
@@ -309,35 +309,35 @@ end
 
 Average YORP torque over given time steps
 """
-function getNetTorque(shape, orbit, spin, times)
+# function getNetTorque(shape, orbit, spin, times)
 
-    τ̄ = MVector(0., 0., 0.)  # net YORP torque
+#     τ̄ = MVector(0., 0., 0.)  # net YORP torque
 
-    for time in times
-        spin_phase = spin.ω * time
-        F☉, r̂☉ = getSolarCondition(orbit, spin, time)
-        τ = sumTorqueOverSurface(shape, F☉, r̂☉)
-        τ = body_to_orbit(τ, spin.γ, spin.ε, spin_phase)
+#     for time in times
+#         spin_phase = spin.ω * time
+#         F☉, r̂☉ = getSolarCondition(orbit, spin, time)
+#         τ = sumTorqueOverSurface(shape, F☉, r̂☉)
+#         τ = body_to_orbit(τ, spin.γ, spin.ε, spin_phase)
 
-        τ̄ .+= τ
-    end
-    τ̄ /= length(times)
-end
+#         τ̄ .+= τ
+#     end
+#     τ̄ /= length(times)
+# end
 
-function getNetTorque_shadowing(shape, orbit, spin, times)
+# function getNetTorque_shadowing(shape, orbit, spin, times)
 
-    τ̄ = MVector(0., 0., 0.)  # net YORP torque
+#     τ̄ = MVector(0., 0., 0.)  # net YORP torque
 
-    for time in times
-        spin_phase = spin.ω * time
-        F☉, r̂☉ = getSolarCondition(orbit, spin, time)
-        τ = sumTorqueOverSurface_shadowing(shape, F☉, r̂☉)
-        τ = body_to_orbit(τ, spin.γ, spin.ε, spin_phase)
+#     for time in times
+#         spin_phase = spin.ω * time
+#         F☉, r̂☉ = getSolarCondition(orbit, spin, time)
+#         τ = sumTorqueOverSurface_shadowing(shape, F☉, r̂☉)
+#         τ = body_to_orbit(τ, spin.γ, spin.ε, spin_phase)
 
-        τ̄ .+= τ
-    end
-    τ̄ /= length(times)
-end
+#         τ̄ .+= τ
+#     end
+#     τ̄ /= length(times)
+# end
 
 
 # ****************************************************************

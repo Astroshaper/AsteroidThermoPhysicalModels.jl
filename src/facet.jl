@@ -23,8 +23,10 @@ Note that the mesh normal indicates outward the polyhedron.
 - `flux         ::T4` : Energy flux from surrounding facets
 - `Tz           ::T5` : Temperature profile in depth direction
 - `force        ::T6` : Photon recoil force
+
+- `property::T7` : Properties based on each facet
 """
-struct Facet{T1, T2, T3, T4, T5, T6}
+struct Facet{T1, T2, T3, T4, T5, T6, T7}
     A::T1
     B::T1
     C::T1
@@ -37,13 +39,16 @@ struct Facet{T1, T2, T3, T4, T5, T6}
     flux         ::T4
     Tz           ::T5
     force        ::T6
+
+    property::T7
 end
 
 Facet(A, B, C) = Facet([A, B, C])
 Facet(vs) = Facet(
     vs[1], vs[2], vs[3],
     getcenter(vs), getnormal(vs), getarea(vs),
-    StructArray(VisibleFacet[]), Flux(), Float64[], zeros(3)
+    StructArray(VisibleFacet[]), Flux(), Float64[], zeros(3),
+    Dict{Symbol, Any}()
 )
 
 function Base.show(io::IO, facet::Facet)
