@@ -84,7 +84,7 @@ function update_flux_rad_single!(shape, ϵ::Real)
     for facet in shape.facets
         facet.flux.rad = 0
         for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
-            T = shape.facets[id].Tz[begin]
+            T = shape.facets[id].temps[begin]
             facet.flux.rad += f * ϵ * σ_SB * T^4
         end
     end
@@ -94,7 +94,7 @@ function update_flux_rad_single!(shape, ϵ::AbstractVector)
     for facet in shape.facets
         facet.flux.rad = 0
         for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
-            T = shape.facets[id].Tz[begin]
+            T = shape.facets[id].temps[begin]
             facet.flux.rad += f * ϵ[id] * σ_SB * T^4
         end
     end

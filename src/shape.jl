@@ -78,7 +78,7 @@ function Shape(shapepath; scale=1, find_visible_facets=false, save_shape=false)
         
         force  = zeros(3)
         torque = zeros(3)
-        Tz⁺    = similar(facets[begin].Tz)
+        Tz⁺    = similar(facets[begin].temps)
         
         shape = Shape(
             num_node, num_face, nodes, faces, facets,

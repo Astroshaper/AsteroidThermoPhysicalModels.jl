@@ -21,7 +21,8 @@ Note that the mesh normal indicates outward the polyhedron.
     
 - `visiblefacets::T3` : 1-D array of `VisibleFacet`
 - `flux         ::T4` : Energy flux from surrounding facets
-- `Tz           ::T5` : Temperature profile in depth direction
+- `temps        ::T5` : Temperature profile in depth direction
+- `_temps_      ::T5` : Pre-allocated vector for updating temperature profile
 - `force        ::T6` : Photon recoil force
 """
 struct Facet{T1, T2, T3, T4, T5, T6}
@@ -35,15 +36,16 @@ struct Facet{T1, T2, T3, T4, T5, T6}
     
     visiblefacets::T3
     flux         ::T4
-    Tz           ::T5
+    temps        ::T5
+    _temps_      ::T5
     force        ::T6
 end
 
 Facet(A, B, C) = Facet([A, B, C])
 Facet(vs) = Facet(
     vs[1], vs[2], vs[3],
-    getcenter(vs), getnormal(vs), getarea(vs),
-    StructArray(VisibleFacet[]), Flux(), Float64[], zeros(3)
+    facet_center(vs), facet_normal(vs), facet_area(vs),
+    StructArray(VisibleFacet[]), Flux(), Float64[], Float64[], zeros(3)
 )
 
 function Base.show(io::IO, facet::Facet)
@@ -79,14 +81,14 @@ getfacets(nodes, faces) = StructArray([Facet(nodes[face]) for face in faces])
 # #                      Facet properties
 # ################################################################
 
-getcenter(vs) = getcenter(vs...)
-getcenter(v1, v2, v3) = (v1 + v2 + v3) / 3
+facet_center(vs) = facet_center(vs...)
+facet_center(v1, v2, v3) = (v1 + v2 + v3) / 3
 
-getnormal(vs) = getnormal(vs...)
-getnormal(v1, v2, v3) = normalize((v2 - v1) × (v3 - v2)) 
+facet_normal(vs) = facet_normal(vs...)
+facet_normal(v1, v2, v3) = normalize((v2 - v1) × (v3 - v2)) 
 
-getarea(vs) = getarea(vs...)
-getarea(v1, v2, v3) = norm((v2 - v1) × (v3 - v2)) * 0.5
+facet_area(vs) = facet_area(vs...)
+facet_area(v1, v2, v3) = norm((v2 - v1) × (v3 - v2)) / 2
 
 
 ################################################################
@@ -139,12 +141,12 @@ view_factor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * d�
 """
     mutable struct Flux{T}
 
-Energy flux from/to a facet
+Energy flux to a facet
 
 # Fields
-- `sun ::T` : Flux of solar radiation,   F_sun
+- `sun ::T` : Flux of solar radiation,    F_sun
 - `scat::T` : Flux of scattered sunlight, F_scat
-- `rad ::T` : Flux of thermal radiation, F_rad
+- `rad ::T` : Flux of thermal radiation,  F_rad
 """
 mutable struct Flux{T}
     sun ::T

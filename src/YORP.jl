@@ -1,12 +1,40 @@
 
 
+"""
+    init_temps_zero!(shape::Shape, params)
+    init_temps_zero!(shape::Shape, Nz::AbstractVector)
+    init_temps_zero!(shape::Shape, Nz::Integer)
+    init_temps_zero!(facet::Facet, Nz::Integer)
+
+Initialize temperature profile in depth on every facet.
+All elements are intialized as 0 K.
+"""
+init_temps_zero!(shape::Shape, params) = init_temps_zero!(shape, params.Nz)
+
+function init_temps_zero!(shape::Shape, Nz::AbstractVector)
+    for (i, facet) in enumerate(shape.facets)
+        init_temps_zero!(facet, Nz[i])
+    end
+end
+
+function init_temps_zero!(shape::Shape, Nz::Integer)
+    for facet in shape.facets
+        init_temps_zero!(facet, Nz)
+    end
+end
+
+function init_temps_zero!(facet::Facet, Nz::Integer)
+    isempty(facet.temps)   ? append!(facet.temps,   zeros(Nz)) : facet.temps   .= 0
+    isempty(facet._temps_) ? append!(facet._temps_, zeros(Nz)) : facet._temps_ .= 0
+end
+
 
 """
 """
-function run_YORP(shape, orbit, spin, params_thermo)
-    @unpack P, Δt, t_bgn, t_end, Nt, Nz = params_thermo
+function run_YORP(shape, orbit, spin, params)
+    @unpack P, Δt, t_bgn, t_end, Nt, Nz = params
     
-    init_temperature!(shape, orbit, spin, params_thermo)
+    init_temps_zero!(shape, params)
     
     τ̄ = zeros(3)  # Net YORP torque
 
@@ -20,26 +48,26 @@ function run_YORP(shape, orbit, spin, params_thermo)
         F☉, r̂☉ = getSolarCondition(orbit, spin, t)
         
         update_flux_sun!(shape, F☉, r̂☉)
-        update_flux_scat_single!(shape, params_thermo)
-        update_flux_rad_single!(shape, params_thermo)
+        update_flux_scat_single!(shape, params)
+        update_flux_rad_single!(shape, params)
         
-        # update_force_Rubincam!(shape, params_thermo)
-        update_force!(shape, params_thermo)
+        # update_force_Rubincam!(shape, params)
+        update_force!(shape, params)
         sum_force_torque!(shape)
         
         τ̄ .+= body_to_orbit(SVector{3}(shape.torque), spin.γ, spin.ε, spin_phase)
         
-        update_temperature!(shape, params_thermo)
+        update_temps!(shape, params)
     end
     τ̄ /= Nt
 end
 
 """
 """
-function run_Yarkovsky(shape, orbit, spin, params_thermo)
-    @unpack P, Δt, t_bgn, t_end, Nt, Nz = params_thermo
+function run_Yarkovsky(shape, orbit, spin, params)
+    @unpack P, Δt, t_bgn, t_end, Nt, Nz = params
     
-    init_temperature!(shape, orbit, spin, params_thermo)
+    init_temps_zero!(shape, params)
     
     ts = (t_bgn:Δt:t_end)*P
     # Fs = typeof(shape.force)[]
@@ -51,35 +79,21 @@ function run_Yarkovsky(shape, orbit, spin, params_thermo)
         F☉, r̂☉ = getSolarCondition(orbit, spin, t)
         
         update_flux_sun!(shape, F☉, r̂☉)
-        update_flux_scat_single!(shape, params_thermo)
-        update_flux_rad_single!(shape, params_thermo)
+        update_flux_scat_single!(shape, params)
+        update_flux_rad_single!(shape, params)
         
-        update_force!(shape, params_thermo)
-        # update_force_Rubincam!(shape, params_thermo)
+        # update_force_Rubincam!(shape, params)
+        update_force!(shape, params)
         sum_force_torque!(shape)
         
         F = body_to_orbit(SVector{3}(shape.force), spin.γ, spin.ε, spin_phase)
         Fs[i] .= F
         # push!(Fs, F)
         
-        update_temperature!(shape, params_thermo)
+        update_temps!(shape, params)
     end
     Fs
     # τ̄ /= Nt
-end
-
-"""
-    init_temperature!(shape, orbit, spin, params_thermo)
-
-Initialize temperature distribution of every facet
-"""
-function init_temperature!(shape, orbit, spin, params_thermo)
-    @unpack P, Δt, t_bgn, t_end, Nt, Nz = params_thermo
-    
-    for facet in shape.facets
-        length(facet.Tz) == 0 ? append!(facet.Tz, zeros(Nz)) : facet.Tz .= 0
-    end
-    length(shape.Tz⁺) == 0 ? append!(shape.Tz⁺, zeros(Nz)) : shape.Tz⁺ .= 0
 end
 
 
@@ -124,7 +138,7 @@ function update_force!(shape::Shape, A_B::AbstractVector, ϵ::AbstractVector)
 end
 
 function update_force!(facet::Facet, A_B::Real, ϵ::Real)
-    E = A_B * facet.flux.scat + ϵ * σ_SB * facet.Tz[begin]^4
+    E = A_B * facet.flux.scat + ϵ * σ_SB * facet.temps[begin]^4
 
     @. facet.force = facet.normal
     for vf in facet.visiblefacets
@@ -433,12 +447,12 @@ function YORP_timescale(P_start, P_end, ω̇)
     ω_start = 2π / P_start  # Initial spin rate [rad/sec]
     ω_end   = 2π / P_end    # Final spin rate [rad/sec]
     
-    Δω = ω_end - ω_start  # [rad/sec]
-    Δω = rad2deg(Δω)      # [deg/sec]
-    Δω *= 3600*24         # [deg/day]
+    Δω = ω_end - ω_start    # [rad/sec]
+    Δω = rad2deg(Δω)        # [deg/sec]
+    Δω *= 3600*24           # [deg/day]
     
-    timescale = Δω / ω̇   # [day]
-    timescale /= 365e6   # [Myr]
+    timescale = Δω / ω̇      # [day]
+    SPICE.convrt(timescale, "days", "years")  # [year]
 end
 
 

@@ -1,7 +1,7 @@
 
 
 # ****************************************************************
-#                      1D heat conduction
+#                   Thermophysical properties
 # ****************************************************************
 
 """
@@ -64,8 +64,8 @@ function ParamsThermo(; A_B, A_TH, k, ρ, Cp, ϵ, P, Δt, t_bgn, t_end, Δz, z_m
 end
 
 
-function Base.show(io::IO, params_thermo::ParamsThermo)
-    @unpack A_B, A_TH, k, ρ, Cp, ϵ, P, l, Γ, Δt, t_bgn, t_end, Nt, Δz, z_max, Nz, λ = params_thermo
+function Base.show(io::IO, params::ParamsThermo)
+    @unpack A_B, A_TH, k, ρ, Cp, ϵ, P, l, Γ, Δt, t_bgn, t_end, Nt, Δz, z_max, Nz, λ = params
     
     println(io, "Thermophysical parameters")
     println("-------------------------")
@@ -121,16 +121,20 @@ thermal_inertia(k, ρ, Cp) = √(k * ρ * Cp)
 thermal_inertia(params) = thermal_inertia(params.k, params.ρ, params.Cp)
 
 
+# ****************************************************************
+#                      1D heat conduction
+# ****************************************************************
+
 """
-    update_temperature!(Tⱼ, Tⱼ₊₁, F, params_thermo)
+    update_temps!(Tⱼ, Tⱼ₊₁, F, params)
 
 Update temerature profie based on 1-D heat diffusion
 
 # Arguments
-- `Tⱼ`            : Temperatures
-- `Tⱼ₊₁`          : Temperatures at the next time step
-- `F`             : Energy flux to the surface 
-- `params_thermo` : Thermophysical parameters
+- `Tⱼ`     : Temperatures
+- `Tⱼ₊₁`   : Temperatures at the next time step
+- `F`      : Energy flux to the surface 
+- `params` : Thermophysical parameters
 
 i : index of depth
 j : index of time step
@@ -139,51 +143,73 @@ for i in 2:length(Tⱼ)-1
     Tⱼ₊₁[i] = (1-2λ)*Tⱼ[i] + λ*(Tⱼ[i+1] + Tⱼ[i-1])
 end
 """
-function update_temperature!(Tⱼ, Tⱼ₊₁, F, params_thermo)
-    @unpack λ = params_thermo
-    
-    @. Tⱼ₊₁[begin+1:end-1] = @views (1-2λ)*Tⱼ[begin+1:end-1] + λ*(Tⱼ[begin+2:end] + Tⱼ[begin:end-2])
-    
-    update_surface_temperature!(Tⱼ₊₁, F, params_thermo)  # Sourface boundary condition (Radiation)
-    Tⱼ₊₁[end] = Tⱼ₊₁[end-1]                              # Internal boundary condition (Insulation)
-    
-    Tⱼ .= Tⱼ₊₁
-end
 
 
-function update_temperature!(shape, params_thermo)
-    @unpack A_B, A_TH = params_thermo
-                    
+
+function update_temps!(shape, params)
+    @unpack A_B, A_TH, λ, Δz, Γ, P, ϵ = params
+
     for facet in shape.facets
-        F_sun  = facet.flux.sun
-        F_scat = facet.flux.scat
-        F_rad  = facet.flux.rad
-        
-        F_total = (1 - A_B)*(F_sun + F_scat) + (1 - A_TH)*F_rad
-
-        update_temperature!(facet.Tz, shape.Tz⁺, F_total, params_thermo)
+        update_temps!(facet::Facet, A_B, A_TH, λ, Δz, Γ, P, ϵ)
     end
 end
 
+function update_temps!(facet::Facet, A_B, A_TH, λ, Δz, Γ, P, ϵ)
+    F_total = flux_total(facet, A_B, A_TH)
+
+    Tⱼ   = facet.temps
+    Tⱼ₊₁ = facet._temps_
+
+    @. Tⱼ₊₁[begin+1:end-1] = @views (1-2λ)*Tⱼ[begin+1:end-1] + λ*(Tⱼ[begin+2:end] + Tⱼ[begin:end-2])
+
+    update_surf_temp!(Tⱼ₊₁, F_total, Δz, Γ, P, ϵ)  # Surface boundary condition (Radiation)
+    Tⱼ₊₁[end] = Tⱼ₊₁[end-1]                        # Internal boundary condition (Insulation)
+        
+    Tⱼ .= Tⱼ₊₁
+end
 
 """
-    update_surface_temperature!(T, F, params_thermo)
+    update_surf_temp!(T, F_total, Δz, Γ, P, ϵ)
 
-Solve Newton's method to get surface temperature 
+# Arguments
+- `T`       : 1-D array of temperatures
+- `F_total` : Total energy flux to the surface facet 
+- `Δz`      : 
+- `Γ`       : Thermal inertia
+- `P`       : Rotation period
+- `ϵ`       : Emissivity
+
+Update surface temperature under radiative boundary condition using Newton's method
 """
-function update_surface_temperature!(T, F, params_thermo)
-    @unpack Δz, Γ, P, ϵ = params_thermo
-
+function update_surf_temp!(T, F_total, Δz, Γ, P, ϵ)
     for _ in 1:20
         T_pri = T[begin]
 
-        f = F + Γ / √(4π * P) * (T[begin+1] - T[begin]) / Δz - ϵ*σ_SB*T[begin]^4
+        f = F_total + Γ / √(4π * P) * (T[begin+1] - T[begin]) / Δz - ϵ*σ_SB*T[begin]^4
         df = - Γ / √(4π * P) / Δz - 4*ϵ*σ_SB*T[begin]^3             
         T[begin] -= f / df
 
         err = abs(1 - T_pri / T[begin])
         err < 1e-10 && return
     end
+end
+
+"""
+    flux_total(facet::Facet, A_B::Real, A_TH::Real) -> F_total
+
+# Arguments
+- `facet` : surface facet (`Facet`)
+- `A_B`   : Bond albedo
+- `A_TH`  : Albedo in thermal infrared wavelength
+
+Total energy absorbed by the facet
+"""
+function flux_total(facet::Facet, A_B::Real, A_TH::Real)
+    F_sun  = facet.flux.sun
+    F_scat = facet.flux.scat
+    F_rad  = facet.flux.rad
+    
+    F_total = (1 - A_B)*(F_sun + F_scat) + (1 - A_TH)*F_rad
 end
 
 
