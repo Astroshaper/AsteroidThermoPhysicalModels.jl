@@ -33,6 +33,7 @@ end
 """
 function run_YORP(shape, orbit, spin, params)
     @unpack P, Δt, t_bgn, t_end, Nt, Nz = params
+    @unpack λ, A_B, A_TH, k, l, Δz, ϵ = params
     
     init_temps_zero!(shape, params)
     
@@ -57,7 +58,8 @@ function run_YORP(shape, orbit, spin, params)
         
         τ̄ .+= body_to_orbit(SVector{3}(shape.torque), spin.γ, spin.ε, spin_phase)
         
-        update_temps!(shape, params)
+        # update_temps!(shape, params)
+        update_temps!(shape, λ, A_B, A_TH, k, l, Δz, ϵ)
     end
     τ̄ /= Nt
 end

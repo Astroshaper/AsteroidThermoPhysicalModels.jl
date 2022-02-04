@@ -46,10 +46,10 @@ export orb_to_ref!, orb_to_ref
 export solveKeplerEquation1, solveKeplerEquation2, u2ν, heliocentric_distance
 export SpinParams
 
-include("TPM.jl")
 include("thermophysics.jl")
+include("TPM.jl")
 include("YORP.jl")
-export ParamsThermo
+export ThermoParams
 export torque2rate, YORP_timescale, run_YORP, run_Yarkovsky
 
 include("polyhedron.jl")

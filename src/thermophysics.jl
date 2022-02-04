@@ -1,73 +1,116 @@
 
 
 # ****************************************************************
-#                   Thermophysical properties
+#                Thermal skin depth and inertia
 # ****************************************************************
 
 """
+    thermal_skin_depth(P, k, ρ, Cp) -> l_2π
+
+# Arguments
+- `P`  : Cycle of thermal cycle [sec]
+- `k`  : Thermal conductivity [W/m/K]
+- `ρ`  : Material density [kg/m³]
+- `Cp` : Heat capacity [J/kg/K]
+
+# Return
+- `l_2π` : Thermal skin depth [m]
+"""
+thermal_skin_depth(P, k, ρ, Cp) = √(4π * P * k / (ρ * Cp))
+thermal_skin_depth(params) = thermal_skin_depth(params.P, params.k, params.ρ, params.Cp)
+
+"""
+    thermal_inertia(k, ρ, Cp) -> Γ
+
+# Arguments
+- `k`  : Thermal conductivity [W/m/K]
+- `ρ`  : Material density [kg/m³]
+- `Cp` : Heat capacity [J/kg/K]
+
+# Return
+- `Γ` : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
+"""
+thermal_inertia(k, ρ, Cp) = √(k * ρ * Cp)
+thermal_inertia(params) = thermal_inertia(params.k, params.ρ, params.Cp)
+
+
+# ****************************************************************
+#               Struct for thermophysical properties
+# ****************************************************************
+
+"""
+    struct ThermoParams
+
 - `A_B`   : Bond albedo
 - `A_TH`  : Albedo at thermal radiation wavelength
-- `k`     : Thermal conductivity
-- `ρ`     : Density [kg/m³]
+- `k`     : Thermal conductivity [W/m/K]
+- `ρ`     : Material density [kg/m³]
 - `Cp`    : Heat capacity [J/kg/K]
 - `ϵ`     : Emissivity
-- `P`     : Rotation period [s]
-- `l`     : Thermal skin depth
-- `Γ`     : Thermal inertia
-- `Δt`    : Time step
-- `t_bgn` : Start time of the simulation
-- `t_end` : End time of the simulation
-- `Nt`    : Number of time step
-- `Δz`    : Depth step
-- `z_max` : Maximum depth for themal simualtion
-- `Nz`    : Number of depth step
+
+- `t_bgn` : Start time of the simulation, normalized by period `P`
+- `t_end` : End time of the simulation, normalized by period `P`
+- `Δt`    : Non-dimensional timesteps, normalized by period `P`
+- `Nt`    : Number of timesteps
+
+- `z_max` : Maximum depth for thermophysical simualtion, normalized by thermal skin depth `l`
+- `Δz`    : Non-dimensional step in depth, normalized by thermal skin depth `l`
+- `Nz`    : Number of depth steps
+
+- `P`     : Cycle of thermal cycle (rotation period) [sec]
+- `l`     : Thermal skin depth [m]
+- `Γ`     : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
 - `λ`     : Non-dimensional coefficient for heat diffusion equation
 """
-struct ParamsThermo{T1, T2}
+struct ThermoParams{T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11}
     A_B  ::T1
-    A_TH ::T1
-    k    ::T1
-    ρ    ::T1
-    Cp   ::T1
-    ϵ    ::T1
-    P    ::T1
-    l    ::T1
-    Γ    ::T1
-    Δt   ::T1
-    t_bgn::T1
-    t_end::T1
-    Nt   ::T2
-    Δz   ::T1
-    z_max::T1
-    Nz   ::T2
-    λ    ::T1
+    A_TH ::T2
+    k    ::T3
+    ρ    ::T4
+    Cp   ::T5
+    ϵ    ::T6
+
+    t_bgn::T7
+    t_end::T7
+    Δt   ::T7
+    Nt   ::T8
+
+    z_max::T9
+    Δz   ::T9
+    Nz   ::T10
+
+    P    ::T7
+    l    ::T11
+    Γ    ::T11
+    λ    ::T11
 end
 
+function ThermoParams(; A_B, A_TH, k, ρ, Cp, ϵ, t_bgn=0., t_end, Nt, z_max, Nz, P)
 
-function ParamsThermo(; A_B, A_TH, k, ρ, Cp, ϵ, P, Δt, t_bgn, t_end, Δz, z_max)
+    t_bgn /= P                       # Normalized by period
+    t_end /= P                       # Normalized by period
+    Δt = (t_end - t_bgn) / (Nt - 1)  # Normalized by period
+
     l = thermal_skin_depth(P, k, ρ, Cp)
     Γ = thermal_inertia(k, ρ, Cp)
-    
-    Δt /= P
-    t_bgn /= P
-    t_end /= P
-    Nt = length(t_bgn:Δt:t_end)
-    
-    Δz /= l
-    z_max /= l
-    Nz = length(0:Δz:z_max)
-    
+
+    z_max /= l             # Normalized by skin depth
+    Δz = z_max / (Nz - 1)  # Normalized by skin depth
+
     λ = 1/4π * (Δt/Δz^2)
-    λ > 0.5 && println("λ should be smaller than 0.5 for convergence.")
+    λ > 0.5 && println("λ = ", λ, ", which should be smaller than 0.5 for convergence.")
     
-    ParamsThermo(A_B, A_TH, k, ρ, Cp, ϵ, P, l, Γ, Δt, t_bgn, t_end, Nt, Δz, z_max, Nz, λ)
+    ThermoParams(A_B, A_TH, k, ρ, Cp, ϵ, t_bgn, t_end, Δt, Nt, z_max, Δz, Nz, P, l, Γ, λ) 
 end
 
 
-function Base.show(io::IO, params::ParamsThermo)
-    @unpack A_B, A_TH, k, ρ, Cp, ϵ, P, l, Γ, Δt, t_bgn, t_end, Nt, Δz, z_max, Nz, λ = params
+function Base.show(io::IO, params::ThermoParams)
+    @unpack A_B, A_TH, k, ρ, Cp, ϵ = params
+    @unpack t_bgn, t_end, Δt, Nt   = params
+    @unpack z_max, Δz, Nz          = params
+    @unpack P, l, Γ, λ             = params
     
-    println(io, "Thermophysical parameters")
+    println("Thermophysical parameters")
     println("-------------------------")
     
     println("A_B   : ", A_B)
@@ -76,49 +119,31 @@ function Base.show(io::IO, params::ParamsThermo)
     println("ρ     : ", ρ)
     println("Cp    : ", Cp)
     println("ϵ     : ", ϵ)
+
+    println("-------------------------")
+    println("t_bgn : ", t_bgn * P)
+    println("t_bgn : ", t_bgn, " (Normalized by period P)")
+    println("t_end : ", t_end * P)
+    println("t_end : ", t_end, " (Normalized by period P)")
+    println("Nt    : ", Nt)
+    println("Δt    : ", Δt * P)
+    println("Δt    : ", Δt, " (Normalized by period P)")
+
+    println("-------------------------")
+    println("z_max : ", z_max * l)
+    println("z_max : ", z_max, " (Normalized by skin depth l)")
+    println("Nz    : ", Nz)
+    println("Δz    : ", Δz * l)
+    println("Δz    : ", Δz, " (Normalized by skin depth l)")
+    
+    println("-------------------------")
     println("P     : ", P)
     println("l     : ", l)
     println("Γ     : ", Γ)
-    println("Δt    : ", Δt)
-    println("t_bgn : ", t_bgn)
-    println("t_end : ", t_end)
-    println("Nt    : ", Nt)
-    println("Δz    : ", Δz)
-    println("z_max : ", z_max)
-    println("Nz    : ", Nz)
     println("λ     : ", λ)
+
+    println("-------------------------")
 end
-
-
-"""
-    thermal_skin_depth(P, k, ρ, Cp) -> l_2π
-
-# Arguments
-- `P`  :
-- `k`  :
-- `ρ`  :
-- `Cₚ` :
-
-# Return
-`l_2π` : Thermal skin depth
-"""
-thermal_skin_depth(P, k, ρ, Cp) = √(4π * P * k / (ρ * Cp))
-thermal_skin_depth(params) = thermal_skin_depth(params.P, params.k, params.ρ, params.Cp)
-
-
-"""
-    thermal_inertia(k, ρ, Cp) -> Γ
-
-# Arguments
-- `k`  :
-- `ρ`  :
-- `Cp` :
-
-# Return
-`Γ` : Thermal inertia
-"""
-thermal_inertia(k, ρ, Cp) = √(k * ρ * Cp)
-thermal_inertia(params) = thermal_inertia(params.k, params.ρ, params.Cp)
 
 
 # ****************************************************************
@@ -134,6 +159,13 @@ Update temerature profie (`Facet.temps`) based on 1-D heat diffusion
 function update_temps!(shape, params)
     @unpack λ, A_B, A_TH, k, l, Δz, ϵ = params
 
+    for facet in shape.facets
+        update_temps!(facet, λ, A_B, A_TH, k, l, Δz, ϵ)
+    end
+end
+
+function update_temps!(shape::Shape, λ, A_B, A_TH, k, l, Δz, ϵ)
+    # update_temps!.(shape.facets, λ, A_B, A_TH, k, l, Δz, ϵ)
     for facet in shape.facets
         update_temps!(facet, λ, A_B, A_TH, k, l, Δz, ϵ)
     end
@@ -165,31 +197,32 @@ function step_heat_cond!(Tⱼ, Tⱼ₊₁, λ)
 end
 
 """
-    update_surf_temp!(facet::Facet, A_B, A_TH, Δz, Γ, P, ϵ)
-    update_surf_temp!(T, F_total, Δz, Γ, P, ϵ)
+    update_surf_temp!(facet::Facet, A_B, A_TH, k, l, Δz, ϵ)
+    update_surf_temp!(T, F_total, k, l, Δz, ϵ)
+
+Update surface temperature under radiative boundary condition using Newton's method
 
 # Arguments
 - `facet`   : surface facet (`Facet`)
 - `A_B`     : Bond albedo
 - `A_TH`    : Albedo in thermal infrared wavelength
-- `T`       : 1-D array of temperatures
-- `F_total` : Total energy flux to the surface facet 
-- `Δz`      : Step width in depth direction
-- `Γ`       : Thermal inertia
-- `P`       : Rotation period
+- `k`       : Thermal conductivity
+- `l`       : Thermal skin depth
+- `Δz`      : Step width in depth direction (normalized by thermal skin depth `l`)
 - `ϵ`       : Emissivity
 
-Update surface temperature under radiative boundary condition using Newton's method
+- `T`       : 1-D array of temperatures
+- `F_total` : Total energy absorbed by the facet
+
+In the normalized equation of the surface boundary condition,
+the coefficient `Γ / √(4π * P)` is equivalent for `k / l`,
+where `Γ` is the thermal inertia and `P` the rotation period.
 """
 function update_surf_temp!(facet::Facet, A_B, A_TH, k, l, Δz, ϵ)
     F_total = flux_total(facet, A_B, A_TH)
     update_surf_temp!(facet.temps, F_total, k, l, Δz, ϵ)
 end
 
-"""
-
-Coefficient `Γ / √(4π * P)` is equivalent for `k / l`.
-"""
 function update_surf_temp!(T, F_total, k, l, Δz, ϵ)
     ϵσ = ϵ * σ_SB
     for _ in 1:20
