@@ -132,16 +132,16 @@ thermal_inertia(params) = thermal_inertia(params.k, params.ρ, params.Cp)
 Update temerature profie (`Facet.temps`) based on 1-D heat diffusion
 """
 function update_temps!(shape, params)
-    @unpack λ, A_B, A_TH, Δz, Γ, P, ϵ = params
+    @unpack λ, A_B, A_TH, k, l, Δz, ϵ = params
 
     for facet in shape.facets
-        update_temps!(facet, λ, A_B, A_TH, Δz, Γ, P, ϵ)
+        update_temps!(facet, λ, A_B, A_TH, k, l, Δz, ϵ)
     end
 end
 
-function update_temps!(facet::Facet, λ, A_B, A_TH, Δz, Γ, P, ϵ)
+function update_temps!(facet::Facet, λ, A_B, A_TH, k, l, Δz, ϵ)
     step_heat_cond!(facet, λ)
-    update_surf_temp!(facet, A_B, A_TH, Δz, Γ, P, ϵ)  # Surface boundary condition (Radiation)
+    update_surf_temp!(facet, A_B, A_TH, k, l, Δz, ϵ)  # Surface boundary condition (Radiation)
     facet.temps[end] = facet.temps[end-1]             # Internal boundary condition (Insulation)
 end
 
@@ -181,22 +181,22 @@ end
 
 Update surface temperature under radiative boundary condition using Newton's method
 """
-function update_surf_temp!(facet::Facet, A_B, A_TH, Δz, Γ, P, ϵ)
+function update_surf_temp!(facet::Facet, A_B, A_TH, k, l, Δz, ϵ)
     F_total = flux_total(facet, A_B, A_TH)
-    update_surf_temp!(facet.temps, F_total, Δz, Γ, P, ϵ)
+    update_surf_temp!(facet.temps, F_total, k, l, Δz, ϵ)
 end
 
 """
 
 Coefficient `Γ / √(4π * P)` is equivalent for `k / l`.
 """
-function update_surf_temp!(T, F_total, Δz, Γ, P, ϵ)
+function update_surf_temp!(T, F_total, k, l, Δz, ϵ)
     ϵσ = ϵ * σ_SB
     for _ in 1:20
         T_pri = T[begin]
 
-        f = F_total + Γ / √(4π * P) * (T[begin+1] - T[begin]) / Δz - ϵσ*T[begin]^4
-        df = - Γ / √(4π * P) / Δz - 4*ϵσ*T[begin]^3             
+        f = F_total + k / l * (T[begin+1] - T[begin]) / Δz - ϵσ*T[begin]^4
+        df = - k / l / Δz - 4*ϵσ*T[begin]^3             
         T[begin] -= f / df
 
         err = abs(1 - T_pri / T[begin])
