@@ -21,7 +21,7 @@ A polyhedral shape model of an asteroid.
 – `force`    : Thermal recoil force at body-fixed frame (Yarkovsky effect)
 - `torque`   : Thermal recoil torque at body-fixed frame (YORP effect)
 """
-struct Shape{T1, T2, T3, T4, T5, T6, T7, T8, T9, T10}
+struct Shape{T1, T2, T3, T4, T5, T6, T7, T8}
     num_node::T1
     num_face::T1
     nodes   ::T2
@@ -35,7 +35,7 @@ struct Shape{T1, T2, T3, T4, T5, T6, T7, T8, T9, T10}
     MOI     ::T7
 
     force   ::T8
-    torque  ::T9
+    torque  ::T8
 end
 
 
