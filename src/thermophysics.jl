@@ -1,10 +1,11 @@
 
 
 # ****************************************************************
-#                Thermal skin depth and inertia
+#              Thermal skin depth & Thermal inertia
 # ****************************************************************
 
 """
+    thermal_skin_depth(params)      -> l_2π
     thermal_skin_depth(P, k, ρ, Cp) -> l_2π
 
 # Arguments
@@ -16,10 +17,12 @@
 # Return
 - `l_2π` : Thermal skin depth [m]
 """
-thermal_skin_depth(P, k, ρ, Cp) = √(4π * P * k / (ρ * Cp))
 thermal_skin_depth(params) = thermal_skin_depth(params.P, params.k, params.ρ, params.Cp)
+thermal_skin_depth(P, k, ρ, Cp) = @. √(4π * P * k / (ρ * Cp))
+
 
 """
+    thermal_inertia(params)   -> Γ
     thermal_inertia(k, ρ, Cp) -> Γ
 
 # Arguments
@@ -30,8 +33,8 @@ thermal_skin_depth(params) = thermal_skin_depth(params.P, params.k, params.ρ, p
 # Return
 - `Γ` : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
 """
-thermal_inertia(k, ρ, Cp) = √(k * ρ * Cp)
 thermal_inertia(params) = thermal_inertia(params.k, params.ρ, params.Cp)
+thermal_inertia(k, ρ, Cp) = @. √(k * ρ * Cp)
 
 
 # ****************************************************************
@@ -39,8 +42,9 @@ thermal_inertia(params) = thermal_inertia(params.k, params.ρ, params.Cp)
 # ****************************************************************
 
 """
-    struct ThermoParams
+    struct ThermoParams{COMMON_INT, COMMON_FLOAT, FACET_INT, FACET_FLOAT}
 
+# Fields
 - `A_B`   : Bond albedo
 - `A_TH`  : Albedo at thermal radiation wavelength
 - `k`     : Thermal conductivity [W/m/K]
@@ -61,44 +65,69 @@ thermal_inertia(params) = thermal_inertia(params.k, params.ρ, params.Cp)
 - `l`     : Thermal skin depth [m]
 - `Γ`     : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
 - `λ`     : Non-dimensional coefficient for heat diffusion equation
+
+# Parametic types
+- `COMMON_INT`   : Integer-typed property common for all facets
+- `COMMON_FLOAT` : Float-typed property common for all facets
+- `FACET_INT`    : Integer common for all facets or array giving an integer for each facet individually
+- `FACET_FLOAT`  : Float common for all facets or array giving a float for each facet individually
 """
-struct ThermoParams{T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11}
-    A_B  ::T1
-    A_TH ::T2
-    k    ::T3
-    ρ    ::T4
-    Cp   ::T5
-    ϵ    ::T6
+struct ThermoParams{COMMON_INT, COMMON_FLOAT, FACET_INT, FACET_FLOAT}
+    A_B  ::FACET_FLOAT
+    A_TH ::FACET_FLOAT
+    k    ::FACET_FLOAT
+    ρ    ::FACET_FLOAT
+    Cp   ::FACET_FLOAT
+    ϵ    ::FACET_FLOAT
 
-    t_bgn::T7
-    t_end::T7
-    Δt   ::T7
-    Nt   ::T8
+    t_bgn::COMMON_FLOAT  # Common for all facets
+    t_end::COMMON_FLOAT  # Common for all facets
+    Δt   ::COMMON_FLOAT  # Common for all facets
+    Nt   ::COMMON_INT    # Common for all facets
 
-    z_max::T9
-    Δz   ::T9
-    Nz   ::T10
+    z_max::FACET_FLOAT
+    Δz   ::FACET_FLOAT
+    Nz   ::FACET_INT
 
-    P    ::T7
-    l    ::T11
-    Γ    ::T11
-    λ    ::T11
+    P    ::COMMON_FLOAT  # Common for all facets
+    l    ::FACET_FLOAT
+    Γ    ::FACET_FLOAT
+    λ    ::FACET_FLOAT
 end
 
 function ThermoParams(; A_B, A_TH, k, ρ, Cp, ϵ, t_bgn=0., t_end, Nt, z_max, Nz, P)
 
-    t_bgn /= P                       # Normalized by period
-    t_end /= P                       # Normalized by period
-    Δt = (t_end - t_bgn) / (Nt - 1)  # Normalized by period
+    t_bgn /= P                       # Normalized by period P
+    t_end /= P                       # Normalized by period P
+    Δt = (t_end - t_bgn) / (Nt - 1)  # Normalized by period P
 
     l = thermal_skin_depth(P, k, ρ, Cp)
     Γ = thermal_inertia(k, ρ, Cp)
 
-    z_max /= l             # Normalized by skin depth
-    Δz = z_max / (Nz - 1)  # Normalized by skin depth
+    z_max = @. z_max / l      # Normalized by skin depth l
+    Δz = @. z_max / (Nz - 1)  # Normalized by skin depth l
 
-    λ = 1/4π * (Δt/Δz^2)
-    λ > 0.5 && println("λ = ", λ, ", which should be smaller than 0.5 for convergence.")
+    λ = @. (Δt/Δz^2) / 4π
+    maximum(λ) > 0.5 && println("λ should be smaller than 0.5 for convergence.")
+
+    LENGTH = maximum(length.([A_B, A_TH, k, ρ, Cp, ϵ, z_max, Δz, Nz, l, Γ, λ]))
+
+    if LENGTH > 1
+        A_B   isa Real && (A_B   = fill(A_B,   LENGTH))
+        A_TH  isa Real && (A_TH  = fill(A_TH,  LENGTH))
+        k     isa Real && (k     = fill(k,     LENGTH))
+        ρ     isa Real && (ρ     = fill(ρ,     LENGTH))
+        Cp    isa Real && (Cp    = fill(Cp,    LENGTH))
+        ϵ     isa Real && (ϵ     = fill(ϵ,     LENGTH))
+        
+        z_max isa Real && (z_max = fill(z_max, LENGTH))
+        Δz    isa Real && (Δz    = fill(Δz,    LENGTH))
+        Nz    isa Real && (Nz    = fill(Nz,    LENGTH))
+        
+        l     isa Real && (l     = fill(l,     LENGTH))
+        Γ     isa Real && (Γ     = fill(Γ,     LENGTH))
+        λ     isa Real && (λ     = fill(λ,     LENGTH))
+    end
     
     ThermoParams(A_B, A_TH, k, ρ, Cp, ϵ, t_bgn, t_end, Δt, Nt, z_max, Δz, Nz, P, l, Γ, λ) 
 end
@@ -151,35 +180,31 @@ end
 # ****************************************************************
 
 """
-    update_temps!(shape, params)
-    update_temps!(facet::Facet, λ, A_B, A_TH, Δz, Γ, P, ϵ)
+    update_temps!(shape::Shape, params::ThermoParams)
+    update_temps!(shape::Shape, λ, A_B, A_TH, k, l, Δz, ϵ)
+    update_temps!(facet::Facet, λ::Real, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
 
 Update temerature profie (`Facet.temps`) based on 1-D heat diffusion
 """
-function update_temps!(shape, params)
-    @unpack λ, A_B, A_TH, k, l, Δz, ϵ = params
-
-    for facet in shape.facets
-        update_temps!(facet, λ, A_B, A_TH, k, l, Δz, ϵ)
-    end
-end
+update_temps!(shape::Shape, params::ThermoParams) = update_temps!(shape, params.λ, params.A_B, params.A_TH, params.k, params.l, params.Δz, params.ϵ)
 
 function update_temps!(shape::Shape, λ, A_B, A_TH, k, l, Δz, ϵ)
-    # update_temps!.(shape.facets, λ, A_B, A_TH, k, l, Δz, ϵ)
-    for facet in shape.facets
-        update_temps!(facet, λ, A_B, A_TH, k, l, Δz, ϵ)
-    end
+    step_heat_cond!(shape, λ)
+    update_surf_temp!(shape, A_B, A_TH, k, l, Δz, ϵ)  # Surface boundary condition (Radiation)
+    update_bottom_temp!(shape)                        # Internal boundary condition (Insulation)
 end
 
-function update_temps!(facet::Facet, λ, A_B, A_TH, k, l, Δz, ϵ)
+function update_temps!(facet::Facet, λ::Real, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
     step_heat_cond!(facet, λ)
     update_surf_temp!(facet, A_B, A_TH, k, l, Δz, ϵ)  # Surface boundary condition (Radiation)
-    facet.temps[end] = facet.temps[end-1]             # Internal boundary condition (Insulation)
+    update_bottom_temp!(facet)                        # Internal boundary condition (Insulation)
 end
 
 """
-    step_heat_cond!(facet::Facet, λ)
-    step_heat_cond!(Tⱼ, Tⱼ₊₁, λ)
+    step_heat_cond!(shape::Shape, λ::AbstractVector)
+    step_heat_cond!(shape::Shape, λ::Real)
+    step_heat_cond!(facet::Facet, λ::Real)
+    step_heat_cond!(Tⱼ::AbstractVector, Tⱼ₊₁::AbstractVector, λ::Real)
 
 Calculate temperature profile at the next step and update `Facet.temps`
 
@@ -189,16 +214,31 @@ Calculate temperature profile at the next step and update `Facet.temps`
 - `Tⱼ`     : Temperatures
 - `Tⱼ₊₁`   : Temperatures at the next timestep
 """
-step_heat_cond!(facet::Facet, λ) = step_heat_cond!(facet.temps, facet._temps_, λ)
+function step_heat_cond!(shape::Shape, λ::AbstractVector)
+    for (i, facet) in enumerate(shape.facets)
+        step_heat_cond!(facet, λ[i])
+    end
+end
 
-function step_heat_cond!(Tⱼ, Tⱼ₊₁, λ)
+function step_heat_cond!(shape::Shape, λ::Real)
+    for facet in shape.facets
+        step_heat_cond!(facet, λ)
+    end
+end
+
+step_heat_cond!(facet::Facet, λ::Real) = step_heat_cond!(facet.temps, facet._temps_, λ)
+
+function step_heat_cond!(Tⱼ::AbstractVector, Tⱼ₊₁::AbstractVector, λ::Real)
     @. Tⱼ₊₁[begin+1:end-1] = @views (1-2λ)*Tⱼ[begin+1:end-1] + λ*(Tⱼ[begin+2:end] + Tⱼ[begin:end-2])
     @. Tⱼ = Tⱼ₊₁  # Update cells for next step
 end
 
+
 """
-    update_surf_temp!(facet::Facet, A_B, A_TH, k, l, Δz, ϵ)
-    update_surf_temp!(T, F_total, k, l, Δz, ϵ)
+    update_surf_temp!(shape::Shape, A_B, A_TH, k, l, Δz, ϵ)
+    update_surf_temp!(shape::Shape, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
+    update_surf_temp!(facet::Facet, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
+    update_surf_temp!(T::AbstractVector, F_total::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
 
 Update surface temperature under radiative boundary condition using Newton's method
 
@@ -218,12 +258,24 @@ In the normalized equation of the surface boundary condition,
 the coefficient `Γ / √(4π * P)` is equivalent for `k / l`,
 where `Γ` is the thermal inertia and `P` the rotation period.
 """
-function update_surf_temp!(facet::Facet, A_B, A_TH, k, l, Δz, ϵ)
+function update_surf_temp!(shape::Shape, A_B, A_TH, k, l, Δz, ϵ)
+    for (i, facet) in enumerate(shape.facets)
+        update_surf_temp!(facet, A_B[i], A_TH[i], k[i], l[i], Δz[i], ϵ[i])
+    end
+end
+
+function update_surf_temp!(shape::Shape, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
+    for facet in shape.facets
+        update_surf_temp!(facet, A_B, A_TH, k, l, Δz, ϵ)
+    end
+end
+
+function update_surf_temp!(facet::Facet, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
     F_total = flux_total(facet, A_B, A_TH)
     update_surf_temp!(facet.temps, F_total, k, l, Δz, ϵ)
 end
 
-function update_surf_temp!(T, F_total, k, l, Δz, ϵ)
+function update_surf_temp!(T::AbstractVector, F_total::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
     ϵσ = ϵ * σ_SB
     for _ in 1:20
         T_pri = T[begin]
@@ -237,16 +289,35 @@ function update_surf_temp!(T, F_total, k, l, Δz, ϵ)
     end
 end
 
+
 """
-    flux_total(facet::Facet, A_B::Real, A_TH::Real) -> F_total
+Update bottom temperature under boundary condition of insulation
+"""
+function update_bottom_temp!(shape::Shape)
+    for facet in shape.facets
+        update_bottom_temp!(facet)
+    end
+end
+
+function update_bottom_temp!(facet::Facet)
+    facet.temps[end] = facet.temps[end-1] 
+end
+
+
+"""
+    flux_total(shape::Shape, A_B::AbstractVector, A_TH::AbstractVector) -> F_total
+    flux_total(facet::Facet, A_B::Real,           A_TH::Real)           -> F_total
 
 # Arguments
-- `facet` : surface facet (`Facet`)
+- `shape` : Shape model (`Shape`)
+- `facet` : Surface facet (`Facet`)
 - `A_B`   : Bond albedo
 - `A_TH`  : Albedo in thermal infrared wavelength
 
 Total energy absorbed by the facet
 """
+flux_total(shape::Shape, A_B::AbstractVector, A_TH::AbstractVector) = [flux_total(facet, A_B[i], A_TH[i]) for (i, facet) in enumerate(shape.facets)]
+
 function flux_total(facet::Facet, A_B::Real, A_TH::Real)
     F_sun  = facet.flux.sun
     F_scat = facet.flux.scat

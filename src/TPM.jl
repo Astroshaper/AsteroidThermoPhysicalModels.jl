@@ -25,7 +25,7 @@ end
 
 Single scattering of sunlight is considered.
 """
-update_flux_scat_single!(shape, params) = update_flux_scat_single!(shape, params.A_B)
+update_flux_scat_single!(shape, params::ThermoParams) = update_flux_scat_single!(shape, params.A_B)
 
 function update_flux_scat_single!(shape, A_B::Real)
     for facet in shape.facets
@@ -50,7 +50,7 @@ end
 
 Multiple scattering of sunlight is considered.
 """
-update_flux_scat_mult!(shape, params) = update_flux_scat_mult!(shape, params.A_B)
+update_flux_scat_mult!(shape, params::ThermoParams) = update_flux_scat_mult!(shape, params.A_B)
 
 function update_flux_scat_mult!(shape, A_B::Real)
     # for facet in shape.facets
@@ -78,7 +78,7 @@ end
 Single radiation-reabsorption is considered,
 assuming albedo is close to zero at thermal infrared wavelength.
 """
-update_flux_rad_single!(shape, params) = update_flux_rad_single!(shape, params.ϵ)
+update_flux_rad_single!(shape, params::ThermoParams) = update_flux_rad_single!(shape, params.ϵ)
 
 function update_flux_rad_single!(shape, ϵ::Real)
     for facet in shape.facets

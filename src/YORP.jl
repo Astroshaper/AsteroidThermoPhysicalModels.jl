@@ -31,18 +31,13 @@ end
 
 """
 """
-function run_YORP(shape, orbit, spin, params)
+function run_YORP(shape, orbit, spin, params::ThermoParams)
     @unpack P, Δt, t_bgn, t_end, Nt, Nz = params
     @unpack λ, A_B, A_TH, k, l, Δz, ϵ = params
     
     init_temps_zero!(shape, params)
     
     τ̄ = zeros(3)  # Net YORP torque
-
-    # A_B = params_thermo.A_B
-    # A_B = fill(params_thermo.A_B, shape.num_face)
-    # ϵ = params_thermo.ϵ
-    # ϵ = fill(params_thermo.ϵ, shape.num_face)
 
     for t in (t_bgn:Δt:t_end)*P
         spin_phase = spin.ω * t
@@ -58,8 +53,7 @@ function run_YORP(shape, orbit, spin, params)
         
         τ̄ .+= body_to_orbit(SVector{3}(shape.torque), spin.γ, spin.ε, spin_phase)
         
-        # update_temps!(shape, params)
-        update_temps!(shape, λ, A_B, A_TH, k, l, Δz, ϵ)
+        update_temps!(shape, params)
     end
     τ̄ /= Nt
 end
