@@ -1,13 +1,9 @@
 
 
-
-
-
 """
 """
 function run_YORP(shape, orbit, spin, params::ThermoParams)
-    @unpack P, Δt, t_bgn, t_end, Nt, Nz = params
-    @unpack λ, A_B, A_TH, k, l, Δz, ϵ = params
+    @unpack P, Δt, t_bgn, t_end, Nt = params
     
     init_temps_zero!(shape, params)
     
