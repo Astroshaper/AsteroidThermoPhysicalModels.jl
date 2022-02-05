@@ -1,4 +1,39 @@
 
+
+
+# ****************************************************************
+#                   Initialize temperatures
+# ****************************************************************
+
+"""
+    init_temps_zero!(shape::Shape, params)
+    init_temps_zero!(shape::Shape, Nz::AbstractVector)
+    init_temps_zero!(shape::Shape, Nz::Integer)
+    init_temps_zero!(facet::Facet, Nz::Integer)
+
+Initialize temperature profile in depth on every facet.
+All elements are intialized as 0 K.
+"""
+init_temps_zero!(shape::Shape, params) = init_temps_zero!(shape, params.Nz)
+
+function init_temps_zero!(shape::Shape, Nz::AbstractVector)
+    for (i, facet) in enumerate(shape.facets)
+        init_temps_zero!(facet, Nz[i])
+    end
+end
+
+function init_temps_zero!(shape::Shape, Nz::Integer)
+    for facet in shape.facets
+        init_temps_zero!(facet, Nz)
+    end
+end
+
+function init_temps_zero!(facet::Facet, Nz::Integer)
+    isempty(facet.temps)   ? append!(facet.temps,   zeros(Nz)) : facet.temps   .= 0
+    isempty(facet._temps_) ? append!(facet._temps_, zeros(Nz)) : facet._temps_ .= 0
+end
+
+
 # ****************************************************************
 #        Energy flux of sunlight, scattering, and radiation
 # ****************************************************************
