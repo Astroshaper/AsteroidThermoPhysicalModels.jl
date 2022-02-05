@@ -32,28 +32,25 @@ include("coordinates.jl")
 export rotateX, rotateY, rotateZ
 export rotateX!, rotateY!, rotateZ!
 
+include("facet.jl")
+include("shape.jl")
+include("visualization.jl")
+export Shape
+export draw
+
 include("kepler.jl")
+include("spin.jl")
 export OrbitalElements
 export ref_to_orb!, ref_to_orb
 export orb_to_ref!, orb_to_ref
 export solveKeplerEquation1, solveKeplerEquation2, u2ν, heliocentric_distance
-
-include("spin.jl")
 export SpinParams
 
-include("facet.jl")
-
-include("shape.jl")
-export Shape, draw
-
-include("visualization.jl")
-export draw
-
-include("YORP.jl")
-export torque2rate, YORP_time_scale, run_YORP, run_Yarkovsky
-
 include("thermophysics.jl")
-export ParamsThermo
+include("TPM.jl")
+include("YORP.jl")
+export ThermoParams
+export torque2rate, YORP_timescale, run_YORP, run_Yarkovsky
 
 include("polyhedron.jl")
 

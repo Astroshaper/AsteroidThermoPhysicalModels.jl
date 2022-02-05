@@ -6,7 +6,6 @@
 A polyhedral shape model of an asteroid.
 
 # Fields
-
 - `num_node` : Number of nodes
 - `num_face` : Number of faces
 - `nodes`    : 1-D array of node positions
@@ -21,24 +20,22 @@ A polyhedral shape model of an asteroid.
 
 – `force`    : Thermal recoil force at body-fixed frame (Yarkovsky effect)
 - `torque`   : Thermal recoil torque at body-fixed frame (YORP effect)
-- `Tz⁺`      : Pre-allocated vector for update of temperature profile on each facets (`Facet`)
 """
-struct Shape{T1, T2, T3, T4, T5, T6, T7, T8, T9, T10}
+struct Shape{T1, T2, T3, T4, T5, T6, T7, T8}
     num_node::T1
     num_face::T1
     nodes   ::T2
     faces   ::T3
 
-    facets::T4
+    facets  ::T4
 
-    AREA  ::T5
-    VOLUME::T5
-    COF   ::T6
-    MOI   ::T7
+    AREA    ::T5
+    VOLUME  ::T5
+    COF     ::T6
+    MOI     ::T7
 
-    force ::T8
-    torque::T9
-    Tz⁺   ::T10
+    force   ::T8
+    torque  ::T8
 end
 
 
@@ -79,12 +76,11 @@ function Shape(shapepath; scale=1, find_visible_facets=false, save_shape=false)
         
         force  = zeros(3)
         torque = zeros(3)
-        Tz⁺    = similar(facets[begin].Tz)
         
         shape = Shape(
-                num_node, num_face, nodes, faces, facets,
-                AREA, VOLUME, COF, MOI,
-                force, torque, Tz⁺
+            num_node, num_face, nodes, faces, facets,
+            AREA, VOLUME, COF, MOI,
+            force, torque
         )
         save_shape && save(splitext(shapepath)[1] * ".jld2", Dict("shape" => shape))
 
