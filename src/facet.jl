@@ -61,7 +61,7 @@ function Base.show(io::IO, facet::Facet)
     println("Normal : ", facet.normal)
     println("Area   : ", facet.area)
     
-    if length(facet.visiblefacets) == 0
+    if isempty(facet.visiblefacets)
         println("No visible facets.")
     else
         @unpack visiblefacets = facet
