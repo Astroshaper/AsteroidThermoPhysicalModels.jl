@@ -209,7 +209,6 @@ isAbove(obs::Facet, tar::Facet) = isAbove(obs.A, obs.B, obs.C, tar.center)
 isBelow(obs::Facet, tar::Facet) = isBelow(obs.A, obs.B, obs.C, tar.center)
 
 
-
 ################################################################
 #                           Raycast
 ################################################################

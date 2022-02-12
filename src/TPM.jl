@@ -67,14 +67,20 @@ function run_TPM(shape, orbit, spin, params::ThermoParams)
     
     init_temps_zero!(shape, params)
     
-    ts = (t_bgn:Δt:t_end) * P
-    df = DataFrame(
-        t   = zeros(Nt), u   = zeros(Nt), ϕ   = zeros(Nt),
-        f_x = zeros(Nt), f_y = zeros(Nt), f_z = zeros(Nt), 
-        τ_x = zeros(Nt), τ_y = zeros(Nt), τ_z = zeros(Nt), 
-    )
-
-    for (i, t) in enumerate(ts)
+    df = DataFrame()
+    df[:, :t    ] = (t_bgn:Δt:t_end) * P
+    df[:, :u    ] = zeros(Nt)
+    df[:, :ϕ    ] = zeros(Nt)
+    df[:, :f_x  ] = zeros(Nt)
+    df[:, :f_y  ] = zeros(Nt)
+    df[:, :f_z  ] = zeros(Nt)
+    df[:, :τ_x  ] = zeros(Nt)
+    df[:, :τ_y  ] = zeros(Nt)
+    df[:, :τ_z  ] = zeros(Nt)
+    df[:, :E_in ] = zeros(Nt)
+    df[:, :E_out] = zeros(Nt)
+    
+    for (i, t) in enumerate(df.t)
         ϕ = spin.ω * t
 
         u = solveKeplerEquation2(orbit, t)
@@ -97,7 +103,7 @@ function run_TPM(shape, orbit, spin, params::ThermoParams)
         f = body_to_orbit(f, spin.γ, spin.ε, ϕ)  # Orbital plane frame
         τ = body_to_orbit(τ, spin.γ, spin.ε, ϕ)  # Orbital plane frame
 
-        df.t[i] = t
+        # df.t[i] = t
         df.u[i] = u
         df.ϕ[i] = ϕ
 
@@ -108,12 +114,51 @@ function run_TPM(shape, orbit, spin, params::ThermoParams)
         df.τ_x[i] = τ[1]
         df.τ_y[i] = τ[2]
         df.τ_z[i] = τ[3]
+
+        df.E_in[i]  = energy_in(shape, params)
+        df.E_out[i] = energy_out(shape, params)
         
         update_temps!(shape, params)
     end
+
+    df[:, :ν] = u2ν(df.u, orbit)
+    df[:, :E_cons] = df.E_out ./ df.E_in
+    df[:, :Ē_cons] = [ mean(df.E_cons[@. row.t - spin.P ≤ df.t ≤ row.t]) for row in eachrow(df) ];
+    
     df
 end
 
+# ****************************************************************
+#                     Convergence decision
+# ****************************************************************
+
+
+"""
+    energy_in(shape::Shape, params::ThermoParams) -> E_in
+    energy_in(shape::Shape, A_B::AbstractVector ) -> E_in
+    energy_in(shape::Shape, A_B::Real           ) -> E_in
+    energy_in(facet::Facet, A_B::Real           ) -> E_in
+
+Input energy per second at a certain time [W]
+"""
+energy_in(shape::Shape, params::ThermoParams) = energy_in(shape, params.A_B)
+energy_in(shape::Shape, A_B::AbstractVector) = sum(energy_in(facet, A_B[i]) for (i, facet) in enumerate(shape.facets))
+energy_in(shape::Shape, A_B::Real) = sum(energy_in(facet, A_B) for facet in shape.facets)
+energy_in(facet::Facet, A_B::Real) = (1 - A_B) * (facet.flux.sun + facet.flux.scat) * facet.area
+
+
+"""
+    energy_out(shape::Shape, params::ThermoParams                   ) -> E_out
+    energy_out(shape::Shape, ϵ::AbstractVector, A_TH::AbstractVector) -> E_out
+    energy_out(shape::Shape, ϵ::Real,           A_TH::Real          ) -> E_out
+    energy_out(facet::Facet, ϵ::Real,           A_TH::Real          ) -> E_out
+
+Output enegey per second at a certain time [W]
+"""
+energy_out(shape::Shape, params::ThermoParams) = energy_out(shape, params.ϵ, params.A_TH)
+energy_out(shape::Shape, ϵ::AbstractVector, A_TH::AbstractVector) = sum(energy_out(facet, ϵ[i], A_TH[i]) for (i, facet) in enumerate(shape.facets))
+energy_out(shape::Shape, ϵ::Real, A_TH::Real) = sum(energy_out(facet, ϵ, A_TH) for facet in shape.facets)
+energy_out(facet::Facet, ϵ::Real, A_TH::Real) = ( ϵ*σ_SB*facet.temps[begin]^4 - (1 - A_TH)*facet.flux.rad ) * facet.area
 
 # ****************************************************************
 #        Energy flux of sunlight, scattering, and radiation

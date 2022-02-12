@@ -11,9 +11,6 @@ import SPICE
 # using SharedArrays
 
 using DataFrames
-ENV["COLUMNS"] = 100
-ENV["LINES"] = 20
-
 using Parameters
 using GLMakie  # 3D visulaization
 
@@ -52,6 +49,7 @@ export SpinParams
 include("thermophysics.jl")
 include("TPM.jl")
 include("YORP.jl")
+include("Yarkovsky.jl")
 export ThermoParams
 export run_TPM
 export torque2rate, YORP_timescale, run_YORP, run_Yarkovsky

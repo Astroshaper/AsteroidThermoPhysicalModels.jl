@@ -369,11 +369,11 @@ end
 Calculate true anomaly ν from eccentric anomaly u and eccentricity e
 
 # Parameters
-- `u` : eccentric anomaly
-- `e` : eccentricity
+- `u` : Eccentric anomaly
+- `e` : Eccentricity
 
 # Return
-- `ν` : true anomaly
+- `ν` : True anomaly
 
 """
 u2ν(u, e) = 2 * atan(√((1+e)/(1-e)) * sin(u*0.5), cos(u*0.5))
