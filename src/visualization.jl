@@ -106,16 +106,17 @@ end
 ################################################################
 
 """
-    showshape(shape; data=nothing)
+    draw(shape; data=nothing)
 
 """
-function draw(shape::Shape; data=nothing, r̂☉=[1,0,0.])
+function draw(shape::Shape; data=nothing, r̂☉=[1,0,0.], colormap=:viridis, strokecolor=:gray20)
     nodes = VectorVector2Matrix(shape.nodes)
     faces = VectorVector2Matrix(shape.faces)
 
     set_theme!(backgroundcolor=:black)
+    # set_theme!(backgroundcolor=:white)
     
-    if data == nothing
+    if data === nothing
         color = :gray
     elseif data == :radius
         color = [norm(v) for v in eachrow(nodes)]
@@ -129,12 +130,16 @@ function draw(shape::Shape; data=nothing, r̂☉=[1,0,0.])
         color = face2node(nodes, faces, data)
     end
 
-    # scene = mesh(nodes, faces, color=color)
-    scene = poly(nodes, faces, color=color, strokecolor=:black, strokewidth=1)
+    scene = poly(nodes, faces,
+        color=color, colormap=colormap,
+        strokecolor=strokecolor, strokewidth=1,
+        size=(1500,1500)
+    )
     display(scene)
 end
 
-
+"""
+"""
 function draw(shape1::Shape, shape2::Shape)
     faces1 = VectorVector2Matrix(shape1.faces)
     faces2 = VectorVector2Matrix(shape2.faces)
@@ -158,7 +163,8 @@ function draw(shape1::Shape, shape2::Shape)
     display(scene)
 end
 
-
+"""
+"""
 function draw(shape1::Shape, shape2::Shape, savepath)
 
     faces = VectorVector2Matrix(shape1.faces)
