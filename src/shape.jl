@@ -77,7 +77,7 @@ function ShapeModel(shapepath; scale=1, find_visible_facets=false, save_shape=fa
         force  = zeros(3)
         torque = zeros(3)
         
-        shape = Shape(
+        shape = ShapeModel(
             num_node, num_face, nodes, faces, facets,
             AREA, VOLUME, COF, MOI,
             force, torque
