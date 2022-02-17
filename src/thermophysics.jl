@@ -180,15 +180,15 @@ end
 # ****************************************************************
 
 """
-    update_temps!(shape::Shape, params::ThermoParams)
-    update_temps!(shape::Shape, λ, A_B, A_TH, k, l, Δz, ϵ)
+    update_temps!(shape::ShapeModel, params::ThermoParams)
+    update_temps!(shape::ShapeModel, λ, A_B, A_TH, k, l, Δz, ϵ)
     update_temps!(facet::Facet, λ::Real, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
 
 Update temerature profie (`Facet.temps`) based on 1-D heat diffusion
 """
-update_temps!(shape::Shape, params::ThermoParams) = update_temps!(shape, params.λ, params.A_B, params.A_TH, params.k, params.l, params.Δz, params.ϵ)
+update_temps!(shape::ShapeModel, params::ThermoParams) = update_temps!(shape, params.λ, params.A_B, params.A_TH, params.k, params.l, params.Δz, params.ϵ)
 
-function update_temps!(shape::Shape, λ, A_B, A_TH, k, l, Δz, ϵ)
+function update_temps!(shape::ShapeModel, λ, A_B, A_TH, k, l, Δz, ϵ)
     step_heat_cond!(shape, λ)
     update_surf_temp!(shape, A_B, A_TH, k, l, Δz, ϵ)  # Surface boundary condition (Radiation)
     update_bottom_temp!(shape)                        # Internal boundary condition (Insulation)
@@ -201,9 +201,9 @@ function update_temps!(facet::Facet, λ::Real, A_B::Real, A_TH::Real, k::Real, l
 end
 
 """
-    step_heat_cond!(shape::Shape, λ::AbstractVector)
-    step_heat_cond!(shape::Shape, λ::Real)
-    step_heat_cond!(facet::Facet, λ::Real)
+    step_heat_cond!(shape::ShapeModel, λ::AbstractVector)
+    step_heat_cond!(shape::ShapeModel, λ::Real)
+    step_heat_cond!(facet::Facet,      λ::Real)
     step_heat_cond!(Tⱼ::AbstractVector, Tⱼ₊₁::AbstractVector, λ::Real)
 
 Calculate temperature profile at the next step and update `Facet.temps`
@@ -214,13 +214,13 @@ Calculate temperature profile at the next step and update `Facet.temps`
 - `Tⱼ`     : Temperatures
 - `Tⱼ₊₁`   : Temperatures at the next timestep
 """
-function step_heat_cond!(shape::Shape, λ::AbstractVector)
+function step_heat_cond!(shape::ShapeModel, λ::AbstractVector)
     for (i, facet) in enumerate(shape.facets)
         step_heat_cond!(facet, λ[i])
     end
 end
 
-function step_heat_cond!(shape::Shape, λ::Real)
+function step_heat_cond!(shape::ShapeModel, λ::Real)
     for facet in shape.facets
         step_heat_cond!(facet, λ)
     end
@@ -235,9 +235,9 @@ end
 
 
 """
-    update_surf_temp!(shape::Shape, A_B, A_TH, k, l, Δz, ϵ)
-    update_surf_temp!(shape::Shape, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
-    update_surf_temp!(facet::Facet, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
+    update_surf_temp!(shape::ShapeModel, A_B, A_TH, k, l, Δz, ϵ)
+    update_surf_temp!(shape::ShapeModel, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
+    update_surf_temp!(facet::Facet,      A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
     update_surf_temp!(T::AbstractVector, F_total::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
 
 Update surface temperature under radiative boundary condition using Newton's method
@@ -258,13 +258,13 @@ In the normalized equation of the surface boundary condition,
 the coefficient `Γ / √(4π * P)` is equivalent for `k / l`,
 where `Γ` is the thermal inertia and `P` the rotation period.
 """
-function update_surf_temp!(shape::Shape, A_B, A_TH, k, l, Δz, ϵ)
+function update_surf_temp!(shape::ShapeModel, A_B, A_TH, k, l, Δz, ϵ)
     for (i, facet) in enumerate(shape.facets)
         update_surf_temp!(facet, A_B[i], A_TH[i], k[i], l[i], Δz[i], ϵ[i])
     end
 end
 
-function update_surf_temp!(shape::Shape, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
+function update_surf_temp!(shape::ShapeModel, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
     for facet in shape.facets
         update_surf_temp!(facet, A_B, A_TH, k, l, Δz, ϵ)
     end
@@ -293,7 +293,7 @@ end
 """
 Update bottom temperature under boundary condition of insulation
 """
-function update_bottom_temp!(shape::Shape)
+function update_bottom_temp!(shape::ShapeModel)
     for facet in shape.facets
         update_bottom_temp!(facet)
     end
@@ -316,7 +316,7 @@ end
 
 Total energy absorbed by the facet
 """
-flux_total(shape::Shape, A_B::AbstractVector, A_TH::AbstractVector) = [flux_total(facet, A_B[i], A_TH[i]) for (i, facet) in enumerate(shape.facets)]
+flux_total(shape::ShapeModel, A_B::AbstractVector, A_TH::AbstractVector) = [flux_total(facet, A_B[i], A_TH[i]) for (i, facet) in enumerate(shape.facets)]
 
 function flux_total(facet::Facet, A_B::Real, A_TH::Real)
     F_sun  = facet.flux.sun

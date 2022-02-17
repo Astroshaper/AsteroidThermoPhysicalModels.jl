@@ -68,36 +68,36 @@ end
 # ****************************************************************
 
 """
-    update_force!(shape::Shape, params)
-    update_force!(shape::Shape, A_B::Real,           ϵ::Real)
-    update_force!(shape::Shape, A_B::AbstractVector, ϵ::Real)
-    update_force!(shape::Shape, A_B::Real,           ϵ::AbstractVector)
-    update_force!(shape::Shape, A_B::AbstractVector, ϵ::AbstractVector)
-    update_force!(facet::Facet, A_B::Real,           ϵ::Real)
+    update_force!(shape::ShapeModel, params)
+    update_force!(shape::ShapeModel, A_B::Real,           ϵ::Real)
+    update_force!(shape::ShapeModel, A_B::AbstractVector, ϵ::Real)
+    update_force!(shape::ShapeModel, A_B::Real,           ϵ::AbstractVector)
+    update_force!(shape::ShapeModel, A_B::AbstractVector, ϵ::AbstractVector)
+    update_force!(facet::Facet,      A_B::Real,           ϵ::Real)
 
 Update photon recoil force on every facet (dfᵢ)
 """
-update_force!(shape::Shape, params) = update_force!(shape, params.A_B, params.ϵ)
+update_force!(shape::ShapeModel, params) = update_force!(shape, params.A_B, params.ϵ)
 
-function update_force!(shape::Shape, A_B::Real, ϵ::Real)
+function update_force!(shape::ShapeModel, A_B::Real, ϵ::Real)
     for facet in shape.facets
         update_force!(facet, A_B, ϵ)
     end
 end
 
-function update_force!(shape::Shape, A_B::AbstractVector, ϵ::Real)
+function update_force!(shape::ShapeModel, A_B::AbstractVector, ϵ::Real)
     for (i, facet) in enumerate(shape.facets)
         update_force!(facet, A_B[i], ϵ)
     end
 end
 
-function update_force!(shape::Shape, A_B::Real, ϵ::AbstractVector)
+function update_force!(shape::ShapeModel, A_B::Real, ϵ::AbstractVector)
     for (i, facet) in enumerate(shape.facets)
         update_force!(facet, A_B, ϵ[i])
     end
 end
 
-function update_force!(shape::Shape, A_B::AbstractVector, ϵ::AbstractVector)
+function update_force!(shape::ShapeModel, A_B::AbstractVector, ϵ::AbstractVector)
     for (i, facet) in enumerate(shape.facets)
         update_force!(facet, A_B[i], ϵ[i])
     end
@@ -118,7 +118,7 @@ end
 
 Integrate the force and torque over the global surface
 """
-function sum_force_torque!(shape::Shape)
+function sum_force_torque!(shape::ShapeModel)
     shape.force  .= 0
     shape.torque .= 0
     for facet in shape.facets

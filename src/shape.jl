@@ -1,7 +1,7 @@
 
 
 """
-    Shape{T1, T2, T3, T4, T5, T6, T7}
+    ShapeModel{T1, T2, T3, T4, T5, T6, T7}
 
 A polyhedral shape model of an asteroid.
 
@@ -21,7 +21,7 @@ A polyhedral shape model of an asteroid.
 – `force`    : Thermal recoil force at body-fixed frame (Yarkovsky effect)
 - `torque`   : Thermal recoil torque at body-fixed frame (YORP effect)
 """
-struct Shape{T1, T2, T3, T4, T5, T6, T7, T8}
+struct ShapeModel{T1, T2, T3, T4, T5, T6, T7, T8}
     num_node::T1
     num_face::T1
     nodes   ::T2
@@ -39,7 +39,7 @@ struct Shape{T1, T2, T3, T4, T5, T6, T7, T8}
 end
 
 
-function Base.show(io::IO, shape::Shape)
+function Base.show(io::IO, shape::ShapeModel)
     println("Shape model")
     println("-----------")
 
@@ -94,13 +94,13 @@ function Shape(shapepath; scale=1, find_visible_facets=false, save_shape=false)
 end
 
 equivalent_radius(VOLUME) = (3VOLUME/4π)^(1/3)
-equivalent_radius(shape::Shape) = equivalent_radius(shape.VOLUME)
+equivalent_radius(shape::ShapeModel) = equivalent_radius(shape.VOLUME)
 
-findVisibleFacets!(shape::Shape) = findVisibleFacets!(shape.facets)
-isIlluminated(obs::Facet, r̂☉, shape::Shape) = isIlluminated(obs, r̂☉, shape.facets)
-isIlluminated(r̂☉, shape::Shape) = [isIlluminated(obs, r̂☉, shape) for obs in shape.facets]
+findVisibleFacets!(shape::ShapeModel) = findVisibleFacets!(shape.facets)
+isIlluminated(obs::Facet, r̂☉, shape::ShapeModel) = isIlluminated(obs, r̂☉, shape.facets)
+isIlluminated(r̂☉, shape::ShapeModel) = [isIlluminated(obs, r̂☉, shape) for obs in shape.facets]
 
-surface_temperature(shape) = [facet.Tz[begin] for facet in shape.facets]
+surface_temperature(shape::ShapeModel) = [facet.Tz[begin] for facet in shape.facets]
 
 
 ################################################################

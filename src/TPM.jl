@@ -6,23 +6,23 @@
 # ****************************************************************
 
 """
-    init_temps_zero!(shape::Shape, params)
-    init_temps_zero!(shape::Shape, Nz::AbstractVector)
-    init_temps_zero!(shape::Shape, Nz::Integer)
-    init_temps_zero!(facet::Facet, Nz::Integer)
+    init_temps_zero!(shape::ShapeModel, params)
+    init_temps_zero!(shape::ShapeModel, Nz::AbstractVector)
+    init_temps_zero!(shape::ShapeModel, Nz::Integer)
+    init_temps_zero!(facet::Facet,      Nz::Integer)
 
 Initialize temperature profile in depth on every facet.
 All elements are intialized as 0 K.
 """
-init_temps_zero!(shape::Shape, params) = init_temps_zero!(shape, params.Nz)
+init_temps_zero!(shape::ShapeModel, params) = init_temps_zero!(shape, params.Nz)
 
-function init_temps_zero!(shape::Shape, Nz::AbstractVector)
+function init_temps_zero!(shape::ShapeModel, Nz::AbstractVector)
     for (i, facet) in enumerate(shape.facets)
         init_temps_zero!(facet, Nz[i])
     end
 end
 
-function init_temps_zero!(shape::Shape, Nz::Integer)
+function init_temps_zero!(shape::ShapeModel, Nz::Integer)
     for facet in shape.facets
         init_temps_zero!(facet, Nz)
     end
@@ -51,7 +51,7 @@ end
 - `thermo_params` : 
 """
 mutable struct ThermoPhysicalModel
-    shape        ::Shape
+    shape        ::ShapeModel
     time         ::Float64
     orbit        ::OrbitalElements
     true_anomaly ::Float64
@@ -134,30 +134,30 @@ end
 
 
 """
-    energy_in(shape::Shape, params::ThermoParams) -> E_in
-    energy_in(shape::Shape, A_B::AbstractVector ) -> E_in
-    energy_in(shape::Shape, A_B::Real           ) -> E_in
-    energy_in(facet::Facet, A_B::Real           ) -> E_in
+    energy_in(shape::ShapeModel, params::ThermoParams) -> E_in
+    energy_in(shape::ShapeModel, A_B::AbstractVector ) -> E_in
+    energy_in(shape::ShapeModel, A_B::Real           ) -> E_in
+    energy_in(facet::Facet,      A_B::Real           ) -> E_in
 
 Input energy per second at a certain time [W]
 """
-energy_in(shape::Shape, params::ThermoParams) = energy_in(shape, params.A_B)
-energy_in(shape::Shape, A_B::AbstractVector) = sum(energy_in(facet, A_B[i]) for (i, facet) in enumerate(shape.facets))
-energy_in(shape::Shape, A_B::Real) = sum(energy_in(facet, A_B) for facet in shape.facets)
+energy_in(shape::ShapeModel, params::ThermoParams) = energy_in(shape, params.A_B)
+energy_in(shape::ShapeModel, A_B::AbstractVector) = sum(energy_in(facet, A_B[i]) for (i, facet) in enumerate(shape.facets))
+energy_in(shape::ShapeModel, A_B::Real) = sum(energy_in(facet, A_B) for facet in shape.facets)
 energy_in(facet::Facet, A_B::Real) = (1 - A_B) * (facet.flux.sun + facet.flux.scat) * facet.area
 
 
 """
-    energy_out(shape::Shape, params::ThermoParams                   ) -> E_out
-    energy_out(shape::Shape, ϵ::AbstractVector, A_TH::AbstractVector) -> E_out
-    energy_out(shape::Shape, ϵ::Real,           A_TH::Real          ) -> E_out
-    energy_out(facet::Facet, ϵ::Real,           A_TH::Real          ) -> E_out
+    energy_out(shape::ShapeModel, params::ThermoParams                   ) -> E_out
+    energy_out(shape::ShapeModel, ϵ::AbstractVector, A_TH::AbstractVector) -> E_out
+    energy_out(shape::ShapeModel, ϵ::Real,           A_TH::Real          ) -> E_out
+    energy_out(facet::Facet,      ϵ::Real,           A_TH::Real          ) -> E_out
 
 Output enegey per second at a certain time [W]
 """
-energy_out(shape::Shape, params::ThermoParams) = energy_out(shape, params.ϵ, params.A_TH)
-energy_out(shape::Shape, ϵ::AbstractVector, A_TH::AbstractVector) = sum(energy_out(facet, ϵ[i], A_TH[i]) for (i, facet) in enumerate(shape.facets))
-energy_out(shape::Shape, ϵ::Real, A_TH::Real) = sum(energy_out(facet, ϵ, A_TH) for facet in shape.facets)
+energy_out(shape::ShapeModel, params::ThermoParams) = energy_out(shape, params.ϵ, params.A_TH)
+energy_out(shape::ShapeModel, ϵ::AbstractVector, A_TH::AbstractVector) = sum(energy_out(facet, ϵ[i], A_TH[i]) for (i, facet) in enumerate(shape.facets))
+energy_out(shape::ShapeModel, ϵ::Real, A_TH::Real) = sum(energy_out(facet, ϵ, A_TH) for facet in shape.facets)
 energy_out(facet::Facet, ϵ::Real, A_TH::Real) = ( ϵ*σ_SB*facet.temps[begin]^4 - (1 - A_TH)*facet.flux.rad ) * facet.area
 
 # ****************************************************************
