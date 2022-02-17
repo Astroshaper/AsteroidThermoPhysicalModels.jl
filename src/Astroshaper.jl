@@ -35,7 +35,7 @@ export rotateX!, rotateY!, rotateZ!
 include("facet.jl")
 include("shape.jl")
 include("visualization.jl")
-export Shape
+export ShapeModel
 export draw
 
 include("kepler.jl")

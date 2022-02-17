@@ -109,7 +109,7 @@ end
     draw(shape; data=nothing)
 
 """
-function draw(shape::Shape; data=nothing, r̂☉=[1,0,0.], colormap=:viridis, strokecolor=:gray20)
+function draw(shape::ShapeModel; data=nothing, r̂☉=[1,0,0.], colormap=:viridis, strokecolor=:gray20)
     nodes = VectorVector2Matrix(shape.nodes)
     faces = VectorVector2Matrix(shape.faces)
 
@@ -140,7 +140,7 @@ end
 
 """
 """
-function draw(shape1::Shape, shape2::Shape)
+function draw(shape1::ShapeModel, shape2::ShapeModel)
     faces1 = VectorVector2Matrix(shape1.faces)
     faces2 = VectorVector2Matrix(shape2.faces)
 
@@ -165,7 +165,7 @@ end
 
 """
 """
-function draw(shape1::Shape, shape2::Shape, savepath)
+function draw(shape1::ShapeModel, shape2::ShapeModel, savepath)
 
     faces = VectorVector2Matrix(shape1.faces)
     nodes = VectorVector2Matrix(shape1.nodes)
