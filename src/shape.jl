@@ -100,7 +100,7 @@ findVisibleFacets!(shape::ShapeModel) = findVisibleFacets!(shape.facets)
 isIlluminated(obs::Facet, r̂☉, shape::ShapeModel) = isIlluminated(obs, r̂☉, shape.facets)
 isIlluminated(r̂☉, shape::ShapeModel) = [isIlluminated(obs, r̂☉, shape) for obs in shape.facets]
 
-surface_temperature(shape::ShapeModel) = [facet.Tz[begin] for facet in shape.facets]
+surface_temperature(shape::ShapeModel) = [facet.temps[begin] for facet in shape.facets]
 
 
 ################################################################
