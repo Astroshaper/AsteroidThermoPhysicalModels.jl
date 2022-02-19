@@ -38,27 +38,133 @@ end
 #                    Thermophysical modeling
 # ****************************************************************
 
-"""
-    mutable struct ThermoPhysicalModel
+# """
+#     mutable struct ThermoPhysicalModel
 
-# Fields
-- `shape`         :
-- `time`          :
-- `orbit`         :
-- `true_anomaly`  :
-- `spin`          :
-- `spin_phase`    :
-- `thermo_params` : 
-"""
-mutable struct ThermoPhysicalModel
-    shape        ::ShapeModel
-    time         ::Float64
-    orbit        ::OrbitalElements
-    true_anomaly ::Float64
-    spin         ::SpinParams
-    spin_phase   ::Float64
-    thermo_params::ThermoParams
-end
+# # Fields
+# - `shape`         :
+# - `orbit`         :
+# - `spin`          :
+# - `thermo_params` : 
+
+# - `t` : Time
+# - `u` : Eccentric anomaly
+# - `ν` : True anomaly
+# - `ϕ` : Spin phase
+
+# - `r`  : Position of the asteroid in the orbital plane frame
+# - `F☉` : Solar irradiation at the position `r` [W/m²]
+# - `r̂☉` : Unit vector for the solar position in the body-fixed frame
+# """
+# mutable struct ThermoPhysicalModel
+#     shape        ::ShapeModel
+#     orbit        ::OrbitalElements
+#     spin         ::SpinParams
+#     thermo_params::ThermoParams
+
+#     t::Float64
+#     u::Float64
+#     ν::Float64
+#     ϕ::Float64
+
+#     r ::Vector{Float64}
+#     F☉::Float64
+#     r̂☉::Vector{Float64}
+# end
+
+# function ThermoPhysicalModel(shape, orbit, spin, thermo_params)
+#     @unpack t_bgn, P = thermo_params
+
+#     init_temps_zero!(shape, thermo_params)
+
+#     t = t_bgn * P
+#     u = solveKeplerEquation2(orbit, t)
+#     ν = u2ν(u, orbit)
+#     ϕ = spin.ω * t
+
+#     r = get_r(orbit, u)
+#     F☉ = getSolarIrradiation(norm(r))
+    
+#     r̂☉ = normalize(r) * -1  # Shift the origin from the sun to the body
+#     r̂☉ = orbit_to_body(r̂☉, spin.γ, spin.ε, ϕ)
+
+#     ThermoPhysicalModel(shape, orbit, spin, thermo_params, t, u, ν, ϕ, r, F☉, r̂☉)
+# end
+
+# function Base.show(io::IO, TPM::ThermoPhysicalModel)
+#     @unpack t, u, ν, ϕ, r, F☉, r̂☉ = TPM
+    
+#     println("Time              : ", t)
+#     println("Eccentric anomaly : ", rad2deg(u))
+#     println("True anomaly      : ", rad2deg(ν))
+#     println("Spin phase        : ", rad2deg(ϕ))
+
+#     println("Body's position   : ", r)
+#     println("Solar irradiation : ", F☉)
+#     println("Sun's direction   : ", r̂☉)
+# end
+
+# """
+#     nextstep!(TPM::ThermoPhysicalModel, Δt)
+
+# Move on to the next timestep
+# """
+# function nextstep!(TPM::ThermoPhysicalModel, Δt)
+#     @unpack t, u, ν, ϕ, r, F☉, r̂☉ = TPM
+
+#     t += Δt
+#     u = solveKeplerEquation2(orbit, t)
+#     ν = u2ν(u, orbit)
+#     ϕ = spin.ω * t
+
+#     r = get_r(orbit, u)
+#     F☉ = getSolarIrradiation(norm(r))
+    
+#     r̂☉ = normalize(r) * -1  # Shift the origin from the sun to the body
+#     r̂☉ = orbit_to_body(r̂☉, spin.γ, spin.ε, ϕ)
+# end
+
+# """
+# """
+# function run(TPM::ThermoPhysicalModel)
+#     @unpack shape, orbit, spin, thermo_params = 
+#     @unpack P, Δt, t_bgn, t_end, Nt = params
+    
+    
+#     init_temps_zero!(shape, params)
+
+#     # ts = (t_bgn:Δt:t_end) * P
+#     # outputs = [:u, :ν, :ϕ, :f_x, :f_y, :f_z, :τ_x, :τ_y, :τ_z, :E_in, :E_out, :E_cons]
+    
+#     for (i, t) in enumerate(ts)
+#         @unapck shape = TPM
+        
+        
+        
+#         update_flux_sun!(shape, F☉, r̂☉)
+#         update_flux_scat_single!(shape, params)
+#         update_flux_rad_single!(shape, params)
+        
+#         update_force!(shape, params)
+#         sum_force_torque!(shape)
+        
+#         f = SVector{3}(shape.force)   # Body-fixed frame
+#         τ = SVector{3}(shape.torque)  # Body-fixed frame
+
+#         f = body_to_orbit(f, spin.γ, spin.ε, ϕ)  # Orbital plane frame
+#         τ = body_to_orbit(τ, spin.γ, spin.ε, ϕ)  # Orbital plane frame
+
+#         E_in, E_out, E_cons = energy_io(shape, params)
+
+#         values = [u, ν, ϕ, f..., τ..., E_in, E_out, E_cons]
+#         save_to_dataframe!(df, i, outputs, values)
+        
+#         nextstep!(TPM, Δt)
+#         update_temps!(shape, params)
+#     end
+#     # df[:, :Ē_cons] = [mean(df.E_cons[@. row.t - spin.P ≤ df.t ≤ row.t]) for row in eachrow(df)]
+# end
+
 
 """
 """
@@ -66,24 +172,16 @@ function run_TPM(shape, orbit, spin, params::ThermoParams)
     @unpack P, Δt, t_bgn, t_end, Nt = params
     
     init_temps_zero!(shape, params)
+
+    ts = (t_bgn:Δt:t_end) * P
+    outputs = [:u, :ν, :ϕ, :f_x, :f_y, :f_z, :τ_x, :τ_y, :τ_z, :E_in, :E_out, :E_cons]
+    df = prep_dataframe(ts, outputs)
     
-    df = DataFrame()
-    df[:, :t    ] = (t_bgn:Δt:t_end) * P
-    df[:, :u    ] = zeros(Nt)
-    df[:, :ϕ    ] = zeros(Nt)
-    df[:, :f_x  ] = zeros(Nt)
-    df[:, :f_y  ] = zeros(Nt)
-    df[:, :f_z  ] = zeros(Nt)
-    df[:, :τ_x  ] = zeros(Nt)
-    df[:, :τ_y  ] = zeros(Nt)
-    df[:, :τ_z  ] = zeros(Nt)
-    df[:, :E_in ] = zeros(Nt)
-    df[:, :E_out] = zeros(Nt)
-    
-    for (i, t) in enumerate(df.t)
+    for (i, t) in enumerate(ts)
         ϕ = spin.ω * t
 
         u = solveKeplerEquation2(orbit, t)
+        ν = u2ν(u, orbit)
         r = get_r(orbit, u)
         F☉ = getSolarIrradiation(norm(r))
     
@@ -103,34 +201,62 @@ function run_TPM(shape, orbit, spin, params::ThermoParams)
         f = body_to_orbit(f, spin.γ, spin.ε, ϕ)  # Orbital plane frame
         τ = body_to_orbit(τ, spin.γ, spin.ε, ϕ)  # Orbital plane frame
 
-        # df.t[i] = t
-        df.u[i] = u
-        df.ϕ[i] = ϕ
+        E_in, E_out, E_cons = energy_io(shape, params)
 
-        df.f_x[i] = f[1]
-        df.f_y[i] = f[2]
-        df.f_z[i] = f[3]
-
-        df.τ_x[i] = τ[1]
-        df.τ_y[i] = τ[2]
-        df.τ_z[i] = τ[3]
-
-        df.E_in[i]  = energy_in(shape, params)
-        df.E_out[i] = energy_out(shape, params)
+        values = [u, ν, ϕ, f..., τ..., E_in, E_out, E_cons]
+        save_to_dataframe!(df, i, outputs, values)
         
         update_temps!(shape, params)
     end
 
-    df[:, :ν] = u2ν(df.u, orbit)
-    df[:, :E_cons] = df.E_out ./ df.E_in
-    df[:, :Ē_cons] = [ mean(df.E_cons[@. row.t - spin.P ≤ df.t ≤ row.t]) for row in eachrow(df) ];
-    
+    if "E_cons" in names(df)
+        df[:, :Ē_cons] = [mean(df.E_cons[@. row.t - spin.P ≤ df.t ≤ row.t]) for row in eachrow(df)]
+    end
     df
 end
+
+"""
+"""
+function prep_dataframe(ts, outputs; dtype=Float64)
+    Nt = length(ts)
+    df = DataFrame(t=ts)
+    for symbol in outputs
+        df[:, symbol] = Vector{dtype}(undef, Nt)
+    end
+    df
+end
+
+"""
+"""
+function save_to_dataframe!(df, i, outputs, values)
+    for (symbol, value) in zip(outputs, values)
+        df[i, symbol] = value
+    end
+end
+
 
 # ****************************************************************
 #                     Convergence decision
 # ****************************************************************
+
+
+"""
+    energy_io(shape::ShapeModel, params::ThermoParams) -> E_in, E_out, E_cons
+
+Input and output energy per second at a certain time
+
+# Returns
+- `E_in`   : Input energy per second at a certain time [W]
+- `E_out`  : Output enegey per second at a certain time [W]
+- `E_cons` : Output-input energy ratio (`E_out / E_in`)
+"""
+function energy_io(shape::ShapeModel, params::ThermoParams)
+    E_in   = energy_in(shape, params)
+    E_out  = energy_out(shape, params)
+    E_cons = E_out / E_in
+
+    E_in, E_out, E_cons
+end
 
 
 """
