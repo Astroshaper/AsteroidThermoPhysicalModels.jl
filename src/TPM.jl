@@ -181,7 +181,7 @@ function run_TPM(shape, orbit, spin, thermo_params::ThermoParams, savepath="tmp.
         update_spin!(spin, t)
             
         r̂☉ = normalize(orbit.r) * -1  # Shift the origin from the sun to the body
-        r̂☉ = orbit_to_body(r̂☉, spin.γ, spin.ε, spin.ϕ)
+        r̂☉ = orbit_to_body(r̂☉, spin)
         
         update_flux_sun!(shape, orbit.F☉, r̂☉)
         update_flux_scat_single!(shape, thermo_params)
@@ -193,8 +193,8 @@ function run_TPM(shape, orbit, spin, thermo_params::ThermoParams, savepath="tmp.
         f = SVector{3}(shape.force)   # Body-fixed frame
         τ = SVector{3}(shape.torque)  # Body-fixed frame
 
-        f = body_to_orbit(f, spin.γ, spin.ε, spin.ϕ)  # Orbital plane frame
-        τ = body_to_orbit(τ, spin.γ, spin.ε, spin.ϕ)  # Orbital plane frame
+        f = body_to_orbit(f, spin)  # Orbital plane frame
+        τ = body_to_orbit(τ, spin)  # Orbital plane frame
 
         E_in, E_out, E_cons = energy_io(shape, thermo_params)
 
@@ -257,15 +257,19 @@ end
 # ****************************************************************
 
 """
+    mean_energy_cons_frac!(df, spin::SpinParams)
+    mean_energy_cons_frac!(df, P::Real)
+
 Average energy conservation fraction over a rotational cycle
 """
+mean_energy_cons_frac!(df, spin::SpinParams) = mean_energy_cons_frac!(df, spin.P)
+
 function mean_energy_cons_frac!(df, P::Real)
     for row in eachrow(df)
         row.Ē_cons = mean(df.E_cons[@. row.t - P ≤ df.t ≤ row.t])
     end
 end
 
-mean_energy_cons_frac!(df, spin::SpinParams) = mean_energy_cons_frac!(df, spin.P)
 
 """
     energy_io(shape::ShapeModel, params::ThermoParams) -> E_in, E_out, E_cons
@@ -312,6 +316,7 @@ energy_out(shape::ShapeModel, params::ThermoParams) = energy_out(shape, params.�
 energy_out(shape::ShapeModel, ϵ::AbstractVector, A_TH::AbstractVector) = sum(energy_out(facet, ϵ[i], A_TH[i]) for (i, facet) in enumerate(shape.facets))
 energy_out(shape::ShapeModel, ϵ::Real, A_TH::Real) = sum(energy_out(facet, ϵ, A_TH) for facet in shape.facets)
 energy_out(facet::Facet, ϵ::Real, A_TH::Real) = ( ϵ*σ_SB*facet.temps[begin]^4 - (1 - A_TH)*facet.flux.rad ) * facet.area
+
 
 # ****************************************************************
 #        Energy flux of sunlight, scattering, and radiation

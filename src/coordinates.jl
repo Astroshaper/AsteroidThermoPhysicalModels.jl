@@ -172,6 +172,7 @@ end
 
 ################################################################
 #                   Coordinate transformation
+#              Inertial frame <-> Orbital plane frame
 ################################################################
 
 """
@@ -224,8 +225,14 @@ orbit_to_inertia!(v, orbit) = orbit_to_inertia!(v, orbit.ω, orbit.I, orbit.Ω)
 orbit_to_inertia(v, orbit) = orbit_to_inertia(v, orbit.ω, orbit.I, orbit.Ω)
 
 
+################################################################
+#                   Coordinate transformation
+#            Orbital plane frame <-> Body-fixed frame
+################################################################
+
 """
-    orbit_to_body(v::SArray{Tuple{3},Float64,1,3}, γ, ε, ϕ) -> v
+    orbit_to_body(v, spin::SpinParams) -> v
+    orbit_to_body(v, γ, ε, ϕ)          -> v
 
 # Parameters
 - `v` : vector in the orbital plane frame
@@ -236,12 +243,15 @@ orbit_to_inertia(v, orbit) = orbit_to_inertia(v, orbit.ω, orbit.I, orbit.Ω)
 # Return
 - `v` : vector in the body-fixed frame
 """
+orbit_to_body(v, spin) = orbit_to_body(v, spin.γ, spin.ε, spin.ϕ)
+
 function orbit_to_body(v, γ, ε, ϕ)
     v = rotateZ(v, γ)  # body's ecliptic coordinate
     v = rotateX(v, ε)  # body's equatorial coordinate
     v = rotateZ(v, ϕ)  # body-fixed frame
 end
 
+orbit_to_body!(v, spin) = orbit_to_body!(v, spin.γ, spin.ε, spin.ϕ)
 
 function orbit_to_body!(v, γ, ε, ϕ)
     rotateZ!(v, γ)  # body's ecliptic coordinate
@@ -251,7 +261,8 @@ end
 
 
 """
-    body_to_orbit(v::SArray{Tuple{3},Float64,1,3}, γ, ε, ϕ) -> v
+    body_to_orbit(v, spin::SpinParams) -> v
+    body_to_orbit(v, γ, ε, ϕ)          -> v
 
 # Parameters
 - `v` : vector in the body-fixed frame
@@ -262,12 +273,15 @@ end
 # Return
 - `v` : vector in the orbital plane frame
 """
+body_to_orbit(v, spin) = body_to_orbit(v, spin.γ, spin.ε, spin.ϕ)
+
 function body_to_orbit(v, γ, ε, ϕ)
     v = rotateZ(v, -ϕ)  # body's equatorial coordinate
     v = rotateX(v, -ε)  # body's ecliptic coordinate
     v = rotateZ(v, -γ)  # orbital plane frame 
 end
 
+body_to_orbit!(v, spin) = body_to_orbit!(v, spin.γ, spin.ε, spin.ϕ)
 
 function body_to_orbit!(v, γ, ε, ϕ)
     rotateZ!(v, -ϕ)  # body's equatorial coordinate
