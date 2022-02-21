@@ -177,17 +177,13 @@ function run_TPM(shape, orbit, spin, thermo_params::ThermoParams, savepath="tmp.
     # surf_temp_table = zeros(shape.num_face, Int(1/thermo_params.Δt)-1)
 
     for (i, t) in enumerate(ts)
-        u = solveKeplerEquation2(orbit, t)
-        ν = u2ν(u, orbit)
-        spin.ϕ = spin.ω * t
-
-        r = get_r(orbit, u)
-        F☉ = getSolarIrradiation(norm(r))
-    
-        r̂☉ = normalize(r) * -1  # Shift the origin from the sun to the body
+        update_orbit!(orbit, t)
+        update_spin!(spin, t)
+            
+        r̂☉ = normalize(orbit.r) * -1  # Shift the origin from the sun to the body
         r̂☉ = orbit_to_body(r̂☉, spin.γ, spin.ε, spin.ϕ)
         
-        update_flux_sun!(shape, F☉, r̂☉)
+        update_flux_sun!(shape, orbit.F☉, r̂☉)
         update_flux_scat_single!(shape, thermo_params)
         update_flux_rad_single!(shape, thermo_params)
         
@@ -202,7 +198,7 @@ function run_TPM(shape, orbit, spin, thermo_params::ThermoParams, savepath="tmp.
 
         E_in, E_out, E_cons = energy_io(shape, thermo_params)
 
-        save_timestamp!(timestamp, i, u, ν, spin.ϕ, f..., τ..., E_in, E_out, E_cons)
+        save_timestamp!(timestamp, i, orbit.u, orbit.ν, spin.ϕ, f..., τ..., E_in, E_out, E_cons)
         
         update_temps!(shape, thermo_params)
     end

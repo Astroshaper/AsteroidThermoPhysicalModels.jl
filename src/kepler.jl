@@ -1,6 +1,3 @@
-## kepler.jl
-##     Functions for orbital elements and Kepler motion
-
 
 ###################################################################
 #                       Orbital elements
@@ -8,49 +5,63 @@
 
 """
 # Orbital elements
+- `a`  : Semi-major axis
+- `e`  : Eccentricity
+- `I`  : Inclination
+- `ω`  : Argument of periapsis
+- `Ω`  : Longitude of ascending node
+- `Φ`  : Mean anomaly (tₚ = - Φ / n)
+- `tₚ`  : Periapsis passage time
 
-- `a` : Semi-major axis
-- `e` : Eccentricity
-- `I` : Inclination
-- `ω` : Argument of periapsis
-- `Ω` : Longitude of ascending node
-- `Φ` : Mean anomaly : tₚ = - Φ / n
-- `tₚ` : Periapsis passage time
+- `μ`  : Standard gravitational parameter of the system (GM)
+- `n`  : Mean motion    : n = √(μ / a^3)
+- `P`  : Orbital period : T = 2π / n
 
-- `μ` : Standard gravitational parameter of the system (GM)
-- `n` : Mean motion    : n = √(μ / a^3)
-- `T` : Orbital period : T = 2π / n
+## Time-variables
+- `t`  : Time
+- `u`  : Eccentric anomaly
+- `ν`  : True anomaly
+- `r`  : Position in the orbital plane frame (located at the focus of the ellipse)
+- `v`  : Velocity in the orbital plane frame (located at the focus of the ellipse)
+- `F☉` : Solar irradiation at the orbit [W/m²]
 """
-struct OrbitalElements{T}
-    a::T
-    e::T
-    I::T
-    ω::T
-    Ω::T
-    Φ::T
-    tₚ::T
+mutable struct OrbitalElements{T1, T2}
+    a::T1
+    e::T1
+    I::T1
+    ω::T1
+    Ω::T1
+    Φ::T1
+    tₚ::T1
 
-    μ::T
-    n::T
-    T::T
+    μ::T1
+    n::T1
+    P::T1
+
+    t::T1
+    u::T1
+    ν::T1
+    r::T2
+    v::T2
+    F☉::T1
 end
 
 
-function OrbitalElements(params)
+function OrbitalElements(params; t=0.)
 
-    a = params[:a] * AU      # semi-mojor axis [m]
-    e = params[:e]           # eccentricity
-    I = deg2rad(params[:I])  # inclination [rad]
-    Ω = deg2rad(params[:Ω])  # longitude of the ascending node [rad]
-    ω = deg2rad(params[:ω])  # argument of periapsis [rad]
+    a = params[:a] * AU      # Semi-mojor axis [m]
+    e = params[:e]           # Eccentricity
+    I = deg2rad(params[:I])  # Inclination [rad]
+    Ω = deg2rad(params[:Ω])  # Longitude of the ascending node [rad]
+    ω = deg2rad(params[:ω])  # Argument of periapsis [rad]
     
     μ = params[:μ]  # Gravitational parameter
-    n = √(μ / a^3)  # mean motion  [rad/sec]
-    T = 2π / n      # orbital period [sec]
+    n = √(μ / a^3)  # Mean motion [rad/sec]
+    P = 2π / n      # Orbital period [sec]
     
     if haskey(params, :Φ)
-        Φ  = deg2rad(params[:Φ])  # mean anomaly at the epoch [rad]
-        tₚ = - Φ / n              # periapsis passage time [sec]
+        Φ  = deg2rad(params[:Φ])  # Mean anomaly at the epoch [rad]
+        tₚ = - Φ / n              # Periapsis passage time [sec]
     elseif haskey(params, :tₚ)
         tₚ = params[:tₚ]
         Φ  = - n * tₚ
@@ -58,7 +69,12 @@ function OrbitalElements(params)
         println("Give [:Φ] or [:tp] in Dict.")
     end
 
-    OrbitalElements(a, e, I, ω, Ω, Φ, tₚ, μ, n, T)
+    u = solveKeplerEquation2(e, n, tₚ, t)
+    ν = u2ν(u, e)
+    r, v = get_rv(a, e, n, u)
+    F☉ = SOLAR_CONST / (norm(r) / AU)^2
+
+    OrbitalElements(a, e, I, ω, Ω, Φ, tₚ, μ, n, P, t, u, ν, r, v, F☉)
 end
 
 
@@ -70,32 +86,73 @@ function OrbitalElements(a, e, I, μ)
     Φ = 2π * rand()
     
     n = √(μ / a^3)
-    T = 2π / n
+    P = 2π / n
     tₚ = - Φ / n
-    
-    OrbitalElements(a, e, I, ω, Ω, Φ, tₚ, μ, n, T)
+
+    t = rand(0:T)
+    u = solveKeplerEquation2(e, n, tₚ, t)
+    ν = u2ν(u, e)
+    r, v = get_rv(a, e, n, u)
+    F☉ = SOLAR_CONST / (norm(r) / AU)^2
+
+    OrbitalElements(a, e, I, ω, Ω, Φ, tₚ, μ, n, P, t, u, ν, r, v, F☉)
 end
 
 
-function Base.show(io::IO, elms::OrbitalElements)
-    println(io, "Orbital elements")
-    println(io, "----------------")
+function Base.show(io::IO, orbit::OrbitalElements)
+    @unpack a, e, I, ω, Ω, Φ, tₚ, μ, n, P, t, u, ν, r, v, F☉ = orbit
 
-    println("Semi-mojor axis        : a  = ", elms.a / AU,     " [AU]")
-    println("Eccentricity           : e  = ", elms.e,          " [-]")
-    println("Lon. of ascending node : Ω  = ", rad2deg(elms.Ω), " [deg]")
-    println("Argument of periapsis  : ω  = ", rad2deg(elms.ω), " [deg]")
-    println("Inclination            : I  = ", rad2deg(elms.I), " [deg]")
-    println("Periapsis passage time : tₚ = ", elms.tₚ,         " [sec]")
-    println("Mean anomaly           : Φ  = ", rad2deg(elms.Φ), " [deg]")
+    println("--------------------")
+    println("  Orbital elements  ")
+    println("--------------------")
 
-    println()
-    println("Other parameters")
-    println("----------------")
+    println("    Semi-mojor axis         : a  = ", a / AU,     " [AU]")
+    println("    Eccentricity            : e  = ", e,          " [-]")
+    println("    Lon. of ascending node  : Ω  = ", rad2deg(Ω), " [deg]")
+    println("    Argument of periapsis   : ω  = ", rad2deg(ω), " [deg]")
+    println("    Inclination             : I  = ", rad2deg(I), " [deg]")
+    println("    Periapsis passage time  : tₚ = ", tₚ,         " [sec]")
+    println("    Mean anomaly            : Φ  = ", rad2deg(Φ), " [deg]")
 
-    println("Gravitational parameter : μ = ", elms.μ,                      " [m^3/s^2]")
-    println("Mean motion             : n = ", rad2deg(elms.n) * (3600*24), " [deg/day]")
-    println("Orbital period          : T = ", elms.T / (3600*24),          " [day]")
+    println("--------------------")
+    println("  Other parameters  ")
+    println("--------------------")
+
+    println("    Gravitational parameter : μ = ", μ,                      " [m^3/s^2]")
+    println("    Mean motion             : n = ", rad2deg(n) * (3600*24), " [deg/day]")
+    println("    Orbital period          : P = ", P / (3600*24),          " [day]")
+
+    println("------------------")
+    println("  Time-variables  ")
+    println("------------------")
+    println("    Time                    : t  = ", t,          " [sec]")
+    println("    Eccentric anomaly       : u  = ", rad2deg(u), " [deg]")
+    println("    True anomaly            : ν  = ", rad2deg(ν), " [deg]")
+    println("    Position                : r  = ", r,          " [m]")
+    println("    Velocity                : v  = ", v,          " [m/s]")
+    println("    Solar irradiation       : F☉ = ", F☉,         " [W/m²]")
+end
+
+
+###################################################################
+#                   Update orbital parameters
+###################################################################
+
+"""
+    update_orbit!(orbit::OrbitalElements, t)
+"""
+function update_orbit!(orbit::OrbitalElements, t)
+    u = solveKeplerEquation2(orbit, t)
+    ν = u2ν(u, orbit)
+    r, v = get_rv(orbit, u)
+    F☉ = SOLAR_CONST / (norm(r) / AU)^2
+
+    orbit.t  = t
+    orbit.u  = u
+    orbit.ν  = ν
+    orbit.r  = r
+    orbit.v  = v
+    orbit.F☉ = F☉
 end
 
 
@@ -188,12 +245,12 @@ function OrbitalElements(R::AbstractVector, V::AbstractVector, μ, t)
     
     E = f2E(f, e)   # eccentric anomaly (E or u)
     n = √(μ / a^3)  # mean motion
-    T = 2π / n      # orbital period
+    P = 2π / n      # orbital period
     
     tₚ = get_tₚ(t%T, E, e, n)  # time of periapsis passage
     M = - n * tₚ              # mean anomaly (M or Φ)
 
-    OrbitalElements(a, e, I, ω, Ω, M, tₚ, μ, n, T)
+    OrbitalElements(a, e, I, ω, Ω, M, tₚ, μ, n, P)
 end
 
 
@@ -384,7 +441,7 @@ u2ν(us::T, elms::OrbitalElements) where T<:AbstractArray = u2ν(us, elms.e)
 
 
 """
-    getrv(a, e, n, u) -> r, v
+    get_rv(a, e, n, u) -> r, v
 
 Get a body's positon and velocity based on Kepler's motion
 
