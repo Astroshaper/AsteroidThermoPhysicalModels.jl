@@ -52,7 +52,8 @@ include("YORP.jl")
 include("Yarkovsky.jl")
 export ThermoParams
 export run_TPM
-export analyze_YORP, torque2rate, YORP_timescale, run_YORP, run_Yarkovsky
+export analyze_YORP, YORP_timescale
+export torque2rate, run_YORP, run_Yarkovsky
 
 include("polyhedron.jl")
 
