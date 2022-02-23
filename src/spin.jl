@@ -7,22 +7,26 @@ Spin parameters of an asteroid
 
 # Fields
 
-## Spin pole @ equatorial coordinate
-- `α`  # Right ascension (RA)
-- `δ`  # Declination (Dec)
+## Spin pole @ Equatorial coordinate
+- `α`  : Right ascension (RA)
+- `δ`  : Declination (Dec)
 
-## Spin pole @ ecliptic coordinate
-- `λ`  # Ecliptic longitude
-- `β`  # Ecliptic latitude
+## Spin pole @ Ecliptic coordinate
+- `λ`  : Ecliptic longitude
+- `β`  : Ecliptic latitude
 
 ## Other parameters
-- `P`  # Spin period [sec]
-- `ω`  # Angular velocity [rad/sec]
-- `ŝ`  # Spin pole direction (normalized)
-- `ε`  # Obliquity
-- `γ`  # Vernal equinox lon. from the direction of perihelion
+- `P`  : Spin period [sec]
+- `ω`  : Angular velocity [rad/sec]
+- `ŝ`  : Spin pole direction (normalized)
+- `ε`  : Obliquity
+- `γ`  : ernal equinox lon. from the direction of perihelion
+
+- `t`  : Time
+- `ϕ₀` : Initial spin phase
+- `ϕ`  : Spin phase angle
 """
-struct SpinParams{T1, T2}
+mutable struct SpinParams{T1, T2}
     α::T1
     δ::T1
 
@@ -33,28 +37,40 @@ struct SpinParams{T1, T2}
     ω::T1
     ŝ::T2
     ε::T1
-
     γ::T1
+
+    t::T1
+    ϕ₀::T1
+    ϕ::T1
 end
 
 
 function Base.show(io::IO, spin::SpinParams)
-    println(io, "Spin parameters")
-    println(io, "---------------")
+    @unpack α, δ, λ, β, ε, P, ω, γ, t, ϕ₀, ϕ = spin
 
-    println("Right ascension (RA) : α = ", rad2deg(spin.α), " [deg]")
-    println("Declination (Dec)    : δ = ", rad2deg(spin.δ), " [deg]")
-    println("Ecliptic longitude   : λ = ", rad2deg(spin.λ), " [deg]")
-    println("Ecliptic latitude    : β = ", rad2deg(spin.β), " [deg]")
-    println("Obliquity            : ε = ", rad2deg(spin.ε), " [deg]")
-    println("Spin period          : P = ", spin.P / 3600,   " [hours]")
-    println("Spin rate            : ω = ", spin.ω,          " [rad/sec]")
-    println("Vernal equinox lon.  : γ = ", rad2deg(spin.γ), " [deg]")
+    println("-------------------")
+    println("  Spin parameters  ")
+    println("-------------------")
+
+    println("Right ascension (RA) : α = ", rad2deg(α), " [deg]")
+    println("Declination (Dec)    : δ = ", rad2deg(δ), " [deg]")
+
+    println("Ecliptic longitude   : λ = ", rad2deg(λ), " [deg]")
+    println("Ecliptic latitude    : β = ", rad2deg(β), " [deg]")
+
+    println("Obliquity            : ε = ", rad2deg(ε), " [deg]")
+    println("Spin period          : P = ", P / 3600,   " [hours]")
+    println("Spin rate            : ω = ", ω,          " [rad/sec]")
+    println("Vernal equinox lon.  : γ = ", rad2deg(γ), " [deg]")
     println("                           (longitude from the periheion direction)")
+
+    println("Time                 : t  = ", t, " [sec]")
+    println("Initial spin phase   : ϕ₀ = ", rad2deg(ϕ₀), " [deg]")
+    println("Spin phase           : ϕ  = ", rad2deg(ϕ),  " [deg]")
 end
 
 
-function SpinParams(params, orbit::OrbitalElements)
+function SpinParams(params, orbit::OrbitalElements; ϕ₀=0., t=0.)
 
     if haskey(params, :α) && haskey(params, :δ)
         α = deg2rad(params[:α])
@@ -75,11 +91,13 @@ function SpinParams(params, orbit::OrbitalElements)
     P = params[:P] * 3600
     ω = 2π / P
 
-    return SpinParams(α, δ, λ, β, P, ω, ŝ, ε, γ)
+    ϕ = ϕ₀ + ω * t
+
+    SpinParams(α, δ, λ, β, P, ω, ŝ, ε, γ, t, ϕ₀, ϕ)
 end
 
 
-function SpinParams(P::AbstractFloat, ŝ::AbstractVector, orbit)
+function SpinParams(P::AbstractFloat, ŝ::AbstractVector, orbit; ϕ₀=0., t=0.)
     
     P *= 3600
     ω = 2π / P
@@ -90,11 +108,26 @@ function SpinParams(P::AbstractFloat, ŝ::AbstractVector, orbit)
     β = asin(ŝ[3])
     α, δ = ec2eq(λ, β)
 
-    return SpinParams(α, δ, λ, β, P, ω, ŝ, ε, γ) 
+    ϕ = ϕ₀ + ω * t
+
+    SpinParams(α, δ, λ, β, P, ω, ŝ, ε, γ, t, ϕ₀, ϕ)
+end
+
+###################################################################
+#                     Update spin state
+###################################################################
+
+"""
+    update_spin!(spin::SpinParams, t)
+"""
+function update_spin!(spin::SpinParams, t)
+    spin.t = t
+    spin.ϕ = spin.ϕ₀ + spin.ω * t
 end
 
 
 ##############################################################################
+# 
 ##############################################################################
 
 

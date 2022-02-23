@@ -280,70 +280,8 @@ Average YORP torque over given time steps
 
 
 # ****************************************************************
-#
-# ****************************************************************
-
-
-"""
-Integrate torque over a whole surface: Pseudo-convex model
-"""
-function getTotalTorque_convex(shape, F☉, r̂☉)
-    τ = MVector(0., 0., 0.)
-    for mesh in shape.smeshes
-        Ψ = mesh.normal ⋅ r̂☉  # cosine of the Sun illumination angle
-        Ψ > 0 && (τ .+= gettorque(mesh, F☉ * Ψ))
-    end
-    return SVector(τ)
-end
-
-
-"""
-Integrate torque over a whole surface: Self-shadowing model
-"""
-function getTotalTorque_shadow(shape, F☉, r̂☉)
-    τ = MVector(0., 0., 0.)
-    for mesh in shape.smeshes
-        Ψ = mesh.normal ⋅ r̂☉  # cosine of the Sun illumination angle
-        Ψ > 0 && isIlluminated(mesh, r̂☉, shape) && (τ .+= gettorque(mesh, F☉ * Ψ))
-    end
-    return SVector(τ)
-end
-
-#####################
-
-"""
-Net torque during a revolutional cycle
-"""
-function getAnnualNetTorque(shape, orbit, spin, times; shadow)
-    if shadow
-        getTotalTorque = getTotalTorque_shadow
-    else
-        getTotalTorque = getTotalTorque_convex
-    end
-    
-    getAnnualNetTorque(shape, orbit, spin, times, getTotalTorque)
-end
-
-
-function getAnnualNetTorque(shape, orbit, spin, times, getTotalTorque)
-    τ̄ = MVector(0., 0., 0.)
-
-    for time in times
-        spin_phase = spin.ω * time
-        F☉, r̂☉ = getSolarCondition(orbit, spin, time)
-        τ = getTotalTorque(shape, F☉, r̂☉)
-        τ = body_to_orbit(τ, spin.γ, spin.ε, spin_phase)
-
-        τ̄ .+= τ
-    end
-    τ̄ /= length(times)
-end
-
-
-# ****************************************************************
 #                            Analysis
 # ****************************************************************
-
 
 getτω(τ, spin) = τ ⋅ spin.ŝ
 getτε(τ, spin) = τ ⋅ spin_perp_unit1(spin)
@@ -351,48 +289,31 @@ getτψ(τ, spin) = τ ⋅ spin_perp_unit2(spin)
 
 
 """
-    torque2rate(τ, spin, C) -> ω̇, ωε̇, ωψ̇
+    analyze_YORP(df, spin, MOI)
 
 # Parameters
-- `τ`    : torque in a body's orbital plane frame
-- `spin` :
-- `C`    : moment of inertia
+- `df`   : Dataframe of timestamp
+- `spin` : `SpinParams`
+- `C`    : Moment of inertia
 """
-function torque2rate(τ, spin, C)
-    τ_ω = getτω(τ, spin)
-    τ_ε = getτε(τ, spin)
-    τ_ψ = getτψ(τ, spin)
+function analyze_YORP(df, spin, MOI)
+    τ̄ = [mean(df.τ_x), mean(df.τ_y), mean(df.τ_z)]
+
+    τ̄_ω = τ̄ ⋅ spin.ŝ
+    τ̄_ε = τ̄ ⋅ spin_perp_unit1(spin)
+    τ̄_ψ = τ̄ ⋅ spin_perp_unit2(spin)
 
     ## [rad/sec/sec]
-    ω̇  = τ_ω / C
-    ωε̇ = τ_ε / C
-    ωψ̇ = τ_ψ / C
+    ω̇  = τ̄_ω / MOI
+    ωε̇ = τ̄_ε / MOI
+    ωψ̇ = τ̄_ψ / MOI
 
     ## [deg/day/day]
     ω̇  = rad2deg(ω̇)  * (3600*24)^2
     ωε̇ = rad2deg(ωε̇) * (3600*24)^2
     ωψ̇ = rad2deg(ωψ̇) * (3600*24)^2
 
-    return ω̇, ωε̇, ωψ̇
-end
-
-
-function torque2rate(τ, spin)
-    τ_ω = getτω(τ, spin)
-    τ_ε = getτε(τ, spin)
-    τ_ψ = getτψ(τ, spin)
-
-    ## [rad/sec/sec]
-    ω̇  = τ_ω / shape.I[3, 3]
-    ωε̇ = τ_ε / shape.I[3, 3]
-    ωψ̇ = τ_ψ / shape.I[3, 3]
-
-    ## [deg/day/day]
-    ω̇  = rad2deg(ω̇)  * (3600*24)^2
-    ωε̇ = rad2deg(ωε̇) * (3600*24)^2
-    ωψ̇ = rad2deg(ωψ̇) * (3600*24)^2
-
-    return ω̇, ωε̇, ωψ̇
+    (τ̄ = τ̄, τ̄_ω = τ̄_ω, τ̄_ε = τ̄_ε, τ̄_ψ = τ̄_ψ, ω̇ = ω̇, ωε̇ = ωε̇, ωψ̇ = ωψ̇)
 end
 
 
@@ -406,7 +327,7 @@ Caluculate the YORP time scale given a constant acceleration/deceleration
 - `P_end`   [hour]
 - `ω̇`       [deg/day/day]
 """
-function YORP_timescale(P_start, P_end, ω̇)
+function YORP_timescale(ω̇, P_start, P_end)
     P_start *= 3600  # [sec]
     P_end   *= 3600  # [sec]
 
@@ -423,44 +344,105 @@ end
 
 
 # ****************************************************************
+#
+# ****************************************************************
+
+
+# """
+# Integrate torque over a whole surface: Pseudo-convex model
+# """
+# function getTotalTorque_convex(shape, F☉, r̂☉)
+#     τ = MVector(0., 0., 0.)
+#     for mesh in shape.smeshes
+#         Ψ = mesh.normal ⋅ r̂☉  # cosine of the Sun illumination angle
+#         Ψ > 0 && (τ .+= gettorque(mesh, F☉ * Ψ))
+#     end
+#     return SVector(τ)
+# end
+
+
+# """
+# Integrate torque over a whole surface: Self-shadowing model
+# """
+# function getTotalTorque_shadow(shape, F☉, r̂☉)
+#     τ = MVector(0., 0., 0.)
+#     for mesh in shape.smeshes
+#         Ψ = mesh.normal ⋅ r̂☉  # cosine of the Sun illumination angle
+#         Ψ > 0 && isIlluminated(mesh, r̂☉, shape) && (τ .+= gettorque(mesh, F☉ * Ψ))
+#     end
+#     return SVector(τ)
+# end
+
+#####################
+
+# """
+# Net torque during a revolutional cycle
+# """
+# function getAnnualNetTorque(shape, orbit, spin, times; shadow)
+#     if shadow
+#         getTotalTorque = getTotalTorque_shadow
+#     else
+#         getTotalTorque = getTotalTorque_convex
+#     end
+    
+#     getAnnualNetTorque(shape, orbit, spin, times, getTotalTorque)
+# end
+
+
+# function getAnnualNetTorque(shape, orbit, spin, times, getTotalTorque)
+#     τ̄ = MVector(0., 0., 0.)
+
+#     for time in times
+#         spin_phase = spin.ω * time
+#         F☉, r̂☉ = getSolarCondition(orbit, spin, time)
+#         τ = getTotalTorque(shape, F☉, r̂☉)
+#         τ = body_to_orbit(τ, spin.γ, spin.ε, spin_phase)
+
+#         τ̄ .+= τ
+#     end
+#     τ̄ /= length(times)
+# end
+
+
+# ****************************************************************
 #                   Time variance of torque
 # ****************************************************************
 
-"""
-    getTorqueVariation(shape, orbit, spin, times) -> τs
+# """
+#     getTorqueVariation(shape, orbit, spin, times) -> τs
 
-Get time variation of YORP torque at each time step
+# Get time variation of YORP torque at each time step
 
-"""
-function getTorqueVsTime(shape, orbit, spin, times)
+# """
+# function getTorqueVsTime(shape, orbit, spin, times)
     
-    τs = SVector{3,Float64}[]
+#     τs = SVector{3,Float64}[]
 
-    for time in times
-        spin_phase = spin.ω * time
-        F_sun, r̂_sun = getSolarCondition(orbit, spin, time)
-        τ = sumTorqueOverSurface(shape, F_sun, r̂_sun)
-        τ = body_to_orbit(τ, spin.γ, spin.ε, spin_phase)
+#     for time in times
+#         spin_phase = spin.ω * time
+#         F_sun, r̂_sun = getSolarCondition(orbit, spin, time)
+#         τ = sumTorqueOverSurface(shape, F_sun, r̂_sun)
+#         τ = body_to_orbit(τ, spin.γ, spin.ε, spin_phase)
         
-        push!(τs, τ)
-    end
-    τs
-end
+#         push!(τs, τ)
+#     end
+#     τs
+# end
 
-function getTorqueVsTime_shadowing(shape, orbit, spin, times)
+# function getTorqueVsTime_shadowing(shape, orbit, spin, times)
     
-    τs = SVector{3,Float64}[]
+#     τs = SVector{3,Float64}[]
 
-    for time in times
-        spin_phase = spin.ω * time
-        F_sun, r̂_sun = getSolarCondition(orbit, spin, time)
-        τ = sumTorqueOverSurface_shadowing(shape, F_sun, r̂_sun)
-        τ = body_to_orbit(τ, spin.γ, spin.ε, spin_phase)
+#     for time in times
+#         spin_phase = spin.ω * time
+#         F_sun, r̂_sun = getSolarCondition(orbit, spin, time)
+#         τ = sumTorqueOverSurface_shadowing(shape, F_sun, r̂_sun)
+#         τ = body_to_orbit(τ, spin.γ, spin.ε, spin_phase)
         
-        push!(τs, τ)
-    end
-    τs
-end
+#         push!(τs, τ)
+#     end
+#     τs
+# end
 
 
 # ****************************************************************
@@ -468,82 +450,82 @@ end
 # ****************************************************************
 
 
-"""
-"""
-function addTorqueDistribution!(dτ̄s, shape, F_sun, r̂_sun, spin_phase)
-    # c₀ = 299792458.0  # speed of light [m/s]
+# """
+# """
+# function addTorqueDistribution!(dτ̄s, shape, F_sun, r̂_sun, spin_phase)
+#     # c₀ = 299792458.0  # speed of light [m/s]
 
-    for i in eachindex(shape.smeshes)
-        mesh = shape.smeshes[i]
-        Ψ = mesh.normal ⋅ r̂_sun  # cosine of the Sun illumination angle
-        if Ψ > 0  # daytime hemisphere of the body
-            df = - 2/3 * F_sun * Ψ / c₀ * mesh.area * mesh.normal
-            dτ = mesh.center × df
-            dτ = rotateZ(dτ, -spin_phase)
+#     for i in eachindex(shape.smeshes)
+#         mesh = shape.smeshes[i]
+#         Ψ = mesh.normal ⋅ r̂_sun  # cosine of the Sun illumination angle
+#         if Ψ > 0  # daytime hemisphere of the body
+#             df = - 2/3 * F_sun * Ψ / c₀ * mesh.area * mesh.normal
+#             dτ = mesh.center × df
+#             dτ = rotateZ(dτ, -spin_phase)
 
-            dτ̄s[i] .+= dτ
-        end
-    end
-end
+#             dτ̄s[i] .+= dτ
+#         end
+#     end
+# end
 
-function addTorqueDistribution_shadowing!(dτ̄s, shape, F_sun, r̂_sun, spin_phase)
-    # c₀ = 299792458.0  # speed of light [m/s]
+# function addTorqueDistribution_shadowing!(dτ̄s, shape, F_sun, r̂_sun, spin_phase)
+#     # c₀ = 299792458.0  # speed of light [m/s]
 
-    for i in eachindex(shape.smeshes)
-        mesh = shape.smeshes[i]
-        Ψ = mesh.normal ⋅ r̂_sun  # cosine of the Sun illumination angle
-        if Ψ > 0  # daytime hemisphere of the body
-            if isIlluminated(mesh, r̂_sun, shape.smeshes)
-                df = - 2/3 * F_sun * Ψ / c₀ * mesh.area * mesh.normal
-                dτ = mesh.center × df
-                dτ = rotateZ(dτ, -spin_phase)  # body's equatorial coordinate
+#     for i in eachindex(shape.smeshes)
+#         mesh = shape.smeshes[i]
+#         Ψ = mesh.normal ⋅ r̂_sun  # cosine of the Sun illumination angle
+#         if Ψ > 0  # daytime hemisphere of the body
+#             if isIlluminated(mesh, r̂_sun, shape.smeshes)
+#                 df = - 2/3 * F_sun * Ψ / c₀ * mesh.area * mesh.normal
+#                 dτ = mesh.center × df
+#                 dτ = rotateZ(dτ, -spin_phase)  # body's equatorial coordinate
 
-                dτ̄s[i] .+= dτ
-            end
-        end
-    end
-end
+#                 dτ̄s[i] .+= dτ
+#             end
+#         end
+#     end
+# end
     
 
-"""
-"""
-function getNetTorqueDistribution(shape, orbit, spin, times)
+# """
+# """
+# function getNetTorqueDistribution(shape, orbit, spin, times)
 
-    ## Spatial distribution of net torque
-    dτ̄s = [MVector(0.,0.,0.) for i in eachindex(shape.smeshes)]
+#     ## Spatial distribution of net torque
+#     dτ̄s = [MVector(0.,0.,0.) for i in eachindex(shape.smeshes)]
 
-    for time in times
-        spin_phase = spin.ω * time
-        F_sun, r̂_sun = getSolarCondition(orbit, spin, time)
-        addTorqueDistribution!(dτ̄s, shape, F_sun, r̂_sun, spin_phase)
-    end
-    dτ̄s ./= length(times)
+#     for time in times
+#         spin_phase = spin.ω * time
+#         F_sun, r̂_sun = getSolarCondition(orbit, spin, time)
+#         addTorqueDistribution!(dτ̄s, shape, F_sun, r̂_sun, spin_phase)
+#     end
+#     dτ̄s ./= length(times)
 
-    for dτ̄ in dτ̄s
-        rotateX!(dτ̄, -spin.ε)  # body's ecliptic coordinate
-        rotateZ!(dτ̄, -spin.γ)  # orbital plane frame
-    end
-    return dτ̄s
-end
+#     for dτ̄ in dτ̄s
+#         rotateX!(dτ̄, -spin.ε)  # body's ecliptic coordinate
+#         rotateZ!(dτ̄, -spin.γ)  # orbital plane frame
+#     end
+#     return dτ̄s
+# end
 
 
-function getNetTorqueDistribution_shadowing(shape, orbit, spin, times)
+# function getNetTorqueDistribution_shadowing(shape, orbit, spin, times)
 
-    ## Spatial distribution of net torque
-    dτ̄s = [MVector(0.,0.,0.) for i in eachindex(shape.smeshes)]
+#     ## Spatial distribution of net torque
+#     dτ̄s = [MVector(0.,0.,0.) for i in eachindex(shape.smeshes)]
 
-    for time in times
-        spin_phase = spin.ω * time
-        F_sun, r̂_sun = getSolarCondition(orbit, spin, time)
-        addTorqueDistribution_shadowing!(dτ̄s, shape, F_sun, r̂_sun, spin_phase)
-    end
-    dτ̄s ./= length(times)
+#     for time in times
+#         spin_phase = spin.ω * time
+#         F_sun, r̂_sun = getSolarCondition(orbit, spin, time)
+#         addTorqueDistribution_shadowing!(dτ̄s, shape, F_sun, r̂_sun, spin_phase)
+#     end
+#     dτ̄s ./= length(times)
 
-    for dτ̄ in dτ̄s
-        rotateX!(dτ̄, -spin.ε)  # body's ecliptic coordinate
-        rotateZ!(dτ̄, -spin.γ)  # orbital plane frame
-    end
-    return dτ̄s
-end
+#     for dτ̄ in dτ̄s
+#         rotateX!(dτ̄, -spin.ε)  # body's ecliptic coordinate
+#         rotateZ!(dτ̄, -spin.γ)  # orbital plane frame
+#     end
+#     return dτ̄s
+# end
 
 

@@ -167,76 +167,108 @@ end
 
 """
 """
-function run_TPM(shape, orbit, spin, params::ThermoParams)
-    @unpack P, Δt, t_bgn, t_end, Nt = params
+function run_TPM(shape, orbit, spin, thermo_params::ThermoParams, savepath="tmp.jld2")
+    @unpack P, Δt, t_bgn, t_end = thermo_params
     
-    init_temps_zero!(shape, params)
+    init_temps_zero!(shape, thermo_params)
 
     ts = (t_bgn:Δt:t_end) * P
-    outputs = [:u, :ν, :ϕ, :f_x, :f_y, :f_z, :τ_x, :τ_y, :τ_z, :E_in, :E_out, :E_cons]
-    df = prep_dataframe(ts, outputs)
-    
-    for (i, t) in enumerate(ts)
-        ϕ = spin.ω * t
+    timestamp = prep_timestamp(ts)
+    # surf_temp_table = zeros(shape.num_face, Int(1/thermo_params.Δt)-1)
 
-        u = solveKeplerEquation2(orbit, t)
-        ν = u2ν(u, orbit)
-        r = get_r(orbit, u)
-        F☉ = getSolarIrradiation(norm(r))
-    
-        r̂☉ = normalize(r) * -1  # Shift the origin from the sun to the body
-        r̂☉ = orbit_to_body(r̂☉, spin.γ, spin.ε, ϕ)
+    for (i, t) in enumerate(ts)
+        update_orbit!(orbit, t)
+        update_spin!(spin, t)
+            
+        r̂☉ = normalize(orbit.r) * -1  # Shift the origin from the sun to the body
+        r̂☉ = orbit_to_body(r̂☉, spin)
         
-        update_flux_sun!(shape, F☉, r̂☉)
-        update_flux_scat_single!(shape, params)
-        update_flux_rad_single!(shape, params)
+        update_flux_sun!(shape, orbit.F☉, r̂☉)
+        update_flux_scat_single!(shape, thermo_params)
+        update_flux_rad_single!(shape, thermo_params)
         
-        update_force!(shape, params)
+        update_force!(shape, thermo_params)
         sum_force_torque!(shape)
         
         f = SVector{3}(shape.force)   # Body-fixed frame
         τ = SVector{3}(shape.torque)  # Body-fixed frame
 
-        f = body_to_orbit(f, spin.γ, spin.ε, ϕ)  # Orbital plane frame
-        τ = body_to_orbit(τ, spin.γ, spin.ε, ϕ)  # Orbital plane frame
+        f = body_to_orbit(f, spin)  # Orbital plane frame
+        τ = body_to_orbit(τ, spin)  # Orbital plane frame
 
-        E_in, E_out, E_cons = energy_io(shape, params)
+        E_in, E_out, E_cons = energy_io(shape, thermo_params)
 
-        values = [u, ν, ϕ, f..., τ..., E_in, E_out, E_cons]
-        save_to_dataframe!(df, i, outputs, values)
+        save_timestamp!(timestamp, i, orbit.u, orbit.ν, spin.ϕ, f..., τ..., E_in, E_out, E_cons)
         
-        update_temps!(shape, params)
+        update_temps!(shape, thermo_params)
     end
+    mean_energy_cons_frac!(timestamp, spin)
+    jldsave(savepath; shape, orbit, spin, thermo_params, timestamp)
 
-    if "E_cons" in names(df)
-        df[:, :Ē_cons] = [mean(df.E_cons[@. row.t - spin.P ≤ df.t ≤ row.t]) for row in eachrow(df)]
-    end
-    df
+    timestamp
 end
 
+# ****************************************************************
+#                      Data input/output
+# ****************************************************************
+
 """
 """
-function prep_dataframe(ts, outputs; dtype=Float64)
+function prep_timestamp(ts; dtype=Float64)
     Nt = length(ts)
-    df = DataFrame(t=ts)
-    for symbol in outputs
-        df[:, symbol] = Vector{dtype}(undef, Nt)
-    end
-    df
+    df = DataFrame(
+        t      = ts,
+        u      = Vector{dtype}(undef, Nt),
+        ν      = Vector{dtype}(undef, Nt),
+        ϕ      = Vector{dtype}(undef, Nt),
+        f_x    = Vector{dtype}(undef, Nt),
+        f_y    = Vector{dtype}(undef, Nt),
+        f_z    = Vector{dtype}(undef, Nt),
+        τ_x    = Vector{dtype}(undef, Nt),
+        τ_y    = Vector{dtype}(undef, Nt),
+        τ_z    = Vector{dtype}(undef, Nt),
+        E_in   = Vector{dtype}(undef, Nt),
+        E_out  = Vector{dtype}(undef, Nt),
+        E_cons = Vector{dtype}(undef, Nt),
+        Ē_cons = Vector{dtype}(undef, Nt),
+    )
 end
 
 """
 """
-function save_to_dataframe!(df, i, outputs, values)
-    for (symbol, value) in zip(outputs, values)
-        df[i, symbol] = value
-    end
+function save_timestamp!(df, i::Integer, u, ν, ϕ, f_x, f_y, f_z, τ_x, τ_y, τ_z, E_in, E_out, E_cons)
+    df.u[i]      = u
+    df.ν[i]      = ν
+    df.ϕ[i]      = ϕ
+    df.f_x[i]    = f_x
+    df.f_y[i]    = f_y
+    df.f_z[i]    = f_z
+    df.τ_x[i]    = τ_x
+    df.τ_y[i]    = τ_y
+    df.τ_z[i]    = τ_z
+    df.E_in[i]   = E_in
+    df.E_out[i]  = E_out
+    df.E_cons[i] = E_cons
 end
 
 
 # ****************************************************************
 #                     Convergence decision
 # ****************************************************************
+
+"""
+    mean_energy_cons_frac!(df, spin::SpinParams)
+    mean_energy_cons_frac!(df, P::Real)
+
+Average energy conservation fraction over a rotational cycle
+"""
+mean_energy_cons_frac!(df, spin::SpinParams) = mean_energy_cons_frac!(df, spin.P)
+
+function mean_energy_cons_frac!(df, P::Real)
+    for row in eachrow(df)
+        row.Ē_cons = mean(df.E_cons[@. row.t - P ≤ df.t ≤ row.t])
+    end
+end
 
 
 """
@@ -284,6 +316,7 @@ energy_out(shape::ShapeModel, params::ThermoParams) = energy_out(shape, params.�
 energy_out(shape::ShapeModel, ϵ::AbstractVector, A_TH::AbstractVector) = sum(energy_out(facet, ϵ[i], A_TH[i]) for (i, facet) in enumerate(shape.facets))
 energy_out(shape::ShapeModel, ϵ::Real, A_TH::Real) = sum(energy_out(facet, ϵ, A_TH) for facet in shape.facets)
 energy_out(facet::Facet, ϵ::Real, A_TH::Real) = ( ϵ*σ_SB*facet.temps[begin]^4 - (1 - A_TH)*facet.flux.rad ) * facet.area
+
 
 # ****************************************************************
 #        Energy flux of sunlight, scattering, and radiation
