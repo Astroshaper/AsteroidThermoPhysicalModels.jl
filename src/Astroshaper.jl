@@ -55,6 +55,9 @@ export run_TPM
 export analyze_YORP, YORP_timescale
 export torque2rate, run_YORP, run_Yarkovsky
 
+include("roughness.jl")
+export crater_curvature_radius, concave_spherical_segment, parallel_sinusoidal_trenches
+
 include("polyhedron.jl")
 
 include("binary.jl")
