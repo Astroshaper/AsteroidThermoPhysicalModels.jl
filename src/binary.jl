@@ -1,4 +1,29 @@
 
+"""
+    mutable struct Binary{T}
+
+Describe the state of a binary asteroid
+
+# Fields
+- `shape1` : Shape model of the primary
+- `shape2` : Shape model of the secondary
+
+- `ϕ₁` : Spin phase of the primary
+- `ϕ₂` : Spin phase of the secondary
+- `ω₁` : Spin velocity of the primary
+- `ω₂` : Spin velocity of the secondary
+"""
+mutable struct Binary{T1, T2, T3}
+    shape1::T1
+    shape2::T1
+
+    orbit::T2
+    # mutual_orbit
+
+    spin1::T3
+    spin2::T3
+end
+
 
 function run_binary(shape1, shape2, orbit1, orbit2, spin1, spin2, params_thermo)
     @unpack P, Δt, t_bgn, t_end, Nt, Nz = params_thermo

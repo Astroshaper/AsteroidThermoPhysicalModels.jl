@@ -150,6 +150,57 @@ RYUGU[:δ] = -66.4       # Declination (Dec)
 RYUGU[:P] = 7.63262     # Rotation period
 
 
+"""
+# Asteroid 65803 Didymos (1996 GT)
+
+https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=didymos
+
+## Physical parameters
+- `:GM` : GM
+- `:M`  : Mass
+- `:μ`  : Standard gravitational parameter about Sun and Ryugu
+
+## Orbital elements
+- `:a`  : Semi-mojor axis [AU]
+- `:e`  : Eccentricity [-]
+- `:I`  : Inclination [deg]
+- `:Ω`  : Longitude of the ascending node [deg]
+- `:ω`  : Argument of periapsis [deg]
+- `:Φ`  : # Mean anomaly [deg]
+
+## Spin parameters
+- `:α`  : Right ascension (RA) in equatorial coordinate system [deg]
+- `:δ`  : Declination (Dec) in equatorial coordinate system [deg]
+- `:P`  : Rotation period [h]
+"""
+DIDYMOS      = Dict{Symbol, Float64}()
+DIDYMOS[:GM] = 0.             # GM
+DIDYMOS[:M]  = DIDYMOS[:GM] / G    # Mass
+DIDYMOS[:μ]  = GM☉ + DIDYMOS[:GM]  # Standard gravitational parameter about Sun and Ryugu
+
+DIDYMOS[:a] = 1.644206917783226   # Semi-mojor axis [AU]
+DIDYMOS[:e] = 0.3838482230328272  # Eccentricity
+DIDYMOS[:I] = 3.407952385532195   # Inclination [deg]
+DIDYMOS[:Ω] = 73.19580068754534   # Longitude of the ascending node [deg]
+DIDYMOS[:ω] = 319.3229511490275   # Argument of periapsis [deg]
+DIDYMOS[:Φ] = 232.0090776515427   # Mean anomaly [deg]
+
+# DIDYMOS[:α] = 0.  # Right ascension (RA)
+# DIDYMOS[:δ] = 0.  # Declination (Dec)
+DIDYMOS[:P] = 2.2593   # Rotation period
+
+
+"""
+# Dimorphos
+
+- `:a` : Semi-major axis of the mutual orbit with Dimorphos [m]
+- `:P` : Rotation periof of the mutual orbit with Dimorphos [h]
+"""
+DIMORPHOS     = Dict{Symbol, Float64}()
+DIMORPHOS[:a] = 1190.
+DIMORPHOS[:P] = 11.93
+
+
 # ****************************************************************
 #                              Comets
 # ****************************************************************

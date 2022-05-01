@@ -23,7 +23,7 @@ export AU, G, GM☉, M☉, SOLAR_CONST, c₀, σ_SB
 export MERCURY, VENUS, EARTH, MARS, JUPITER, SATURN, URANUS, NEPTUNE
 export CERES, PLUTO, ERIS
 export MOON
-export RYUGU
+export RYUGU, DIDYMOS, DIMORPHOS
 
 include("obj.jl")
 export loadobj
@@ -61,7 +61,7 @@ export crater_curvature_radius, concave_spherical_segment, parallel_sinusoidal_t
 include("polyhedron.jl")
 
 include("binary.jl")
-export run_binary
+export Binary, run_binary
 
 ################################################################
 
