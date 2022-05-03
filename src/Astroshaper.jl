@@ -61,7 +61,7 @@ export crater_curvature_radius, concave_spherical_segment, parallel_sinusoidal_t
 include("polyhedron.jl")
 
 include("binary.jl")
-export Binary, run_binary
+export MutualOrbit, Binary, run_binary_TPM!
 
 ################################################################
 
