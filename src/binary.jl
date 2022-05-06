@@ -29,7 +29,7 @@ mutable struct MutualOrbit{T1, T2}
     m₁::T1
     m₂::T1
     r₁::T2  # Center of the primary
-    r₂::t2  # Center of the secondary
+    r₂::T2  # Center of the secondary
 end
 
 
