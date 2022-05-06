@@ -72,7 +72,7 @@ function update!(binary::Binary, t)
     binary.mutual_orbit.t = t
     binary.mutual_orbit.θ = binary.mutual_orbit.n * t
 
-    @unpack a, θ, m₁, m₂
+    @unpack a, θ, m₁, m₂ = binary.mutual_orbit
     binary.mutual_orbit.r₁ = [cos(θ+π), sin(θ+π), 0] * a * m₂ / (m₁ + m₂)
     binary.mutual_orbit.r₂ = [cos(θ),   sin(θ),   0] * a * m₁ / (m₁ + m₂)
 end
