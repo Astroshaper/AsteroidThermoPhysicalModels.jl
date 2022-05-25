@@ -81,14 +81,59 @@ end
 """
     run_binary_TPM!(binary, thermo_params)
 """
+# function run_binary_TPM!(binary, thermo_params)
+#     @unpack shape1, shape2, orbit, spin1, spin2 = binary
+#     @unpack t_bgn, Δt, t_end, P = thermo_params
+
+#     init_temps_zero!(shape1, thermo_params)
+#     init_temps_zero!(shape2, thermo_params)
+
+#     ts = (t_bgn:Δt:t_end) * P
+#     T₁ = []
+#     T₂ = []
+    
+#     for t in ts
+#         update!(binary, t)
+        
+#         r̂☉ = normalize(orbit.r) * -1  # Shift the origin from the sun to the body
+#         r̂☉₁ = orbit_to_body(r̂☉, spin1)
+#         r̂☉₂ = orbit_to_body(r̂☉, spin2)
+        
+#         update_flux_sun!(shape1, orbit.F☉, r̂☉₁)
+#         update_flux_scat_single!(shape1, thermo_params)
+#         update_flux_rad_single!(shape1, thermo_params)
+        
+#         update_temps!(shape1, thermo_params)
+        
+#         update_flux_sun!(shape2, orbit.F☉, r̂☉₂)
+#         update_flux_scat_single!(shape2, thermo_params)
+#         update_flux_rad_single!(shape2, thermo_params)
+        
+#         update_temps!(shape2, thermo_params)
+#         # println(t, ", ", rad2deg(ϕ₁), ", ", rad2deg(ϕ₂), ", ", r̂☉₁)
+
+#         push!(T₁, surface_temperature(shape1))
+#         push!(T₂, surface_temperature(shape2))
+#     end
+#     ts, T₁, T₂
+# end
+
+
+"""
+    run_binary_TPM!(binary, thermo_params)
+"""
 function run_binary_TPM!(binary, thermo_params)
     @unpack shape1, shape2, orbit, spin1, spin2 = binary
     @unpack t_bgn, Δt, t_end, P = thermo_params
 
     init_temps_zero!(shape1, thermo_params)
     init_temps_zero!(shape2, thermo_params)
+
+    ts = (t_bgn:Δt:t_end) * P
+    T₁ = []
+    T₂ = []
     
-    for t in (t_bgn:Δt:t_end)*P
+    for t in ts
         update!(binary, t)
         
         r̂☉ = normalize(orbit.r) * -1  # Shift the origin from the sun to the body
@@ -99,13 +144,19 @@ function run_binary_TPM!(binary, thermo_params)
         update_flux_scat_single!(shape1, thermo_params)
         update_flux_rad_single!(shape1, thermo_params)
         
-        update_temps!(shape1, thermo_params)
-        
         update_flux_sun!(shape2, orbit.F☉, r̂☉₂)
         update_flux_scat_single!(shape2, thermo_params)
         update_flux_rad_single!(shape2, thermo_params)
+
+        ## Mutual shadowing check
+        ## Mutual heating check
         
+        update_temps!(shape1, thermo_params)
         update_temps!(shape2, thermo_params)
         # println(t, ", ", rad2deg(ϕ₁), ", ", rad2deg(ϕ₂), ", ", r̂☉₁)
+
+        push!(T₁, surface_temperature(shape1))
+        push!(T₂, surface_temperature(shape2))
     end
+    ts, T₁, T₂
 end

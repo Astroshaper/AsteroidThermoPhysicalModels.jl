@@ -34,9 +34,7 @@ export rotateX!, rotateY!, rotateZ!
 
 include("facet.jl")
 include("shape.jl")
-include("visualization.jl")
 export ShapeModel
-export draw
 
 include("kepler.jl")
 include("spin.jl")
@@ -62,6 +60,9 @@ include("polyhedron.jl")
 
 include("binary.jl")
 export MutualOrbit, Binary, run_binary_TPM!
+
+include("visualization.jl")
+export draw
 
 ################################################################
 

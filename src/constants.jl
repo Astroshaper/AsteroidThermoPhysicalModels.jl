@@ -153,8 +153,6 @@ RYUGU[:P] = 7.63262     # Rotation period
 """
 # Asteroid 65803 Didymos (1996 GT)
 
-https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=didymos
-
 ## Physical parameters
 - `:GM` : GM
 - `:M`  : Mass
@@ -172,6 +170,10 @@ https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=didymos
 - `:α`  : Right ascension (RA) in equatorial coordinate system [deg]
 - `:δ`  : Declination (Dec) in equatorial coordinate system [deg]
 - `:P`  : Rotation period [h]
+
+## References
+- Small Body Database Lookup: https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=didymos
+- Naidu et al. (2020)
 """
 DIDYMOS      = Dict{Symbol, Float64}()
 DIDYMOS[:GM] = 0.             # GM
@@ -185,9 +187,11 @@ DIDYMOS[:Ω] = 73.19580068754534   # Longitude of the ascending node [deg]
 DIDYMOS[:ω] = 319.3229511490275   # Argument of periapsis [deg]
 DIDYMOS[:Φ] = 232.0090776515427   # Mean anomaly [deg]
 
-# DIDYMOS[:α] = 0.  # Right ascension (RA)
-# DIDYMOS[:δ] = 0.  # Declination (Dec)
-DIDYMOS[:P] = 2.2593   # Rotation period
+DIDYMOS[:α] = 78.     # Right ascension (RA)
+DIDYMOS[:δ] = -71.    # Declination (Dec)
+# DIDYMOS[:λ] = 290.
+# DIDYMOS[:β] = -75.
+DIDYMOS[:P] = 2.2593  # Rotation period
 
 
 """
@@ -198,7 +202,10 @@ DIDYMOS[:P] = 2.2593   # Rotation period
 """
 DIMORPHOS     = Dict{Symbol, Float64}()
 DIMORPHOS[:a] = 1190.
-DIMORPHOS[:P] = 11.93
+
+DIMORPHOS[:α] = 78.    # Right ascension (RA)
+DIMORPHOS[:δ] = -71.   # Declination (Dec)
+DIMORPHOS[:P] = 11.93  # Rotation period
 
 
 # ****************************************************************
