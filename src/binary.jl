@@ -119,19 +119,27 @@ end
 # end
 
 
+
 """
     run_binary_TPM!(binary, thermo_params)
 """
 function run_binary_TPM!(binary, thermo_params)
-    @unpack shape1, shape2, orbit, spin1, spin2 = binary
+    @unpack shape1, shape2, orbit, mutual_orbit, spin1, spin2 = binary
     @unpack t_bgn, Δt, t_end, P = thermo_params
 
     init_temps_zero!(shape1, thermo_params)
     init_temps_zero!(shape2, thermo_params)
 
     ts = (t_bgn:Δt:t_end) * P
-    T₁ = []
-    T₂ = []
+    df = DataFrame(
+        t=Float64[], u=Float64[], ν=Float64[],
+        f1_x=Float64[], f1_y=Float64[], f1_z=Float64[],
+        τ1_x=Float64[], τ1_y=Float64[], τ1_z=Float64[],
+        f2_x=Float64[], f2_y=Float64[], f2_z=Float64[],
+        τ2_x=Float64[], τ2_y=Float64[], τ2_z=Float64[],
+    )
+    T₁ = Vector{Float64}[]
+    T₂ = Vector{Float64}[]
     
     for t in ts
         update!(binary, t)
@@ -148,15 +156,62 @@ function run_binary_TPM!(binary, thermo_params)
         update_flux_scat_single!(shape2, thermo_params)
         update_flux_rad_single!(shape2, thermo_params)
 
-        ## Mutual shadowing check
-        ## Mutual heating check
+        #### Mutual shadowing check ####
+        ## Assuming the poles of rotation and mutual orbit coincide
+
+        r̂☉ = rotateZ(r̂☉₁, -spin1.ϕ)  # Sun's direction in the mutable orbit frame
+        # r̂☉ = rotateZ(r̂☉₂, -spin2.ϕ)
+
+        r̂₁ = normalize(mutual_orbit.r₁)
+        r̂₂ = normalize(mutual_orbit.r₂)
+        sep1 = acos(r̂₁ ⋅ r̂☉)
+        sep2 = acos(r̂₂ ⋅ r̂☉)
+        
+        if (t > 100 * spin2.P) && (rad2deg(min(sep1, sep2)) < 20)
+            println(t, ", ", rad2deg(sep1), ", ", rad2deg(sep2))
+
+            for f₁ in shape1.facets
+                ## Into the mutable orbit frame
+                A₁ = rotateZ(f₁.A, -spin1.ϕ) + mutual_orbit.r₁
+                B₁ = rotateZ(f₁.B, -spin1.ϕ) + mutual_orbit.r₁
+                C₁ = rotateZ(f₁.C, -spin1.ϕ) + mutual_orbit.r₁
+                center1 = rotateZ(f₁.center, -spin1.ϕ) + mutual_orbit.r₁
+                # normal1 = rotateZ(f₁.normal, -spin1.ϕ)
+                for f₂ in shape2.facets
+                    ## Into the mutable orbit frame
+                    A₂ = rotateZ(f₂.A, -spin2.ϕ) + mutual_orbit.r₂
+                    B₂ = rotateZ(f₂.B, -spin2.ϕ) + mutual_orbit.r₂
+                    C₂ = rotateZ(f₂.C, -spin2.ϕ) + mutual_orbit.r₂
+                    center2 = rotateZ(f₂.center, -spin2.ϕ) + mutual_orbit.r₂
+                    # normal2 = rotateZ(f₂.normal, -spin2.ϕ)
+
+                    raycast(A₂ - center1, B₂ - center1, C₂ - center1, r̂☉) && (f₁.flux.sun = 0)
+                    raycast(A₁ - center2, B₁ - center2, C₁ - center2, r̂☉) && (f₂.flux.sun = 0)
+                end
+            end
+        end
+
+        #### Mutual heating check ####
+        ## Ignored for now
+
+        update_force!(shape1, thermo_params)
+        update_force!(shape2, thermo_params)
+        sum_force_torque!(shape1)
+        sum_force_torque!(shape2)
+
+        f1 = body_to_orbit(SVector{3}(shape1.force),  spin1)  # Orbital plane frame
+        τ1 = body_to_orbit(SVector{3}(shape1.torque), spin1)  # Orbital plane frame
+
+        f2 = body_to_orbit(SVector{3}(shape2.force),  spin2)  # Orbital plane frame
+        τ2 = body_to_orbit(SVector{3}(shape2.torque), spin2)  # Orbital plane frame
         
         update_temps!(shape1, thermo_params)
         update_temps!(shape2, thermo_params)
-        # println(t, ", ", rad2deg(ϕ₁), ", ", rad2deg(ϕ₂), ", ", r̂☉₁)
+
+        push!(df, (t, orbit.u, orbit.ν, f1..., τ1..., f2..., τ2...))
 
         push!(T₁, surface_temperature(shape1))
         push!(T₂, surface_temperature(shape2))
     end
-    ts, T₁, T₂
+    df, T₁, T₂
 end

@@ -153,13 +153,13 @@ function draw(binary::Binary; color=:gray)
     nodes2 = collect.(shape2.nodes)
 
     for (node1, node1_static) in zip(nodes1, shape1.nodes)
-        node1 .= rotateZ(node1_static, spin1.ϕ)
-        node1 .-= mutual_orbit.r₁
+        node1 .= rotateZ(node1_static, -spin1.ϕ)
+        node1 .+= mutual_orbit.r₁
     end
 
     for (node2, node2_static) in zip(nodes2, shape2.nodes)
-        node2 .= rotateZ(node2_static, spin2.ϕ)
-        node2 .-= mutual_orbit.r₂
+        node2 .= rotateZ(node2_static, -spin2.ϕ)
+        node2 .+= mutual_orbit.r₂
     end
 
     nodes1 = VectorVector2Matrix(nodes1)
