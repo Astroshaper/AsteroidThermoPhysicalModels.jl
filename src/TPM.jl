@@ -369,25 +369,25 @@ end
 
 Multiple scattering of sunlight is considered.
 """
-update_flux_scat_mult!(shape, params::ThermoParams) = update_flux_scat_mult!(shape, params.A_B)
+# update_flux_scat_mult!(shape, params::ThermoParams) = update_flux_scat_mult!(shape, params.A_B)
 
-function update_flux_scat_mult!(shape, A_B::Real)
-    # for facet in shape.facets
-    #     facet.flux.scat = 0
-    #     for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
-    #         facet.flux.scat += f * A_B * shape.facets[id].flux.sun
-    #     end
-    # end
-end
+# function update_flux_scat_mult!(shape, A_B::Real)
+#     for facet in shape.facets
+#         facet.flux.scat = 0
+#         for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
+#             facet.flux.scat += f * A_B * shape.facets[id].flux.sun
+#         end
+#     end
+# end
 
-function update_flux_scat_mult!(shape, A_B::AbstractVector)
-    # for facet in shape.facets
-    #     facet.flux.scat = 0
-    #     for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
-    #         facet.flux.scat += f * A_B[id] * shape.facets[id].flux.sun
-    #     end
-    # end
-end
+# function update_flux_scat_mult!(shape, A_B::AbstractVector)
+#     for facet in shape.facets
+#         facet.flux.scat = 0
+#         for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
+#             facet.flux.scat += f * A_B[id] * shape.facets[id].flux.sun
+#         end
+#     end
+# end
 
 """
     update_flux_rad_single!(shape, params)
