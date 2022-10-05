@@ -356,14 +356,14 @@ equal to area of the corresponding spherical triangle
 """
 function solid_angle(facet::Facet, obs::AbstractVector)
 
-    ## Vectors from observer to facet vertices
-    A = facet.A - obs
-    B = facet.B - obs
-    C = facet.C - obs
+    ## Normal vectors from observer to facet vertices
+    A = normalize(facet.A - obs)
+    B = normalize(facet.B - obs)
+    C = normalize(facet.C - obs)
 
-    AOB = getangle(A, B)
-    BOC = getangle(B, C)
-    COA = getangle(C, A)
+    AOB = acos(A ⋅ B)
+    BOC = acos(B ⋅ C)
+    COA = acos(C ⋅ A)
     
     Ω = spherical_excess(AOB, BOC, COA)
 end
@@ -389,5 +389,3 @@ function spherical_excess(a, b, c)
     E = 4 * atan(E)
 end
 
-
-getangle(v1, v2) = acos(normalize(v1) ⋅ normalize(v2))
