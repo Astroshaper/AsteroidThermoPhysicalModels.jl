@@ -168,7 +168,7 @@ function run_binary_TPM!(binary, thermo_params)
         sep2 = acos(r̂₂ ⋅ r̂☉)
         
         if (t > 100 * spin2.P) && (rad2deg(min(sep1, sep2)) < 20)
-            println(t, ", ", rad2deg(sep1), ", ", rad2deg(sep2))
+            # println(t, ", ", rad2deg(sep1), ", ", rad2deg(sep2))
 
             for f₁ in shape1.facets
                 ## Into the mutable orbit frame

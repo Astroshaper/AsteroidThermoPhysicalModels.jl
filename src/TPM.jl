@@ -326,6 +326,10 @@ energy_out(facet::Facet, ϵ::Real, A_TH::Real) = ( ϵ*σ_SB*facet.temps[begin]^4
     update_flux_sun!(shape, F☉, r̂☉)
 
 Update illumination.
+
+- `shape` : Shape model
+- `F☉`    : Solar radiation flux
+- `r̂☉`    : Unit vector indicating the direction of the sun in the body-fixed frame
 """
 function update_flux_sun!(shape, F☉, r̂☉)
     for facet in shape.facets
@@ -336,6 +340,30 @@ function update_flux_sun!(shape, F☉, r̂☉)
         end
     end
 end
+
+
+"""
+    update_flux_sun!(shape1, shape2, F☉, r̂☉₁, r̂☉₂)
+
+Update illumination for a binary asteroid system
+
+- `shape1` : Shape model of the primary body
+- `shape2` : Shape model of the secondary body
+- `F☉`     : Solar radiation flux
+- `r̂☉₁`    : Unit vector indicating the direction of the sun in the primary-body-fixed frame
+- `r̂☉₂`    : Unit vector indicating the direction of the sun in the secondary-body-fixed frame
+"""
+function update_flux_sun!(shape1, shape2, F☉, r̂☉₁, r̂☉₂)
+    update_flux_sun!(shape1, F☉, r̂☉₁)
+    update_flux_sun!(shape2, F☉, r̂☉₂)
+    
+    ## Mutual-shadowing
+
+    for facet in shape1.facets
+        facet.flux.sun == 0 && continue
+    end
+end
+
 
 """
     update_flux_scat_single!(shape, params)
@@ -418,3 +446,4 @@ function update_flux_rad_single!(shape, ϵ::AbstractVector)
         end
     end
 end
+
