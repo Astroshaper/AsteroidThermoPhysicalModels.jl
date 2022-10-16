@@ -25,6 +25,9 @@ export CERES, PLUTO, ERIS
 export MOON
 export RYUGU, DIDYMOS, DIMORPHOS
 
+include("spice_util.jl")
+export spkpos, spkpos_df, pxform
+
 include("obj.jl")
 export loadobj
 
@@ -64,10 +67,9 @@ export MutualOrbit, Binary, run_binary_TPM!
 include("visualization.jl")
 export draw
 
-include("spice_util.jl")
-export spkpos, spkpos_df, pxform
 
 ################################################################
+
 
 include("nbody.jl")
 export AbstractParticle, SimpleParticle, HermiteParticle
