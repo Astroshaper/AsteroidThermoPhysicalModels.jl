@@ -64,6 +64,9 @@ export MutualOrbit, Binary, run_binary_TPM!
 include("visualization.jl")
 export draw
 
+include("spice_util.jl")
+export spkpos, spkpos_df, pxform
+
 ################################################################
 
 include("nbody.jl")
