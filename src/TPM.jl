@@ -167,7 +167,7 @@ end
 
 """
 """
-function run_TPM(shape::ShapeModel, orbit::OrbitalElements, spin::SpinParams, thermo_params::ThermoParams, savepath="tmp.jld2")
+function run_TPM!(shape::ShapeModel, orbit::OrbitalElements, spin::SpinParams, thermo_params::ThermoParams, savepath="tmp.jld2")
     @unpack P, Δt, t_bgn, t_end = thermo_params
     
     init_temps_zero!(shape, thermo_params)
@@ -209,45 +209,54 @@ function run_TPM(shape::ShapeModel, orbit::OrbitalElements, spin::SpinParams, th
 end
 
 
-function run_TPM(shape::ShapeModel, et_range, sun, thermo_params::ThermoParams, savepath="tmp.jld2")
-    @unpack P, Δt, t_bgn, t_end = thermo_params
-    
+function run_TPM!(shape::ShapeModel, et_range, sun, thermo_params::ThermoParams, savepath, save_range)
+ 
     init_temps_zero!(shape, thermo_params)
+    
+    surf_temps = zeros(shape.num_face, length(save_range))
+    forces  = [zeros(3) for _ in eachindex(save_range)]
+    torques = [zeros(3) for _ in eachindex(save_range)]
+    
+    i = 1
 
-    ts = (t_bgn:Δt:t_end) * P
-    timestamp = prep_timestamp(ts)
+    for et in et_range
 
-    # for (i, t) in enumerate(ts)
-    #     update_orbit!(orbit, t)
-    #     update_spin!(spin, t)
-            
-    #     r̂☉ = normalize(orbit.r) * -1  # Shift the origin from the sun to the body
-    #     r̂☉ = orbit_to_body(r̂☉, spin)
-        
-    #     update_flux_sun!(shape, orbit.F☉, r̂☉)
-    #     update_flux_scat_single!(shape, thermo_params)
-    #     update_flux_rad_single!(shape, thermo_params)
-        
-    #     update_force!(shape, thermo_params)
-    #     sum_force_torque!(shape)
-        
-    #     f = SVector{3}(shape.force)   # Body-fixed frame
-    #     τ = SVector{3}(shape.torque)  # Body-fixed frame
+        r̂☉ = SVector{3}(normalize(sun[i]))
+        F☉ = SOLAR_CONST / SPICE.convrt(norm(sun[i]), "m", "au")^2
 
-    #     f = body_to_orbit(f, spin)  # Orbital plane frame
-    #     τ = body_to_orbit(τ, spin)  # Orbital plane frame
+        update_flux_sun!(shape, F☉, r̂☉)
+        update_flux_scat_single!(shape, thermo_params)
+        update_flux_rad_single!(shape, thermo_params)
 
-    #     E_in, E_out, E_cons = energy_io(shape, thermo_params)
+        update_temps!(shape, thermo_params)
 
-    #     save_timestamp!(timestamp, i, orbit.u, orbit.ν, spin.ϕ, f..., τ..., E_in, E_out, E_cons)
-        
-    #     update_temps!(shape, thermo_params)
-    # end
-    # mean_energy_cons_frac!(timestamp, spin)
-    # jldsave(savepath; shape, orbit, spin, thermo_params, timestamp)
+        if et_range[save_range[begin]] ≤ et ≤ et_range[save_range[end]]
+            update_force!(shape, thermo_params)
+            sum_force_torque!(shape)
 
-    # timestamp
+            surf_temps[:, i] .= surface_temperature(shape)
+            forces[i]  .= shape.force   # Body-fixed frame
+            torques[i] .= shape.torque  # Body-fixed frame
+    
+            i += 1
+        end
+
+        E_in, E_out, E_cons = energy_io(shape, thermo_params)
+        println(E_cons)
+    end
+    
+    jldsave(savepath; shape, et_range=et_range[save_range], sun=sun[save_range], thermo_params, surf_temps, forces, torques)
 end
+
+## torques = data["torques"]
+## RYUGU_TO_J2000 = data["RYUGU_TO_J2000"]
+
+## τs = [R * τ for (τ, R) in zip(torques, RYUGU_TO_J2000)]
+## τ̄ = sum(τs) / length(τs)
+## ŝ = RYUGU_TO_J2000[1] * [0,0,1]
+
+## τ̄ = [-7.401430254063619, -4.461572023742755, -2.1021523476586275]
+## ŝ = [-0.04486511842721075, 0.3980298096670074, -0.9162747359634872]
 
 # ****************************************************************
 #                      Data input/output
