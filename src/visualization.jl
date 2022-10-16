@@ -4,18 +4,6 @@
 ################################################################
 
 
-function spkpos_df(targ, ets::AbstractVector, ref, abcorr, obs)
-    df = DataFrame(et=Float64[], x=Float64[], y=Float64[], z=Float64[], lt=Float64[])
- 
-    for et in ets
-        pos, lt = SPICE.spkpos(targ, et, ref, abcorr, obs)
-        push!(df, (et, pos..., lt))
-    end
-
-    df
-end
-
-
 function plot_orbits(kernels, bodies, orbit)
 
     for kernel in kernels
@@ -135,7 +123,21 @@ function draw(shape::ShapeModel; data=nothing, r̂☉=[1,0,0.], colormap=:viridi
         strokecolor=strokecolor, strokewidth=1,
         size=(1500,1500)
     )
+
     display(scene)
+
+    # fig = Figure()
+    # ax = Axis3(fig[1, 1], aspect=:data)
+
+    # poly!(ax, nodes, faces,
+    #     color=color, colormap=colormap,
+    #     strokecolor=strokecolor, strokewidth=1,
+    #     size=(1500,1500)
+    # )
+
+    # # Colorbar(fig[1, 2], limits = (minimum(surf_temps), maximum(surf_temps)), colormap=colormap)
+
+    # display(fig)
 end
 
 
