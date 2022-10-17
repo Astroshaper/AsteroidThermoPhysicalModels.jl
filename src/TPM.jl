@@ -38,133 +38,6 @@ end
 #                    Thermophysical modeling
 # ****************************************************************
 
-# """
-#     mutable struct ThermoPhysicalModel
-
-# # Fields
-# - `shape`         :
-# - `orbit`         :
-# - `spin`          :
-# - `thermo_params` : 
-
-# - `t` : Time
-# - `u` : Eccentric anomaly
-# - `ν` : True anomaly
-# - `ϕ` : Spin phase
-
-# - `r`  : Position of the asteroid in the orbital plane frame
-# - `F☉` : Solar irradiation at the position `r` [W/m²]
-# - `r̂☉` : Unit vector for the solar position in the body-fixed frame
-# """
-# mutable struct ThermoPhysicalModel
-#     shape        ::ShapeModel
-#     orbit        ::OrbitalElements
-#     spin         ::SpinParams
-#     thermo_params::ThermoParams
-
-#     t::Float64
-#     u::Float64
-#     ν::Float64
-#     ϕ::Float64
-
-#     r ::Vector{Float64}
-#     F☉::Float64
-#     r̂☉::Vector{Float64}
-# end
-
-# function ThermoPhysicalModel(shape, orbit, spin, thermo_params)
-#     @unpack t_bgn, P = thermo_params
-
-#     init_temps_zero!(shape, thermo_params)
-
-#     t = t_bgn * P
-#     u = solveKeplerEquation2(orbit, t)
-#     ν = u2ν(u, orbit)
-#     ϕ = spin.ω * t
-
-#     r = get_r(orbit, u)
-#     F☉ = getSolarIrradiation(norm(r))
-    
-#     r̂☉ = normalize(r) * -1  # Shift the origin from the sun to the body
-#     r̂☉ = orbit_to_body(r̂☉, spin.γ, spin.ε, ϕ)
-
-#     ThermoPhysicalModel(shape, orbit, spin, thermo_params, t, u, ν, ϕ, r, F☉, r̂☉)
-# end
-
-# function Base.show(io::IO, TPM::ThermoPhysicalModel)
-#     @unpack t, u, ν, ϕ, r, F☉, r̂☉ = TPM
-    
-#     println("Time              : ", t)
-#     println("Eccentric anomaly : ", rad2deg(u))
-#     println("True anomaly      : ", rad2deg(ν))
-#     println("Spin phase        : ", rad2deg(ϕ))
-
-#     println("Body's position   : ", r)
-#     println("Solar irradiation : ", F☉)
-#     println("Sun's direction   : ", r̂☉)
-# end
-
-# """
-#     nextstep!(TPM::ThermoPhysicalModel, Δt)
-
-# Move on to the next timestep
-# """
-# function nextstep!(TPM::ThermoPhysicalModel, Δt)
-#     @unpack t, u, ν, ϕ, r, F☉, r̂☉ = TPM
-
-#     t += Δt
-#     u = solveKeplerEquation2(orbit, t)
-#     ν = u2ν(u, orbit)
-#     ϕ = spin.ω * t
-
-#     r = get_r(orbit, u)
-#     F☉ = getSolarIrradiation(norm(r))
-    
-#     r̂☉ = normalize(r) * -1  # Shift the origin from the sun to the body
-#     r̂☉ = orbit_to_body(r̂☉, spin.γ, spin.ε, ϕ)
-# end
-
-# """
-# """
-# function run(TPM::ThermoPhysicalModel)
-#     @unpack shape, orbit, spin, thermo_params = 
-#     @unpack P, Δt, t_bgn, t_end, Nt = params
-    
-    
-#     init_temps_zero!(shape, params)
-
-#     # ts = (t_bgn:Δt:t_end) * P
-#     # outputs = [:u, :ν, :ϕ, :f_x, :f_y, :f_z, :τ_x, :τ_y, :τ_z, :E_in, :E_out, :E_cons]
-    
-#     for (i, t) in enumerate(ts)
-#         @unapck shape = TPM
-
-        
-#         update_flux_sun!(shape, F☉, r̂☉)
-#         update_flux_scat_single!(shape, params)
-#         update_flux_rad_single!(shape, params)
-        
-#         update_force!(shape, params)
-#         sum_force_torque!(shape)
-        
-#         f = SVector{3}(shape.force)   # Body-fixed frame
-#         τ = SVector{3}(shape.torque)  # Body-fixed frame
-
-#         f = body_to_orbit(f, spin.γ, spin.ε, ϕ)  # Orbital plane frame
-#         τ = body_to_orbit(τ, spin.γ, spin.ε, ϕ)  # Orbital plane frame
-
-#         E_in, E_out, E_cons = energy_io(shape, params)
-
-#         values = [u, ν, ϕ, f..., τ..., E_in, E_out, E_cons]
-#         save_to_dataframe!(df, i, outputs, values)
-        
-#         nextstep!(TPM, Δt)
-#         update_temps!(shape, params)
-#     end
-#     # df[:, :Ē_cons] = [mean(df.E_cons[@. row.t - spin.P ≤ df.t ≤ row.t]) for row in eachrow(df)]
-# end
-
-
 """
 """
 function run_TPM!(shape::ShapeModel, orbit::OrbitalElements, spin::SpinParams, thermo_params::ThermoParams, savepath="tmp.jld2")
@@ -208,7 +81,15 @@ function run_TPM!(shape::ShapeModel, orbit::OrbitalElements, spin::SpinParams, t
     timestamp
 end
 
+"""
+- `shape`         : Shape model
+- `et_range`      : Range of ephemeris times to run
+- `sun`           : Sun's position in the body-fixed frame at epochs (Not normalized)
+- `thermo_params` : Thermophysical parametes
+- `savepath`      : Path to save data file
+- `save_range`    : Indices in `et_range` to be saved
 
+"""
 function run_TPM!(shape::ShapeModel, et_range, sun, thermo_params::ThermoParams, savepath, save_range)
  
     init_temps_zero!(shape, thermo_params)
@@ -219,10 +100,10 @@ function run_TPM!(shape::ShapeModel, et_range, sun, thermo_params::ThermoParams,
     
     i = 1
 
-    for et in et_range
+    for (et, r☉) in zip(et_range, sun)
 
-        r̂☉ = SVector{3}(normalize(sun[i]))
-        F☉ = SOLAR_CONST / SPICE.convrt(norm(sun[i]), "m", "au")^2
+        r̂☉ = SVector{3}(normalize(r☉))
+        F☉ = SOLAR_CONST / SPICE.convrt(norm(r☉), "m", "au")^2
 
         update_flux_sun!(shape, F☉, r̂☉)
         update_flux_scat_single!(shape, thermo_params)
@@ -257,6 +138,54 @@ end
 
 ## τ̄ = [-7.401430254063619, -4.461572023742755, -2.1021523476586275]
 ## ŝ = [-0.04486511842721075, 0.3980298096670074, -0.9162747359634872]
+
+
+"""
+    run_TPM!
+
+Run TPM for a binary asteroid.
+"""
+function run_TPM!(shapes::Tuple, et_range, sun, P2S, thermo_params::ThermoParams, savepath, save_range)
+
+    for shape in shapes
+        init_temps_zero!(shape, thermo_params)
+    end
+       
+    surf_temps = zeros(shapes[1].num_face, length(save_range)), zeros(shapes[2].num_face, length(save_range))
+    forces  = [zeros(3) for _ in eachindex(save_range)], [zeros(3) for _ in eachindex(save_range)]
+    torques = [zeros(3) for _ in eachindex(save_range)], [zeros(3) for _ in eachindex(save_range)]
+    
+    i = 1
+
+    for et in et_range
+
+        r̂☉ = SVector{3}(normalize(sun[i]))
+        F☉ = SOLAR_CONST / SPICE.convrt(norm(sun[i]), "m", "au")^2
+
+        update_flux_sun!(shape, F☉, r̂☉)
+        update_flux_scat_single!(shape, thermo_params)
+        update_flux_rad_single!(shape, thermo_params)
+
+        update_temps!(shape, thermo_params)
+
+        if et_range[save_range[begin]] ≤ et ≤ et_range[save_range[end]]
+            update_force!(shape, thermo_params)
+            sum_force_torque!(shape)
+
+            surf_temps[:, i] .= surface_temperature(shape)
+            forces[i]  .= shape.force   # Body-fixed frame
+            torques[i] .= shape.torque  # Body-fixed frame
+    
+            i += 1
+        end
+
+        E_in, E_out, E_cons = energy_io(shape, thermo_params)
+        println(E_cons)
+    end
+    
+    jldsave(savepath; shape1, shape2, et_range=et_range[save_range], sun=sun[save_range], thermo_params, surf_temps, forces, torques)
+end
+
 
 # ****************************************************************
 #                      Data input/output
