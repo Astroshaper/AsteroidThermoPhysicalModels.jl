@@ -98,7 +98,7 @@ function run_TPM!(shape::ShapeModel, et_range, sun, thermo_params::ThermoParams,
     forces  = [zeros(3) for _ in eachindex(save_range)]
     torques = [zeros(3) for _ in eachindex(save_range)]
     
-    i = 1
+    idx = 1  # Index to save data
 
     for (et, r☉) in zip(et_range, sun)
 
@@ -115,11 +115,11 @@ function run_TPM!(shape::ShapeModel, et_range, sun, thermo_params::ThermoParams,
             update_force!(shape, thermo_params)
             sum_force_torque!(shape)
 
-            surf_temps[:, i] .= surface_temperature(shape)
-            forces[i]  .= shape.force   # Body-fixed frame
-            torques[i] .= shape.torque  # Body-fixed frame
+            surf_temps[:, idx] .= surface_temperature(shape)
+            forces[idx]  .= shape.force   # Body-fixed frame
+            torques[idx] .= shape.torque  # Body-fixed frame
     
-            i += 1
+            idx += 1
         end
 
         E_in, E_out, E_cons = energy_io(shape, thermo_params)
@@ -155,35 +155,35 @@ function run_TPM!(shapes::Tuple, et_range, sun, P2S, thermo_params::ThermoParams
     forces  = [zeros(3) for _ in eachindex(save_range)], [zeros(3) for _ in eachindex(save_range)]
     torques = [zeros(3) for _ in eachindex(save_range)], [zeros(3) for _ in eachindex(save_range)]
     
-    i = 1
+    idx = 1  # Index to save data
 
-    for et in et_range
+    for (et, r☉) in zip(et_range, sun)
 
-        r̂☉ = SVector{3}(normalize(sun[i]))
-        F☉ = SOLAR_CONST / SPICE.convrt(norm(sun[i]), "m", "au")^2
+        r̂☉ = SVector{3}(normalize(r☉))
+        F☉ = SOLAR_CONST / SPICE.convrt(norm(r☉), "m", "au")^2
 
-        update_flux_sun!(shape, F☉, r̂☉)
-        update_flux_scat_single!(shape, thermo_params)
-        update_flux_rad_single!(shape, thermo_params)
+        # update_flux_sun!(shape, F☉, r̂☉)
+        # update_flux_scat_single!(shape, thermo_params)
+        # update_flux_rad_single!(shape, thermo_params)
 
-        update_temps!(shape, thermo_params)
+        # update_temps!(shape, thermo_params)
 
-        if et_range[save_range[begin]] ≤ et ≤ et_range[save_range[end]]
-            update_force!(shape, thermo_params)
-            sum_force_torque!(shape)
+        # if et_range[save_range[begin]] ≤ et ≤ et_range[save_range[end]]
+        #     update_force!(shape, thermo_params)
+        #     sum_force_torque!(shape)
 
-            surf_temps[:, i] .= surface_temperature(shape)
-            forces[i]  .= shape.force   # Body-fixed frame
-            torques[i] .= shape.torque  # Body-fixed frame
+        #     surf_temps[:, idx] .= surface_temperature(shape)
+        #     forces[idx]  .= shape.force   # Body-fixed frame
+        #     torques[idx] .= shape.torque  # Body-fixed frame
     
-            i += 1
-        end
+        #     idx += 1
+        # end
 
-        E_in, E_out, E_cons = energy_io(shape, thermo_params)
-        println(E_cons)
+        # E_in, E_out, E_cons = energy_io(shape, thermo_params)
+        # println(E_cons)
     end
     
-    jldsave(savepath; shape1, shape2, et_range=et_range[save_range], sun=sun[save_range], thermo_params, surf_temps, forces, torques)
+    jldsave(savepath; shapes, et_range=et_range[save_range], sun=sun[save_range], P2S, thermo_params, surf_temps, forces, torques)
 end
 
 
