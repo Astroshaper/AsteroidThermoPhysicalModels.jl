@@ -25,6 +25,9 @@ export CERES, PLUTO, ERIS
 export MOON
 export RYUGU, DIDYMOS, DIMORPHOS
 
+include("spice_util.jl")
+export spkpos, spkpos_df, pxform
+
 include("obj.jl")
 export loadobj
 
@@ -49,7 +52,7 @@ include("TPM.jl")
 include("YORP.jl")
 include("Yarkovsky.jl")
 export ThermoParams
-export run_TPM
+export run_TPM!
 export analyze_YORP, YORP_timescale
 export torque2rate, run_YORP, run_Yarkovsky
 
@@ -64,7 +67,9 @@ export MutualOrbit, Binary, run_binary_TPM!
 include("visualization.jl")
 export draw
 
+
 ################################################################
+
 
 include("nbody.jl")
 export AbstractParticle, SimpleParticle, HermiteParticle
