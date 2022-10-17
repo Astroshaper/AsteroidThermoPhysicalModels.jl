@@ -135,7 +135,7 @@ function draw(shape::ShapeModel; data=nothing, r̂☉=[1,0,0.], colormap=:viridi
     #     size=(1500,1500)
     # )
 
-    # # Colorbar(fig[1, 2], limits = (minimum(surf_temps), maximum(surf_temps)), colormap=colormap)
+    # Colorbar(fig[1, 2], limits = (minimum(surf_temps), maximum(surf_temps)), colormap=colormap, ticks = 0:50:400)
 
     # display(fig)
 end
