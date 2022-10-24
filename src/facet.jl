@@ -243,6 +243,10 @@ raycast(facet::Facet, R) = raycast(facet.A, facet.B, facet.C, R)
 raycast(facet::Facet, R, obs::AbstractVector) = raycast(facet.A - obs, facet.B - obs, facet.C - obs, R)
 raycast(facet::Facet, R, obs::Facet) = raycast(facet, R, obs.center)
 
+raycast(A, B, C, R, obs::AbstractVector) = raycast(A - obs, B - obs, C - obs, R)
+raycast(A, B, C, R, obs::Facet) = raycast(A, B, C, R, obs.center)
+
+
 """
     findVisibleFacets!(obs::Facet, facets)
 

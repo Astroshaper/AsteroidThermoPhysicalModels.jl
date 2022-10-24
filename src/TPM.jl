@@ -145,7 +145,7 @@ end
 
 Run TPM for a binary asteroid.
 """
-function run_TPM!(shapes::Tuple, et_range, suns, P2S, thermo_params::ThermoParams, savepath, save_range)
+function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::ThermoParams, savepath, save_range)
 
     for shape in shapes
         init_temps_zero!(shape, thermo_params)
@@ -155,55 +155,55 @@ function run_TPM!(shapes::Tuple, et_range, suns, P2S, thermo_params::ThermoParam
     forces  = [zeros(3) for _ in eachindex(save_range)], [zeros(3) for _ in eachindex(save_range)]
     torques = [zeros(3) for _ in eachindex(save_range)], [zeros(3) for _ in eachindex(save_range)]
     
-    idx = 1  # Index to save data
+    idx_save = 1  # Index to save data
 
-    for (et, r☉₁, r☉₂, R₁₂) in zip(et_range, suns[1], suns[2], P2S)
+    for (i, et) in enumerate(et_range)
+        r☉₁ = suns[1][i]
+        r☉₂ = suns[2][i]
+        sec_from_pri = d2_d1[i]
+        R₂₁ = S2P[i]
 
         r̂☉₁ = SVector{3}(normalize(r☉₁))
         F☉₁ = SOLAR_CONST / SPICE.convrt(norm(r☉₁), "m", "au")^2
 
-        update_flux_sun!(shapes[1], F☉₁, r̂☉₁)
-        update_flux_scat_single!(shapes[1], thermo_params)
-        update_flux_rad_single!(shapes[1], thermo_params)
-        update_temps!(shapes[1], thermo_params)
-
         r̂☉₂ = SVector{3}(normalize(r☉₂))
         F☉₂ = SOLAR_CONST / SPICE.convrt(norm(r☉₂), "m", "au")^2
 
-        update_flux_sun!(shapes[2], F☉₂, r̂☉₂)
-        update_flux_scat_single!(shapes[2], thermo_params)
-        update_flux_rad_single!(shapes[2], thermo_params)
-        update_temps!(shapes[2], thermo_params)
+        update_flux!(shapes[1], F☉₁, r̂☉₁, thermo_params)
+        update_flux!(shapes[2], F☉₂, r̂☉₂, thermo_params)
+        
+        find_eclipse!(shapes, r̂☉₁, sec_from_pri, R₂₁)  # Mutual-shadowing
 
-        #### Mutual-shadowing ####
-
+        
         #### Mutual-heating ####
+        #
+        #
+
+        update_temps!(shapes[1], thermo_params)
+        update_temps!(shapes[2], thermo_params)
 
         if et_range[save_range[begin]] ≤ et ≤ et_range[save_range[end]]
 
-            update_force!(shapes[1], thermo_params)
-            sum_force_torque!(shapes[1])
+            for (idx_shape, shape) in enumerate(shapes)
+                update_force!(shape, thermo_params)
+                sum_force_torque!(shape)
 
-            surf_temps[1][:, idx] .= surface_temperature(shapes[1])
-            forces[1][idx]  .= shapes[1].force   # Body-fixed frame
-            torques[1][idx] .= shapes[1].torque  # Body-fixed frame
-
-            update_force!(shapes[2], thermo_params)
-            sum_force_torque!(shapes[2])
-
-            surf_temps[2][:, idx] .= surface_temperature(shapes[2])
-            forces[2][idx]  .= shapes[2].force   # Body-fixed frame
-            torques[2][idx] .= shapes[2].torque  # Body-fixed frame
+                surf_temps[idx_shape][:, idx_save] .= surface_temperature(shape)
+                forces[idx_shape][idx_save]  .= shape.force   # Body-fixed frame
+                torques[idx_shape][idx_save] .= shape.torque  # Body-fixed frame
+            end
     
-            idx += 1
+            idx_save += 1
         end
 
-        E_in, E_out, E_cons = energy_io(shapes[1], thermo_params)
-        println(E_cons)
+        # E_in, E_out, E_cons = energy_io(shapes[1], thermo_params)
+        # println(E_cons)
     end
     
-    jldsave(savepath; shapes, et_range=et_range[save_range], suns=(suns[1][save_range], suns[2][save_range]), P2S=P2S[save_range], thermo_params, surf_temps, forces, torques)
+    jldsave(savepath; shapes, et_range=et_range[save_range], suns=(suns[1][save_range], suns[2][save_range]), S2P=S2P[save_range], thermo_params, surf_temps, forces, torques)
 end
+
+
 
 
 # ****************************************************************
@@ -320,6 +320,18 @@ energy_out(facet::Facet, ϵ::Real, A_TH::Real) = ( ϵ*σ_SB*facet.temps[begin]^4
 #        Energy flux of sunlight, scattering, and radiation
 # ****************************************************************
 
+
+"""
+    update_flux!(shape, F☉, r̂☉, thermo_params)
+
+Update the energy flux to every facet by illumination, scattering, and absorption of radiation
+"""
+function update_flux!(shape, F☉, r̂☉, thermo_params)
+    update_flux_sun!(shape, F☉, r̂☉)
+    update_flux_scat_single!(shape, thermo_params)
+    update_flux_rad_single!(shape, thermo_params)
+end
+
 """
     update_flux_sun!(shape, F☉, r̂☉)
 
@@ -341,24 +353,38 @@ end
 
 
 """
-    update_flux_sun!(shape1, shape2, F☉, r̂☉₁, r̂☉₂)
+    find_eclipse!(shape1, shape2, SEC_FROM_PRI, R₂₁)
 
-Update illumination for a binary asteroid system
-
-- `shape1` : Shape model of the primary body
-- `shape2` : Shape model of the secondary body
-- `F☉`     : Solar radiation flux
-- `r̂☉₁`    : Unit vector indicating the direction of the sun in the primary-body-fixed frame
-- `r̂☉₂`    : Unit vector indicating the direction of the sun in the secondary-body-fixed frame
+- `shape1`
+- `shape2`
+- `r̂☉₁`
+- `sec_from_pri` : Position of the secondary relative to primary
+- `R₂₁`          : Rotation matrix from secondary to primary
 """
-function update_flux_sun!(shape1, shape2, F☉, r̂☉₁, r̂☉₂)
-    update_flux_sun!(shape1, F☉, r̂☉₁)
-    update_flux_sun!(shape2, F☉, r̂☉₂)
-    
-    ## Mutual-shadowing
+function find_eclipse!(shapes, r̂☉₁, sec_from_pri, R₂₁)
 
-    for facet in shape1.facets
-        facet.flux.sun == 0 && continue
+    r̂☉ = SVector{3}(normalize(r̂☉₁))
+    r̂ₛ = SVector{3}(normalize(sec_from_pri))
+    θ = acos(r̂☉ ⋅ r̂ₛ)  # Angle of Sun-Primary-Secondary
+
+    R₁_max = maximum(norm.(shapes[1].nodes))
+    R₂_max = maximum(norm.(shapes[2].nodes))
+
+    θ_crit = norm.(shapes[1].nodes)
+    π/4 < θ < π - π/4 && return
+
+    for facet2 in shapes[2].facets
+        facet2.flux.sun == 0 && continue
+        for facet1 in shapes[1].facets
+            facet1.flux.sun == 0 && continue
+
+            A = sec_from_pri + R₂₁ * facet2.A  # Primary-fixed frame
+            B = sec_from_pri + R₂₁ * facet2.B  # Primary-fixed frame
+            C = sec_from_pri + R₂₁ * facet2.C  # Primary-fixed frame
+
+            raycast(A, B, C, r̂☉₁, facet1) && (facet1.flux.sun = 0)
+            # if raycast(A, B, C, r̂☉₁, facet1) 太陽から遠いfacetのフラックスをゼロにする
+        end
     end
 end
 

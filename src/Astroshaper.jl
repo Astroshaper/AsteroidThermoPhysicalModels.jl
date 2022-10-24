@@ -12,7 +12,8 @@ import SPICE
 
 using DataFrames
 using Parameters
-using GLMakie  # 3D visulaization
+using GLMakie, CairoMakie
+using ScatteredInterpolation
 
 using FileIO
 using JLD2
@@ -65,7 +66,7 @@ include("binary.jl")
 export MutualOrbit, Binary, run_binary_TPM!
 
 include("visualization.jl")
-export draw
+export draw, temperature_map
 
 
 ################################################################

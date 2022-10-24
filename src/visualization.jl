@@ -97,12 +97,11 @@ end
     draw(shape; data=nothing)
 
 """
-function draw(shape::ShapeModel; data=nothing, r̂☉=[1,0,0.], colormap=:viridis, strokecolor=:gray20)
+function draw(shape::ShapeModel; data=nothing, r̂☉=[1,0,0.], colormap=:viridis, strokecolor=:gray20, strokewidth=1)
     nodes = VectorVector2Matrix(shape.nodes)
     faces = VectorVector2Matrix(shape.faces)
 
     set_theme!(backgroundcolor=:black)
-    # set_theme!(backgroundcolor=:white)
     
     if data === nothing
         color = :gray
@@ -120,9 +119,11 @@ function draw(shape::ShapeModel; data=nothing, r̂☉=[1,0,0.], colormap=:viridi
 
     scene = poly(nodes, faces,
         color=color, colormap=colormap,
-        strokecolor=strokecolor, strokewidth=1,
+        strokecolor=strokecolor, strokewidth=strokewidth,
         size=(1500,1500)
     )
+
+    set_theme!(backgroundcolor=:white)
 
     display(scene)
 
@@ -216,3 +217,125 @@ end
 #         l.colorrange = (0, frame)
 #     end
 # end
+
+
+################################################################
+#                      Temperature map
+################################################################
+
+
+latitude(facet::Facet) = latitude(facet.center)
+latitude(r) = asin(r[3] / norm(r))
+
+longitude(facet::Facet) = longitude(facet.center)
+longitude(r) = atan(r[2], r[1])
+
+"""
+    facet_to_grid(shape, data) -> x, y, gridded
+
+Make a lat-lon grid from facet-correlated data using ScatteredInterpolation.jl
+"""
+function facet_to_grid(shape, data)
+
+    lons = rad2deg.(longitude(facet) for facet in shape.facets)
+    lats = rad2deg.(latitude(facet)  for facet in shape.facets)
+    points = hcat(lons, lats)'
+
+    n = 180
+    x = range(-180, 180, length=n)
+    y = range(-90, 90, length=n)
+    X = repeat(x, n)[:]
+    Y = repeat(y', n)[:]
+    gridPoints = [X Y]'
+
+    itp = interpolate(Multiquadratic(), points, data)
+    interpolated = evaluate(itp, gridPoints)
+    gridded = reshape(interpolated, n, n)
+
+    x, y, gridded
+end
+
+
+"""
+    temperature_map(shape, temps=surface_temperature(shape))
+
+Make a global 2D-map from temperature based on every facet.
+
+ScatteredInterpolation.jl works well.
+- https://eljungsk.github.io/ScatteredInterpolation.jl/dev/
+
+CairoMakie.tricontourf seems unavailable now?
+- https://docs.makie.org/v0.18.0/examples/plotting_functions/tricontourf/
+"""
+function temperature_map(shape::ShapeModel, temps=surface_temperature(shape);
+    colormap=:hot, colorrange=extrema(temps),
+    draw_contour=true, nlevels=10, ticks=0:20:5000,
+    filepath="temp_map.png", title="",
+)
+
+    T_min, T_max = extrema(temps)
+    println("Max. temperature: ", T_max)
+    println("Min. temperature: ", T_min)
+    
+    fig = Figure(resolution=(800,500))
+    ax = Axis(fig[1, 1],
+        title=title,
+        xlabel="Longitude [deg]",
+        ylabel="Latitude [deg]",
+        xticks=-180:30:180,
+        yticks=-90:30:90,
+    )
+    xlims!(ax, -180, 180)
+    ylims!(ax, -90, 90)
+
+    x, y, gridded = facet_to_grid(shape, temps)
+    levels = range(colorrange..., nlevels+1)
+    cntrf = contourf!(ax, x, y, gridded; colormap, levels, extendlow=:auto, extendhigh=:auto)
+    draw_contour && contour!(x, y, gridded; color=:black, linewidth=1, levels)
+    Colorbar(fig[:, end+1], cntrf, ticks=ticks, label="Temperature [K]")
+
+    save(filepath, fig)
+    fig
+end
+
+"""
+    temperature_map(shape, temps=surface_temperature(shape))
+
+Make temperature maps of a binary asteroid, `shape1` and `shape2`.
+"""
+function temperature_map(shape1::ShapeModel, shape2::ShapeModel, temps1=surface_temperature(shape1), temps2=surface_temperature(shape2);
+    colormap=:hot, colorrange=extrema(vcat(temps1, temps2)),
+    draw_contour=true, nlevels=10, ticks=0:20:5000,
+    filepath="temp_maps.png", titles=("", ""),
+)
+
+    T_min, T_max = extrema(vcat(temps1, temps2))
+    println("Max. temperature: ", T_max)
+    println("Min. temperature: ", T_min)
+
+    fig = Figure(resolution=(1400, 600))
+
+    for (idx_shape, (shape, temps, title)) in enumerate(zip((shape1, shape2), (temps1, temps2), titles))
+
+        ax = Axis(fig[1, idx_shape],
+            title=title,
+            xlabel="Longitude [deg]",
+            ylabel="Latitude [deg]",
+            xticks=-180:30:180,
+            yticks=-90:30:90,
+        )
+        xlims!(ax, -180, 180)
+        ylims!(ax, -90, 90)
+    
+        x, y, gridded = facet_to_grid(shape, temps)
+        levels = range(colorrange..., nlevels+1)
+        cntrf = contourf!(ax, x, y, gridded; colormap, levels, extendlow=:auto, extendhigh=:auto)
+        draw_contour && contour!(x, y, gridded; color=:black, linewidth=1, levels)
+
+        # idx_shape == 2 && Colorbar(fig[:, end+1], hm, label="Temperature [K]")
+        idx_shape == 2 && Colorbar(fig[2, :], cntrf, ticks=ticks, label="Temperature [K]", vertical=false, flipaxis=false)
+    end
+
+    save(filepath, fig)
+    fig
+end
