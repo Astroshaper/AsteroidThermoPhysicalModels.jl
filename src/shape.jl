@@ -96,6 +96,8 @@ end
 equivalent_radius(VOLUME) = (3VOLUME/4π)^(1/3)
 equivalent_radius(shape::ShapeModel) = equivalent_radius(shape.VOLUME)
 
+maximum_radius(shape::ShapeModel) = maximum(norm.(shape.nodes))
+
 findVisibleFacets!(shape::ShapeModel) = findVisibleFacets!(shape.facets)
 isIlluminated(obs::Facet, r̂☉, shape::ShapeModel) = isIlluminated(obs, r̂☉, shape.facets)
 isIlluminated(r̂☉, shape::ShapeModel) = [isIlluminated(obs, r̂☉, shape) for obs in shape.facets]

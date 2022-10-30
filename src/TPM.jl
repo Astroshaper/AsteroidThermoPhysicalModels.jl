@@ -353,37 +353,53 @@ end
 
 
 """
-    find_eclipse!(shape1, shape2, SEC_FROM_PRI, R₂₁)
+The secondary is within the critical angle to detect an eclipse event.
+"""
+function eclipse_is_possible(shapes, sun_from_pri, sec_from_pri)
 
-- `shape1`
-- `shape2`
+    R₁_max = maximum_radius(shapes[1])
+    R₂_max = maximum_radius(shapes[2])
+    θ_crit = asin((R₁_max + R₂_max) / norm(sec_from_pri))
+
+    r̂☉ = SVector{3}(normalize(sun_from_pri))
+    r̂ₛ = SVector{3}(normalize(sec_from_pri))
+    θ = acos(r̂☉ ⋅ r̂ₛ)  # Angle of Sun-Primary-Secondary
+
+    θ_crit < θ < π - θ_crit ? false : true
+end
+
+
+"""
+    find_eclipse!(shapes, r̂☉₁, sec_from_pri, R₂₁)
+
+- `shapes`
 - `r̂☉₁`
 - `sec_from_pri` : Position of the secondary relative to primary
 - `R₂₁`          : Rotation matrix from secondary to primary
 """
-function find_eclipse!(shapes, r̂☉₁, sec_from_pri, R₂₁)
+function find_eclipse!(shapes, sun_from_pri, sec_from_pri, R₂₁)
 
-    r̂☉ = SVector{3}(normalize(r̂☉₁))
-    r̂ₛ = SVector{3}(normalize(sec_from_pri))
-    θ = acos(r̂☉ ⋅ r̂ₛ)  # Angle of Sun-Primary-Secondary
+    r̂☉ = SVector{3}(normalize(sun_from_pri))
+    # r̂ₛ = SVector{3}(normalize(sec_from_pri))
+    rₛ = SVector{3}(sec_from_pri)
 
-    R₁_max = maximum(norm.(shapes[1].nodes))
-    R₂_max = maximum(norm.(shapes[2].nodes))
+    # cosθ = r̂☉ ⋅ r̂ₛ  # Cosine of angle of Sun-Primary-Secondary
 
-    θ_crit = norm.(shapes[1].nodes)
-    π/4 < θ < π - π/4 && return
+    eclipse_is_possible(shapes, r̂☉, rₛ) == false && return
 
-    for facet2 in shapes[2].facets
-        facet2.flux.sun == 0 && continue
-        for facet1 in shapes[1].facets
-            facet1.flux.sun == 0 && continue
+    for facet1 in shapes[1].facets
+        facet1.flux.sun == 0 && continue
+        for facet2 in shapes[2].facets
+            facet2.flux.sun == 0 && continue
+        
+            ## Facet ABC of the secondary in the primary-fixed frame
+            A = rₛ + R₂₁ * facet2.A
+            B = rₛ + R₂₁ * facet2.B
+            C = rₛ + R₂₁ * facet2.C
+            center2 = rₛ + R₂₁ * facet2.center
 
-            A = sec_from_pri + R₂₁ * facet2.A  # Primary-fixed frame
-            B = sec_from_pri + R₂₁ * facet2.B  # Primary-fixed frame
-            C = sec_from_pri + R₂₁ * facet2.C  # Primary-fixed frame
-
-            raycast(A, B, C, r̂☉₁, facet1) && (facet1.flux.sun = 0)
-            # if raycast(A, B, C, r̂☉₁, facet1) 太陽から遠いfacetのフラックスをゼロにする
+            raycast(A, B, C, r̂☉, facet1) && (facet1.flux.sun = 0)
+            raycast(facet1, r̂☉, center2) && (facet2.flux.sun = 0)
         end
     end
 end
