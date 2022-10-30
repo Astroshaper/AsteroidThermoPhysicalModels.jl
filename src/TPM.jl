@@ -370,10 +370,10 @@ end
 
 
 """
-    find_eclipse!(shapes, r̂☉₁, sec_from_pri, R₂₁)
+    find_eclipse!(shapes, sun_from_pri, sec_from_pri, R₂₁)
 
 - `shapes`
-- `r̂☉₁`
+- `sun_from_pri`
 - `sec_from_pri` : Position of the secondary relative to primary
 - `R₂₁`          : Rotation matrix from secondary to primary
 """
