@@ -332,8 +332,9 @@ function temperature_map(shape1::ShapeModel, shape2::ShapeModel, temps1=surface_
         cntrf = contourf!(ax, x, y, gridded; colormap, levels, extendlow=:auto, extendhigh=:auto)
         draw_contour && contour!(x, y, gridded; color=:black, linewidth=1, levels)
 
-        # idx_shape == 2 && Colorbar(fig[:, end+1], hm, label="Temperature [K]")
-        idx_shape == 2 && Colorbar(fig[2, :], cntrf, ticks=ticks, label="Temperature [K]", vertical=false, flipaxis=false)
+        if idx_shape == 2
+            Colorbar(fig[2, :], cntrf, ticks=ticks, label="Temperature [K]", vertical=false, flipaxis=false)
+        end
     end
 
     save(filepath, fig)
