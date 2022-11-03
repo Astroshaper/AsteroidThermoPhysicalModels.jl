@@ -269,7 +269,7 @@ CairoMakie.tricontourf seems unavailable now?
 """
 function temperature_map(shape::ShapeModel, temps=surface_temperature(shape);
     colormap=:hot, colorrange=extrema(temps),
-    draw_contour=true, nlevels=10, ticks=0:20:5000,
+    draw_contour=true, nlevels=15, ticks=0:20:5000,
     filepath="temp_map.png", title="",
 )
 
@@ -291,7 +291,7 @@ function temperature_map(shape::ShapeModel, temps=surface_temperature(shape);
     x, y, gridded = facet_to_grid(shape, temps)
     levels = range(colorrange..., nlevels+1)
     cntrf = contourf!(ax, x, y, gridded; colormap, levels, extendlow=:auto, extendhigh=:auto)
-    draw_contour && contour!(x, y, gridded; color=:black, linewidth=1, levels)
+    draw_contour && contour!(x, y, gridded; color=:black, linewidth=0.5, levels)
     Colorbar(fig[:, end+1], cntrf, ticks=ticks, label="Temperature [K]")
 
     save(filepath, fig)
@@ -305,8 +305,8 @@ Make temperature maps of a binary asteroid, `shape1` and `shape2`.
 """
 function temperature_map(shape1::ShapeModel, shape2::ShapeModel, temps1=surface_temperature(shape1), temps2=surface_temperature(shape2);
     colormap=:hot, colorrange=extrema(vcat(temps1, temps2)),
-    draw_contour=true, nlevels=10, ticks=0:20:5000,
-    filepath="temp_maps.png", titles=("", ""),
+    draw_contour=true, nlevels=15, ticks=0:20:5000,
+    filepath="temp_maps.pdf", titles=("", ""),
 )
 
     T_min, T_max = extrema(vcat(temps1, temps2))
@@ -330,7 +330,7 @@ function temperature_map(shape1::ShapeModel, shape2::ShapeModel, temps1=surface_
         x, y, gridded = facet_to_grid(shape, temps)
         levels = range(colorrange..., nlevels+1)
         cntrf = contourf!(ax, x, y, gridded; colormap, levels, extendlow=:auto, extendhigh=:auto)
-        draw_contour && contour!(x, y, gridded; color=:black, linewidth=1, levels)
+        draw_contour && contour!(x, y, gridded; color=:black, linewidth=0.5, levels)
 
         if idx_shape == 2
             Colorbar(fig[2, :], cntrf, ticks=ticks, label="Temperature [K]", vertical=false, flipaxis=false)
