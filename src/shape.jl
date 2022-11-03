@@ -6,36 +6,40 @@
 A polyhedral shape model of an asteroid.
 
 # Fields
-- `num_node` : Number of nodes
-- `num_face` : Number of faces
-- `nodes`    : 1-D array of node positions
-- `faces`    : 1-D array of vertex indices of faces
+- `num_node`   : Number of nodes
+- `num_face`   : Number of faces
+- `nodes`      : 1-D array of node positions
+- `faces`      : 1-D array of vertex indices of faces
 
-- `facets`   : 1-D array of surface facets (`Facet`)
+- `facets`     : 1-D array of surface facets (`Facet`)
 
-- `AREA`     : Surface area
-- `VOLUME`   : Volume
-- `COF`      : Center-of-figure
-- `MOI`      : Moment of inertia tensor
+- `AREA`       : Surface area
+- `VOLUME`     : Volume
+- `RADIUS_EQ`  : Equivalent radius of a sphere with the same volume
+- `RADIUS_MAX` : Maximum radius
+- `COF`        : Center-of-figure
+- `MOI`        : Moment of inertia tensor
 
-– `force`    : Thermal recoil force at body-fixed frame (Yarkovsky effect)
-- `torque`   : Thermal recoil torque at body-fixed frame (YORP effect)
+– `force`      : Thermal recoil force at body-fixed frame (Yarkovsky effect)
+- `torque`     : Thermal recoil torque at body-fixed frame (YORP effect)
 """
 struct ShapeModel{T1, T2, T3, T4, T5, T6, T7, T8}
-    num_node::T1
-    num_face::T1
-    nodes   ::T2
-    faces   ::T3
+    num_node  ::T1
+    num_face  ::T1
+    nodes     ::T2
+    faces     ::T3
 
-    facets  ::T4
+    facets    ::T4
 
-    AREA    ::T5
-    VOLUME  ::T5
-    COF     ::T6
-    MOI     ::T7
+    AREA      ::T5
+    VOLUME    ::T5
+    RADIUS_EQ ::T5
+    RADIUS_MAX::T5
+    COF       ::T6
+    MOI       ::T7
 
-    force   ::T8
-    torque  ::T8
+    force     ::T8
+    torque    ::T8
 end
 
 
@@ -47,7 +51,8 @@ function Base.show(io::IO, shape::ShapeModel)
     println("Faces             : ", shape.num_face)
     println("Surface area      : ", shape.AREA)
     println("Volume            : ", shape.VOLUME)
-    println("Equivalent radius : ", equivalent_radius(shape))
+    println("Equivalent radius : ", shape.RADIUS_EQ)
+    println("Maximum radius    : ", shape.RADIUS_MAX)
     println("Center-of-Figure  : ", shape.COF)
     println("Inertia tensor    : ")
     println("    | Ixx Ixy Ixz |   ", shape.MOI[1, :])
@@ -69,17 +74,19 @@ function ShapeModel(shapepath; scale=1, find_visible_facets=false, save_shape=fa
         facets = getfacets(nodes, faces)
         find_visible_facets && findVisibleFacets!(facets)
         
-        AREA   = sum(facets.area)
-        VOLUME = getvolume(facets)
-        COF    = center_of_figure(facets)
-        MOI    = moment_of_inertia(facets)
+        AREA       = sum(facets.area)
+        VOLUME     = getvolume(facets)
+        RADIUS_EQ  = equivalent_radius(VOLUME)
+        RADIUS_MAX = maximum_radius(nodes)
+        COF        = center_of_figure(facets)
+        MOI        = moment_of_inertia(facets)
         
         force  = zeros(3)
         torque = zeros(3)
         
         shape = ShapeModel(
             num_node, num_face, nodes, faces, facets,
-            AREA, VOLUME, COF, MOI,
+            AREA, VOLUME, RADIUS_EQ, RADIUS_MAX, COF, MOI,
             force, torque
         )
         save_shape && save(splitext(shapepath)[1] * ".jld2", Dict("shape" => shape))
@@ -96,7 +103,8 @@ end
 equivalent_radius(VOLUME) = (3VOLUME/4π)^(1/3)
 equivalent_radius(shape::ShapeModel) = equivalent_radius(shape.VOLUME)
 
-maximum_radius(shape::ShapeModel) = maximum(norm.(shape.nodes))
+maximum_radius(nodes) = maximum(norm.(nodes))
+maximum_radius(shape::ShapeModel) = maximum_radius(shape.nodes)
 
 findVisibleFacets!(shape::ShapeModel) = findVisibleFacets!(shape.facets)
 isIlluminated(obs::Facet, r̂☉, shape::ShapeModel) = isIlluminated(obs, r̂☉, shape.facets)
