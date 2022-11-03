@@ -17,10 +17,11 @@ A polyhedral shape model of an asteroid.
 - `VOLUME`     : Volume
 - `RADIUS_EQ`  : Equivalent radius of a sphere with the same volume
 - `RADIUS_MAX` : Maximum radius
+- `RADIUS_MIN` : Minimum radius
 - `COF`        : Center-of-figure
 - `MOI`        : Moment of inertia tensor
 
-– `force`      : Thermal recoil force at body-fixed frame (Yarkovsky effect)
+- `force`      : Thermal recoil force at body-fixed frame (Yarkovsky effect)
 - `torque`     : Thermal recoil torque at body-fixed frame (YORP effect)
 """
 struct ShapeModel{T1, T2, T3, T4, T5, T6, T7, T8}
@@ -35,6 +36,7 @@ struct ShapeModel{T1, T2, T3, T4, T5, T6, T7, T8}
     VOLUME    ::T5
     RADIUS_EQ ::T5
     RADIUS_MAX::T5
+    RADIUS_MIN::T5
     COF       ::T6
     MOI       ::T7
 
