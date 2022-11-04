@@ -142,6 +142,31 @@ function draw(shape::ShapeModel; data=nothing, r̂☉=[1,0,0.], colormap=:viridi
 end
 
 
+function draw(shapes::Tuple, sec_from_pri, R₂₁; data=nothing, r̂☉=[1,0,0.], colormap=:viridis, strokecolor=:gray20, strokewidth=1)
+
+    fig = Figure(backgroundcolor=:gray40)
+    ax = Axis3(fig[1, 1], aspect=:data)
+
+    for (i, shape) in enumerate(shapes)
+
+        i == 1 && (nodes = shape.nodes)
+        i == 2 && (nodes = [sec_from_pri + R₂₁ * node for node in shape.nodes])
+        
+        nodes = VectorVector2Matrix(nodes)
+        faces = VectorVector2Matrix(shape.faces)
+        
+        color = face2node(nodes, faces, surface_temperature(shape))
+        poly!(ax, nodes, faces; colormap, color)
+
+        if i == 2
+            limits = extrema(vcat(surface_temperature.(shapes)...))
+            Colorbar(fig[1, 2]; colormap, limits, label="Temperature [K]")
+        end
+    end
+    display(fig)
+end
+
+
 """
 適度に回転させて表示する
 （二重小惑星の重心を原点とする座標系）
