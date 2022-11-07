@@ -53,7 +53,7 @@ include("TPM.jl")
 include("YORP.jl")
 include("Yarkovsky.jl")
 export ThermoParams
-export run_TPM!
+export init_temps_zero!, run_TPM!
 export analyze_YORP, YORP_timescale
 export torque2rate, run_YORP, run_Yarkovsky
 
