@@ -292,7 +292,8 @@ ScatteredInterpolation.jl works well.
 CairoMakie.tricontourf seems unavailable now?
 - https://docs.makie.org/v0.18.0/examples/plotting_functions/tricontourf/
 """
-function temperature_map(shape::ShapeModel, temps=surface_temperature(shape);
+function temperature_map(shape::ShapeModel;
+    temps=surface_temperature(shape),
     colormap=:hot, colorrange=extrema(temps),
     draw_contour=true, nlevels=15, ticks=0:20:5000,
     filepath="temp_map.png", title="",
@@ -328,7 +329,8 @@ end
 
 Make temperature maps of a binary asteroid, `shape1` and `shape2`.
 """
-function temperature_map(shape1::ShapeModel, shape2::ShapeModel, temps1=surface_temperature(shape1), temps2=surface_temperature(shape2);
+function temperature_map(shape1::ShapeModel, shape2::ShapeModel;
+    temps1=surface_temperature(shape1), temps2=surface_temperature(shape2),
     colormap=:hot, colorrange=extrema(vcat(temps1, temps2)),
     draw_contour=true, nlevels=15, ticks=0:20:5000,
     filepath="temp_maps.pdf", titles=("", ""),
