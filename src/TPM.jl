@@ -163,18 +163,11 @@ function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::Ther
         sec_from_pri = d2_d1[i]
         R₂₁ = S2P[i]
 
-        r̂☉₁ = SVector{3}(normalize(r☉₁))
-        F☉₁ = SOLAR_CONST / SPICE.convrt(norm(r☉₁), "m", "au")^2
-
-        r̂☉₂ = SVector{3}(normalize(r☉₂))
-        F☉₂ = SOLAR_CONST / SPICE.convrt(norm(r☉₂), "m", "au")^2
-
-        update_flux!(shapes[1], F☉₁, r̂☉₁, thermo_params)
-        update_flux!(shapes[2], F☉₂, r̂☉₂, thermo_params)
+        update_flux!(shapes[1], r☉₁, thermo_params)
+        update_flux!(shapes[2], r☉₂, thermo_params)
         
-        find_eclipse!(shapes, r̂☉₁, sec_from_pri, R₂₁)  # Mutual-shadowing
+        find_eclipse!(shapes, r☉₁, sec_from_pri, R₂₁)  # Mutual-shadowing
 
-        
         #### Mutual-heating ####
         #
         #
@@ -324,10 +317,16 @@ energy_out(facet::Facet, ϵ::Real, A_TH::Real) = ( ϵ*σ_SB*facet.temps[begin]^4
 """
     update_flux!(shape, F☉, r̂☉, thermo_params)
 
-Update the energy flux to every facet by illumination, scattering, and absorption of radiation
+Update energy flux to every facet by solar radiation, scattering, and re-absorption of radiation
 """
-function update_flux!(shape, F☉, r̂☉, thermo_params)
+function update_flux!(shape, F☉::Real, r̂☉::AbstractVector, thermo_params)
     update_flux_sun!(shape, F☉, r̂☉)
+    update_flux_scat_single!(shape, thermo_params)
+    update_flux_rad_single!(shape, thermo_params)
+end
+
+function update_flux!(shape, r☉::AbstractVector, thermo_params)
+    update_flux_sun!(shape, r☉)
     update_flux_scat_single!(shape, thermo_params)
     update_flux_rad_single!(shape, thermo_params)
 end
@@ -335,7 +334,7 @@ end
 """
     update_flux_sun!(shape, F☉, r̂☉)
 
-Update illumination.
+Update solar radiation flux on every facet of a shape model.
 
 - `shape` : Shape model
 - `F☉`    : Solar radiation flux
@@ -349,6 +348,21 @@ function update_flux_sun!(shape, F☉, r̂☉)
             facet.flux.sun = 0
         end
     end
+end
+
+"""
+    update_flux_sun!(shape, r☉::AbstractVector)
+
+Update solar radiation flux on every facet of a shape model.
+
+- `shape` : Shape model
+- `r☉`    : Position of the sun in the body-fixed frame, which is not normalized.
+"""
+function update_flux_sun!(shape, r☉::AbstractVector)
+    r̂☉ = SVector{3}(normalize(r☉))
+    F☉ = SOLAR_CONST / SPICE.convrt(norm(r☉), "m", "au")^2
+
+    update_flux_sun!(shape, F☉, r̂☉)
 end
 
 
