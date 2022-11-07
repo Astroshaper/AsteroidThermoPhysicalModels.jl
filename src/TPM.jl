@@ -145,11 +145,7 @@ end
 
 Run TPM for a binary asteroid.
 """
-<<<<<<< Updated upstream
 function run_TPM!(shapes::Tuple, et_range, sun, P2S, thermo_params::ThermoParams, savepath, save_range)
-=======
-function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::ThermoParams, savepath, save_range)
->>>>>>> Stashed changes
 
     for shape in shapes
         init_temps_zero!(shape, thermo_params)
@@ -159,7 +155,6 @@ function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::Ther
     forces  = [zeros(3) for _ in eachindex(save_range)], [zeros(3) for _ in eachindex(save_range)]
     torques = [zeros(3) for _ in eachindex(save_range)], [zeros(3) for _ in eachindex(save_range)]
     
-<<<<<<< Updated upstream
     i = 1
 
     for et in et_range
@@ -170,24 +165,9 @@ function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::Ther
         update_flux_sun!(shape, F☉, r̂☉)
         update_flux_scat_single!(shape, thermo_params)
         update_flux_rad_single!(shape, thermo_params)
-=======
-    idx_save = 1  # Index to save data
-
-    for (i, et) in enumerate(et_range)
-        r☉₁ = suns[1][i]
-        r☉₂ = suns[2][i]
-        sec_from_pri = d2_d1[i]
-        R₂₁ = S2P[i]
-
-        update_flux!(shapes[1], r☉₁, thermo_params)
-        update_flux!(shapes[2], r☉₂, thermo_params)
-        
-        find_eclipse!(shapes, r☉₁, sec_from_pri, R₂₁)  # Mutual-shadowing
->>>>>>> Stashed changes
 
         update_temps!(shape, thermo_params)
 
-<<<<<<< Updated upstream
         if et_range[save_range[begin]] ≤ et ≤ et_range[save_range[end]]
             update_force!(shape, thermo_params)
             sum_force_torque!(shape)
@@ -204,30 +184,6 @@ function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::Ther
     end
     
     jldsave(savepath; shape1, shape2, et_range=et_range[save_range], sun=sun[save_range], thermo_params, surf_temps, forces, torques)
-=======
-        update_temps!(shapes[1], thermo_params)
-        update_temps!(shapes[2], thermo_params)
-
-        if et_range[save_range[begin]] ≤ et ≤ et_range[save_range[end]]
-
-            for (idx_shape, shape) in enumerate(shapes)
-                update_force!(shape, thermo_params)
-                sum_force_torque!(shape)
-
-                surf_temps[idx_shape][:, idx_save] .= surface_temperature(shape)
-                forces[idx_shape][idx_save]  .= shape.force   # Body-fixed frame
-                torques[idx_shape][idx_save] .= shape.torque  # Body-fixed frame
-            end
-    
-            idx_save += 1
-        end
-
-        # E_in, E_out, E_cons = energy_io(shapes[1], thermo_params)
-        # println(E_cons)
-    end
-    
-    jldsave(savepath; shapes, et_range=et_range[save_range], suns=(suns[1][save_range], suns[2][save_range]), S2P=S2P[save_range], thermo_params, surf_temps, forces, torques)
->>>>>>> Stashed changes
 end
 
 
