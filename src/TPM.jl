@@ -185,8 +185,6 @@ function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::Ther
 end
 
 
-
-
 # ****************************************************************
 #                      Data input/output
 # ****************************************************************
