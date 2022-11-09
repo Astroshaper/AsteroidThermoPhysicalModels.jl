@@ -151,6 +151,10 @@ function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::Ther
     forces  = [zeros(3) for _ in eachindex(et_range)], [zeros(3) for _ in eachindex(et_range)]
     torques = [zeros(3) for _ in eachindex(et_range)], [zeros(3) for _ in eachindex(et_range)]
     
+    ## ProgressMeter setting
+    p = Progress(length(et_range); dt=1, desc="Running TPM...", showspeed=true)
+    ProgressMeter.ijulia_behavior(:clear)
+
     for (i, et) in enumerate(et_range)
         r☉₁ = suns[1][i]
         r☉₂ = suns[2][i]
@@ -174,9 +178,14 @@ function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::Ther
             torques[idx_shape][i] .= shape.torque  # Body-fixed frame
         end
     
-        # E_in, E_out, E_cons = energy_io(shapes[1], thermo_params)
-        # println(E_cons)
+        E_io_pri = energy_io(shapes[1], thermo_params)
+        E_io_sec = energy_io(shapes[2], thermo_params)
 
+        ## Update the progress meter
+        showvalues = [(:i, i), (:E_cons_pri, E_io_pri[3]), (:E_cons_sec, E_io_sec[3])]
+        ProgressMeter.next!(p; showvalues)
+        
+        et == et_range[end] && break  # Stop to update the temperature at the final step
         update_temps!(shapes[1], thermo_params)
         update_temps!(shapes[2], thermo_params)
     end

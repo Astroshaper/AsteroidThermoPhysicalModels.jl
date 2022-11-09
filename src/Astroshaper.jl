@@ -14,6 +14,7 @@ using DataFrames
 using Parameters
 using GLMakie, CairoMakie
 using ScatteredInterpolation
+using ProgressMeter
 
 using FileIO
 using JLD2
