@@ -144,16 +144,22 @@ end
     run_TPM!
 
 Run TPM for a binary asteroid.
+
+- shapes
+- ephemerides
+- thermo_params
+- savepath
+- savevalues
 """
-function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::ThermoParams, savepath)
+function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::ThermoParams, savepath, savevalues)
 
     surf_temps = zeros(shapes[1].num_face, length(et_range)), zeros(shapes[2].num_face, length(et_range))
     forces  = [zeros(3) for _ in eachindex(et_range)], [zeros(3) for _ in eachindex(et_range)]
     torques = [zeros(3) for _ in eachindex(et_range)], [zeros(3) for _ in eachindex(et_range)]
     
     ## ProgressMeter setting
-    p = Progress(length(et_range); dt=1, desc="Running TPM...", showspeed=true)
-    ProgressMeter.ijulia_behavior(:clear)
+    # p = Progress(length(et_range); dt=1, desc="Running TPM...", showspeed=true)
+    # ProgressMeter.ijulia_behavior(:clear)
 
     for (i, et) in enumerate(et_range)
         r☉₁ = suns[1][i]
@@ -161,11 +167,12 @@ function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::Ther
         sec_from_pri = d2_d1[i]
         R₂₁ = S2P[i]
 
+        ## Update enegey flux
         update_flux!(shapes[1], r☉₁, thermo_params)
         update_flux!(shapes[2], r☉₂, thermo_params)
         find_eclipse!(shapes, r☉₁, sec_from_pri, R₂₁)  # Mutual-shadowing
 
-        #### Mutual-heating ####
+        ## Mutual-heating
         #
         #
 
@@ -178,18 +185,22 @@ function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::Ther
             torques[idx_shape][i] .= shape.torque  # Body-fixed frame
         end
     
+        ## Energy input/output
         E_io_pri = energy_io(shapes[1], thermo_params)
         E_io_sec = energy_io(shapes[2], thermo_params)
+        println(E_io_pri[3], ", ",  E_io_sec[3])
 
         ## Update the progress meter
-        showvalues = [(:i, i), (:E_cons_pri, E_io_pri[3]), (:E_cons_sec, E_io_sec[3])]
-        ProgressMeter.next!(p; showvalues)
+        # showvalues = [(:i, i), (:E_cons_pri, E_io_pri[3]), (:E_cons_sec, E_io_sec[3])]
+        # ProgressMeter.next!(p; showvalues)
         
+        ## Update temperature distribution
         et == et_range[end] && break  # Stop to update the temperature at the final step
         update_temps!(shapes[1], thermo_params)
         update_temps!(shapes[2], thermo_params)
     end
     
+    # jldsave(savepath; shapes, et_range, suns, S2P, thermo_params)
     jldsave(savepath; shapes, et_range, suns, S2P, thermo_params, surf_temps, forces, torques)
 end
 

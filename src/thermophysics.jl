@@ -95,7 +95,8 @@ struct ThermoParams{COMMON_INT, COMMON_FLOAT, FACET_INT, FACET_FLOAT}
     λ    ::FACET_FLOAT
 end
 
-function ThermoParams(; A_B, A_TH, k, ρ, Cp, ϵ, t_bgn=0., t_end, Nt, z_max, Nz, P)
+
+function ThermoParams(; A_B, A_TH, k, ρ, Cp, ϵ, t_bgn, t_end, Nt, z_max, Nz, P)
 
     t_bgn /= P                       # Normalized by period P
     t_end /= P                       # Normalized by period P
