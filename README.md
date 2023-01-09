@@ -3,6 +3,8 @@
 
 # Astroshaper.jl
 
+<img src="https://github.com/MasanoriKanamaru/Astroshaper/files/7840328/Astroshaper_logo.png" width="100%">
+
 [![Build Status](https://travis-ci.com/MasanoriKanamaru/Astroshaper.svg?branch=main)](https://travis-ci.com/MasanoriKanamaru/Astroshaper)
 
 Julia-based toolkit for dynamical simulations of planets and small solar system bodies.
