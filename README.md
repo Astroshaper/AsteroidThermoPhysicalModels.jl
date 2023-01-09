@@ -1,7 +1,7 @@
 
 <img src="https://github.com/MasanoriKanamaru/Astroshaper/files/7840328/Astroshaper_logo.pdf" width="100%">
 
-<img width="100%" src="https://user-images.githubusercontent.com/21192162/148867940-21db4a00-8aef-4030-ab94-397d4f3b572c.png">
+<img width="100%" src="https://github.com/MasanoriKanamaru/Astroshaper/files/7840328/Astroshaper_logo.pdf">
 
 # Astroshaper.jl
 
