@@ -1,8 +1,6 @@
 
 <img src="https://github.com/MasanoriKanamaru/Astroshaper/files/7840328/Astroshaper_logo.pdf" width="100%">
 
-<img width="100%" src="https://github.com/MasanoriKanamaru/Astroshaper/files/7840328/Astroshaper_logo.pdf">
-
 # Astroshaper.jl
 
 [![Build Status](https://travis-ci.com/MasanoriKanamaru/Astroshaper.svg?branch=main)](https://travis-ci.com/MasanoriKanamaru/Astroshaper)
