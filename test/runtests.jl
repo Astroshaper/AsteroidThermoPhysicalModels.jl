@@ -1,5 +1,8 @@
 using Astroshaper
 using Test
+using Aqua
+
+Aqua.test_all(Astroshaper, ambiguities=false)
 
 @testset "Astroshaper.jl" begin
     # shapepath = "./ryugu_test.obj"

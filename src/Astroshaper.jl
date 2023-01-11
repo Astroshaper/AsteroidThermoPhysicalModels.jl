@@ -56,7 +56,7 @@ include("Yarkovsky.jl")
 export ThermoParams
 export init_temps_zero!, run_TPM!
 export analyze_YORP, YORP_timescale
-export torque2rate, run_YORP, run_Yarkovsky
+export run_YORP, run_Yarkovsky
 
 include("roughness.jl")
 export crater_curvature_radius, concave_spherical_segment, parallel_sinusoidal_trenches
@@ -79,7 +79,7 @@ include("nbody.jl")
 export AbstractParticle, SimpleParticle, HermiteParticle
 export run_nbody!
 export load_snapshot
-export setParticles, addParticle!, setOrigin!, getBaryCenter, setOrigin2BaryCenter!
+export setParticles, addParticle!, getBaryCenter, setOrigin2BaryCenter!
 export getTotalEnergy, getKineticEnergy, sumKineticEnergy, getPotentialEnergy, sumPotentialEnergy
 
 include("Hermite4.jl")
