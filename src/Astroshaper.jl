@@ -62,6 +62,8 @@ include("roughness.jl")
 export crater_curvature_radius, concave_spherical_segment, parallel_sinusoidal_trenches
 
 include("polyhedron.jl")
+export loadmesh, nvertices, nfaces, nedges
+export getSurfaceGravity
 
 include("binary.jl")
 export MutualOrbit, Binary, run_binary_TPM!
