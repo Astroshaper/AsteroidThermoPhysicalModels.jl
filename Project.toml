@@ -24,6 +24,11 @@ StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 
 [compat]
 Makie = "0.19"
+CairoMakie = "0.10"
+ScatteredInterpolation = "0.3"
+JLD2 = "0.4"
+HalfEdges = "0.2"
+DataFrames = "1"
 julia = "1"
 
 [extras]
