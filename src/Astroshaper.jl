@@ -12,8 +12,6 @@ import SPICE
 
 using DataFrames
 using Parameters
-using GLMakie, CairoMakie
-using ScatteredInterpolation
 using ProgressMeter
 
 using FileIO
@@ -67,9 +65,6 @@ export getSurfaceGravity
 
 include("binary.jl")
 export MutualOrbit, Binary, run_binary_TPM!
-
-include("visualization.jl")
-export draw, temperature_map
 
 
 ################################################################
