@@ -3,7 +3,11 @@
 
 # Astroshaper.jl
 
-[![Build Status](https://travis-ci.com/MasanoriKanamaru/Astroshaper.svg?branch=main)](https://travis-ci.com/MasanoriKanamaru/Astroshaper)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://MasanoriKanamaru.github.io/Astroshaper.jl/stable)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://MasanoriKanamaru.github.io/Astroshaper.jl/dev)
+[![Build Status](https://github.com/MasanoriKanamaru/Astroshaper.jl/workflows/CI/badge.svg)](https://github.com/MasanoriKanamaru/Astroshaper.jl/actions?query=workflow%3ACI+branch%3Amain)
+[![codecov](https://codecov.io/gh/MasanoriKanamaru/Astroshaper.jl/branch/main/graph/badge.svg?token=dJBiR91dCD)](https://codecov.io/gh/MasanoriKanamaru/Astroshaper.jl)
+[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 Julia-based toolkit for dynamical simulations of planets and small solar system bodies.
 
