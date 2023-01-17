@@ -1,4 +1,5 @@
 using GLMakie, CairoMakie
+using ScatteredInterpolation
 
 ################################################################
 #                         Plot orbits

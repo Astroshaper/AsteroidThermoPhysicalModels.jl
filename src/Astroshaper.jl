@@ -12,7 +12,6 @@ import SPICE
 
 using DataFrames
 using Parameters
-using ScatteredInterpolation
 using ProgressMeter
 
 using FileIO
