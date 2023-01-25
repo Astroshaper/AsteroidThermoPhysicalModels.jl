@@ -1,6 +1,10 @@
 using Astroshaper
 using Test
 using Aqua
+using JLD2
+using SPICE
+using Downloads
+using Statistics
 
 Aqua.test_all(Astroshaper, ambiguities=false)
 
@@ -10,3 +14,5 @@ Aqua.test_all(Astroshaper, ambiguities=false)
     # @test typeof(shape) == Shape
     @test true
 end
+
+include("TPM_Ryugu.jl")
