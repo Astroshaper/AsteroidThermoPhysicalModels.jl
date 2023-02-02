@@ -25,7 +25,7 @@
     ##= Load data with SPICE =##
     SPICE.furnsh(path_meta_new)
     et_start = SPICE.utc2et("2018-07-01T00:00:00")
-    et_end   = SPICE.utc2et("2018-07-02T00:00:00")
+    et_end   = SPICE.utc2et("2018-07-01T01:00:00")
     step     = 76.3262  # Rotation of 1 deg
     et_range = et_start : step : et_end
     @show et_range
