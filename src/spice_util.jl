@@ -10,6 +10,7 @@ Obtain a dataframe of ephemerides
 - `obs`    : Observing body name
 """
 function spkpos_df(targ, ets::AbstractVector, ref, abcorr, obs)
+    Base.depwarn("`spkpos_df` is deprecated. Please use `SPICE.spkpos` and `DataFrame` instead.", :spkpos_df)
     df = DataFrame(et=Float64[], x=Float64[], y=Float64[], z=Float64[], lt=Float64[])
     for et in ets
         pos, lt = SPICE.spkpos(targ, et, ref, abcorr, obs)  # pos [km], lt [s]
