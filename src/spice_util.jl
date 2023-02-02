@@ -10,6 +10,7 @@ Obtain a dataframe of ephemerides
 - `obs`    : Observing body name
 """
 function spkpos_df(targ, ets::AbstractVector, ref, abcorr, obs)
+    Base.depwarn("`spkpos_df` is deprecated. Please use `SPICE.spkpos` and `DataFrame` instead.", :spkpos_df)
     df = DataFrame(et=Float64[], x=Float64[], y=Float64[], z=Float64[], lt=Float64[])
     for et in ets
         pos, lt = SPICE.spkpos(targ, et, ref, abcorr, obs)  # pos [km], lt [s]
@@ -31,6 +32,7 @@ Obtain a vector of position
 - `obs`    : Observing body name
 """
 function spkpos(targ, ets::AbstractVector, ref, abcorr, obs)
+    Base.depwarn("`spkpos` is deprecated. Please use `[SPICE.spkpos($targ, et, $ref, $abcorr, $obs)[1]*1000 for et in $ets]` instead.", :spkpos)
     positions = Vector{Float64}[]
     for et in ets
         pos, lt = SPICE.spkpos(targ, et, ref, abcorr, obs)  # pos [km], lt [s]
@@ -50,5 +52,7 @@ end
 # Return
 - `rotate` : A rotation matrix
 """
-pxform(from, to, ets) = [SPICE.pxform(from, to, et) for et in ets]
-
+function pxform(from, to, ets)
+    Base.depwarn("`pxform` is deprecated. Please use `[SPICE.pxform($from, $to, et) for et in $ets]` instead.", :pxform)
+    return [SPICE.pxform(from, to, et) for et in ets]
+end
