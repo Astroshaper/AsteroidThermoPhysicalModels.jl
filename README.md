@@ -13,7 +13,7 @@ Julia-based toolkit for dynamical simulations of planets and small solar system 
 ## Installation
 
     using Pkg
-    Pkg.add(url="https://github.com/MasanoriKanamaru/Astroshaper")
+    Pkg.add(url="https://github.com/MasanoriKanamaru/Astroshaper.jl")
     using Astroshaper
 
 You can update the module and run tests as follows.
