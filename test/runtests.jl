@@ -16,3 +16,4 @@ Aqua.test_all(Astroshaper, ambiguities=false)
 end
 
 include("TPM_Ryugu.jl")
+include("TPM_Didymos.jl")
