@@ -17,7 +17,7 @@
     ##= Load data with SPICE =##
     SPICE.furnsh(path_meta_new)
     et_start = SPICE.utc2et("2027-02-18T00:00:00")
-    et_end   = SPICE.utc2et("2027-02-19T00:00:00")
+    et_end   = SPICE.utc2et("2027-02-18T01:00:00")
     step     = 300
     et_range = et_start : step : et_end
     @show et_range
