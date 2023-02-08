@@ -3,6 +3,7 @@ using Test
 using Aqua
 using JLD2
 using SPICE
+using Git
 using Downloads
 using Statistics
 

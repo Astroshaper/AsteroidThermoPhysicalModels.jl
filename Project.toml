@@ -32,7 +32,8 @@ julia = "1.6"
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+Git = "d7ba0133-e1db-5d97-8f8c-041e4b3a1eb2"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Aqua", "Test", "Downloads"]
+test = ["Aqua", "Test", "Downloads", "Git"]
