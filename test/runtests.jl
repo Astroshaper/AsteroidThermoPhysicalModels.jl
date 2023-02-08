@@ -3,6 +3,7 @@ using Test
 using Aqua
 using JLD2
 using SPICE
+using Git
 using Downloads
 using Statistics
 
@@ -16,3 +17,4 @@ Aqua.test_all(Astroshaper, ambiguities=false)
 end
 
 include("TPM_Ryugu.jl")
+include("TPM_Didymos.jl")
