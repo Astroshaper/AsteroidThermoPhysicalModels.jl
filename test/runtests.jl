@@ -6,6 +6,7 @@ using SPICE
 using Git
 using Downloads
 using Statistics
+using LinearAlgebra
 
 Aqua.test_all(Astroshaper, ambiguities=false)
 
