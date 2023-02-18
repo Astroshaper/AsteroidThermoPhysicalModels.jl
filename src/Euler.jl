@@ -3,7 +3,7 @@
 
 """
 
-- `⁺pᵢ` : Particle i at next step
+- `⁺aᵢ` : Particle i at next step
 - `pᵢ`  : Particle i
 - `pⱼ`  : Particle j
 - `ϵ`   : Softening parameter
