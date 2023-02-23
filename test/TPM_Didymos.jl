@@ -1,4 +1,4 @@
-# See https://github.com/MasanoriKanamaru/Astroshaper-examples/tree/main/TPM_Didymos for more information.
+# See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos for more information.
 @testset "TPM_Didymos" begin
     ##= Download Files =##
     path_meta_new = "hera_study_PO_EMA_2024.tm"
@@ -10,7 +10,23 @@
         path_meta_old = "hera/kernels/mk/hera_study_PO_EMA_2024.tm"
         cp(path_meta_old, path_meta_new, force=true)
         script = read(path_meta_new, String)
-        script = replace(script, "PATH_VALUES       = ( '..' )"=>"PATH_VALUES     = ('$(abspath(joinpath("hera", "kernels")))')")
+        max_length = 79
+        subpaths = String[]
+        path_kernel = abspath(joinpath("hera", "kernels"))
+        i = firstindex(path_kernel)
+        for _ in 1:(255 ÷ max_length)
+            if i + max_length < lastindex(path_kernel)
+                j = prevind(path_kernel, i + max_length)
+            else
+                j = lastindex(path_kernel)
+            end
+            push!(subpaths, path_kernel[i:j])
+            i = nextind(path_kernel, j)
+            if lastindex(path_kernel) < i
+                break
+            end
+        end
+        script = replace(script, "PATH_VALUES       = ( '..' )"=>"PATH_VALUES = ('$(join(subpaths, "+'\n'"))')")
         write(path_meta_new, script)
     end
 
@@ -52,18 +68,18 @@
     cp(joinpath("hera", "kernels", "dsk", "g_06650mm_rad_obj_didb_0000n00000_v001.obj"), path_shape2_obj, force=true)
     
     if isfile(path_shape1_jld)
-        shape1 = Astroshaper.ShapeModel(path_shape1_jld; scale=1000, find_visible_facets=true, save_shape=true)
+        shape1 = ThermoPhysicalModeling.ShapeModel(path_shape1_jld; scale=1000, find_visible_facets=true, save_shape=true)
     else
-        shape1 = Astroshaper.ShapeModel(path_shape1_obj; scale=1000, find_visible_facets=true, save_shape=true)
+        shape1 = ThermoPhysicalModeling.ShapeModel(path_shape1_obj; scale=1000, find_visible_facets=true, save_shape=true)
     end
     if isfile(path_shape2_jld)
-        shape2 = Astroshaper.ShapeModel(path_shape2_jld; scale=1000, find_visible_facets=true, save_shape=true)
+        shape2 = ThermoPhysicalModeling.ShapeModel(path_shape2_jld; scale=1000, find_visible_facets=true, save_shape=true)
     else
-        shape2 = Astroshaper.ShapeModel(path_shape2_obj; scale=1000, find_visible_facets=true, save_shape=true)
+        shape2 = ThermoPhysicalModeling.ShapeModel(path_shape2_obj; scale=1000, find_visible_facets=true, save_shape=true)
     end
 
     ##= TPM =##
-    thermo_params = Astroshaper.ThermoParams(  # [Michel+2016; Naidu+2020]
+    thermo_params = ThermoPhysicalModeling.ThermoParams(  # [Michel+2016; Naidu+2020]
         A_B   = 0.059,  # Bolometric Bond albedo
         A_TH  = 0.0,
         k     = 0.125,
@@ -75,15 +91,15 @@
         Nt    = length(et_range),
         z_max = 0.6,
         Nz    = 41,
-        P     = SPICE.convrt(Astroshaper.DIDYMOS[:P], "hours", "seconds"),
+        P     = SPICE.convrt(ThermoPhysicalModeling.DIDYMOS[:P], "hours", "seconds"),
     );
 
-    Astroshaper.init_temps_zero!(shape1, thermo_params)
-    Astroshaper.init_temps_zero!(shape2, thermo_params)
+    ThermoPhysicalModeling.init_temps_zero!(shape1, thermo_params)
+    ThermoPhysicalModeling.init_temps_zero!(shape2, thermo_params)
     
     # Run TPM and save the result
     savepath = "TPM_Didymos.jld2"
     shapes = (shape1, shape2)
     suns = (sun_d1, sun_d2)
-    Astroshaper.run_TPM!(shapes, et_range, suns, D2_TO_D1, d2_d1, thermo_params, savepath, [:surf_temps, :forces, :torques])
+    ThermoPhysicalModeling.run_TPM!(shapes, et_range, suns, D2_TO_D1, d2_d1, thermo_params, savepath, [:surf_temps, :forces, :torques])
 end

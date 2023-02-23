@@ -1,4 +1,4 @@
-module Astroshaper
+module ThermoPhysicalModeling
 
 using LinearAlgebra
 using StaticArrays
@@ -88,4 +88,4 @@ export run_leapfrog
 
 # include("RungeKutta.jl")
 
-end # module Astroshaper
+end # module ThermoPhysicalModeling

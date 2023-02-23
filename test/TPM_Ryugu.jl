@@ -1,4 +1,4 @@
-# See https://github.com/MasanoriKanamaru/Astroshaper-examples/tree/main/TPM_Ryugu for more information.
+# See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for more information.
 @testset "TPM_Ryugu" begin
     ##= Download Files =##
     path_meta_new = "hyb2_v03.tm"
@@ -12,7 +12,23 @@
         path_meta_new = "hyb2_v03.tm"
         cp(path_meta_old, path_meta_new, force=true)
         script = read(path_meta_new, String)
-        script = replace(script, "PATH_VALUES     = ( '..'      )"=>"PATH_VALUES     = ('$(abspath("spice_kernels"))')")
+        max_length = 79
+        subpaths = String[]
+        path_kernel = abspath("spice_kernels")
+        i = firstindex(path_kernel)
+        for _ in 1:(255 ÷ max_length)
+            if i + max_length < lastindex(path_kernel)
+                j = prevind(path_kernel, i + max_length)
+            else
+                j = lastindex(path_kernel)
+            end
+            push!(subpaths, path_kernel[i:j])
+            i = nextind(path_kernel, j)
+            if lastindex(path_kernel) < i
+                break
+            end
+        end
+        script = replace(script, "PATH_VALUES     = ( '..'      )"=>"PATH_VALUES = ('$(join(subpaths, "+'\n'"))')")
         write(path_meta_new, script)
     end
     
@@ -47,13 +63,13 @@
     ##= Load obj file =##
     path_jld = splitext(path_obj)[1]*".jld2"
     if isfile(path_jld)
-        shape = Astroshaper.ShapeModel(path_jld; scale=1000, find_visible_facets=true, save_shape=true)
+        shape = ThermoPhysicalModeling.ShapeModel(path_jld; scale=1000, find_visible_facets=true, save_shape=true)
     else
-        shape = Astroshaper.ShapeModel(path_obj; scale=1000, find_visible_facets=true, save_shape=true)
+        shape = ThermoPhysicalModeling.ShapeModel(path_obj; scale=1000, find_visible_facets=true, save_shape=true)
     end
 
     ##= TPM =##
-    thermo_params = Astroshaper.ThermoParams(
+    thermo_params = ThermoPhysicalModeling.ThermoParams(
         A_B   = 0.04,  # Bolometric Bond albedo
         A_TH  = 0.0,
         k     = 0.1,
@@ -69,7 +85,7 @@
     )
     # Run TPM and save the result
     savepath = "TPM_Ryugu.jld2"
-    Astroshaper.run_TPM!(shape, et_range, sun_ryugu, thermo_params, savepath, save_range)
+    ThermoPhysicalModeling.run_TPM!(shape, et_range, sun_ryugu, thermo_params, savepath, save_range)
     JLD2.jldopen(savepath, "r+") do file
         file["RYUGU_TO_J2000"] = RYUGU_TO_J2000[save_range]
     end
