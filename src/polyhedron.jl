@@ -7,7 +7,7 @@ using HalfEdges
 
 
 function setmesh(shapepath)
-    topology, points = loadmesh(shapepath)
+    topology, _ = loadmesh(shapepath)
     # points *= 1000.
     
     println("Vertices : ", nvertices(topology))
