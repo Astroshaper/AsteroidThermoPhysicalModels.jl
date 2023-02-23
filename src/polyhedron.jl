@@ -361,7 +361,7 @@ Calculate a face factor, ω_f
 - `r_i` : 1st vertex of the face (counter-clockwise)
 - `r_j` : 2nd vertex of the face
 - `r_k` : 3rd vertex of the face 
-– `pos` : position where you want the gravity (if skipped, the origin is given)
+- `pos` : position where you want the gravity (if skipped, the origin is given)
 # Returns
 - `ω_f`: face factor
 """
