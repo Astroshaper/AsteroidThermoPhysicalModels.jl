@@ -25,9 +25,6 @@ export CERES, PLUTO, ERIS
 export MOON
 export RYUGU, DIDYMOS, DIMORPHOS
 
-include("spice_util.jl")
-export spkpos, spkpos_df, pxform
-
 include("obj.jl")
 export loadobj
 
@@ -85,7 +82,5 @@ export run_Euler
 
 include("leapfrog.jl")
 export run_leapfrog
-
-# include("RungeKutta.jl")
 
 end # module ThermoPhysicalModeling
