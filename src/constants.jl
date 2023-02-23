@@ -13,6 +13,7 @@ const σ_SB = 5.670374419e-8            # Stefan–Boltzmann constant [W/m^2/K^4
 #                              Planets
 # ****************************************************************
 
+# TODO: replace these dictionaries with stucts
 """
 # Mercury
 """

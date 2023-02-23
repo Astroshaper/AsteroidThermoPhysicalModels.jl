@@ -49,6 +49,7 @@ Facet(vs) = Facet(
 )
 
 function Base.show(io::IO, facet::Facet)
+    # TODO: use `io`
     println(io, "Surface facet")
     println("-------------")
 
