@@ -1,4 +1,4 @@
-using Astroshaper
+using ThermoPhysicalModeling
 using Test
 using Aqua
 using JLD2
@@ -8,7 +8,7 @@ using Downloads
 using Statistics
 using LinearAlgebra
 
-Aqua.test_all(Astroshaper, ambiguities=false)
+Aqua.test_all(ThermoPhysicalModeling, ambiguities=false)
 
 if !Sys.iswindows()
     # TODO: add test for Windows

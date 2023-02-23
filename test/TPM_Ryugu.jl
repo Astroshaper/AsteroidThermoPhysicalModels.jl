@@ -47,13 +47,13 @@
     ##= Load obj file =##
     path_jld = splitext(path_obj)[1]*".jld2"
     if isfile(path_jld)
-        shape = Astroshaper.ShapeModel(path_jld; scale=1000, find_visible_facets=true, save_shape=true)
+        shape = ThermoPhysicalModeling.ShapeModel(path_jld; scale=1000, find_visible_facets=true, save_shape=true)
     else
-        shape = Astroshaper.ShapeModel(path_obj; scale=1000, find_visible_facets=true, save_shape=true)
+        shape = ThermoPhysicalModeling.ShapeModel(path_obj; scale=1000, find_visible_facets=true, save_shape=true)
     end
 
     ##= TPM =##
-    thermo_params = Astroshaper.ThermoParams(
+    thermo_params = ThermoPhysicalModeling.ThermoParams(
         A_B   = 0.04,  # Bolometric Bond albedo
         A_TH  = 0.0,
         k     = 0.1,
@@ -69,7 +69,7 @@
     )
     # Run TPM and save the result
     savepath = "TPM_Ryugu.jld2"
-    Astroshaper.run_TPM!(shape, et_range, sun_ryugu, thermo_params, savepath, save_range)
+    ThermoPhysicalModeling.run_TPM!(shape, et_range, sun_ryugu, thermo_params, savepath, save_range)
     JLD2.jldopen(savepath, "r+") do file
         file["RYUGU_TO_J2000"] = RYUGU_TO_J2000[save_range]
     end

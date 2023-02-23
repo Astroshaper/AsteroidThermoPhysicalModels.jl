@@ -1,11 +1,11 @@
 ![](logo/Astroshaper_logo.png)
 
-# Astroshaper.jl
+# ThermoPhysicalModeling.jl
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://MasanoriKanamaru.github.io/Astroshaper.jl/stable)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://MasanoriKanamaru.github.io/Astroshaper.jl/dev)
-[![Build Status](https://github.com/MasanoriKanamaru/Astroshaper.jl/workflows/CI/badge.svg)](https://github.com/MasanoriKanamaru/Astroshaper.jl/actions?query=workflow%3ACI+branch%3Amain)
-[![codecov](https://codecov.io/gh/MasanoriKanamaru/Astroshaper.jl/branch/main/graph/badge.svg?token=dJBiR91dCD)](https://codecov.io/gh/MasanoriKanamaru/Astroshaper.jl)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://MasanoriKanamaru.github.io/ThermoPhysicalModeling.jl/stable)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://MasanoriKanamaru.github.io/ThermoPhysicalModeling.jl/dev)
+[![Build Status](https://github.com/MasanoriKanamaru/ThermoPhysicalModeling.jl/workflows/CI/badge.svg)](https://github.com/MasanoriKanamaru/ThermoPhysicalModeling.jl/actions?query=workflow%3ACI+branch%3Amain)
+[![codecov](https://codecov.io/gh/MasanoriKanamaru/ThermoPhysicalModeling.jl/branch/main/graph/badge.svg?token=dJBiR91dCD)](https://codecov.io/gh/MasanoriKanamaru/ThermoPhysicalModeling.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 Julia-based toolkit for dynamical simulations of planets and small solar system bodies.
@@ -13,13 +13,13 @@ Julia-based toolkit for dynamical simulations of planets and small solar system 
 ## Installation
 
     using Pkg
-    Pkg.add(url="https://github.com/MasanoriKanamaru/Astroshaper.jl")
-    using Astroshaper
+    Pkg.add(url="https://github.com/MasanoriKanamaru/ThermoPhysicalModeling.jl")
+    using ThermoPhysicalModeling
 
 You can update the module and run tests as follows.
 
-    Pkg.update("Astroshaper")
-    Pkg.test("Astroshaper")
+    Pkg.update("ThermoPhysicalModeling")
+    Pkg.test("ThermoPhysicalModeling")
 
 ## Orbital dynamics
 You can simulate orbital evolution of planets and small bodies under gravity interaction and various perturbations.
@@ -60,9 +60,9 @@ Distribution of dynamical elevation on asteroid Itokawa. The color map ranges fr
 
 ## Start to play
 Let's visualize a shape model of asteroid Ryugu.
-Please downlad a Ryugu model from Astroshaper/test/ryugu_test.obj.
+Please downlad a Ryugu model from ThermoPhysicalModeling/test/ryugu_test.obj.
 
-    using Astroshaper
+    using ThermoPhysicalModeling
 
     shapepath = "ryugu_test.obj"  # Path to the shape model
     shape = Shape(shapepath; scale=1000, find_visible_facets=true)
