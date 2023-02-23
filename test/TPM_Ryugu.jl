@@ -12,7 +12,23 @@
         path_meta_new = "hyb2_v03.tm"
         cp(path_meta_old, path_meta_new, force=true)
         script = read(path_meta_new, String)
-        script = replace(script, "PATH_VALUES     = ( '..'      )"=>"PATH_VALUES     = ('$(abspath("spice_kernels"))')")
+        max_length = 79
+        subpaths = String[]
+        path_kernel = abspath("spice_kernels")
+        i = firstindex(path_kernel)
+        for _ in 1:(255 ÷ max_length)
+            if i + max_length < lastindex(path_kernel)
+                j = prevind(path_kernel, i + max_length)
+            else
+                j = lastindex(path_kernel)
+            end
+            push!(subpaths, path_kernel[i:j])
+            i = nextind(path_kernel, j)
+            if lastindex(path_kernel) < i
+                break
+            end
+        end
+        script = replace(script, "PATH_VALUES     = ( '..'      )"=>"PATH_VALUES = ('$(join(subpaths, "+'\n'"))')")
         write(path_meta_new, script)
     end
     
