@@ -1,4 +1,4 @@
-# See https://github.com/MasanoriKanamaru/Astroshaper-examples/tree/main/TPM_Ryugu for more information.
+# See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for more information.
 @testset "TPM_Ryugu" begin
     ##= Download Files =##
     path_meta_new = "hyb2_v03.tm"

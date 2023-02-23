@@ -1,4 +1,4 @@
-# See https://github.com/MasanoriKanamaru/Astroshaper-examples/tree/main/TPM_Didymos for more information.
+# See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos for more information.
 @testset "TPM_Didymos" begin
     ##= Download Files =##
     path_meta_new = "hera_study_PO_EMA_2024.tm"

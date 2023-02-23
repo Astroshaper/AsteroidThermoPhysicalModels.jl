@@ -2,10 +2,10 @@
 
 # ThermoPhysicalModeling.jl
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://MasanoriKanamaru.github.io/ThermoPhysicalModeling.jl/stable)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://MasanoriKanamaru.github.io/ThermoPhysicalModeling.jl/dev)
-[![Build Status](https://github.com/MasanoriKanamaru/ThermoPhysicalModeling.jl/workflows/CI/badge.svg)](https://github.com/MasanoriKanamaru/ThermoPhysicalModeling.jl/actions?query=workflow%3ACI+branch%3Amain)
-[![codecov](https://codecov.io/gh/MasanoriKanamaru/ThermoPhysicalModeling.jl/branch/main/graph/badge.svg?token=dJBiR91dCD)](https://codecov.io/gh/MasanoriKanamaru/ThermoPhysicalModeling.jl)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://Astroshaper.github.io/ThermoPhysicalModeling.jl/stable)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://Astroshaper.github.io/ThermoPhysicalModeling.jl/dev)
+[![Build Status](https://github.com/Astroshaper/ThermoPhysicalModeling.jl/workflows/CI/badge.svg)](https://github.com/Astroshaper/ThermoPhysicalModeling.jl/actions?query=workflow%3ACI+branch%3Amain)
+[![codecov](https://codecov.io/gh/Astroshaper/ThermoPhysicalModeling.jl/branch/main/graph/badge.svg?token=dJBiR91dCD)](https://codecov.io/gh/Astroshaper/ThermoPhysicalModeling.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 Julia-based toolkit for dynamical simulations of planets and small solar system bodies.
@@ -13,7 +13,7 @@ Julia-based toolkit for dynamical simulations of planets and small solar system 
 ## Installation
 
     using Pkg
-    Pkg.add(url="https://github.com/MasanoriKanamaru/ThermoPhysicalModeling.jl")
+    Pkg.add(url="https://github.com/Astroshaper/ThermoPhysicalModeling.jl")
     using ThermoPhysicalModeling
 
 You can update the module and run tests as follows.

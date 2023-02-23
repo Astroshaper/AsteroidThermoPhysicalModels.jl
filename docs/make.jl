@@ -5,11 +5,11 @@ DocMeta.setdocmeta!(ThermoPhysicalModeling, :DocTestSetup, :(using ThermoPhysica
 
 makedocs(;
     modules=[ThermoPhysicalModeling],
-    repo="https://github.com/MasanoriKanamaru/ThermoPhysicalModeling.jl/blob/{commit}{path}#{line}",
+    repo="https://github.com/Astroshaper/ThermoPhysicalModeling.jl/blob/{commit}{path}#{line}",
     sitename="ThermoPhysicalModeling.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://MasanoriKanamaru.github.io/ThermoPhysicalModeling.jl",
+        canonical="https://Astroshaper.github.io/ThermoPhysicalModeling.jl",
         assets=["assets/favicon.ico"],
     ),
     pages=[
@@ -18,5 +18,5 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/MasanoriKanamaru/ThermoPhysicalModeling.jl",
+    repo="github.com/Astroshaper/ThermoPhysicalModeling.jl",
 )
