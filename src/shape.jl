@@ -46,6 +46,7 @@ end
 
 
 function Base.show(io::IO, shape::ShapeModel)
+    # TODO: use `io`
     println("Shape model")
     println("-----------")
 
@@ -65,6 +66,7 @@ end
 
 
 function ShapeModel(shapepath; scale=1, find_visible_facets=false, save_shape=false)
+    # TODO: use MeshIO.jl
     
     ext = splitext(shapepath)[2]
     

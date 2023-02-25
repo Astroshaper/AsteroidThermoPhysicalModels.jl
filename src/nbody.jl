@@ -296,7 +296,7 @@ function load_snapshot(filepath)
             t = parse(Float64, readline(io))
             N = parse(Int64, readline(io))
             ps = StructArray(SimpleParticle{Vector{Float64}, Float64}[])
-            for i in 1:N
+            for _ in 1:N
                 line = parse.(Float64, split(readline(io), ","))
                 m = line[1]
                 r = line[2:4]
