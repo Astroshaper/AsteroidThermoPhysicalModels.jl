@@ -1,37 +1,19 @@
 # See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for more information.
 @testset "TPM_Ryugu" begin
     ##= Download Files =##
-    path_meta_new = "hyb2_v03.tm"
-    if !isfile(path_meta_new)
-        # Dowonload files for SPICE
-        cmd = `wget -nv -m -np -nH --cut-dirs=3 -R "index.html*" --execute robots=off --wait=1 https://data.darts.isas.jaxa.jp/pub/hayabusa2/spice_bundle/spice_kernels/`
-        run(cmd)
-    
-        # Update path
-        path_meta_old = "spice_kernels/mk/hyb2_v03.tm"
-        path_meta_new = "hyb2_v03.tm"
-        cp(path_meta_old, path_meta_new, force=true)
-        script = read(path_meta_new, String)
-        max_length = 79
-        subpaths = String[]
-        path_kernel = abspath("spice_kernels")
-        i = firstindex(path_kernel)
-        for _ in 1:(255 ÷ max_length)
-            if i + max_length < lastindex(path_kernel)
-                j = prevind(path_kernel, i + max_length)
-            else
-                j = lastindex(path_kernel)
-            end
-            push!(subpaths, path_kernel[i:j])
-            i = nextind(path_kernel, j)
-            if lastindex(path_kernel) < i
-                break
-            end
-        end
-        script = replace(script, "PATH_VALUES     = ( '..'      )"=>"PATH_VALUES = ('$(join(subpaths, "+'\n'"))')")
-        write(path_meta_new, script)
+    path_kernels = [
+        "spice_kernels/lsk/naif0012.tls",
+        "spice_kernels/pck/hyb2_ryugu_shape_v20190328.tpc",
+        "spice_kernels/fk/hyb2_ryugu_v01.tf",
+        "spice_kernels/spk/2162173_Ryugu.bsp",
+    ]
+
+    for path_kernel in path_kernels
+        mkpath(dirname(path_kernel))
+        url_kernel = joinpath("https://data.darts.isas.jaxa.jp/pub/hayabusa2/spice_bundle", path_kernel)
+        isfile(path_kernel) || Downloads.download(url_kernel, path_kernel)
     end
-    
+
     path_obj = "SHAPE_SFM_49k_v20180804.obj"
     if !isfile(path_obj)
         url_obj = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/paper/Watanabe_2019/SHAPE_SFM_49k_v20180804.obj"
