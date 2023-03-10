@@ -21,7 +21,10 @@
     end
 
     ##= Load data with SPICE =##
-    SPICE.furnsh(path_meta_new)
+    for path_kernel in path_kernels
+        SPICE.furnsh(path_kernel)
+    end
+
     et_start = SPICE.utc2et("2018-07-01T00:00:00")
     et_end   = SPICE.utc2et("2018-07-01T01:00:00")
     step     = 76.3262  # Rotation of 1 deg
