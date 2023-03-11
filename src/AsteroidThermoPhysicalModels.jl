@@ -1,4 +1,4 @@
-module ThermoPhysicalModeling
+module AsteroidThermoPhysicalModels
 
 using LinearAlgebra
 using StaticArrays
@@ -83,4 +83,4 @@ export run_Euler
 include("leapfrog.jl")
 export run_leapfrog
 
-end # module ThermoPhysicalModeling
+end # module AsteroidThermoPhysicalModels
