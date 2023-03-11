@@ -7,12 +7,4 @@
 .ipynb_checkpoints
 
 /test/Ryugu
-
-# TPM_Didymos
-/test/hera
-/test/hera_study_PO_EMA_2024.tm
-/test/g_06650mm_rad_obj_didb_0000n00000_v001.obj
-/test/g_50677mm_rad_obj_dida_0000n00000_v001.obj
-/test/g_06650mm_rad_obj_didb_0000n00000_v001.jld2
-/test/g_50677mm_rad_obj_dida_0000n00000_v001.jld2
-/test/TPM_Didymos.jld2
+/test/Didymos
