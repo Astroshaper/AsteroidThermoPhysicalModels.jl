@@ -10,7 +10,7 @@
 
     for path_kernel in path_kernels
         mkpath(dirname(path_kernel))
-        url_kernel = joinpath("https://data.darts.isas.jaxa.jp/pub/hayabusa2/spice_bundle", path_kernel)
+        url_kernel = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/spice_bundle/$(path_kernel)"
         isfile(path_kernel) || Downloads.download(url_kernel, path_kernel)
     end
 
