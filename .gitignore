@@ -6,18 +6,5 @@
 /docs/Manifest.toml
 .ipynb_checkpoints
 
-# TPM_Ryugu
-/test/spice_kernels
-/test/hyb2_v03.tm
-/test/SHAPE_SFM_49k_v20180804.obj
-/test/SHAPE_SFM_49k_v20180804.jld2
-/test/TPM_Ryugu.jld2
-
-# TPM_Didymos
-/test/hera
-/test/hera_study_PO_EMA_2024.tm
-/test/g_06650mm_rad_obj_didb_0000n00000_v001.obj
-/test/g_50677mm_rad_obj_dida_0000n00000_v001.obj
-/test/g_06650mm_rad_obj_didb_0000n00000_v001.jld2
-/test/g_50677mm_rad_obj_dida_0000n00000_v001.jld2
-/test/TPM_Didymos.jld2
+/test/Ryugu
+/test/Didymos
