@@ -68,18 +68,18 @@
     cp(joinpath("hera", "kernels", "dsk", "g_06650mm_rad_obj_didb_0000n00000_v001.obj"), path_shape2_obj, force=true)
     
     if isfile(path_shape1_jld)
-        shape1 = ThermoPhysicalModeling.ShapeModel(path_shape1_jld; scale=1000, find_visible_facets=true, save_shape=true)
+        shape1 = AsteroidThermoPhysicalModels.ShapeModel(path_shape1_jld; scale=1000, find_visible_facets=true, save_shape=true)
     else
-        shape1 = ThermoPhysicalModeling.ShapeModel(path_shape1_obj; scale=1000, find_visible_facets=true, save_shape=true)
+        shape1 = AsteroidThermoPhysicalModels.ShapeModel(path_shape1_obj; scale=1000, find_visible_facets=true, save_shape=true)
     end
     if isfile(path_shape2_jld)
-        shape2 = ThermoPhysicalModeling.ShapeModel(path_shape2_jld; scale=1000, find_visible_facets=true, save_shape=true)
+        shape2 = AsteroidThermoPhysicalModels.ShapeModel(path_shape2_jld; scale=1000, find_visible_facets=true, save_shape=true)
     else
-        shape2 = ThermoPhysicalModeling.ShapeModel(path_shape2_obj; scale=1000, find_visible_facets=true, save_shape=true)
+        shape2 = AsteroidThermoPhysicalModels.ShapeModel(path_shape2_obj; scale=1000, find_visible_facets=true, save_shape=true)
     end
 
     ##= TPM =##
-    thermo_params = ThermoPhysicalModeling.ThermoParams(  # [Michel+2016; Naidu+2020]
+    thermo_params = AsteroidThermoPhysicalModels.ThermoParams(  # [Michel+2016; Naidu+2020]
         A_B   = 0.059,  # Bolometric Bond albedo
         A_TH  = 0.0,
         k     = 0.125,
@@ -91,15 +91,15 @@
         Nt    = length(et_range),
         z_max = 0.6,
         Nz    = 41,
-        P     = SPICE.convrt(ThermoPhysicalModeling.DIDYMOS[:P], "hours", "seconds"),
+        P     = SPICE.convrt(AsteroidThermoPhysicalModels.DIDYMOS[:P], "hours", "seconds"),
     );
 
-    ThermoPhysicalModeling.init_temps_zero!(shape1, thermo_params)
-    ThermoPhysicalModeling.init_temps_zero!(shape2, thermo_params)
+    AsteroidThermoPhysicalModels.init_temps_zero!(shape1, thermo_params)
+    AsteroidThermoPhysicalModels.init_temps_zero!(shape2, thermo_params)
     
     # Run TPM and save the result
     savepath = "TPM_Didymos.jld2"
     shapes = (shape1, shape2)
     suns = (sun_d1, sun_d2)
-    ThermoPhysicalModeling.run_TPM!(shapes, et_range, suns, D2_TO_D1, d2_d1, thermo_params, savepath, [:surf_temps, :forces, :torques])
+    AsteroidThermoPhysicalModels.run_TPM!(shapes, et_range, suns, D2_TO_D1, d2_d1, thermo_params, savepath, [:surf_temps, :forces, :torques])
 end
