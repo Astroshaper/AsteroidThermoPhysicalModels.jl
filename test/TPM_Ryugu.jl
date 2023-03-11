@@ -9,7 +9,6 @@
     ]
 
     for path_kernel in path_kernels
-        mkpath(dirname(path_kernel))
         url_kernel = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/spice_bundle/spice_kernels/$(path_kernel)"
         file_kernel = joinpath("Ryugu", "kernels", path_kernel)
         mkpath(dirname(file_kernel))
@@ -27,7 +26,6 @@
         file_kernel = joinpath("Ryugu", "kernels", path_kernel)
         SPICE.furnsh(file_kernel)
     end
-
     et_start = SPICE.utc2et("2018-07-01T00:00:00")
     et_end   = SPICE.utc2et("2018-07-01T01:00:00")
     step     = 76.3262  # Rotation of 1 deg
