@@ -1,4 +1,4 @@
-name = "ThermoPhysicalModeling"
+name = "AsteroidThermoPhysicalModels"
 uuid = "ab46f4a3-3c83-4d86-98d6-41a8b1a2e76e"
 authors = ["Masanori Kanamaru"]
 version = "0.0.3"
