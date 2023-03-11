@@ -1,37 +1,30 @@
 # See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos for more information.
 @testset "TPM_Didymos" begin
     ##= Download Files =##
-    path_meta_new = "hera_study_PO_EMA_2024.tm"
-    if !isfile(path_meta_new)
-        # Dowonload files for SPICE
-        run(Git.git(["clone", "https://s2e2.cosmos.esa.int/bitbucket/scm/spice_kernels/hera.git"]))
+    path_kernels = [
+        "fk/hera_v07.tf",
+        "lsk/naif0012.tls",
+        "pck/hera_didymos_v05.tpc",
+        "spk/de432s.bsp",
+        "spk/didymos_hor_000101_500101_v01.bsp",
+        "spk/didymos_gmv_260901_311001_v01.bsp",
+        "dsk/g_50677mm_rad_obj_dida_0000n00000_v001.obj",
+        "dsk/g_06650mm_rad_obj_didb_0000n00000_v001.obj",
+    ]
     
-        # Update path
-        path_meta_old = "hera/kernels/mk/hera_study_PO_EMA_2024.tm"
-        cp(path_meta_old, path_meta_new, force=true)
-        script = read(path_meta_new, String)
-        max_length = 79
-        subpaths = String[]
-        path_kernel = abspath(joinpath("hera", "kernels"))
-        i = firstindex(path_kernel)
-        for _ in 1:(255 ÷ max_length)
-            if i + max_length < lastindex(path_kernel)
-                j = prevind(path_kernel, i + max_length)
-            else
-                j = lastindex(path_kernel)
-            end
-            push!(subpaths, path_kernel[i:j])
-            i = nextind(path_kernel, j)
-            if lastindex(path_kernel) < i
-                break
-            end
-        end
-        script = replace(script, "PATH_VALUES       = ( '..' )"=>"PATH_VALUES = ('$(join(subpaths, "+'\n'"))')")
-        write(path_meta_new, script)
+    for path_kernel in path_kernels
+        url_kernel = "https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/$(path_kernel)"
+        file_kernel = joinpath("Didymos", "kernels", path_kernel)
+        mkpath(dirname(file_kernel))
+        isfile(file_kernel) || Downloads.download(url_kernel, file_kernel)
     end
 
     ##= Load data with SPICE =##
-    SPICE.furnsh(path_meta_new)
+    for path_kernel in path_kernels
+        file_kernel = joinpath("Didymos", "kernels", path_kernel)
+        @show file_kernel, isfile(file_kernel)
+        SPICE.furnsh(file_kernel)
+    end
     et_start = SPICE.utc2et("2027-02-18T00:00:00")
     et_end   = SPICE.utc2et("2027-02-18T01:00:00")
     step     = 300
@@ -59,13 +52,10 @@
     SPICE.kclear()
 
     ##= Load obj file =##
-    path_shape1_obj = "g_50677mm_rad_obj_dida_0000n00000_v001.obj"
-    path_shape2_obj = "g_06650mm_rad_obj_didb_0000n00000_v001.obj"
-    path_shape1_jld = "g_50677mm_rad_obj_dida_0000n00000_v001.jld2"
-    path_shape2_jld = "g_06650mm_rad_obj_didb_0000n00000_v001.jld2"
-    
-    cp(joinpath("hera", "kernels", "dsk", "g_50677mm_rad_obj_dida_0000n00000_v001.obj"), path_shape1_obj, force=true)
-    cp(joinpath("hera", "kernels", "dsk", "g_06650mm_rad_obj_didb_0000n00000_v001.obj"), path_shape2_obj, force=true)
+    path_shape1_obj = joinpath("Didymos", "kernels", "dsk", "g_50677mm_rad_obj_dida_0000n00000_v001.obj")
+    path_shape2_obj = joinpath("Didymos", "kernels", "dsk", "g_06650mm_rad_obj_didb_0000n00000_v001.obj")
+    path_shape1_jld = joinpath("Didymos", "kernels", "dsk", "g_50677mm_rad_obj_dida_0000n00000_v001.jld2")
+    path_shape2_jld = joinpath("Didymos", "kernels", "dsk", "g_06650mm_rad_obj_didb_0000n00000_v001.jld2")
     
     if isfile(path_shape1_jld)
         shape1 = AsteroidThermoPhysicalModels.ShapeModel(path_shape1_jld; scale=1000, find_visible_facets=true, save_shape=true)
@@ -98,7 +88,7 @@
     AsteroidThermoPhysicalModels.init_temps_zero!(shape2, thermo_params)
     
     # Run TPM and save the result
-    savepath = "TPM_Didymos.jld2"
+    savepath = joinpath("Didymos", "TPM_Didymos.jld2")
     shapes = (shape1, shape2)
     suns = (sun_d1, sun_d2)
     AsteroidThermoPhysicalModels.run_TPM!(shapes, et_range, suns, D2_TO_D1, d2_d1, thermo_params, savepath, [:surf_temps, :forces, :torques])
