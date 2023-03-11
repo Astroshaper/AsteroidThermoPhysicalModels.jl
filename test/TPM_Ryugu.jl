@@ -2,19 +2,21 @@
 @testset "TPM_Ryugu" begin
     ##= Download Files =##
     path_kernels = [
-        "spice_kernels/lsk/naif0012.tls",
-        "spice_kernels/pck/hyb2_ryugu_shape_v20190328.tpc",
-        "spice_kernels/fk/hyb2_ryugu_v01.tf",
-        "spice_kernels/spk/2162173_Ryugu.bsp",
+        "lsk/naif0012.tls",
+        "pck/hyb2_ryugu_shape_v20190328.tpc",
+        "fk/hyb2_ryugu_v01.tf",
+        "spk/2162173_Ryugu.bsp",
     ]
 
     for path_kernel in path_kernels
         mkpath(dirname(path_kernel))
-        url_kernel = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/spice_bundle/$(path_kernel)"
-        isfile(path_kernel) || Downloads.download(url_kernel, path_kernel)
+        url_kernel = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/spice_bundle/spice_kernels/$(path_kernel)"
+        file_kernel = joinpath("Ryugu", "kernels", path_kernel)
+        mkpath(dirname(file_kernel))
+        isfile(file_kernel) || Downloads.download(url_kernel, file_kernel)
     end
 
-    path_obj = "SHAPE_SFM_49k_v20180804.obj"
+    path_obj = joinpath("Ryugu", "kernels", "SHAPE_SFM_49k_v20180804.obj")
     if !isfile(path_obj)
         url_obj = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/paper/Watanabe_2019/SHAPE_SFM_49k_v20180804.obj"
         Downloads.download(url_obj, path_obj)
@@ -22,7 +24,8 @@
 
     ##= Load data with SPICE =##
     for path_kernel in path_kernels
-        SPICE.furnsh(path_kernel)
+        file_kernel = joinpath("Ryugu", "kernels", path_kernel)
+        SPICE.furnsh(file_kernel)
     end
 
     et_start = SPICE.utc2et("2018-07-01T00:00:00")
@@ -69,7 +72,7 @@
         P     = 7.63262 * 3600,
     )
     # Run TPM and save the result
-    savepath = "TPM_Ryugu.jld2"
+    savepath = joinpath("Ryugu", "TPM_Ryugu.jld2")
     ThermoPhysicalModeling.run_TPM!(shape, et_range, sun_ryugu, thermo_params, savepath, save_range)
     JLD2.jldopen(savepath, "r+") do file
         file["RYUGU_TO_J2000"] = RYUGU_TO_J2000[save_range]

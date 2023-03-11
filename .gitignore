@@ -6,12 +6,7 @@
 /docs/Manifest.toml
 .ipynb_checkpoints
 
-# TPM_Ryugu
-/test/spice_kernels
-/test/hyb2_v03.tm
-/test/SHAPE_SFM_49k_v20180804.obj
-/test/SHAPE_SFM_49k_v20180804.jld2
-/test/TPM_Ryugu.jld2
+/test/Ryugu
 
 # TPM_Didymos
 /test/hera
