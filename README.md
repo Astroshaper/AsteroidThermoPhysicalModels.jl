@@ -2,8 +2,8 @@
 
 # ThermoPhysicalModeling.jl
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://Astroshaper.github.io/ThermoPhysicalModeling.jl/stable)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://Astroshaper.github.io/ThermoPhysicalModeling.jl/dev)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://Astroshaper.github.io/AsteroidThermoPhysicalModels.jl/stable)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://Astroshaper.github.io/AsteroidThermoPhysicalModels.jl/dev)
 [![Build Status](https://github.com/Astroshaper/ThermoPhysicalModeling.jl/workflows/CI/badge.svg)](https://github.com/Astroshaper/ThermoPhysicalModeling.jl/actions?query=workflow%3ACI+branch%3Amain)
 [![codecov](https://codecov.io/gh/Astroshaper/ThermoPhysicalModeling.jl/branch/main/graph/badge.svg?token=dJBiR91dCD)](https://codecov.io/gh/Astroshaper/ThermoPhysicalModeling.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
@@ -13,13 +13,13 @@ Julia-based toolkit for dynamical simulations of planets and small solar system 
 ## Installation
 
     using Pkg
-    Pkg.add(url="https://github.com/Astroshaper/ThermoPhysicalModeling.jl")
-    using ThermoPhysicalModeling
+    Pkg.add(url="https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl")
+    using AsteroidThermoPhysicalModels
 
 You can update the module and run tests as follows.
 
-    Pkg.update("ThermoPhysicalModeling")
-    Pkg.test("ThermoPhysicalModeling")
+    Pkg.update("AsteroidThermoPhysicalModels")
+    Pkg.test("AsteroidThermoPhysicalModels")
 
 ## Orbital dynamics
 You can simulate orbital evolution of planets and small bodies under gravity interaction and various perturbations.
