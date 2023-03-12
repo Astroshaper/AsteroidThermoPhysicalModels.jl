@@ -205,6 +205,63 @@ function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::Ther
 end
 
 
+"""
+    run_TPM!
+
+Run TPM for a binary asteroid.
+
+- shapes
+- ephemerides
+- thermo_params
+- savepath
+- savevalues
+"""
+function run_TPM!(shapes::Tuple, ephem, thermo_params::ThermoParams, savepath, savevalues)
+
+    surf_temps = zeros(shapes[1].num_face, length(ephem[:et])), zeros(shapes[2].num_face, length(ephem[:et]))
+    forces  = [zeros(3) for _ in eachindex(ephem[:et])], [zeros(3) for _ in eachindex(ephem[:et])]
+    torques = [zeros(3) for _ in eachindex(ephem[:et])], [zeros(3) for _ in eachindex(ephem[:et])]
+
+    for (i, et) in enumerate(ephem[:et])
+        r☉₁ = ephem[:pos_sun_1][i]
+        r☉₂ = ephem[:pos_sun_2][i]
+        r₂₁ = ephem[:pos_2_1][i]
+        R₂₁ = ephem[:rot_2_to_1][i]
+
+        ## Update enegey flux
+        update_flux!(shapes[1], r☉₁, thermo_params)
+        update_flux!(shapes[2], r☉₂, thermo_params)
+        find_eclipse!(shapes, r☉₁, r₂₁, R₂₁)  # Mutual-shadowing
+
+        ## Mutual-heating
+        #
+        #
+
+        for (idx_shape, shape) in enumerate(shapes)
+            update_force!(shape, thermo_params)
+            sum_force_torque!(shape)
+
+            surf_temps[idx_shape][:, i] .= surface_temperature(shape)
+            forces[idx_shape][i]  .= shape.force   # Body-fixed frame
+            torques[idx_shape][i] .= shape.torque  # Body-fixed frame
+        end
+    
+        ## Energy input/output
+        E_io_pri = energy_io(shapes[1], thermo_params)
+        E_io_sec = energy_io(shapes[2], thermo_params)
+        # println(E_io_pri[3], ", ",  E_io_sec[3])
+        
+        ## Update temperature distribution
+        et == ephem[:et][end] && break  # Stop to update the temperature at the final step
+        update_temps!(shapes[1], thermo_params)
+        update_temps!(shapes[2], thermo_params)
+    end
+    
+    # jldsave(savepath; shapes, et_range, suns, S2P, thermo_params)
+    jldsave(savepath; shapes, ephem, thermo_params, surf_temps, forces, torques)
+end
+
+
 # ****************************************************************
 #                      Data input/output
 # ****************************************************************
