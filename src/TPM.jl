@@ -216,49 +216,74 @@ Run TPM for a binary asteroid.
 - savepath
 - savevalues
 """
-function run_TPM!(shapes::Tuple, ephem, thermo_params::ThermoParams, savepath, savevalues)
+function run_TPM!(shape1::ShapeModel, shape2::ShapeModel, ephem, thermo_params::ThermoParams, savepath, savevalues)
 
-    surf_temps = zeros(shapes[1].num_face, length(ephem[:et])), zeros(shapes[2].num_face, length(ephem[:et]))
-    forces  = [zeros(3) for _ in eachindex(ephem[:et])], [zeros(3) for _ in eachindex(ephem[:et])]
-    torques = [zeros(3) for _ in eachindex(ephem[:et])], [zeros(3) for _ in eachindex(ephem[:et])]
+    data1 = Dict()
+    data2 = Dict()
+
+    if :surf_temps in savevalues
+        data1[:surf_temps] = zeros(shape1.num_face, length(ephem[:et]))
+        data2[:surf_temps] = zeros(shape2.num_face, length(ephem[:et]))
+    end
+    if :force in savevalues
+        data1[:force] = [zeros(3) for _ in eachindex(ephem[:et])]
+        data2[:force] = [zeros(3) for _ in eachindex(ephem[:et])]
+    end
+    if :torque in savevalues
+        data1[:torque] = [zeros(3) for _ in eachindex(ephem[:et])]
+        data2[:torque] = [zeros(3) for _ in eachindex(ephem[:et])]
+    end
+    if :E_cons in savevalues
+        data1[:E_cons] = zeros(length(ephem[:et]))
+        data2[:E_cons] = zeros(length(ephem[:et]))
+    end
 
     for (i, et) in enumerate(ephem[:et])
-        r☉₁ = ephem[:pos_sun_1][i]
-        r☉₂ = ephem[:pos_sun_2][i]
-        r₂₁ = ephem[:pos_2_1][i]
-        R₂₁ = ephem[:rot_2_to_1][i]
+        r☉₁ = SVector{3}(ephem[:pos_sun_1][i])
+        r☉₂ = SVector{3}(ephem[:pos_sun_2][i])
+        r₂₁ = SVector{3}(ephem[:pos_2_1][i])
+        R₂₁ = SMatrix{3,3}(ephem[:rot_2_to_1][i])
 
         ## Update enegey flux
-        update_flux!(shapes[1], r☉₁, thermo_params)
-        update_flux!(shapes[2], r☉₂, thermo_params)
-        find_eclipse!(shapes, r☉₁, r₂₁, R₂₁)  # Mutual-shadowing
+        update_flux!(shape1, r☉₁, thermo_params)
+        update_flux!(shape2, r☉₂, thermo_params)
+        find_eclipse!((shape1, shape2), r☉₁, r₂₁, R₂₁)  # Mutual-shadowing
 
         ## Mutual-heating
         #
         #
 
-        for (idx_shape, shape) in enumerate(shapes)
-            update_force!(shape, thermo_params)
-            sum_force_torque!(shape)
+        ## Update thermal force and torque
+        update_force!(shape1, thermo_params)
+        update_force!(shape2, thermo_params)
+        sum_force_torque!(shape1)
+        sum_force_torque!(shape2)
 
-            surf_temps[idx_shape][:, i] .= surface_temperature(shape)
-            forces[idx_shape][i]  .= shape.force   # Body-fixed frame
-            torques[idx_shape][i] .= shape.torque  # Body-fixed frame
+        ## Save data
+        if :surf_temps in savevalues
+            data1[:surf_temps][:, i] .= surface_temperature(shape1)
+            data2[:surf_temps][:, i] .= surface_temperature(shape2)
         end
-    
-        ## Energy input/output
-        E_io_pri = energy_io(shapes[1], thermo_params)
-        E_io_sec = energy_io(shapes[2], thermo_params)
-        # println(E_io_pri[3], ", ",  E_io_sec[3])
+        if :force in savevalues
+            data1[:force][i] .= shape1.force
+            data2[:force][i] .= shape2.force
+        end
+        if :torque in savevalues
+            data1[:torque][i] .= shape1.torque
+            data2[:torque][i] .= shape2.torque
+        end
+        if :E_cons in savevalues
+            data1[:E_cons][i] = energy_io(shape1, thermo_params)[3]
+            data2[:E_cons][i] = energy_io(shape2, thermo_params)[3]
+        end
         
         ## Update temperature distribution
         et == ephem[:et][end] && break  # Stop to update the temperature at the final step
-        update_temps!(shapes[1], thermo_params)
-        update_temps!(shapes[2], thermo_params)
+        update_temps!(shape1, thermo_params)
+        update_temps!(shape2, thermo_params)
     end
     
-    # jldsave(savepath; shapes, et_range, suns, S2P, thermo_params)
-    jldsave(savepath; shapes, ephem, thermo_params, surf_temps, forces, torques)
+    jldsave(savepath; shape1, shape2, ephem, thermo_params, data1, data2)
 end
 
 
