@@ -4,8 +4,8 @@
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://Astroshaper.github.io/AsteroidThermoPhysicalModels.jl/stable)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://Astroshaper.github.io/AsteroidThermoPhysicalModels.jl/dev)
-[![Build Status](https://github.com/Astroshaper/ThermoPhysicalModeling.jl/workflows/CI/badge.svg)](https://github.com/Astroshaper/ThermoPhysicalModeling.jl/actions?query=workflow%3ACI+branch%3Amain)
-[![codecov](https://codecov.io/gh/Astroshaper/ThermoPhysicalModeling.jl/branch/main/graph/badge.svg?token=dJBiR91dCD)](https://codecov.io/gh/Astroshaper/ThermoPhysicalModeling.jl)
+[![Build Status](https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl/workflows/CI/badge.svg)](https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl/actions?query=workflow%3ACI+branch%3Amain)
+[![codecov](https://codecov.io/gh/Astroshaper/AsteroidThermoPhysicalModels.jl/branch/main/graph/badge.svg?token=dJBiR91dCD)](https://codecov.io/gh/Astroshaper/AsteroidThermoPhysicalModels.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 Julia-based toolkit for dynamical simulations of planets and small solar system bodies.
@@ -60,9 +60,9 @@ Distribution of dynamical elevation on asteroid Itokawa. The color map ranges fr
 
 ## Start to play
 Let's visualize a shape model of asteroid Ryugu.
-Please downlad a Ryugu model from ThermoPhysicalModeling/test/ryugu_test.obj.
+Please downlad a Ryugu model from AsteroidThermoPhysicalModels/test/ryugu_test.obj.
 
-    using ThermoPhysicalModeling
+    using AsteroidThermoPhysicalModels
 
     shapepath = "ryugu_test.obj"  # Path to the shape model
     shape = Shape(shapepath; scale=1000, find_visible_facets=true)
