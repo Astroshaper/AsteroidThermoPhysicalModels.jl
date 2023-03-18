@@ -65,7 +65,7 @@ Please downlad a Ryugu model from AsteroidThermoPhysicalModels/test/ryugu_test.o
     using AsteroidThermoPhysicalModels
 
     shapepath = "ryugu_test.obj"  # Path to the shape model
-    shape = Shape(shapepath; scale=1000, find_visible_facets=true)
+    shape = ShapeModel(shapepath; scale=1000, find_visible_facets=true)
 
     draw(shape)
     # draw(shape, data=:radius)                     # Radius of each surface facet
