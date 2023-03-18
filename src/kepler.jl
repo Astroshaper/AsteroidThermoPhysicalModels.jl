@@ -102,35 +102,36 @@ end
 function Base.show(io::IO, orbit::OrbitalElements)
     @unpack a, e, I, ω, Ω, Φ, tₚ, μ, n, P, t, u, ν, r, v, F☉ = orbit
 
-    println("--------------------")
-    println("  Orbital elements  ")
-    println("--------------------")
+    msg = "--------------------\n"
+    msg *= "  Orbital elements  \n"
+    msg *= "--------------------\n"
 
-    println("    Semi-mojor axis         : a  = ", a / AU,     " [AU]")
-    println("    Eccentricity            : e  = ", e,          " [-]")
-    println("    Lon. of ascending node  : Ω  = ", rad2deg(Ω), " [deg]")
-    println("    Argument of periapsis   : ω  = ", rad2deg(ω), " [deg]")
-    println("    Inclination             : I  = ", rad2deg(I), " [deg]")
-    println("    Periapsis passage time  : tₚ = ", tₚ,         " [sec]")
-    println("    Mean anomaly            : Φ  = ", rad2deg(Φ), " [deg]")
+    msg *= "    Semi-mojor axis         : a  = $(a / AU    ) [AU]\n"
+    msg *= "    Eccentricity            : e  = $(e         ) [-]\n"
+    msg *= "    Lon. of ascending node  : Ω  = $(rad2deg(Ω)) [deg]\n"
+    msg *= "    Argument of periapsis   : ω  = $(rad2deg(ω)) [deg]\n"
+    msg *= "    Inclination             : I  = $(rad2deg(I)) [deg]\n"
+    msg *= "    Periapsis passage time  : tₚ = $(tₚ        ) [sec]\n"
+    msg *= "    Mean anomaly            : Φ  = $(rad2deg(Φ)) [deg]\n"
 
-    println("--------------------")
-    println("  Other parameters  ")
-    println("--------------------")
+    msg *= "--------------------\n"
+    msg *= "  Other parameters  \n"
+    msg *= "--------------------\n"
 
-    println("    Gravitational parameter : μ = ", μ,                      " [m^3/s^2]")
-    println("    Mean motion             : n = ", rad2deg(n) * (3600*24), " [deg/day]")
-    println("    Orbital period          : P = ", P / (3600*24),          " [day]")
+    msg *= "    Gravitational parameter : μ = $(μ                     ) [m^3/s^2]\n"
+    msg *= "    Mean motion             : n = $(rad2deg(n) * (3600*24)) [deg/day]\n"
+    msg *= "    Orbital period          : P = $(P / (3600*24)         ) [day]\n"
 
-    println("------------------")
-    println("  Time-variables  ")
-    println("------------------")
-    println("    Time                    : t  = ", t,          " [sec]")
-    println("    Eccentric anomaly       : u  = ", rad2deg(u), " [deg]")
-    println("    True anomaly            : ν  = ", rad2deg(ν), " [deg]")
-    println("    Position                : r  = ", r,          " [m]")
-    println("    Velocity                : v  = ", v,          " [m/s]")
-    println("    Solar irradiation       : F☉ = ", F☉,         " [W/m²]")
+    msg *= "------------------\n"
+    msg *= "  Time-variables  \n"
+    msg *= "------------------\n"
+    msg *= "    Time                    : t  = $(t         ) [sec]\n"
+    msg *= "    Eccentric anomaly       : u  = $(rad2deg(u)) [deg]\n"
+    msg *= "    True anomaly            : ν  = $(rad2deg(ν)) [deg]\n"
+    msg *= "    Position                : r  = $(r         ) [m]\n"
+    msg *= "    Velocity                : v  = $(v         ) [m/s]\n"
+    msg *= "    Solar irradiation       : F☉ = $(F☉       ) [W/m²]\n"
+    print(io, msg)
 end
 
 

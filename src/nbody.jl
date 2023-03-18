@@ -237,14 +237,15 @@ end
 
 
 function Base.show(io::IO, p::SimpleParticle)
-    println(io, typeof(p))
+    msg = "$(typeof(p))\n"
 
-    println(" r  : ", p.r)
-    println(" v  : ", p.v)
-    println(" a  : ", p.a)
+    msg *= " r  : $(p.r)\n"
+    msg *= " v  : $(p.v)\n"
+    msg *= " a  : $(p.a)\n"
     
-    println(" m  : ", p.m)
-    println(" R  : ", p.R)
+    msg *= " m  : $(p.m)\n"
+    msg *= " R  : $(p.R)\n"
+    print(io, msg)
 end
 
 

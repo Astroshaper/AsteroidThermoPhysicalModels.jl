@@ -49,27 +49,28 @@ Facet(vs) = Facet(
 )
 
 function Base.show(io::IO, facet::Facet)
-    # TODO: use `io`
-    println(io, "Surface facet")
-    println("-------------")
+    msg = "Surface facet"
+    msg *= "Surface facet\n"
+    msg *= "-------------\n"
 
-    println("Vertices")
-    println("    A : ", facet.A)
-    println("    B : ", facet.B)
-    println("    C : ", facet.C)
+    msg *= "Vertices\n"
+    msg *= "    A : $(facet.A)\n"
+    msg *= "    B : $(facet.B)\n"
+    msg *= "    C : $(facet.C)\n"
 
-    println("Center : ", facet.center)
-    println("Normal : ", facet.normal)
-    println("Area   : ", facet.area)
+    msg *= "Center : $(facet.center)\n"
+    msg *= "Normal : $(facet.normal)\n"
+    msg *= "Area   : $(facet.area)\n"
     
     if isempty(facet.visiblefacets)
-        println("No visible facets.")
+        msg *= "No visible facets.\n"
     else
         @unpack visiblefacets = facet
-        println(length(visiblefacets), " facets are visible:")
+        msg *= "$(length(visiblefacets)) facets are visible:\n"
         df = DataFrame(id=visiblefacets.id, f=visiblefacets.f, d=visiblefacets.d)
-        println(df)
+        msg *= "$(df)\n"
     end
+    print(io, msg)
 end
 
 """

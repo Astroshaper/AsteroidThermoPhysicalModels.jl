@@ -46,22 +46,21 @@ end
 
 
 function Base.show(io::IO, shape::ShapeModel)
-    # TODO: use `io`
-    println("Shape model")
-    println("-----------")
-
-    println("Nodes             : ", shape.num_node)
-    println("Faces             : ", shape.num_face)
-    println("Surface area      : ", shape.AREA)
-    println("Volume            : ", shape.VOLUME)
-    println("Equivalent radius : ", shape.RADIUS_EQ)
-    println("Maximum radius    : ", shape.RADIUS_MAX)
-    println("Minimum radius    : ", shape.RADIUS_MIN)
-    println("Center-of-Figure  : ", shape.COF)
-    println("Inertia tensor    : ")
-    println("    | Ixx Ixy Ixz |   ", shape.MOI[1, :])
-    println("    | Iyx Iyy Iyz | = ", shape.MOI[2, :])
-    println("    | Izx Izy Izz |   ", shape.MOI[3, :])
+    msg = "Shape model\n"
+    msg *= "-----------\n"
+    msg *= "Nodes             : $(shape.num_node)\n"
+    msg *= "Faces             : $(shape.num_face)\n"
+    msg *= "Surface area      : $(shape.AREA)\n"
+    msg *= "Volume            : $(shape.VOLUME)\n"
+    msg *= "Equivalent radius : $(shape.RADIUS_EQ)\n"
+    msg *= "Maximum radius    : $(shape.RADIUS_MAX)\n"
+    msg *= "Minimum radius    : $(shape.RADIUS_MIN)\n"
+    msg *= "Center-of-Figure  : $(shape.COF)\n"
+    msg *= "Inertia tensor    : \n"
+    msg *= "    | Ixx Ixy Ixz |   $(shape.MOI[1, :])\n"
+    msg *= "    | Iyx Iyy Iyz | = $(shape.MOI[2, :])\n"
+    msg *= "    | Izx Izy Izz |   $(shape.MOI[3, :])\n"
+    pritn(io, msg)
 end
 
 
