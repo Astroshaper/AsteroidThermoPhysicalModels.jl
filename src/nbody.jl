@@ -250,18 +250,19 @@ end
 
 
 function Base.show(io::IO, p::HermiteParticle)
-    println(io, typeof(p))
+    msg = "$(typeof(p))\n"
 
-    println(" r  : ", p.r)
-    println(" v  : ", p.v)
-    println(" a  : ", p.a)
+    msg *= " r  : $(p.r)\n"
+    msg *= " v  : $(p.v)\n"
+    msg *= " a  : $(p.a)\n"
     
-    println(" a¹ : ", p.a¹)
-    println(" a² : ", p.a²)
-    println(" a³ : ", p.a³)
+    msg *= " a¹ : $(p.a¹)\n"
+    msg *= " a² : $(p.a²)\n"
+    msg *= " a³ : $(p.a³)\n"
 
-    println(" m  : ", p.m)
-    println(" R  : ", p.R)
+    msg *= " m  : $(p.m)\n"
+    msg *= " R  : $(p.R)\n"
+    print(io, msg)
 end
 
 

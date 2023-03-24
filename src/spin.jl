@@ -48,25 +48,26 @@ end
 function Base.show(io::IO, spin::SpinParams)
     @unpack α, δ, λ, β, ε, P, ω, γ, t, ϕ₀, ϕ = spin
 
-    println("-------------------")
-    println("  Spin parameters  ")
-    println("-------------------")
+    msg = "-------------------"
+    msg *= "  Spin parameters  "
+    msg *= "-------------------"
 
-    println("Right ascension (RA) : α = ", rad2deg(α), " [deg]")
-    println("Declination (Dec)    : δ = ", rad2deg(δ), " [deg]")
+    msg *= "Right ascension (RA) : α = $(rad2deg(α)) [deg]"
+    msg *= "Declination (Dec)    : δ = $(rad2deg(δ)) [deg]"
 
-    println("Ecliptic longitude   : λ = ", rad2deg(λ), " [deg]")
-    println("Ecliptic latitude    : β = ", rad2deg(β), " [deg]")
+    msg *= "Ecliptic longitude   : λ = $(rad2deg(λ)) [deg]"
+    msg *= "Ecliptic latitude    : β = $(rad2deg(β)) [deg]"
 
-    println("Obliquity            : ε = ", rad2deg(ε), " [deg]")
-    println("Spin period          : P = ", P / 3600,   " [hours]")
-    println("Spin rate            : ω = ", ω,          " [rad/sec]")
-    println("Vernal equinox lon.  : γ = ", rad2deg(γ), " [deg]")
-    println("                           (longitude from the periheion direction)")
+    msg *= "Obliquity            : ε = $(rad2deg(ε)) [deg]"
+    msg *= "Spin period          : P = $(P / 3600) [hours]"
+    msg *= "Spin rate            : ω = $(ω) [rad/sec]"
+    msg *= "Vernal equinox lon.  : γ = $(rad2deg(γ)) [deg]"
+    msg *= "                           (longitude from the periheion direction)"
 
-    println("Time                 : t  = ", t, " [sec]")
-    println("Initial spin phase   : ϕ₀ = ", rad2deg(ϕ₀), " [deg]")
-    println("Spin phase           : ϕ  = ", rad2deg(ϕ),  " [deg]")
+    msg *= "Time                 : t  = $(t) [sec]"
+    msg *= "Initial spin phase   : ϕ₀ = $(rad2deg(ϕ₀)) [deg]"
+    msg *= "Spin phase           : ϕ  = $(rad2deg(ϕ) ) [deg]"
+    print(io, msg)
 end
 
 

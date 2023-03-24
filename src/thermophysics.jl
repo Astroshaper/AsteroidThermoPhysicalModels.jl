@@ -140,39 +140,40 @@ function Base.show(io::IO, params::ThermoParams)
     @unpack z_max, Δz, Nz          = params
     @unpack P, l, Γ, λ             = params
     
-    println("Thermophysical parameters")
-    println("-------------------------")
+    msg = "Thermophysical parameters\n"
+    msg *= "-------------------------\n"
     
-    println("A_B   : ", A_B)
-    println("A_TH  : ", A_TH)
-    println("k     : ", k)
-    println("ρ     : ", ρ)
-    println("Cp    : ", Cp)
-    println("ϵ     : ", ϵ)
+    msg *= "A_B   : $(A_B)\n"
+    msg *= "A_TH  : $(A_TH)\n"
+    msg *= "k     : $(k)\n"
+    msg *= "ρ     : $(ρ)\n"
+    msg *= "Cp    : $(Cp)\n"
+    msg *= "ϵ     : $(ϵ)\n"
 
-    println("-------------------------")
-    println("t_bgn : ", t_bgn * P)
-    println("t_bgn : ", t_bgn, " (Normalized by period P)")
-    println("t_end : ", t_end * P)
-    println("t_end : ", t_end, " (Normalized by period P)")
-    println("Nt    : ", Nt)
-    println("Δt    : ", Δt * P)
-    println("Δt    : ", Δt, " (Normalized by period P)")
+    msg *= "-------------------------\n"
+    msg *= "t_bgn : $(t_bgn * P)\n"
+    msg *= "t_bgn : $(t_bgn), (Normalized by period P)\n"
+    msg *= "t_end : $(t_end * P)\n"
+    msg *= "t_end : $(t_end), (Normalized by period P)\n"
+    msg *= "Nt    : $(Nt)\n"
+    msg *= "Δt    : $(Δt * P)\n"
+    msg *= "Δt    : $(Δt), (Normalized by period P)\n"
 
-    println("-------------------------")
-    println("z_max : ", z_max * l)
-    println("z_max : ", z_max, " (Normalized by skin depth l)")
-    println("Nz    : ", Nz)
-    println("Δz    : ", Δz * l)
-    println("Δz    : ", Δz, " (Normalized by skin depth l)")
+    msg *= "-------------------------\n"
+    msg *= "z_max : $(z_max * l)\n"
+    msg *= "z_max : $(z_max), (Normalized by skin depth l)\n"
+    msg *= "Nz    : $(Nz)\n"
+    msg *= "Δz    : $(Δz * l)\n"
+    msg *= "Δz    : $(Δz), (Normalized by skin depth l)\n"
     
-    println("-------------------------")
-    println("P     : ", P)
-    println("l     : ", l)
-    println("Γ     : ", Γ)
-    println("λ     : ", λ)
+    msg *= "-------------------------\n"
+    msg *= "P     : $(P)\n"
+    msg *= "l     : $(l)\n"
+    msg *= "Γ     : $(Γ)\n"
+    msg *= "λ     : $(λ)\n"
 
-    println("-------------------------")
+    msg *= "-------------------------\n"
+    print(io, msg)
 end
 
 
