@@ -6,5 +6,9 @@
 /docs/Manifest.toml
 .ipynb_checkpoints
 
-/test/Ryugu
-/test/Didymos
+/test/Ryugu/kernel
+/test/Ryugu/shape
+/test/Ryugu/TPM_Ryugu.jld2
+/test/Didymos/kernel
+/test/Didymos/shape
+/test/Didymos/TPM_Didymos.jld2
