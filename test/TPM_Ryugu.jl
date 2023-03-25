@@ -1,30 +1,33 @@
 # See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for more information.
 @testset "TPM_Ryugu" begin
     ##= Download Files =##
-    path_kernels = [
+    paths_kernel = [
         "lsk/naif0012.tls",
         "pck/hyb2_ryugu_shape_v20190328.tpc",
         "fk/hyb2_ryugu_v01.tf",
         "spk/2162173_Ryugu.bsp",
     ]
+    paths_shape = [
+        "SHAPE_SFM_49k_v20180804.obj",
+    ]
 
-    for path_kernel in path_kernels
+    for path_kernel in paths_kernel
         url_kernel = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/spice_bundle/spice_kernels/$(path_kernel)"
-        file_kernel = joinpath("Ryugu", "kernels", path_kernel)
-        mkpath(dirname(file_kernel))
-        isfile(file_kernel) || Downloads.download(url_kernel, file_kernel)
+        filepath = joinpath("Ryugu", "kernels", path_kernel)
+        mkpath(dirname(filepath))
+        isfile(filepath) || Downloads.download(url_kernel, filepath)
     end
-
-    path_obj = joinpath("Ryugu", "kernels", "SHAPE_SFM_49k_v20180804.obj")
-    if !isfile(path_obj)
-        url_obj = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/paper/Watanabe_2019/SHAPE_SFM_49k_v20180804.obj"
-        Downloads.download(url_obj, path_obj)
+    for path_shape in paths_shape
+        url_shape = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/paper/Watanabe_2019/$(path_shape)"
+        filepath = joinpath("Ryugu", "shape", path_shape)
+        mkpath(dirname(filepath))
+        isfile(filepath) || Downloads.download(url_shape, filepath)
     end
 
     ##= Load data with SPICE =##
-    for path_kernel in path_kernels
-        file_kernel = joinpath("Ryugu", "kernels", path_kernel)
-        SPICE.furnsh(file_kernel)
+    for path_kernel in paths_kernel
+        filepath = joinpath("Ryugu", "kernels", path_kernel)
+        SPICE.furnsh(filepath)
     end
     et_start = SPICE.utc2et("2018-07-01T00:00:00")
     et_end   = SPICE.utc2et("2018-07-01T01:00:00")
@@ -32,14 +35,14 @@
     et_range = et_start : step : et_end
     @show et_range
     @show length(et_range)
-    
+
     # Indices of et_range to be saved.
     # Save only the last rotation.
     save_range = findall(et_range .> et_range[end] - 7.63262 * 3600)
     @show save_range[begin]
     @show save_range[end]
     @show length(save_range);
-    
+
     # Sun's position in the RYUGU_FIXED frame
     sun_ryugu = [SPICE.spkpos("SUN", et, "RYUGU_FIXED", "None", "RYUGU")[1]*1000 for et in et_range]
     # Transformation matrix from RYUGU_FIXED to J2000
@@ -47,7 +50,8 @@
     SPICE.kclear()
 
     ##= Load obj file =##
-    path_jld = splitext(path_obj)[1]*".jld2"
+    path_obj = "Ryugu/shape/SHAPE_SFM_49k_v20180804.obj"
+    path_jld = "Ryugu/shape/SHAPE_SFM_49k_v20180804.jld2"
     if isfile(path_jld)
         shape = AsteroidThermoPhysicalModels.ShapeModel(path_jld; scale=1000, find_visible_facets=true, save_shape=true)
     else
@@ -69,7 +73,7 @@
         Nz    = 41,
         P     = 7.63262 * 3600,
     )
-    
+
     # Run TPM and save the result
     savepath = joinpath("Ryugu", "TPM_Ryugu.jld2")
     AsteroidThermoPhysicalModels.run_TPM!(shape, et_range, sun_ryugu, thermo_params, savepath, save_range)
