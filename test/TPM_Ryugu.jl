@@ -13,7 +13,7 @@
 
     for path_kernel in paths_kernel
         url_kernel = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/spice_bundle/spice_kernels/$(path_kernel)"
-        filepath = joinpath("Ryugu", "kernels", path_kernel)
+        filepath = joinpath("Ryugu", "kernel", path_kernel)
         mkpath(dirname(filepath))
         isfile(filepath) || Downloads.download(url_kernel, filepath)
     end
