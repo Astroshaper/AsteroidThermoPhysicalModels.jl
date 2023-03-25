@@ -26,7 +26,7 @@
 
     ##= Load data with SPICE =##
     for path_kernel in paths_kernel
-        filepath = joinpath("Ryugu", "kernels", path_kernel)
+        filepath = joinpath("Ryugu", "kernel", path_kernel)
         SPICE.furnsh(filepath)
     end
     et_start = SPICE.utc2et("2018-07-01T00:00:00")
