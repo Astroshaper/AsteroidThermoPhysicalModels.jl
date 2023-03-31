@@ -16,20 +16,20 @@
 
     for path_kernel in paths_kernel
         url_kernel = "https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/$(path_kernel)"
-        filepath = joinpath("Didymos", "kernel", path_kernel)
+        filepath = joinpath("kernel", path_kernel)
         mkpath(dirname(filepath))
         isfile(filepath) || Downloads.download(url_kernel, filepath)
     end
     for path_shape in paths_shape
         url_kernel = "https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/$(path_shape)"
-        filepath = joinpath("Didymos", "shape", path_shape)
+        filepath = joinpath("shape", path_shape)
         mkpath(dirname(filepath))
         isfile(filepath) || Downloads.download(url_kernel, filepath)
     end
 
     ##= Load data with SPICE =##
     for path_kernel in paths_kernel
-        filepath = joinpath("Didymos", "kernel", path_kernel)
+        filepath = joinpath("kernel", path_kernel)
         SPICE.furnsh(filepath)
     end
     et_start = SPICE.utc2et("2027-02-18T00:00:00")
@@ -95,7 +95,7 @@
     AsteroidThermoPhysicalModels.init_temps_zero!(shape2, thermo_params)
 
     # Run TPM and save the result
-    savepath = joinpath("Didymos", "TPM_Didymos.jld2")
+    savepath = joinpath("TPM_Didymos.jld2")
     shapes = (shape1, shape2)
     suns = (sun_d1, sun_d2)
     AsteroidThermoPhysicalModels.run_TPM!(shapes, et_range, suns, D2_TO_D1, d2_d1, thermo_params, savepath, [:surf_temps, :forces, :torques])

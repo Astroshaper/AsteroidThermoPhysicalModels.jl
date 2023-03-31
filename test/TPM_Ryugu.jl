@@ -13,20 +13,20 @@
 
     for path_kernel in paths_kernel
         url_kernel = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/spice_bundle/spice_kernels/$(path_kernel)"
-        filepath = joinpath("Ryugu", "kernel", path_kernel)
+        filepath = joinpath("kernel", path_kernel)
         mkpath(dirname(filepath))
         isfile(filepath) || Downloads.download(url_kernel, filepath)
     end
     for path_shape in paths_shape
         url_shape = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/paper/Watanabe_2019/$(path_shape)"
-        filepath = joinpath("Ryugu", "shape", path_shape)
+        filepath = joinpath("shape", path_shape)
         mkpath(dirname(filepath))
         isfile(filepath) || Downloads.download(url_shape, filepath)
     end
 
     ##= Load data with SPICE =##
     for path_kernel in paths_kernel
-        filepath = joinpath("Ryugu", "kernel", path_kernel)
+        filepath = joinpath("kernel", path_kernel)
         SPICE.furnsh(filepath)
     end
     et_start = SPICE.utc2et("2018-07-01T00:00:00")
@@ -75,7 +75,7 @@
     )
 
     # Run TPM and save the result
-    savepath = joinpath("Ryugu", "TPM_Ryugu.jld2")
+    savepath = joinpath("TPM_Ryugu.jld2")
     AsteroidThermoPhysicalModels.run_TPM!(shape, et_range, sun_ryugu, thermo_params, savepath, save_range)
 
     JLD2.jldopen(savepath, "r+") do file
