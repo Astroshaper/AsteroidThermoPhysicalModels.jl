@@ -10,8 +10,8 @@
         "spk/didymos_gmv_260901_311001_v01.bsp",
     ]
     paths_shape = [
-        "dsk/g_50677mm_rad_obj_dida_0000n00000_v001.obj",
-        "dsk/g_06650mm_rad_obj_didb_0000n00000_v001.obj",
+        "g_50677mm_rad_obj_dida_0000n00000_v001.obj",
+        "g_06650mm_rad_obj_didb_0000n00000_v001.obj",
     ]
 
     for path_kernel in paths_kernel
@@ -21,7 +21,7 @@
         isfile(filepath) || Downloads.download(url_kernel, filepath)
     end
     for path_shape in paths_shape
-        url_kernel = "https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/$(path_shape)"
+        url_kernel = "https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/dsk/$(path_shape)"
         filepath = joinpath("shape", path_shape)
         mkpath(dirname(filepath))
         isfile(filepath) || Downloads.download(url_kernel, filepath)
@@ -59,10 +59,10 @@
     SPICE.kclear()
 
     ##= Load obj file =##
-    path_shape1_obj = "Didymos/shape/dsk/g_50677mm_rad_obj_dida_0000n00000_v001.obj"
-    path_shape2_obj = "Didymos/shape/dsk/g_06650mm_rad_obj_didb_0000n00000_v001.obj"
-    path_shape1_jld = "Didymos/shape/dsk/g_50677mm_rad_obj_dida_0000n00000_v001.jld2"
-    path_shape2_jld = "Didymos/shape/dsk/g_06650mm_rad_obj_didb_0000n00000_v001.jld2"
+    path_shape1_obj = joinpath("Didymos", "shape", "g_50677mm_rad_obj_dida_0000n00000_v001.obj")
+    path_shape2_obj = joinpath("Didymos", "shape", "g_06650mm_rad_obj_didb_0000n00000_v001.obj")
+    path_shape1_jld = joinpath("Didymos", "shape", "g_50677mm_rad_obj_dida_0000n00000_v001.jld2")
+    path_shape2_jld = joinpath("Didymos", "shape", "g_06650mm_rad_obj_didb_0000n00000_v001.jld2")
 
     if isfile(path_shape1_jld)
         shape1 = AsteroidThermoPhysicalModels.ShapeModel(path_shape1_jld; scale=1000, find_visible_facets=true, save_shape=true)

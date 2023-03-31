@@ -50,8 +50,8 @@
     SPICE.kclear()
 
     ##= Load obj file =##
-    path_obj = "Ryugu/shape/SHAPE_SFM_49k_v20180804.obj"
-    path_jld = "Ryugu/shape/SHAPE_SFM_49k_v20180804.jld2"
+    path_obj = joinpath("shape", "SHAPE_SFM_49k_v20180804.obj")
+    path_jld = joinpath("shape", "SHAPE_SFM_49k_v20180804.jld2")
     if isfile(path_jld)
         shape = AsteroidThermoPhysicalModels.ShapeModel(path_jld; scale=1000, find_visible_facets=true, save_shape=true)
     else
