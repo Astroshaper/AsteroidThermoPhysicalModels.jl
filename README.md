@@ -1,5 +1,3 @@
-![](logo/Astroshaper_logo.png)
-
 # AsteroidThermoPhysicalModels.jl
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://Astroshaper.github.io/AsteroidThermoPhysicalModels.jl/stable)
@@ -12,14 +10,18 @@ Julia-based toolkit for dynamical simulations of planets and small solar system 
 
 ## Installation
 
-    using Pkg
-    Pkg.add(url="https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl")
-    using AsteroidThermoPhysicalModels
+```julia
+using Pkg
+Pkg.add(url="https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl")
+using AsteroidThermoPhysicalModels
+```
 
 You can update the module and run tests as follows.
 
-    Pkg.update("AsteroidThermoPhysicalModels")
-    Pkg.test("AsteroidThermoPhysicalModels")
+```julia
+Pkg.update("AsteroidThermoPhysicalModels")
+Pkg.test("AsteroidThermoPhysicalModels")
+```
 
 ## Orbital dynamics
 You can simulate orbital evolution of planets and small bodies under gravity interaction and various perturbations.
