@@ -60,7 +60,7 @@ function Base.show(io::IO, shape::ShapeModel)
     msg *= "    | Ixx Ixy Ixz |   $(shape.MOI[1, :])\n"
     msg *= "    | Iyx Iyy Iyz | = $(shape.MOI[2, :])\n"
     msg *= "    | Izx Izy Izz |   $(shape.MOI[3, :])\n"
-    pritn(io, msg)
+    print(io, msg)
 end
 
 
