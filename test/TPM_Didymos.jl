@@ -59,10 +59,10 @@
     SPICE.kclear()
 
     ##= Load obj file =##
-    path_shape1_obj = joinpath("Didymos", "shape", "g_50677mm_rad_obj_dida_0000n00000_v001.obj")
-    path_shape2_obj = joinpath("Didymos", "shape", "g_06650mm_rad_obj_didb_0000n00000_v001.obj")
-    path_shape1_jld = joinpath("Didymos", "shape", "g_50677mm_rad_obj_dida_0000n00000_v001.jld2")
-    path_shape2_jld = joinpath("Didymos", "shape", "g_06650mm_rad_obj_didb_0000n00000_v001.jld2")
+    path_shape1_obj = joinpath("shape", "g_50677mm_rad_obj_dida_0000n00000_v001.obj")
+    path_shape2_obj = joinpath("shape", "g_06650mm_rad_obj_didb_0000n00000_v001.obj")
+    path_shape1_jld = joinpath("shape", "g_50677mm_rad_obj_dida_0000n00000_v001.jld2")
+    path_shape2_jld = joinpath("shape", "g_06650mm_rad_obj_didb_0000n00000_v001.jld2")
 
     if isfile(path_shape1_jld)
         shape1 = AsteroidThermoPhysicalModels.ShapeModel(path_shape1_jld; scale=1000, find_visible_facets=true, save_shape=true)
