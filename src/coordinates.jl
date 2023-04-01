@@ -230,20 +230,20 @@ orbit_to_inertia(v, orbit) = orbit_to_inertia(v, orbit.ω, orbit.I, orbit.Ω)
 #            Orbital plane frame <-> Body-fixed frame
 ################################################################
 
-"""
-    orbit_to_body(v, spin::SpinParams) -> v
-    orbit_to_body(v, γ, ε, ϕ)          -> v
+# """
+#     orbit_to_body(v, spin::SpinParams) -> v
+#     orbit_to_body(v, γ, ε, ϕ)          -> v
 
-# Parameters
-- `v` : vector in the orbital plane frame
-- `γ` : longitude of vernal equinox direction of the body
-- `ε` : obliquity of the spin pole
-- `ϕ` : spin phase of the body
+# # Parameters
+# - `v` : vector in the orbital plane frame
+# - `γ` : longitude of vernal equinox direction of the body
+# - `ε` : obliquity of the spin pole
+# - `ϕ` : spin phase of the body
 
-# Return
-- `v` : vector in the body-fixed frame
-"""
-orbit_to_body(v, spin) = orbit_to_body(v, spin.γ, spin.ε, spin.ϕ)
+# # Return
+# - `v` : vector in the body-fixed frame
+# """
+# orbit_to_body(v, spin) = orbit_to_body(v, spin.γ, spin.ε, spin.ϕ)
 
 function orbit_to_body(v, γ, ε, ϕ)
     v = rotateZ(v, γ)  # body's ecliptic coordinate
