@@ -28,10 +28,6 @@ export RYUGU, DIDYMOS, DIMORPHOS
 include("obj.jl")
 export loadobj
 
-include("coordinates.jl")
-export rotateX, rotateY, rotateZ
-export rotateX!, rotateY!, rotateZ!
-
 include("facet.jl")
 include("shape.jl")
 export ShapeModel
