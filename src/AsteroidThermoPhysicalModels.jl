@@ -60,27 +60,4 @@ include("polyhedron.jl")
 export loadmesh, nvertices, nfaces, nedges
 export getSurfaceGravity
 
-include("binary.jl")
-export MutualOrbit, Binary, run_binary_TPM!
-
-
-################################################################
-
-
-include("nbody.jl")
-export AbstractParticle, SimpleParticle, HermiteParticle
-export run_nbody!
-export load_snapshot
-export setParticles, addParticle!, getBaryCenter, setOrigin2BaryCenter!
-export getTotalEnergy, getKineticEnergy, sumKineticEnergy, getPotentialEnergy, sumPotentialEnergy
-
-include("Hermite4.jl")
-export run_Hermite4, run_Hermite4_test, initialize!
-
-include("Euler.jl")
-export run_Euler
-
-include("leapfrog.jl")
-export run_leapfrog
-
 end # module AsteroidThermoPhysicalModels
