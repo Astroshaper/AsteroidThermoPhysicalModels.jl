@@ -32,14 +32,6 @@ include("facet.jl")
 include("shape.jl")
 export ShapeModel
 
-# include("kepler.jl")
-# include("spin.jl")
-# export OrbitalElements
-# export ref_to_orb!, ref_to_orb
-# export orb_to_ref!, orb_to_ref
-# export solveKeplerEquation1, solveKeplerEquation2, u2ν, heliocentric_distance
-# export SpinParams
-
 include("thermophysics.jl")
 include("TPM.jl")
 include("YORP.jl")
