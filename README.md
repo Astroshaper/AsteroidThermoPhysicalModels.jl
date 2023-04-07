@@ -23,15 +23,6 @@ Pkg.update("AsteroidThermoPhysicalModels")
 Pkg.test("AsteroidThermoPhysicalModels")
 ```
 
-## Orbital dynamics
-You can simulate orbital evolution of planets and small bodies under gravity interaction and various perturbations.
-As for the orbital integrators, you can choose from Euler, leapfrog,  4th-degree Hermite methods (Note that my implementation of the Hermite method is being verified). Thermophysical perturbation on orbital motion of an asteroid, that is, Yarkovsky effect will be implemented.
-
-### Example
-Orbital calculation of the solar system. The gravity of 8 planets and Pluto are considered.
-
-<img src="https://user-images.githubusercontent.com/21192162/149469835-42fed69f-f93e-4123-80ea-baa6497aebca.gif" width="400">
-
 ## Themophysical modeling
 Based on orbit, spin, and 3-D shape, you can calculate the distribution of the surface temperature on an asteroid. The temperature distribution can be used to calculate the non-gravitational perturbations on its orbital and rotational motion (Yarkovsky and YORP effects, respectively).
 
