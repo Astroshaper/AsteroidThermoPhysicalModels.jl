@@ -28,21 +28,9 @@ export RYUGU, DIDYMOS, DIMORPHOS
 include("obj.jl")
 export loadobj
 
-include("coordinates.jl")
-export rotateX, rotateY, rotateZ
-export rotateX!, rotateY!, rotateZ!
-
 include("facet.jl")
 include("shape.jl")
 export ShapeModel
-
-include("kepler.jl")
-include("spin.jl")
-export OrbitalElements
-export ref_to_orb!, ref_to_orb
-export orb_to_ref!, orb_to_ref
-export solveKeplerEquation1, solveKeplerEquation2, u2ν, heliocentric_distance
-export SpinParams
 
 include("thermophysics.jl")
 include("TPM.jl")
@@ -59,28 +47,5 @@ export crater_curvature_radius, concave_spherical_segment, parallel_sinusoidal_t
 include("polyhedron.jl")
 export loadmesh, nvertices, nfaces, nedges
 export getSurfaceGravity
-
-include("binary.jl")
-export MutualOrbit, Binary, run_binary_TPM!
-
-
-################################################################
-
-
-include("nbody.jl")
-export AbstractParticle, SimpleParticle, HermiteParticle
-export run_nbody!
-export load_snapshot
-export setParticles, addParticle!, getBaryCenter, setOrigin2BaryCenter!
-export getTotalEnergy, getKineticEnergy, sumKineticEnergy, getPotentialEnergy, sumPotentialEnergy
-
-include("Hermite4.jl")
-export run_Hermite4, run_Hermite4_test, initialize!
-
-include("Euler.jl")
-export run_Euler
-
-include("leapfrog.jl")
-export run_leapfrog
 
 end # module AsteroidThermoPhysicalModels
