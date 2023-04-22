@@ -46,13 +46,15 @@ Distribution of surface temperature on asteroid Ryugu. The color map ranges from
 Let's visualize a shape model of asteroid Ryugu.
 Please downlad a Ryugu model from AsteroidThermoPhysicalModels/test/ryugu_test.obj.
 
-    using AsteroidThermoPhysicalModels
+```julia
+using AsteroidThermoPhysicalModels
 
-    shapepath = "ryugu_test.obj"  # Path to the shape model
-    shape = ShapeModel(shapepath; scale=1000, find_visible_facets=true)
+shapepath = "ryugu_test.obj"  # Path to the shape model
+shape = ShapeModel(shapepath; scale=1000, find_visible_facets=true)
 
-    draw(shape)
-    # draw(shape, data=:radius)                     # Radius of each surface facet
-    # draw(shape; data=:illumination, r̂☉=[1,0,0.])  # Illumination when the Sun is in the direction of r̂☉
+draw(shape)
+# draw(shape, data=:radius)                     # Radius of each surface facet
+# draw(shape; data=:illumination, r̂☉=[1,0,0.])  # Illumination when the Sun is in the direction of r̂☉
+```
 
 <img width="300" alt="start_to_play" src="https://user-images.githubusercontent.com/21192162/148867940-21db4a00-8aef-4030-ab94-397d4f3b572c.png">
