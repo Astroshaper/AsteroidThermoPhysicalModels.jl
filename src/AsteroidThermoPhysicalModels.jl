@@ -44,8 +44,4 @@ export run_YORP, run_Yarkovsky
 include("roughness.jl")
 export crater_curvature_radius, concave_spherical_segment, parallel_sinusoidal_trenches
 
-include("polyhedron.jl")
-export loadmesh, nvertices, nfaces, nedges
-export getSurfaceGravity
-
 end # module AsteroidThermoPhysicalModels
