@@ -40,7 +40,6 @@ include("Yarkovsky.jl")
 export ThermoParams
 export init_temps_zero!, run_TPM!
 export analyze_YORP, YORP_timescale
-export run_YORP, run_Yarkovsky
 
 include("roughness.jl")
 export crater_curvature_radius, concave_spherical_segment, parallel_sinusoidal_trenches
