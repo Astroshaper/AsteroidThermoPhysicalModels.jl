@@ -340,14 +340,14 @@ isAboveHorizon(facet::Facet) = length(facet.visiblefaces) == 0
 # Return
 - `ids` : Indices of illuminated facets
 """
-function getIlluminatedFacets(r̂☉, facets; ray_trace=true)
-    ids = Int64[]
-    for (id, obs) in enumerate(facets)
-        ray_trace == true  && isIlluminated(obs, r̂☉, facets) && push!(ids, id)
-        ray_trace == false && obs.normal ⋅ r̂☉ > 0            && push!(ids, id)  # Pseudo-convex
-    end
-    ids
-end
+# function getIlluminatedFacets(r̂☉, facets; ray_trace=true)
+#     ids = Int64[]
+#     for (id, obs) in enumerate(facets)
+#         ray_trace == true  && isIlluminated(obs, r̂☉, facets) && push!(ids, id)
+#         ray_trace == false && obs.normal ⋅ r̂☉ > 0            && push!(ids, id)  # Pseudo-convex
+#     end
+#     ids
+# end
 
 
 ################################################################
@@ -360,19 +360,19 @@ end
 Solid angle of a triangular facet,
 equal to area of the corresponding spherical triangle
 """
-function solid_angle(facet::Facet, obs::AbstractVector)
+# function solid_angle(facet::Facet, obs::AbstractVector)
 
-    ## Normal vectors from observer to facet vertices
-    A = normalize(facet.A - obs)
-    B = normalize(facet.B - obs)
-    C = normalize(facet.C - obs)
+#     ## Normal vectors from observer to facet vertices
+#     A = normalize(facet.A - obs)
+#     B = normalize(facet.B - obs)
+#     C = normalize(facet.C - obs)
 
-    AOB = acos(A ⋅ B)
-    BOC = acos(B ⋅ C)
-    COA = acos(C ⋅ A)
+#     AOB = acos(A ⋅ B)
+#     BOC = acos(B ⋅ C)
+#     COA = acos(C ⋅ A)
     
-    Ω = spherical_excess(AOB, BOC, COA)
-end
+#     Ω = spherical_excess(AOB, BOC, COA)
+# end
 
 
 """
@@ -384,14 +384,14 @@ c.f. L'Huilier's Theorem
 # Arguments
 - `a`, `b`, `c` : side lengths of a spherical traiangle
 """
-function spherical_excess(a, b, c)
-    s = (a + b + c) * 0.5  # semiperimeter
+# function spherical_excess(a, b, c)
+#     s = (a + b + c) * 0.5  # semiperimeter
         
-    E = tan(s*0.5)
-    E *= tan((s - a)*0.5)
-    E *= tan((s - b)*0.5)
-    E *= tan((s - c)*0.5)
-    E = sqrt(E)
-    E = 4 * atan(E)
-end
+#     E = tan(s*0.5)
+#     E *= tan((s - a)*0.5)
+#     E *= tan((s - b)*0.5)
+#     E *= tan((s - c)*0.5)
+#     E = sqrt(E)
+#     E = 4 * atan(E)
+# end
 
