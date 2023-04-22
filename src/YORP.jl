@@ -83,53 +83,6 @@ end
 
 
 # ****************************************************************
-#
-# ****************************************************************
-
-
-"""
-    getSolarIrradiation(distance) -> solar_irrad
-
-Calculate the solar irradiation on the body
-
-# Parameter
-- `rₕ` : heliocentric distance of the body [m]
-
-# Return
-- `F☉` : solar irradiation [W/m^2]
-"""
-getSolarIrradiation(rₕ) = SOLAR_CONST / (rₕ / AU)^2
-
-
-"""
-    getSolarCondition(orbit, spin, time) -> Φ, r_sun
-
-Get the solar irradition and the direction of the Sun
-
-# Parameters
-- `orbit` :
-- `spin`  :
-- `time`  : [sec]
-
-# Returns
-- `F☉` : solar irradiation [W/m^2]
-- `r̂☉` : solar direction in the body-fixed frame
-"""
-function getSolarCondition(orbit, spin, time)
-    u = solveKeplerEquation2(orbit, time)
-    r = get_r(orbit, u)
-    F☉ = getSolarIrradiation(norm(r))
-
-    r̂☉ = normalize(r) * -1  # Shift the origin from the sun to the body
-
-    spin_phase = spin.ω * time
-    r̂☉ = orbit_to_body(r̂☉, spin.γ, spin.ε, spin_phase)
-
-    F☉, r̂☉
-end
-
-
-# ****************************************************************
 #                            Analysis
 # ****************************************************************
 
