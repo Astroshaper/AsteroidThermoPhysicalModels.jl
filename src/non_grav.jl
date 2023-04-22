@@ -68,15 +68,3 @@ function sum_force_torque!(shape::ShapeModel)
     end
 end
 
-"""
-    update_force_Rubincam!(shape, params_thermo)
-
-Update photon recoil force on every facet (df) based on Rubincam (2000) approximation
-"""
-function update_force_Rubincam!(shape, params_thermo)
-    shape.torque .= 0.
-    for facet in shape.facets
-        facet.force .= - 2 * facet.flux.sun * facet.area / (3*c₀) .* facet.normal
-        shape.torque .+= facet.center × SVector{3}(facet.force)
-    end
-end
