@@ -102,14 +102,7 @@ function run_TPM!(shape::ShapeModel, et_range, sun, thermo_params::ThermoParams,
 
     for (et, r☉) in zip(et_range, sun)
 
-        r̂☉ = SVector{3}(normalize(r☉))
-        F☉ = SOLAR_CONST / SPICE.convrt(norm(r☉), "m", "au")^2
-
-        update_flux_sun!(shape, F☉, r̂☉)
-        update_flux_scat_single!(shape, thermo_params)
-        update_flux_rad_single!(shape, thermo_params)
-
-        update_temps!(shape, thermo_params)
+        update_flux!(shape, r☉, thermo_params)
 
         if et_range[save_range[begin]] ≤ et ≤ et_range[save_range[end]]
             update_force!(shape, thermo_params)
@@ -124,21 +117,12 @@ function run_TPM!(shape::ShapeModel, et_range, sun, thermo_params::ThermoParams,
 
         E_in, E_out, E_cons = energy_io(shape, thermo_params)
         println(E_cons)
+
+        update_temps!(shape, thermo_params)
     end
     
     jldsave(savepath; shape, et_range=et_range[save_range], sun=sun[save_range], thermo_params, surf_temps, forces, torques)
 end
-
-## torques = data["torques"]
-## RYUGU_TO_J2000 = data["RYUGU_TO_J2000"]
-
-## τs = [R * τ for (τ, R) in zip(torques, RYUGU_TO_J2000)]
-## τ̄ = sum(τs) / length(τs)
-## ŝ = RYUGU_TO_J2000[1] * [0,0,1]
-
-## τ̄ = [-7.401430254063619, -4.461572023742755, -2.1021523476586275]
-## ŝ = [-0.04486511842721075, 0.3980298096670074, -0.9162747359634872]
-
 
 """
     run_TPM!
@@ -262,16 +246,10 @@ energy_out(facet::Facet, ϵ::Real, A_TH::Real) = ( ϵ*σ_SB*facet.temps[begin]^4
 
 
 """
-    update_flux!(shape, F☉, r̂☉, thermo_params)
+    update_flux!(shape, r☉, thermo_params)
 
 Update energy flux to every facet by solar radiation, scattering, and re-absorption of radiation
 """
-function update_flux!(shape, F☉::Real, r̂☉::AbstractVector, thermo_params)
-    update_flux_sun!(shape, F☉, r̂☉)
-    update_flux_scat_single!(shape, thermo_params)
-    update_flux_rad_single!(shape, thermo_params)
-end
-
 function update_flux!(shape, r☉::AbstractVector, thermo_params)
     update_flux_sun!(shape, r☉)
     update_flux_scat_single!(shape, thermo_params)
