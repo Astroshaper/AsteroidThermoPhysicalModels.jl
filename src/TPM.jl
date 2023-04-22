@@ -206,67 +206,8 @@ end
 
 
 # ****************************************************************
-#                      Data input/output
-# ****************************************************************
-
-"""
-"""
-function prep_timestamp(ts; dtype=Float64)
-    Nt = length(ts)
-    df = DataFrame(
-        t      = ts,
-        u      = Vector{dtype}(undef, Nt),
-        ν      = Vector{dtype}(undef, Nt),
-        ϕ      = Vector{dtype}(undef, Nt),
-        f_x    = Vector{dtype}(undef, Nt),
-        f_y    = Vector{dtype}(undef, Nt),
-        f_z    = Vector{dtype}(undef, Nt),
-        τ_x    = Vector{dtype}(undef, Nt),
-        τ_y    = Vector{dtype}(undef, Nt),
-        τ_z    = Vector{dtype}(undef, Nt),
-        E_in   = Vector{dtype}(undef, Nt),
-        E_out  = Vector{dtype}(undef, Nt),
-        E_cons = Vector{dtype}(undef, Nt),
-        Ē_cons = Vector{dtype}(undef, Nt),
-    )
-end
-
-"""
-"""
-function save_timestamp!(df, i::Integer, u, ν, ϕ, f_x, f_y, f_z, τ_x, τ_y, τ_z, E_in, E_out, E_cons)
-    df.u[i]      = u
-    df.ν[i]      = ν
-    df.ϕ[i]      = ϕ
-    df.f_x[i]    = f_x
-    df.f_y[i]    = f_y
-    df.f_z[i]    = f_z
-    df.τ_x[i]    = τ_x
-    df.τ_y[i]    = τ_y
-    df.τ_z[i]    = τ_z
-    df.E_in[i]   = E_in
-    df.E_out[i]  = E_out
-    df.E_cons[i] = E_cons
-end
-
-
-# ****************************************************************
 #                     Convergence decision
 # ****************************************************************
-
-# """
-#     mean_energy_cons_frac!(df, spin::SpinParams)
-#     mean_energy_cons_frac!(df, P::Real)
-
-# Average energy conservation fraction over a rotational cycle
-# """
-# mean_energy_cons_frac!(df, spin::SpinParams) = mean_energy_cons_frac!(df, spin.P)
-
-function mean_energy_cons_frac!(df, P::Real)
-    for row in eachrow(df)
-        row.Ē_cons = mean(df.E_cons[@. row.t - P ≤ df.t ≤ row.t])
-    end
-end
-
 
 """
     energy_io(shape::ShapeModel, params::ThermoParams) -> E_in, E_out, E_cons
