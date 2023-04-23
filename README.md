@@ -42,26 +42,19 @@ Distribution of surface temperature on asteroid Ryugu. The color map ranges from
 
 ![Thermophysics_Ryugu](https://user-images.githubusercontent.com/21192162/149468024-f403011f-b3d3-47ce-a69c-7daf78a40658.png)
 
-
-## Gravity calculation for asteoids
-You can calculate the precise gravity field of an irregularly shaped body, based on the constant-density polyhedron method (Werner & Scheeres, 1997).
-
-### Example
-Distribution of dynamical elevation on asteroid Itokawa. The color map ranges from -25 to 55 m.
-
-![Gravity_Itokawa](https://user-images.githubusercontent.com/21192162/149465150-6cead63e-6027-402f-b866-5111dc5321a7.png)
-
 ## Start to play
 Let's visualize a shape model of asteroid Ryugu.
 Please downlad a Ryugu model from AsteroidThermoPhysicalModels/test/ryugu_test.obj.
 
-    using AsteroidThermoPhysicalModels
+```julia
+using AsteroidThermoPhysicalModels
 
-    shapepath = "ryugu_test.obj"  # Path to the shape model
-    shape = ShapeModel(shapepath; scale=1000, find_visible_facets=true)
+shapepath = "ryugu_test.obj"  # Path to the shape model
+shape = ShapeModel(shapepath; scale=1000, find_visible_facets=true)
 
-    draw(shape)
-    # draw(shape, data=:radius)                     # Radius of each surface facet
-    # draw(shape; data=:illumination, r̂☉=[1,0,0.])  # Illumination when the Sun is in the direction of r̂☉
+draw(shape)
+# draw(shape, data=:radius)                     # Radius of each surface facet
+# draw(shape; data=:illumination, r̂☉=[1,0,0.])  # Illumination when the Sun is in the direction of r̂☉
+```
 
 <img width="300" alt="start_to_play" src="https://user-images.githubusercontent.com/21192162/148867940-21db4a00-8aef-4030-ab94-397d4f3b572c.png">
