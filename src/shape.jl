@@ -151,19 +151,19 @@ function center_of_figure(facets)
     COF / VOLUME
 end
 
-"""
-    moment_of_inertia(facets) -> MOI
+# """
+#     moment_of_inertia(facets) -> MOI
 
-Calculate moment of inertia tensor of a polyhedron
-"""
-function moment_of_inertia(facets)
-    MOI = zeros(3, 3)
+# Calculate moment of inertia tensor of a polyhedron
+# """
+# function moment_of_inertia(facets)
+#     MOI = zeros(3, 3)
 
-    for facet in facets
-        # v1, v2, v3 = m.vs
+#     for facet in facets
+#         # v1, v2, v3 = m.vs
         
-        # I[3, 3] += (v1[1]*v1[1] + v1[1]*v2[1] + v2[1]*v2[1] + v1[1]*v3[1] + v2[1]*v3[1] + v3[1]*v3[1] + v1[2]*v1[2] + v1[2]*v2[2] + v2[2]*v2[2] + v1[2]*v3[2] + v2[2]*v3[2] + v3[2]*v3[2]) / 60
-    end
-    MOI
-end
+#         # I[3, 3] += (v1[1]*v1[1] + v1[1]*v2[1] + v2[1]*v2[1] + v1[1]*v3[1] + v2[1]*v3[1] + v3[1]*v3[1] + v1[2]*v1[2] + v1[2]*v2[2] + v2[2]*v2[2] + v1[2]*v3[2] + v2[2]*v3[2] + v3[2]*v3[2]) / 60
+#     end
+#     MOI
+# end
 
