@@ -38,8 +38,8 @@ include("non_grav.jl")
 export ThermoParams
 export init_temps_zero!, run_TPM!
 
-include("roughness.jl")
-export crater_curvature_radius, concave_spherical_segment, parallel_sinusoidal_trenches
+# include("roughness.jl")
+# export crater_curvature_radius, concave_spherical_segment, parallel_sinusoidal_trenches
 
 include("polyhedron.jl")
 export loadmesh, nvertices, nfaces, nedges
