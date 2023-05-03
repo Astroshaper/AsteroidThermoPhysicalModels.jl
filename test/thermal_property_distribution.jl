@@ -1,4 +1,3 @@
-# See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for more information.
 @testset "thermal_property_distribution" begin
     ##= Download Files =##
     paths_kernel = [
