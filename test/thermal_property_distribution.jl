@@ -1,5 +1,5 @@
 # See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for more information.
-@testset "TPM_Ryugu" begin
+@testset "thermal_property_distribution" begin
     ##= Download Files =##
     paths_kernel = [
         "lsk/naif0012.tls",
@@ -41,7 +41,7 @@
     save_range = findall(et_range .> et_range[end] - 7.63262 * 3600)
     @show save_range[begin]
     @show save_range[end]
-    @show length(save_range);
+    @show length(save_range)
 
     # Sun's position in the RYUGU_FIXED frame
     sun_ryugu = [SPICE.spkpos("SUN", et, "RYUGU_FIXED", "None", "RYUGU")[1]*1000 for et in et_range]
@@ -77,6 +77,6 @@
     )
 
     # Run TPM and save the result
-    savepath = joinpath("TPM_Ryugu.jld2")
+    savepath = joinpath("thermal_property_distribution.jld2")
     AsteroidThermoPhysicalModels.run_TPM!(shape, et_range, sun_ryugu, thermo_params, savepath, save_range)
 end
