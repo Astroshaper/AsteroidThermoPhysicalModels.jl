@@ -12,3 +12,4 @@ Aqua.test_all(AsteroidThermoPhysicalModels, ambiguities=false)
 
 include("TPM_Ryugu.jl")
 include("TPM_Didymos.jl")
+include("thermal_property_distribution.jl")
