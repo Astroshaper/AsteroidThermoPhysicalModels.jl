@@ -328,26 +328,3 @@ function flux_total(facet::Facet, A_B::Real, A_TH::Real)
     F_total = (1 - A_B)*(F_sun + F_scat) + (1 - A_TH)*F_rad
 end
 
-
-# ****************************************************************
-#
-# ****************************************************************
-
-
-"""
-    intensity(λ, T) -> I
-
-Intensity of radiation at a wavelength λ and tempertature T
-according to the Planck function
-"""
-# function intensity(λ, T)
-#     h = 6.62607015e-34  # Planck constant [J⋅s]
-#     k = 1.380649e-23    # Boltzmann's constant [J/K]
-
-#     I = 2 * h * c^2 / λ^5 / (exp(h * c₀ / (λ * k * T)) - 1)
-# end
-
-
-# ν2λ(ν) = c₀ / ν
-# λ2ν(λ) = c₀ / λ
-
