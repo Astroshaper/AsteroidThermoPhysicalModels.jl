@@ -84,7 +84,7 @@ function ShapeModel(shapepath; scale=1, find_visible_facets=false, save_shape=fa
         RADIUS_MAX = maximum_radius(nodes)
         RADIUS_MIN = minimum_radius(nodes)
         COF        = center_of_figure(facets)
-        MOI        = zeros(3, 3)
+        MOI        = zeros(3, 3)  # TODO: implement this field
         
         force  = zeros(3)
         torque = zeros(3)
