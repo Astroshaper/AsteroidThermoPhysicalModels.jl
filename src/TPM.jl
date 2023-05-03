@@ -371,11 +371,11 @@ function update_flux_scat_single!(shape, A_B::AbstractVector)
     end
 end
 
-"""
-    update_flux_scat_mult!(shape, params)
+# """
+#     update_flux_scat_mult!(shape, params)
 
-Multiple scattering of sunlight is considered.
-"""
+# Multiple scattering of sunlight is considered.
+# """
 # update_flux_scat_mult!(shape, params::ThermoParams) = update_flux_scat_mult!(shape, params.A_B)
 
 # function update_flux_scat_mult!(shape, A_B::Real)
