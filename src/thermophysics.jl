@@ -50,7 +50,7 @@ thermal_inertia(k, ρ, Cp) = @. √(k * ρ * Cp)
 - `k`     : Thermal conductivity [W/m/K]
 - `ρ`     : Material density [kg/m³]
 - `Cp`    : Heat capacity [J/kg/K]
-- `ϵ`     : Emissivity
+- `ε`     : Emissivity
 
 - `t_bgn` : Start time of the simulation, normalized by period `P`
 - `t_end` : End time of the simulation, normalized by period `P`
@@ -78,7 +78,7 @@ struct ThermoParams{COMMON_INT, COMMON_FLOAT, FACET_INT, FACET_FLOAT}
     k    ::FACET_FLOAT
     ρ    ::FACET_FLOAT
     Cp   ::FACET_FLOAT
-    ϵ    ::FACET_FLOAT
+    ε    ::FACET_FLOAT
 
     t_bgn::COMMON_FLOAT  # Common for all facets
     t_end::COMMON_FLOAT  # Common for all facets
@@ -96,7 +96,7 @@ struct ThermoParams{COMMON_INT, COMMON_FLOAT, FACET_INT, FACET_FLOAT}
 end
 
 
-function ThermoParams(; A_B, A_TH, k, ρ, Cp, ϵ, t_bgn, t_end, Nt, z_max, Nz, P)
+function ThermoParams(; A_B, A_TH, k, ρ, Cp, ε, t_bgn, t_end, Nt, z_max, Nz, P)
 
     t_bgn /= P                       # Normalized by period P
     t_end /= P                       # Normalized by period P
@@ -111,7 +111,7 @@ function ThermoParams(; A_B, A_TH, k, ρ, Cp, ϵ, t_bgn, t_end, Nt, z_max, Nz, P
     λ = @. (Δt/Δz^2) / 4π
     maximum(λ) > 0.5 && println("λ should be smaller than 0.5 for convergence.")
 
-    LENGTH = maximum(length.([A_B, A_TH, k, ρ, Cp, ϵ, z_max, Δz, Nz, l, Γ, λ]))
+    LENGTH = maximum(length.([A_B, A_TH, k, ρ, Cp, ε, z_max, Δz, Nz, l, Γ, λ]))
 
     if LENGTH > 1
         A_B   isa Real && (A_B   = fill(A_B,   LENGTH))
@@ -119,7 +119,7 @@ function ThermoParams(; A_B, A_TH, k, ρ, Cp, ϵ, t_bgn, t_end, Nt, z_max, Nz, P
         k     isa Real && (k     = fill(k,     LENGTH))
         ρ     isa Real && (ρ     = fill(ρ,     LENGTH))
         Cp    isa Real && (Cp    = fill(Cp,    LENGTH))
-        ϵ     isa Real && (ϵ     = fill(ϵ,     LENGTH))
+        ε     isa Real && (ε     = fill(ε,     LENGTH))
         
         z_max isa Real && (z_max = fill(z_max, LENGTH))
         Δz    isa Real && (Δz    = fill(Δz,    LENGTH))
@@ -130,12 +130,12 @@ function ThermoParams(; A_B, A_TH, k, ρ, Cp, ϵ, t_bgn, t_end, Nt, z_max, Nz, P
         λ     isa Real && (λ     = fill(λ,     LENGTH))
     end
     
-    ThermoParams(A_B, A_TH, k, ρ, Cp, ϵ, t_bgn, t_end, Δt, Nt, z_max, Δz, Nz, P, l, Γ, λ) 
+    ThermoParams(A_B, A_TH, k, ρ, Cp, ε, t_bgn, t_end, Δt, Nt, z_max, Δz, Nz, P, l, Γ, λ) 
 end
 
 
 function Base.show(io::IO, params::ThermoParams)
-    @unpack A_B, A_TH, k, ρ, Cp, ϵ = params
+    @unpack A_B, A_TH, k, ρ, Cp, ε = params
     @unpack t_bgn, t_end, Δt, Nt   = params
     @unpack z_max, Δz, Nz          = params
     @unpack P, l, Γ, λ             = params
@@ -148,7 +148,7 @@ function Base.show(io::IO, params::ThermoParams)
     msg *= "k     : $(k)\n"
     msg *= "ρ     : $(ρ)\n"
     msg *= "Cp    : $(Cp)\n"
-    msg *= "ϵ     : $(ϵ)\n"
+    msg *= "ε     : $(ε)\n"
 
     msg *= "-------------------------\n"
     msg *= "t_bgn : $(t_bgn * P)\n"
@@ -183,22 +183,22 @@ end
 
 """
     update_temps!(shape::ShapeModel, params::ThermoParams)
-    update_temps!(shape::ShapeModel, λ, A_B, A_TH, k, l, Δz, ϵ)
-    update_temps!(facet::Facet, λ::Real, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
+    update_temps!(shape::ShapeModel, λ, A_B, A_TH, k, l, Δz, ε)
+    update_temps!(facet::Facet, λ::Real, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ε::Real)
 
 Update temerature profie (`Facet.temps`) based on 1-D heat diffusion
 """
-update_temps!(shape::ShapeModel, params::ThermoParams) = update_temps!(shape, params.λ, params.A_B, params.A_TH, params.k, params.l, params.Δz, params.ϵ)
+update_temps!(shape::ShapeModel, params::ThermoParams) = update_temps!(shape, params.λ, params.A_B, params.A_TH, params.k, params.l, params.Δz, params.ε)
 
-function update_temps!(shape::ShapeModel, λ, A_B, A_TH, k, l, Δz, ϵ)
+function update_temps!(shape::ShapeModel, λ, A_B, A_TH, k, l, Δz, ε)
     step_heat_cond!(shape, λ)
-    update_surf_temp!(shape, A_B, A_TH, k, l, Δz, ϵ)  # Surface boundary condition (Radiation)
+    update_surf_temp!(shape, A_B, A_TH, k, l, Δz, ε)  # Surface boundary condition (Radiation)
     update_bottom_temp!(shape)                        # Internal boundary condition (Insulation)
 end
 
-function update_temps!(facet::Facet, λ::Real, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
+function update_temps!(facet::Facet, λ::Real, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ε::Real)
     step_heat_cond!(facet, λ)
-    update_surf_temp!(facet, A_B, A_TH, k, l, Δz, ϵ)  # Surface boundary condition (Radiation)
+    update_surf_temp!(facet, A_B, A_TH, k, l, Δz, ε)  # Surface boundary condition (Radiation)
     update_bottom_temp!(facet)                        # Internal boundary condition (Insulation)
 end
 
@@ -237,10 +237,10 @@ end
 
 
 """
-    update_surf_temp!(shape::ShapeModel, A_B, A_TH, k, l, Δz, ϵ)
-    update_surf_temp!(shape::ShapeModel, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
-    update_surf_temp!(facet::Facet,      A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
-    update_surf_temp!(T::AbstractVector, F_total::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
+    update_surf_temp!(shape::ShapeModel, A_B, A_TH, k, l, Δz, ε)
+    update_surf_temp!(shape::ShapeModel, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ε::Real)
+    update_surf_temp!(facet::Facet,      A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ε::Real)
+    update_surf_temp!(T::AbstractVector, F_total::Real, k::Real, l::Real, Δz::Real, ε::Real)
 
 Update surface temperature under radiative boundary condition using Newton's method
 
@@ -251,7 +251,7 @@ Update surface temperature under radiative boundary condition using Newton's met
 - `k`       : Thermal conductivity
 - `l`       : Thermal skin depth
 - `Δz`      : Step width in depth direction (normalized by thermal skin depth `l`)
-- `ϵ`       : Emissivity
+- `ε`       : Emissivity
 
 - `T`       : 1-D array of temperatures
 - `F_total` : Total energy absorbed by the facet
@@ -260,30 +260,30 @@ In the normalized equation of the surface boundary condition,
 the coefficient `Γ / √(4π * P)` is equivalent for `k / l`,
 where `Γ` is the thermal inertia and `P` the rotation period.
 """
-function update_surf_temp!(shape::ShapeModel, A_B, A_TH, k, l, Δz, ϵ)
+function update_surf_temp!(shape::ShapeModel, A_B, A_TH, k, l, Δz, ε)
     for (i, facet) in enumerate(shape.facets)
-        update_surf_temp!(facet, A_B[i], A_TH[i], k[i], l[i], Δz[i], ϵ[i])
+        update_surf_temp!(facet, A_B[i], A_TH[i], k[i], l[i], Δz[i], ε[i])
     end
 end
 
-function update_surf_temp!(shape::ShapeModel, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
+function update_surf_temp!(shape::ShapeModel, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ε::Real)
     for facet in shape.facets
-        update_surf_temp!(facet, A_B, A_TH, k, l, Δz, ϵ)
+        update_surf_temp!(facet, A_B, A_TH, k, l, Δz, ε)
     end
 end
 
-function update_surf_temp!(facet::Facet, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
+function update_surf_temp!(facet::Facet, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ε::Real)
     F_total = flux_total(facet, A_B, A_TH)
-    update_surf_temp!(facet.temps, F_total, k, l, Δz, ϵ)
+    update_surf_temp!(facet.temps, F_total, k, l, Δz, ε)
 end
 
-function update_surf_temp!(T::AbstractVector, F_total::Real, k::Real, l::Real, Δz::Real, ϵ::Real)
-    ϵσ = ϵ * σ_SB
+function update_surf_temp!(T::AbstractVector, F_total::Real, k::Real, l::Real, Δz::Real, ε::Real)
+    εσ = ε * σ_SB
     for _ in 1:20
         T_pri = T[begin]
 
-        f = F_total + k / l * (T[begin+1] - T[begin]) / Δz - ϵσ*T[begin]^4
-        df = - k / l / Δz - 4*ϵσ*T[begin]^3             
+        f = F_total + k / l * (T[begin+1] - T[begin]) / Δz - εσ*T[begin]^4
+        df = - k / l / Δz - 4*εσ*T[begin]^3             
         T[begin] -= f / df
 
         err = abs(1 - T_pri / T[begin])
@@ -327,27 +327,4 @@ function flux_total(facet::Facet, A_B::Real, A_TH::Real)
     
     F_total = (1 - A_B)*(F_sun + F_scat) + (1 - A_TH)*F_rad
 end
-
-
-# ****************************************************************
-#
-# ****************************************************************
-
-
-"""
-    intensity(λ, T) -> I
-
-Intensity of radiation at a wavelength λ and tempertature T
-according to the Planck function
-"""
-function intensity(λ, T)
-    h = 6.62607015e-34  # Planck constant [J⋅s]
-    k = 1.380649e-23    # Boltzmann's constant [J/K]
-
-    I = 2 * h * c^2 / λ^5 / (exp(h * c₀ / (λ * k * T)) - 1)
-end
-
-
-ν2λ(ν) = c₀ / ν
-λ2ν(λ) = c₀ / λ
 
