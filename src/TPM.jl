@@ -228,16 +228,16 @@ energy_in(facet::Facet, A_B::Real) = (1 - A_B) * (facet.flux.sun + facet.flux.sc
 
 """
     energy_out(shape::ShapeModel, params::ThermoParams                   ) -> E_out
-    energy_out(shape::ShapeModel, ϵ::AbstractVector, A_TH::AbstractVector) -> E_out
-    energy_out(shape::ShapeModel, ϵ::Real,           A_TH::Real          ) -> E_out
-    energy_out(facet::Facet,      ϵ::Real,           A_TH::Real          ) -> E_out
+    energy_out(shape::ShapeModel, ε::AbstractVector, A_TH::AbstractVector) -> E_out
+    energy_out(shape::ShapeModel, ε::Real,           A_TH::Real          ) -> E_out
+    energy_out(facet::Facet,      ε::Real,           A_TH::Real          ) -> E_out
 
 Output enegey per second at a certain time [W]
 """
-energy_out(shape::ShapeModel, params::ThermoParams) = energy_out(shape, params.ϵ, params.A_TH)
-energy_out(shape::ShapeModel, ϵ::AbstractVector, A_TH::AbstractVector) = sum(energy_out(facet, ϵ[i], A_TH[i]) for (i, facet) in enumerate(shape.facets))
-energy_out(shape::ShapeModel, ϵ::Real, A_TH::Real) = sum(energy_out(facet, ϵ, A_TH) for facet in shape.facets)
-energy_out(facet::Facet, ϵ::Real, A_TH::Real) = ( ϵ*σ_SB*facet.temps[begin]^4 - (1 - A_TH)*facet.flux.rad ) * facet.area
+energy_out(shape::ShapeModel, params::ThermoParams) = energy_out(shape, params.ε, params.A_TH)
+energy_out(shape::ShapeModel, ε::AbstractVector, A_TH::AbstractVector) = sum(energy_out(facet, ε[i], A_TH[i]) for (i, facet) in enumerate(shape.facets))
+energy_out(shape::ShapeModel, ε::Real, A_TH::Real) = sum(energy_out(facet, ε, A_TH) for facet in shape.facets)
+energy_out(facet::Facet, ε::Real, A_TH::Real) = ( ε*σ_SB*facet.temps[begin]^4 - (1 - A_TH)*facet.flux.rad ) * facet.area
 
 
 # ****************************************************************
@@ -398,30 +398,30 @@ Multiple scattering of sunlight is considered.
 
 """
     update_flux_rad_single!(shape, params)
-    update_flux_rad_single!(shape, ϵ::Real)
-    update_flux_rad_single!(shape, ϵ::AbstractVector)
+    update_flux_rad_single!(shape, ε::Real)
+    update_flux_rad_single!(shape, ε::AbstractVector)
 
 Single radiation-reabsorption is considered,
 assuming albedo is close to zero at thermal infrared wavelength.
 """
-update_flux_rad_single!(shape, params::ThermoParams) = update_flux_rad_single!(shape, params.ϵ)
+update_flux_rad_single!(shape, params::ThermoParams) = update_flux_rad_single!(shape, params.ε)
 
-function update_flux_rad_single!(shape, ϵ::Real)
+function update_flux_rad_single!(shape, ε::Real)
     for facet in shape.facets
         facet.flux.rad = 0
         for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
             T = shape.facets[id].temps[begin]
-            facet.flux.rad += f * ϵ * σ_SB * T^4
+            facet.flux.rad += f * ε * σ_SB * T^4
         end
     end
 end
 
-function update_flux_rad_single!(shape, ϵ::AbstractVector)
+function update_flux_rad_single!(shape, ε::AbstractVector)
     for facet in shape.facets
         facet.flux.rad = 0
         for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
             T = shape.facets[id].temps[begin]
-            facet.flux.rad += f * ϵ[id] * σ_SB * T^4
+            facet.flux.rad += f * ε[id] * σ_SB * T^4
         end
     end
 end

@@ -6,42 +6,42 @@
 
 """
     update_force!(shape::ShapeModel, params)
-    update_force!(shape::ShapeModel, A_B::Real,           ϵ::Real)
-    update_force!(shape::ShapeModel, A_B::AbstractVector, ϵ::Real)
-    update_force!(shape::ShapeModel, A_B::Real,           ϵ::AbstractVector)
-    update_force!(shape::ShapeModel, A_B::AbstractVector, ϵ::AbstractVector)
-    update_force!(facet::Facet,      A_B::Real,           ϵ::Real)
+    update_force!(shape::ShapeModel, A_B::Real,           ε::Real)
+    update_force!(shape::ShapeModel, A_B::AbstractVector, ε::Real)
+    update_force!(shape::ShapeModel, A_B::Real,           ε::AbstractVector)
+    update_force!(shape::ShapeModel, A_B::AbstractVector, ε::AbstractVector)
+    update_force!(facet::Facet,      A_B::Real,           ε::Real)
 
 Update photon recoil force on every facet (dfᵢ)
 """
-update_force!(shape::ShapeModel, params) = update_force!(shape, params.A_B, params.ϵ)
+update_force!(shape::ShapeModel, params) = update_force!(shape, params.A_B, params.ε)
 
-function update_force!(shape::ShapeModel, A_B::Real, ϵ::Real)
+function update_force!(shape::ShapeModel, A_B::Real, ε::Real)
     for facet in shape.facets
-        update_force!(facet, A_B, ϵ)
+        update_force!(facet, A_B, ε)
     end
 end
 
-function update_force!(shape::ShapeModel, A_B::AbstractVector, ϵ::Real)
+function update_force!(shape::ShapeModel, A_B::AbstractVector, ε::Real)
     for (i, facet) in enumerate(shape.facets)
-        update_force!(facet, A_B[i], ϵ)
+        update_force!(facet, A_B[i], ε)
     end
 end
 
-function update_force!(shape::ShapeModel, A_B::Real, ϵ::AbstractVector)
+function update_force!(shape::ShapeModel, A_B::Real, ε::AbstractVector)
     for (i, facet) in enumerate(shape.facets)
-        update_force!(facet, A_B, ϵ[i])
+        update_force!(facet, A_B, ε[i])
     end
 end
 
-function update_force!(shape::ShapeModel, A_B::AbstractVector, ϵ::AbstractVector)
+function update_force!(shape::ShapeModel, A_B::AbstractVector, ε::AbstractVector)
     for (i, facet) in enumerate(shape.facets)
-        update_force!(facet, A_B[i], ϵ[i])
+        update_force!(facet, A_B[i], ε[i])
     end
 end
 
-function update_force!(facet::Facet, A_B::Real, ϵ::Real)
-    E = A_B * facet.flux.scat + ϵ * σ_SB * facet.temps[begin]^4
+function update_force!(facet::Facet, A_B::Real, ε::Real)
+    E = A_B * facet.flux.scat + ε * σ_SB * facet.temps[begin]^4
 
     @. facet.force = facet.normal
     for vf in facet.visiblefacets

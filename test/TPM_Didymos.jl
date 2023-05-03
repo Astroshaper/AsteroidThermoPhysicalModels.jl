@@ -82,7 +82,7 @@
         k     = 0.125,
         ρ     = 2170.,
         Cp    = 600.,
-        ϵ     = 0.9,
+        ε     = 0.9,
         t_bgn = et_range[begin],
         t_end = et_range[end],
         Nt    = length(et_range),
