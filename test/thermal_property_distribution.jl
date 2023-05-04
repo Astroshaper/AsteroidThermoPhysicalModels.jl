@@ -60,14 +60,16 @@
     ##= TPM =##
     # When thermophysical properties vary from facet to facet
     # Northern hemisphere:
-    #     k = 0.1
-    #     ε = 1.0
+    #     A_B = 0.04
+    #     k   = 0.1
+    #     ε   = 1.0
     # Southern hemisphere:
-    #     k = 0.3
-    #     ε = 0.9
+    #     A_B = 0.1
+    #     k   = 0.3
+    #     ε   = 0.9
     # Thermal conductivity `k` is heterogeneous:
     thermo_params = AsteroidThermoPhysicalModels.ThermoParams(
-        A_B   = 0.04,  # Bolometric Bond albedo
+        A_B   = [facet.center[3] > 0 ? 0.04 : 0.1 for facet in shape.facets],
         A_TH  = 0.0,
         k     = [facet.center[3] > 0 ? 0.1 : 0.3 for facet in shape.facets],
         ρ     = 1270.0,
