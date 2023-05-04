@@ -1,4 +1,5 @@
-The following tests are almost the same as `TPM_Ryugu.jl`. The only difference is thermophysical property distribution.
+# The following tests are almost the same as `TPM_Ryugu.jl`.
+# The only difference is that the thermophysical properties vary depending on the location of the asteroid.
 @testset "thermal_property_distribution" begin
     ##= Download Files =##
     paths_kernel = [
@@ -60,15 +61,14 @@ The following tests are almost the same as `TPM_Ryugu.jl`. The only difference i
 
     ##= TPM =##
     # When thermophysical properties vary from facet to facet
-    # Northern hemisphere:
-    #     A_B = 0.04
-    #     k   = 0.1
-    #     ε   = 1.0
-    # Southern hemisphere:
-    #     A_B = 0.1
-    #     k   = 0.3
-    #     ε   = 0.9
-    # Thermal conductivity `k` is heterogeneous:
+    # "Northern" hemisphere:
+    #     Bond albedo          : A_B = 0.04 [-]
+    #     Thermal conductivity : k   = 0.1  [W/m/K]
+    #     Emissivity           : ε   = 1.0  [-]
+    # "Southern" hemisphere:
+    #     Bond albedo          : A_B = 0.1  [-]
+    #     Thermal conductivity : k   = 0.3  [W/m/K]
+    #     Emissivity           : ε   = 0.9  [-]
     thermo_params = AsteroidThermoPhysicalModels.ThermoParams(
         A_B   = [facet.center[3] > 0 ? 0.04 : 0.1 for facet in shape.facets],
         A_TH  = 0.0,
