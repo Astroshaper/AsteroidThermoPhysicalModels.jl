@@ -52,10 +52,10 @@ thermal_inertia(k, ρ, Cp) = @. √(k * ρ * Cp)
 - `Cp`    : Heat capacity [J/kg/K]
 - `ε`     : Emissivity
 
-- `t_bgn` : Start time of the simulation, normalized by period `P`
-- `t_end` : End time of the simulation, normalized by period `P`
-- `Δt`    : Non-dimensional timesteps, normalized by period `P`
-- `Nt`    : Number of timesteps
+- `t_begin` : Start time of the simulation, normalized by period `P`
+- `t_end`   : End time of the simulation, normalized by period `P`
+- `Δt`      : Non-dimensional timesteps, normalized by period `P`
+- `Nt`      : Number of timesteps
 
 - `z_max` : Maximum depth for thermophysical simualtion, normalized by thermal skin depth `l`
 - `Δz`    : Non-dimensional step in depth, normalized by thermal skin depth `l`
@@ -80,10 +80,10 @@ struct ThermoParams{COMMON_INT, COMMON_FLOAT, FACET_INT, FACET_FLOAT}
     Cp   ::FACET_FLOAT
     ε    ::FACET_FLOAT
 
-    t_bgn::COMMON_FLOAT  # Common for all facets
-    t_end::COMMON_FLOAT  # Common for all facets
-    Δt   ::COMMON_FLOAT  # Common for all facets
-    Nt   ::COMMON_INT    # Common for all facets
+    t_begin::COMMON_FLOAT  # Common for all facets
+    t_end  ::COMMON_FLOAT  # Common for all facets
+    Δt     ::COMMON_FLOAT  # Common for all facets
+    Nt     ::COMMON_INT    # Common for all facets
 
     z_max::FACET_FLOAT
     Δz   ::FACET_FLOAT
@@ -96,11 +96,11 @@ struct ThermoParams{COMMON_INT, COMMON_FLOAT, FACET_INT, FACET_FLOAT}
 end
 
 
-function ThermoParams(; A_B, A_TH, k, ρ, Cp, ε, t_bgn, t_end, Nt, z_max, Nz, P)
+function ThermoParams(; A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Nt, z_max, Nz, P)
 
-    t_bgn /= P                       # Normalized by period P
+    t_begin /= P                       # Normalized by period P
     t_end /= P                       # Normalized by period P
-    Δt = (t_end - t_bgn) / (Nt - 1)  # Normalized by period P
+    Δt = (t_end - t_begin) / (Nt - 1)  # Normalized by period P
 
     l = thermal_skin_depth(P, k, ρ, Cp)
     Γ = thermal_inertia(k, ρ, Cp)
@@ -130,13 +130,13 @@ function ThermoParams(; A_B, A_TH, k, ρ, Cp, ε, t_bgn, t_end, Nt, z_max, Nz, P
         λ     isa Real && (λ     = fill(λ,     LENGTH))
     end
     
-    ThermoParams(A_B, A_TH, k, ρ, Cp, ε, t_bgn, t_end, Δt, Nt, z_max, Δz, Nz, P, l, Γ, λ) 
+    ThermoParams(A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Δt, Nt, z_max, Δz, Nz, P, l, Γ, λ) 
 end
 
 
 function Base.show(io::IO, params::ThermoParams)
     @unpack A_B, A_TH, k, ρ, Cp, ε = params
-    @unpack t_bgn, t_end, Δt, Nt   = params
+    @unpack t_begin, t_end, Δt, Nt = params
     @unpack z_max, Δz, Nz          = params
     @unpack P, l, Γ, λ             = params
     
@@ -151,13 +151,13 @@ function Base.show(io::IO, params::ThermoParams)
     msg *= "ε     : $(ε)\n"
 
     msg *= "-------------------------\n"
-    msg *= "t_bgn : $(t_bgn * P)\n"
-    msg *= "t_bgn : $(t_bgn), (Normalized by period P)\n"
-    msg *= "t_end : $(t_end * P)\n"
-    msg *= "t_end : $(t_end), (Normalized by period P)\n"
-    msg *= "Nt    : $(Nt)\n"
-    msg *= "Δt    : $(Δt * P)\n"
-    msg *= "Δt    : $(Δt), (Normalized by period P)\n"
+    msg *= "t_begin : $(t_begin * P)\n"
+    msg *= "t_begin : $(t_begin), (Normalized by period P)\n"
+    msg *= "t_end   : $(t_end * P)\n"
+    msg *= "t_end   : $(t_end), (Normalized by period P)\n"
+    msg *= "Nt      : $(Nt)\n"
+    msg *= "Δt      : $(Δt * P)\n"
+    msg *= "Δt      : $(Δt), (Normalized by period P)\n"
 
     msg *= "-------------------------\n"
     msg *= "z_max : $(z_max * l)\n"
