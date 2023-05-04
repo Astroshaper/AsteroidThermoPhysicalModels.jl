@@ -1,3 +1,4 @@
+The following tests are almost the same as `TPM_Ryugu.jl`. The only difference is thermophysical property distribution.
 @testset "thermal_property_distribution" begin
     ##= Download Files =##
     paths_kernel = [
