@@ -102,14 +102,7 @@ function run_TPM!(shape::ShapeModel, et_range, sun, thermo_params::ThermoParams,
 
     for (et, r☉) in zip(et_range, sun)
 
-        r̂☉ = SVector{3}(normalize(r☉))
-        F☉ = SOLAR_CONST / SPICE.convrt(norm(r☉), "m", "au")^2
-
-        update_flux_sun!(shape, F☉, r̂☉)
-        update_flux_scat_single!(shape, thermo_params)
-        update_flux_rad_single!(shape, thermo_params)
-
-        update_temps!(shape, thermo_params)
+        update_flux!(shape, r☉, thermo_params)
 
         if et_range[save_range[begin]] ≤ et ≤ et_range[save_range[end]]
             update_force!(shape, thermo_params)
@@ -124,21 +117,12 @@ function run_TPM!(shape::ShapeModel, et_range, sun, thermo_params::ThermoParams,
 
         E_in, E_out, E_cons = energy_io(shape, thermo_params)
         println(E_cons)
+
+        update_temps!(shape, thermo_params)
     end
     
     jldsave(savepath; shape, et_range=et_range[save_range], sun=sun[save_range], thermo_params, surf_temps, forces, torques)
 end
-
-## torques = data["torques"]
-## RYUGU_TO_J2000 = data["RYUGU_TO_J2000"]
-
-## τs = [R * τ for (τ, R) in zip(torques, RYUGU_TO_J2000)]
-## τ̄ = sum(τs) / length(τs)
-## ŝ = RYUGU_TO_J2000[1] * [0,0,1]
-
-## τ̄ = [-7.401430254063619, -4.461572023742755, -2.1021523476586275]
-## ŝ = [-0.04486511842721075, 0.3980298096670074, -0.9162747359634872]
-
 
 """
     run_TPM!
@@ -206,67 +190,8 @@ end
 
 
 # ****************************************************************
-#                      Data input/output
-# ****************************************************************
-
-"""
-"""
-function prep_timestamp(ts; dtype=Float64)
-    Nt = length(ts)
-    df = DataFrame(
-        t      = ts,
-        u      = Vector{dtype}(undef, Nt),
-        ν      = Vector{dtype}(undef, Nt),
-        ϕ      = Vector{dtype}(undef, Nt),
-        f_x    = Vector{dtype}(undef, Nt),
-        f_y    = Vector{dtype}(undef, Nt),
-        f_z    = Vector{dtype}(undef, Nt),
-        τ_x    = Vector{dtype}(undef, Nt),
-        τ_y    = Vector{dtype}(undef, Nt),
-        τ_z    = Vector{dtype}(undef, Nt),
-        E_in   = Vector{dtype}(undef, Nt),
-        E_out  = Vector{dtype}(undef, Nt),
-        E_cons = Vector{dtype}(undef, Nt),
-        Ē_cons = Vector{dtype}(undef, Nt),
-    )
-end
-
-"""
-"""
-function save_timestamp!(df, i::Integer, u, ν, ϕ, f_x, f_y, f_z, τ_x, τ_y, τ_z, E_in, E_out, E_cons)
-    df.u[i]      = u
-    df.ν[i]      = ν
-    df.ϕ[i]      = ϕ
-    df.f_x[i]    = f_x
-    df.f_y[i]    = f_y
-    df.f_z[i]    = f_z
-    df.τ_x[i]    = τ_x
-    df.τ_y[i]    = τ_y
-    df.τ_z[i]    = τ_z
-    df.E_in[i]   = E_in
-    df.E_out[i]  = E_out
-    df.E_cons[i] = E_cons
-end
-
-
-# ****************************************************************
 #                     Convergence decision
 # ****************************************************************
-
-# """
-#     mean_energy_cons_frac!(df, spin::SpinParams)
-#     mean_energy_cons_frac!(df, P::Real)
-
-# Average energy conservation fraction over a rotational cycle
-# """
-# mean_energy_cons_frac!(df, spin::SpinParams) = mean_energy_cons_frac!(df, spin.P)
-
-function mean_energy_cons_frac!(df, P::Real)
-    for row in eachrow(df)
-        row.Ē_cons = mean(df.E_cons[@. row.t - P ≤ df.t ≤ row.t])
-    end
-end
-
 
 """
     energy_io(shape::ShapeModel, params::ThermoParams) -> E_in, E_out, E_cons
@@ -303,16 +228,16 @@ energy_in(facet::Facet, A_B::Real) = (1 - A_B) * (facet.flux.sun + facet.flux.sc
 
 """
     energy_out(shape::ShapeModel, params::ThermoParams                   ) -> E_out
-    energy_out(shape::ShapeModel, ϵ::AbstractVector, A_TH::AbstractVector) -> E_out
-    energy_out(shape::ShapeModel, ϵ::Real,           A_TH::Real          ) -> E_out
-    energy_out(facet::Facet,      ϵ::Real,           A_TH::Real          ) -> E_out
+    energy_out(shape::ShapeModel, ε::AbstractVector, A_TH::AbstractVector) -> E_out
+    energy_out(shape::ShapeModel, ε::Real,           A_TH::Real          ) -> E_out
+    energy_out(facet::Facet,      ε::Real,           A_TH::Real          ) -> E_out
 
 Output enegey per second at a certain time [W]
 """
-energy_out(shape::ShapeModel, params::ThermoParams) = energy_out(shape, params.ϵ, params.A_TH)
-energy_out(shape::ShapeModel, ϵ::AbstractVector, A_TH::AbstractVector) = sum(energy_out(facet, ϵ[i], A_TH[i]) for (i, facet) in enumerate(shape.facets))
-energy_out(shape::ShapeModel, ϵ::Real, A_TH::Real) = sum(energy_out(facet, ϵ, A_TH) for facet in shape.facets)
-energy_out(facet::Facet, ϵ::Real, A_TH::Real) = ( ϵ*σ_SB*facet.temps[begin]^4 - (1 - A_TH)*facet.flux.rad ) * facet.area
+energy_out(shape::ShapeModel, params::ThermoParams) = energy_out(shape, params.ε, params.A_TH)
+energy_out(shape::ShapeModel, ε::AbstractVector, A_TH::AbstractVector) = sum(energy_out(facet, ε[i], A_TH[i]) for (i, facet) in enumerate(shape.facets))
+energy_out(shape::ShapeModel, ε::Real, A_TH::Real) = sum(energy_out(facet, ε, A_TH) for facet in shape.facets)
+energy_out(facet::Facet, ε::Real, A_TH::Real) = ( ε*σ_SB*facet.temps[begin]^4 - (1 - A_TH)*facet.flux.rad ) * facet.area
 
 
 # ****************************************************************
@@ -321,16 +246,10 @@ energy_out(facet::Facet, ϵ::Real, A_TH::Real) = ( ϵ*σ_SB*facet.temps[begin]^4
 
 
 """
-    update_flux!(shape, F☉, r̂☉, thermo_params)
+    update_flux!(shape, r☉, thermo_params)
 
 Update energy flux to every facet by solar radiation, scattering, and re-absorption of radiation
 """
-function update_flux!(shape, F☉::Real, r̂☉::AbstractVector, thermo_params)
-    update_flux_sun!(shape, F☉, r̂☉)
-    update_flux_scat_single!(shape, thermo_params)
-    update_flux_rad_single!(shape, thermo_params)
-end
-
 function update_flux!(shape, r☉::AbstractVector, thermo_params)
     update_flux_sun!(shape, r☉)
     update_flux_scat_single!(shape, thermo_params)
@@ -452,11 +371,11 @@ function update_flux_scat_single!(shape, A_B::AbstractVector)
     end
 end
 
-"""
-    update_flux_scat_mult!(shape, params)
+# """
+#     update_flux_scat_mult!(shape, params)
 
-Multiple scattering of sunlight is considered.
-"""
+# Multiple scattering of sunlight is considered.
+# """
 # update_flux_scat_mult!(shape, params::ThermoParams) = update_flux_scat_mult!(shape, params.A_B)
 
 # function update_flux_scat_mult!(shape, A_B::Real)
@@ -479,30 +398,30 @@ Multiple scattering of sunlight is considered.
 
 """
     update_flux_rad_single!(shape, params)
-    update_flux_rad_single!(shape, ϵ::Real)
-    update_flux_rad_single!(shape, ϵ::AbstractVector)
+    update_flux_rad_single!(shape, ε::Real)
+    update_flux_rad_single!(shape, ε::AbstractVector)
 
 Single radiation-reabsorption is considered,
 assuming albedo is close to zero at thermal infrared wavelength.
 """
-update_flux_rad_single!(shape, params::ThermoParams) = update_flux_rad_single!(shape, params.ϵ)
+update_flux_rad_single!(shape, params::ThermoParams) = update_flux_rad_single!(shape, params.ε)
 
-function update_flux_rad_single!(shape, ϵ::Real)
+function update_flux_rad_single!(shape, ε::Real)
     for facet in shape.facets
         facet.flux.rad = 0
         for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
             T = shape.facets[id].temps[begin]
-            facet.flux.rad += f * ϵ * σ_SB * T^4
+            facet.flux.rad += f * ε * σ_SB * T^4
         end
     end
 end
 
-function update_flux_rad_single!(shape, ϵ::AbstractVector)
+function update_flux_rad_single!(shape, ε::AbstractVector)
     for facet in shape.facets
         facet.flux.rad = 0
         for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
             T = shape.facets[id].temps[begin]
-            facet.flux.rad += f * ϵ[id] * σ_SB * T^4
+            facet.flux.rad += f * ε[id] * σ_SB * T^4
         end
     end
 end

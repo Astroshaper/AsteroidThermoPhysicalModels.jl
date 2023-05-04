@@ -65,7 +65,7 @@
         k     = 0.1,
         ρ     = 1270.0,
         Cp    = 600.0,
-        ϵ     = 1.0,
+        ε     = 1.0,
         t_bgn = et_range[begin],
         t_end = et_range[end],
         Nt    = length(et_range),
