@@ -11,8 +11,8 @@ end
 """
 function loadobj(shapepath::String; scale=1, static=true, message=true)
 
-    nodes = Vector{Float64}[]
-    faces = Vector{Int64}[]
+    nodes = SVector{3, Float64}[]
+    faces = SVector{3, Int64}[]
 
     open(shapepath, "r") do f
         for line in eachline(f)

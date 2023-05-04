@@ -1,7 +1,7 @@
 
 
 """
-    ShapeModel{T1, T2, T3, T4, T5, T6, T7}
+    ShapeModel{T}
 
 A polyhedral shape model of an asteroid.
 
@@ -24,24 +24,21 @@ A polyhedral shape model of an asteroid.
 - `force`      : Thermal recoil force at body-fixed frame (Yarkovsky effect)
 - `torque`     : Thermal recoil torque at body-fixed frame (YORP effect)
 """
-struct ShapeModel{T1, T2, T3, T4, T5, T6, T7, T8}
-    num_node  ::T1
-    num_face  ::T1
-    nodes     ::T2
-    faces     ::T3
-
-    facets    ::T4
-
-    AREA      ::T5
-    VOLUME    ::T5
-    RADIUS_EQ ::T5
-    RADIUS_MAX::T5
-    RADIUS_MIN::T5
-    COF       ::T6
-    MOI       ::T7
-
-    force     ::T8
-    torque    ::T8
+struct ShapeModel{T}
+    num_node  ::Int
+    num_face  ::Int
+    nodes     ::Vector{SVector{3, Float64}}
+    faces     ::Vector{SVector{3, Int}}
+    facets    ::T
+    AREA      ::Float64
+    VOLUME    ::Float64
+    RADIUS_EQ ::Float64
+    RADIUS_MAX::Float64
+    RADIUS_MIN::Float64
+    COF       ::SVector{3, Float64}
+    MOI       ::SMatrix{3, 3, Float64}
+    force     ::MVector{3, Float64}
+    torque    ::MVector{3, Float64}
 end
 
 
@@ -84,10 +81,10 @@ function ShapeModel(shapepath; scale=1, find_visible_facets=false, save_shape=fa
         RADIUS_MAX = maximum_radius(nodes)
         RADIUS_MIN = minimum_radius(nodes)
         COF        = center_of_figure(facets)
-        MOI        = zeros(3, 3)  # TODO: implement this field
+        MOI        = zero(SMatrix{3, 3, Float64})  # TODO: implement this field
         
-        force  = zeros(3)
-        torque = zeros(3)
+        force  = zero(MVector{3, Float64})
+        torque = zero(MVector{3, Float64})
         
         shape = ShapeModel(
             num_node, num_face, nodes, faces, facets,
