@@ -41,7 +41,7 @@
     save_range = findall(et_range .> et_range[end] - 7.63262 * 3600)
     @show save_range[begin]
     @show save_range[end]
-    @show length(save_range);
+    @show length(save_range)
 
     # Sun's position in the RYUGU_FIXED frame
     sun_ryugu = [SPICE.spkpos("SUN", et, "RYUGU_FIXED", "None", "RYUGU")[1]*1000 for et in et_range]
