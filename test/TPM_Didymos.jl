@@ -32,10 +32,10 @@
         filepath = joinpath("kernel", path_kernel)
         SPICE.furnsh(filepath)
     end
-    et_start = SPICE.utc2et("2027-02-18T00:00:00")
+    et_begin = SPICE.utc2et("2027-02-18T00:00:00")
     et_end   = SPICE.utc2et("2027-02-18T01:00:00")
     step     = 300
-    et_range = et_start : step : et_end
+    et_range = et_begin : step : et_end
     @show et_range
     @show length(et_range)
 
@@ -77,19 +77,19 @@
 
     ##= TPM =##
     thermo_params = AsteroidThermoPhysicalModels.ThermoParams(  # [Michel+2016; Naidu+2020]
-        A_B   = 0.059,  # Bolometric Bond albedo
-        A_TH  = 0.0,
-        k     = 0.125,
-        ρ     = 2170.,
-        Cp    = 600.,
-        ε     = 0.9,
-        t_bgn = et_range[begin],
-        t_end = et_range[end],
-        Nt    = length(et_range),
-        z_max = 0.6,
-        Nz    = 41,
-        P     = SPICE.convrt(AsteroidThermoPhysicalModels.DIDYMOS[:P], "hours", "seconds"),
-    );
+        A_B     = 0.059,  # Bolometric Bond albedo
+        A_TH    = 0.0,
+        k       = 0.125,
+        ρ       = 2170.,
+        Cp      = 600.,
+        ε       = 0.9,
+        t_begin = et_range[begin],
+        t_end   = et_range[end],
+        Nt      = length(et_range),
+        z_max   = 0.6,
+        Nz      = 41,
+        P       = SPICE.convrt(AsteroidThermoPhysicalModels.DIDYMOS[:P], "hours", "seconds"),
+    )
 
     AsteroidThermoPhysicalModels.init_temps_zero!(shape1, thermo_params)
     AsteroidThermoPhysicalModels.init_temps_zero!(shape2, thermo_params)

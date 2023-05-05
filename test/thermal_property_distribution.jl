@@ -30,10 +30,10 @@
         filepath = joinpath("kernel", path_kernel)
         SPICE.furnsh(filepath)
     end
-    et_start = SPICE.utc2et("2018-07-01T00:00:00")
+    et_begin = SPICE.utc2et("2018-07-01T00:00:00")
     et_end   = SPICE.utc2et("2018-07-01T01:00:00")
     step     = 76.3262  # Rotation of 1 deg
-    et_range = et_start : step : et_end
+    et_range = et_begin : step : et_end
     @show et_range
     @show length(et_range)
 
@@ -70,18 +70,18 @@
     #     Thermal conductivity : k   = 0.3  [W/m/K]
     #     Emissivity           : ε   = 0.9  [-]
     thermo_params = AsteroidThermoPhysicalModels.ThermoParams(
-        A_B   = [facet.center[3] > 0 ? 0.04 : 0.1 for facet in shape.facets],
-        A_TH  = 0.0,
-        k     = [facet.center[3] > 0 ? 0.1 : 0.3 for facet in shape.facets],
-        ρ     = 1270.0,
-        Cp    = 600.0,
-        ε     = [facet.center[3] > 0 ? 1.0 : 0.9 for facet in shape.facets],
-        t_bgn = et_range[begin],
-        t_end = et_range[end],
-        Nt    = length(et_range),
-        z_max = 0.6,
-        Nz    = 41,
-        P     = 7.63262 * 3600,
+        A_B     = [facet.center[3] > 0 ? 0.04 : 0.1 for facet in shape.facets],
+        A_TH    = 0.0,
+        k       = [facet.center[3] > 0 ? 0.1 : 0.3 for facet in shape.facets],
+        ρ       = 1270.0,
+        Cp      = 600.0,
+        ε       = [facet.center[3] > 0 ? 1.0 : 0.9 for facet in shape.facets],
+        t_begin = et_range[begin],
+        t_end   = et_range[end],
+        Nt      = length(et_range),
+        z_max   = 0.6,
+        Nz      = 41,
+        P       = 7.63262 * 3600,
     )
 
     # Run TPM and save the result

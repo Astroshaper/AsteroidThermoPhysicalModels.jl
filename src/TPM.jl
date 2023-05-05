@@ -41,11 +41,11 @@ end
 # """
 # """
 # function run_TPM!(shape::ShapeModel, orbit::OrbitalElements, spin::SpinParams, thermo_params::ThermoParams, savepath="tmp.jld2")
-#     @unpack P, Δt, t_bgn, t_end = thermo_params
+#     @unpack P, Δt, t_begin, t_end = thermo_params
     
 #     init_temps_zero!(shape, thermo_params)
 
-#     ts = (t_bgn:Δt:t_end) * P
+#     ts = (t_begin:Δt:t_end) * P
 #     timestamp = prep_timestamp(ts)
 #     # surf_temp_table = zeros(shape.num_face, Int(1/thermo_params.Δt)-1)
 
