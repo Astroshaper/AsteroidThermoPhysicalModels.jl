@@ -89,7 +89,7 @@
         z_max   = 0.6,
         Nz      = 41,
         P       = SPICE.convrt(AsteroidThermoPhysicalModels.DIDYMOS[:P], "hours", "seconds"),
-    );
+    )
 
     AsteroidThermoPhysicalModels.init_temps_zero!(shape1, thermo_params)
     AsteroidThermoPhysicalModels.init_temps_zero!(shape2, thermo_params)
