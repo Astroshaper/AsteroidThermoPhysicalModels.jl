@@ -41,8 +41,10 @@ thermal_inertia(k, ρ, Cp) = @. √(k * ρ * Cp)
 #               Struct for thermophysical properties
 # ****************************************************************
 
+abstract type AbstractThermoParams end
+
 """
-    struct ThermoParams{COMMON_INT, COMMON_FLOAT, FACET_INT, FACET_FLOAT}
+    struct NonUniformThermoParams
 
 # Fields
 - `A_B`   : Bond albedo
@@ -65,39 +67,80 @@ thermal_inertia(k, ρ, Cp) = @. √(k * ρ * Cp)
 - `l`     : Thermal skin depth [m]
 - `Γ`     : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
 - `λ`     : Non-dimensional coefficient for heat diffusion equation
-
-# Parametic types
-- `COMMON_INT`   : Integer-typed property common for all facets
-- `COMMON_FLOAT` : Float-typed property common for all facets
-- `FACET_INT`    : Integer common for all facets or array giving an integer for each facet individually
-- `FACET_FLOAT`  : Float common for all facets or array giving a float for each facet individually
 """
-struct ThermoParams{COMMON_INT, COMMON_FLOAT, FACET_INT, FACET_FLOAT}
-    A_B  ::FACET_FLOAT
-    A_TH ::FACET_FLOAT
-    k    ::FACET_FLOAT
-    ρ    ::FACET_FLOAT
-    Cp   ::FACET_FLOAT
-    ε    ::FACET_FLOAT
+struct NonUniformThermoParams <: AbstractThermoParams
+    A_B  ::Vector{Float64}
+    A_TH ::Vector{Float64}
+    k    ::Vector{Float64}
+    ρ    ::Vector{Float64}
+    Cp   ::Vector{Float64}
+    ε    ::Vector{Float64}
 
-    t_begin::COMMON_FLOAT  # Common for all facets
-    t_end  ::COMMON_FLOAT  # Common for all facets
-    Δt     ::COMMON_FLOAT  # Common for all facets
-    Nt     ::COMMON_INT    # Common for all facets
+    t_begin::Float64  # Common for all facets
+    t_end::Float64  # Common for all facets
+    Δt   ::Float64  # Common for all facets
+    Nt   ::Int    # Common for all facets
 
-    z_max::FACET_FLOAT
-    Δz   ::FACET_FLOAT
-    Nz   ::FACET_INT
+    z_max::Vector{Float64}
+    Δz   ::Vector{Float64}
+    Nz   ::Vector{Int}
 
-    P    ::COMMON_FLOAT  # Common for all facets
-    l    ::FACET_FLOAT
-    Γ    ::FACET_FLOAT
-    λ    ::FACET_FLOAT
+    P    ::Float64  # Common for all facets
+    l    ::Vector{Float64}
+    Γ    ::Vector{Float64}
+    λ    ::Vector{Float64}
+end
+
+"""
+    struct UniformThermoParams
+
+# Fields
+- `A_B`   : Bond albedo
+- `A_TH`  : Albedo at thermal radiation wavelength
+- `k`     : Thermal conductivity [W/m/K]
+- `ρ`     : Material density [kg/m³]
+- `Cp`    : Heat capacity [J/kg/K]
+- `ε`     : Emissivity
+
+- `t_begin` : Start time of the simulation, normalized by period `P`
+- `t_end` : End time of the simulation, normalized by period `P`
+- `Δt`    : Non-dimensional timesteps, normalized by period `P`
+- `Nt`    : Number of timesteps
+
+- `z_max` : Maximum depth for thermophysical simualtion, normalized by thermal skin depth `l`
+- `Δz`    : Non-dimensional step in depth, normalized by thermal skin depth `l`
+- `Nz`    : Number of depth steps
+
+- `P`     : Cycle of thermal cycle (rotation period) [sec]
+- `l`     : Thermal skin depth [m]
+- `Γ`     : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
+- `λ`     : Non-dimensional coefficient for heat diffusion equation
+"""
+struct UniformThermoParams <: AbstractThermoParams
+    A_B  ::Float64
+    A_TH ::Float64
+    k    ::Float64
+    ρ    ::Float64
+    Cp   ::Float64
+    ε    ::Float64
+
+    t_begin::Float64  # Common for all facets
+    t_end::Float64  # Common for all facets
+    Δt   ::Float64  # Common for all facets
+    Nt   ::Int    # Common for all facets
+
+    z_max::Float64
+    Δz   ::Float64
+    Nz   ::Int
+
+    P    ::Float64  # Common for all facets
+    l    ::Float64
+    Γ    ::Float64
+    λ    ::Float64
 end
 
 
-function ThermoParams(; A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Nt, z_max, Nz, P)
-
+function thermoparams(; A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Nt, z_max, Nz, P)
     t_begin /= P                       # Normalized by period P
     t_end /= P                       # Normalized by period P
     Δt = (t_end - t_begin) / (Nt - 1)  # Normalized by period P
@@ -128,13 +171,14 @@ function ThermoParams(; A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Nt, z_max, Nz,
         l     isa Real && (l     = fill(l,     LENGTH))
         Γ     isa Real && (Γ     = fill(Γ,     LENGTH))
         λ     isa Real && (λ     = fill(λ,     LENGTH))
+        NonUniformThermoParams(A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Δt, Nt, z_max, Δz, Nz, P, l, Γ, λ)
+    else
+        UniformThermoParams(A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Δt, Nt, z_max, Δz, Nz, P, l, Γ, λ)
     end
-    
-    ThermoParams(A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Δt, Nt, z_max, Δz, Nz, P, l, Γ, λ) 
 end
 
 
-function Base.show(io::IO, params::ThermoParams)
+function Base.show(io::IO, params::AbstractThermoParams)
     @unpack A_B, A_TH, k, ρ, Cp, ε = params
     @unpack t_begin, t_end, Δt, Nt = params
     @unpack z_max, Δz, Nz          = params
@@ -182,13 +226,13 @@ end
 # ****************************************************************
 
 """
-    update_temps!(shape::ShapeModel, params::ThermoParams)
+    update_temps!(shape::ShapeModel, params::AbstractThermoParams)
     update_temps!(shape::ShapeModel, λ, A_B, A_TH, k, l, Δz, ε)
     update_temps!(facet::Facet, λ::Real, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ε::Real)
 
 Update temerature profie (`Facet.temps`) based on 1-D heat diffusion
 """
-update_temps!(shape::ShapeModel, params::ThermoParams) = update_temps!(shape, params.λ, params.A_B, params.A_TH, params.k, params.l, params.Δz, params.ε)
+update_temps!(shape::ShapeModel, params::AbstractThermoParams) = update_temps!(shape, params.λ, params.A_B, params.A_TH, params.k, params.l, params.Δz, params.ε)
 
 function update_temps!(shape::ShapeModel, λ, A_B, A_TH, k, l, Δz, ε)
     step_heat_cond!(shape, λ)

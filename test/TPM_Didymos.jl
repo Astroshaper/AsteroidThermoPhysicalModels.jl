@@ -76,7 +76,7 @@
     end
 
     ##= TPM =##
-    thermo_params = AsteroidThermoPhysicalModels.ThermoParams(  # [Michel+2016; Naidu+2020]
+    thermo_params = AsteroidThermoPhysicalModels.thermoparams(  # [Michel+2016; Naidu+2020]
         A_B     = 0.059,  # Bolometric Bond albedo
         A_TH    = 0.0,
         k       = 0.125,
