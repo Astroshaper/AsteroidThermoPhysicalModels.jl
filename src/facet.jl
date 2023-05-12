@@ -39,7 +39,7 @@ end
 ################################################################
 
 """
-    struct Facet{T3}
+    struct Facet
 
 Triangular surface facet of a polyhedral shape model.
 
