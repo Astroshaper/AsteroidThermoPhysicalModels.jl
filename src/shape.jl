@@ -11,7 +11,6 @@ A polyhedral shape model of an asteroid.
 
 - `facets`     : 1-D array of surface facets (`Facet`)
 
-- `VOLUME`     : Volume
 - `RADIUS_EQ`  : Equivalent radius of a sphere with the same volume
 - `RADIUS_MAX` : Maximum radius
 - `RADIUS_MIN` : Minimum radius
@@ -24,7 +23,6 @@ struct ShapeModel{T}
     nodes     ::Vector{SVector{3, Float64}}
     faces     ::Vector{SVector{3, Int}}
     facets    ::T
-    VOLUME    ::Float64
     RADIUS_EQ ::Float64
     RADIUS_MAX::Float64
     RADIUS_MIN::Float64
@@ -36,7 +34,6 @@ end
 function Base.show(io::IO, shape::ShapeModel)
     msg = "Shape model\n"
     msg *= "-----------\n"
-    msg *= "Volume            : $(shape.VOLUME)\n"
     msg *= "Equivalent radius : $(shape.RADIUS_EQ)\n"
     msg *= "Maximum radius    : $(shape.RADIUS_MAX)\n"
     msg *= "Minimum radius    : $(shape.RADIUS_MIN)\n"
@@ -65,7 +62,7 @@ function ShapeModel(shapepath; scale=1, find_visible_facets=false, save_shape=fa
         
         shape = ShapeModel(
             nodes, faces, facets,
-            VOLUME, RADIUS_EQ, RADIUS_MAX, RADIUS_MIN, force, torque
+            RADIUS_EQ, RADIUS_MAX, RADIUS_MIN, force, torque
         )
         save_shape && save(splitext(shapepath)[1] * ".jld2", Dict("shape" => shape))
 
