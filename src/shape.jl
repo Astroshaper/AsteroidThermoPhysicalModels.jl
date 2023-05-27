@@ -19,7 +19,6 @@ A polyhedral shape model of an asteroid.
 - `RADIUS_MAX` : Maximum radius
 - `RADIUS_MIN` : Minimum radius
 - `COF`        : Center-of-figure
-- `MOI`        : Moment of inertia tensor
 
 - `force`      : Thermal recoil force at body-fixed frame (Yarkovsky effect)
 - `torque`     : Thermal recoil torque at body-fixed frame (YORP effect)
@@ -36,7 +35,6 @@ struct ShapeModel{T}
     RADIUS_MAX::Float64
     RADIUS_MIN::Float64
     COF       ::SVector{3, Float64}
-    MOI       ::SMatrix{3, 3, Float64}
     force     ::MVector{3, Float64}
     torque    ::MVector{3, Float64}
 end
@@ -53,10 +51,6 @@ function Base.show(io::IO, shape::ShapeModel)
     msg *= "Maximum radius    : $(shape.RADIUS_MAX)\n"
     msg *= "Minimum radius    : $(shape.RADIUS_MIN)\n"
     msg *= "Center-of-Figure  : $(shape.COF)\n"
-    msg *= "Inertia tensor    : \n"
-    msg *= "    | Ixx Ixy Ixz |   $(shape.MOI[1, :])\n"
-    msg *= "    | Iyx Iyy Iyz | = $(shape.MOI[2, :])\n"
-    msg *= "    | Izx Izy Izz |   $(shape.MOI[3, :])\n"
     print(io, msg)
 end
 
@@ -81,15 +75,13 @@ function ShapeModel(shapepath; scale=1, find_visible_facets=false, save_shape=fa
         RADIUS_MAX = maximum_radius(nodes)
         RADIUS_MIN = minimum_radius(nodes)
         COF        = center_of_figure(facets)
-        MOI        = zero(SMatrix{3, 3, Float64})  # TODO: implement this field
         
         force  = zero(MVector{3, Float64})
         torque = zero(MVector{3, Float64})
         
         shape = ShapeModel(
             num_node, num_face, nodes, faces, facets,
-            AREA, VOLUME, RADIUS_EQ, RADIUS_MAX, RADIUS_MIN, COF, MOI,
-            force, torque
+            AREA, VOLUME, RADIUS_EQ, RADIUS_MAX, RADIUS_MIN, COF, force, torque
         )
         save_shape && save(splitext(shapepath)[1] * ".jld2", Dict("shape" => shape))
 
@@ -147,20 +139,3 @@ function center_of_figure(facets)
     end
     COF / VOLUME
 end
-
-# """
-#     moment_of_inertia(facets) -> MOI
-
-# Calculate moment of inertia tensor of a polyhedron
-# """
-# function moment_of_inertia(facets)
-#     MOI = zeros(3, 3)
-
-#     for facet in facets
-#         # v1, v2, v3 = m.vs
-        
-#         # I[3, 3] += (v1[1]*v1[1] + v1[1]*v2[1] + v2[1]*v2[1] + v1[1]*v3[1] + v2[1]*v3[1] + v3[1]*v3[1] + v1[2]*v1[2] + v1[2]*v2[2] + v2[2]*v2[2] + v1[2]*v3[2] + v2[2]*v3[2] + v3[2]*v3[2]) / 60
-#     end
-#     MOI
-# end
-
