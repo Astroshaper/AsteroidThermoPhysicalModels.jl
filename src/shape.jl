@@ -11,7 +11,6 @@ A polyhedral shape model of an asteroid.
 
 - `facets`     : 1-D array of surface facets (`Facet`)
 
-- `RADIUS_EQ`  : Equivalent radius of a sphere with the same volume
 - `RADIUS_MAX` : Maximum radius
 - `RADIUS_MIN` : Minimum radius
 - `COF`        : Center-of-figure
@@ -23,7 +22,6 @@ struct ShapeModel{T}
     nodes     ::Vector{SVector{3, Float64}}
     faces     ::Vector{SVector{3, Int}}
     facets    ::T
-    RADIUS_EQ ::Float64
     RADIUS_MAX::Float64
     RADIUS_MIN::Float64
     force     ::MVector{3, Float64}
@@ -34,7 +32,6 @@ end
 function Base.show(io::IO, shape::ShapeModel)
     msg = "Shape model\n"
     msg *= "-----------\n"
-    msg *= "Equivalent radius : $(shape.RADIUS_EQ)\n"
     msg *= "Maximum radius    : $(shape.RADIUS_MAX)\n"
     msg *= "Minimum radius    : $(shape.RADIUS_MIN)\n"
     print(io, msg)
@@ -52,8 +49,6 @@ function ShapeModel(shapepath; scale=1, find_visible_facets=false, save_shape=fa
         facets = getfacets(nodes, faces)
         find_visible_facets && findVisibleFacets!(facets)
         
-        VOLUME     = getvolume(facets)
-        RADIUS_EQ  = equivalent_radius(VOLUME)
         RADIUS_MAX = maximum_radius(nodes)
         RADIUS_MIN = minimum_radius(nodes)
         
@@ -62,7 +57,7 @@ function ShapeModel(shapepath; scale=1, find_visible_facets=false, save_shape=fa
         
         shape = ShapeModel(
             nodes, faces, facets,
-            RADIUS_EQ, RADIUS_MAX, RADIUS_MIN, force, torque
+            RADIUS_MAX, RADIUS_MIN, force, torque
         )
         save_shape && save(splitext(shapepath)[1] * ".jld2", Dict("shape" => shape))
 
