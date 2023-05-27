@@ -296,8 +296,8 @@ The secondary is within the critical angle to detect an eclipse event.
 """
 function eclipse_is_possible(shapes, sun_from_pri, sec_from_pri)
 
-    R₁ = shapes[1].RADIUS_MAX
-    R₂ = shapes[2].RADIUS_MAX
+    R₁ = maximum_radius(shapes[1])
+    R₂ = maximum_radius(shapes[2])
     θ_crit = asin((R₁ + R₂) / norm(sec_from_pri))
 
     r̂☉ = SVector{3}(normalize(sun_from_pri))
