@@ -7,6 +7,8 @@ using Git
 using Downloads
 using Statistics
 using LinearAlgebra
+using StaticArrays
+using Rotations
 
 Aqua.test_all(AsteroidThermoPhysicalModels, ambiguities=false)
 

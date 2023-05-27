@@ -40,7 +40,7 @@ end
 
 # """
 # """
-# function run_TPM!(shape::ShapeModel, orbit::OrbitalElements, spin::SpinParams, thermo_params::ThermoParams, savepath="tmp.jld2")
+# function run_TPM!(shape::ShapeModel, orbit::OrbitalElements, spin::SpinParams, thermo_params::AbstractThermoParams, savepath="tmp.jld2")
 #     @unpack P, Δt, t_begin, t_end = thermo_params
     
 #     init_temps_zero!(shape, thermo_params)
@@ -90,7 +90,7 @@ end
 - `save_range`    : Indices in `et_range` to be saved
 
 """
-function run_TPM!(shape::ShapeModel, et_range, sun, thermo_params::ThermoParams, savepath, save_range)
+function run_TPM!(shape::ShapeModel, et_range, sun, thermo_params::AbstractThermoParams, savepath, save_range)
  
     init_temps_zero!(shape, thermo_params)
     
@@ -135,7 +135,7 @@ Run TPM for a binary asteroid.
 - savepath
 - savevalues
 """
-function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::ThermoParams, savepath, savevalues)
+function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::AbstractThermoParams, savepath, savevalues)
 
     surf_temps = zeros(shapes[1].num_face, length(et_range)), zeros(shapes[2].num_face, length(et_range))
     forces  = [zeros(3) for _ in eachindex(et_range)], [zeros(3) for _ in eachindex(et_range)]
@@ -194,7 +194,7 @@ end
 # ****************************************************************
 
 """
-    energy_io(shape::ShapeModel, params::ThermoParams) -> E_in, E_out, E_cons
+    energy_io(shape::ShapeModel, params::AbstractThermoParams) -> E_in, E_out, E_cons
 
 Input and output energy per second at a certain time
 
@@ -203,7 +203,7 @@ Input and output energy per second at a certain time
 - `E_out`  : Output enegey per second at a certain time [W]
 - `E_cons` : Output-input energy ratio (`E_out / E_in`)
 """
-function energy_io(shape::ShapeModel, params::ThermoParams)
+function energy_io(shape::ShapeModel, params::AbstractThermoParams)
     E_in   = energy_in(shape, params)
     E_out  = energy_out(shape, params)
     E_cons = E_out / E_in
@@ -213,28 +213,28 @@ end
 
 
 """
-    energy_in(shape::ShapeModel, params::ThermoParams) -> E_in
-    energy_in(shape::ShapeModel, A_B::AbstractVector ) -> E_in
-    energy_in(shape::ShapeModel, A_B::Real           ) -> E_in
-    energy_in(facet::Facet,      A_B::Real           ) -> E_in
+    energy_in(shape::ShapeModel, params::AbstractThermoParams) -> E_in
+    energy_in(shape::ShapeModel, A_B::AbstractVector         ) -> E_in
+    energy_in(shape::ShapeModel, A_B::Real                   ) -> E_in
+    energy_in(facet::Facet,      A_B::Real                   ) -> E_in
 
 Input energy per second at a certain time [W]
 """
-energy_in(shape::ShapeModel, params::ThermoParams) = energy_in(shape, params.A_B)
+energy_in(shape::ShapeModel, params::AbstractThermoParams) = energy_in(shape, params.A_B)
 energy_in(shape::ShapeModel, A_B::AbstractVector) = sum(energy_in(facet, A_B[i]) for (i, facet) in enumerate(shape.facets))
 energy_in(shape::ShapeModel, A_B::Real) = sum(energy_in(facet, A_B) for facet in shape.facets)
 energy_in(facet::Facet, A_B::Real) = (1 - A_B) * (facet.flux.sun + facet.flux.scat) * facet.area
 
 
 """
-    energy_out(shape::ShapeModel, params::ThermoParams                   ) -> E_out
+    energy_out(shape::ShapeModel, params::AbstractThermoParams           ) -> E_out
     energy_out(shape::ShapeModel, ε::AbstractVector, A_TH::AbstractVector) -> E_out
     energy_out(shape::ShapeModel, ε::Real,           A_TH::Real          ) -> E_out
     energy_out(facet::Facet,      ε::Real,           A_TH::Real          ) -> E_out
 
 Output enegey per second at a certain time [W]
 """
-energy_out(shape::ShapeModel, params::ThermoParams) = energy_out(shape, params.ε, params.A_TH)
+energy_out(shape::ShapeModel, params::AbstractThermoParams) = energy_out(shape, params.ε, params.A_TH)
 energy_out(shape::ShapeModel, ε::AbstractVector, A_TH::AbstractVector) = sum(energy_out(facet, ε[i], A_TH[i]) for (i, facet) in enumerate(shape.facets))
 energy_out(shape::ShapeModel, ε::Real, A_TH::Real) = sum(energy_out(facet, ε, A_TH) for facet in shape.facets)
 energy_out(facet::Facet, ε::Real, A_TH::Real) = ( ε*σ_SB*facet.temps[begin]^4 - (1 - A_TH)*facet.flux.rad ) * facet.area
@@ -351,7 +351,7 @@ end
 
 Single scattering of sunlight is considered.
 """
-update_flux_scat_single!(shape, params::ThermoParams) = update_flux_scat_single!(shape, params.A_B)
+update_flux_scat_single!(shape, params::AbstractThermoParams) = update_flux_scat_single!(shape, params.A_B)
 
 function update_flux_scat_single!(shape, A_B::Real)
     for facet in shape.facets
@@ -376,7 +376,7 @@ end
 
 # Multiple scattering of sunlight is considered.
 # """
-# update_flux_scat_mult!(shape, params::ThermoParams) = update_flux_scat_mult!(shape, params.A_B)
+# update_flux_scat_mult!(shape, params::AbstractThermoParams) = update_flux_scat_mult!(shape, params.A_B)
 
 # function update_flux_scat_mult!(shape, A_B::Real)
 #     for facet in shape.facets
@@ -404,7 +404,7 @@ end
 Single radiation-reabsorption is considered,
 assuming albedo is close to zero at thermal infrared wavelength.
 """
-update_flux_rad_single!(shape, params::ThermoParams) = update_flux_rad_single!(shape, params.ε)
+update_flux_rad_single!(shape, params::AbstractThermoParams) = update_flux_rad_single!(shape, params.ε)
 
 function update_flux_rad_single!(shape, ε::Real)
     for facet in shape.facets

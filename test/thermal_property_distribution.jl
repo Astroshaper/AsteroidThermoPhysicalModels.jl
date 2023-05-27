@@ -69,7 +69,7 @@
     #     Bond albedo          : A_B = 0.1  [-]
     #     Thermal conductivity : k   = 0.3  [W/m/K]
     #     Emissivity           : ε   = 0.9  [-]
-    thermo_params = AsteroidThermoPhysicalModels.ThermoParams(
+    thermo_params = AsteroidThermoPhysicalModels.thermoparams(
         A_B     = [facet.center[3] > 0 ? 0.04 : 0.1 for facet in shape.facets],
         A_TH    = 0.0,
         k       = [facet.center[3] > 0 ? 0.1 : 0.3 for facet in shape.facets],

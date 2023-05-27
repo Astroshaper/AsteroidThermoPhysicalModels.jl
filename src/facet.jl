@@ -1,10 +1,45 @@
+"""
+    mutable struct Flux
+
+Energy flux to a facet
+
+# Fields
+- `sun`  : Flux of solar radiation,    F_sun
+- `scat` : Flux of scattered sunlight, F_scat
+- `rad`  : Flux of thermal radiation,  F_rad
+"""
+mutable struct Flux
+    sun ::Float64
+    scat::Float64
+    rad ::Float64
+end
+
+Flux() = Flux(0., 0., 0.)
+
+"""
+    struct VisibleFacet
+
+Index of an interfacing facet and its view factor
+
+# Fields
+- `id` : Index of the interfacing facet
+- `f`  : View factor from facet i to j
+- `d`  : Distance from facet i to j
+- `d̂`  : Normal vector from facet i to j
+"""
+struct VisibleFacet
+    id::Int64
+    f ::Float64
+    d ::Float64
+    d̂ ::SVector{3, Float64}
+end
 
 ################################################################
 #                  Triangular surface facet
 ################################################################
 
 """
-    struct Face{T1, T2, T3, T4, T5, T6}
+    struct Facet
 
 Triangular surface facet of a polyhedral shape model.
 
@@ -25,20 +60,20 @@ Note that the mesh normal indicates outward the polyhedron.
 - `_temps_      ::T5` : Pre-allocated vector for updating temperature profile
 - `force        ::T6` : Photon recoil force
 """
-struct Facet{T1, T2, T3, T4, T5, T6}
-    A::T1
-    B::T1
-    C::T1
+struct Facet
+    A::SVector{3, Float64}
+    B::SVector{3, Float64}
+    C::SVector{3, Float64}
     
-    center::T1
-    normal::T1
-    area  ::T2
+    center::SVector{3, Float64}
+    normal::SVector{3, Float64}
+    area  ::Float64
     
-    visiblefacets::T3
-    flux         ::T4
-    temps        ::T5
-    _temps_      ::T5
-    force        ::T6
+    visiblefacets::StructVector{VisibleFacet, NamedTuple{(:id, :f, :d, :d̂), Tuple{Vector{Int64}, Vector{Float64}, Vector{Float64}, Vector{SVector{3, Float64}}}}, Int64}
+    flux         ::Flux
+    temps        ::Vector{Float64}
+    _temps_      ::Vector{Float64}
+    force        ::Vector{Float64}
 end
 
 Facet(A, B, C) = Facet([A, B, C])
@@ -98,25 +133,6 @@ facet_area(v1, v2, v3) = norm((v2 - v1) × (v3 - v2)) / 2
 ################################################################
 
 
-"""
-    struct VisibleFacet{T1, T2, T3}
-
-Index of an interfacing facet and its view factor
-
-# Fields
-- `id` : Index of the interfacing facet
-- `f`  : View factor from facet i to j
-- `d`  : Distance from facet i to j
-- `d̂`  : Normal vector from facet i to j
-"""
-struct VisibleFacet
-    id::Int64
-    f ::Float64
-    d ::Float64
-    d̂ ::SVector{3, Float64}
-end
-
-
 VisibleFacet(i::Facet, j::Facet, id) = VisibleFacet(id, view_factor(i, j)...)
 
 
@@ -138,25 +154,6 @@ function view_factor(i::Facet, j::Facet)
 end
 
 view_factor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * dᵢⱼ^2) * aⱼ
-
-
-"""
-    mutable struct Flux{T}
-
-Energy flux to a facet
-
-# Fields
-- `sun ::T` : Flux of solar radiation,    F_sun
-- `scat::T` : Flux of scattered sunlight, F_scat
-- `rad ::T` : Flux of thermal radiation,  F_rad
-"""
-mutable struct Flux{T}
-    sun ::T
-    scat::T
-    rad ::T
-end
-
-Flux() = Flux(0., 0., 0.)
 
 
 ################################################################

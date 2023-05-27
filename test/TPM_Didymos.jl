@@ -47,15 +47,15 @@
     @show length(save_range)
 
     # Position 
-    sun_d1 = [SPICE.spkpos("SUN", et, "DIDYMOS_FIXED", "None", "DIDYMOS")[1]*1000 for et in et_range]
-    sun_d2 = [SPICE.spkpos("SUN", et, "DIMORPHOS_FIXED", "None", "DIMORPHOS")[1]*1000 for et in et_range]
-    d1_d2 = [SPICE.spkpos("DIDYMOS", et, "DIMORPHOS_FIXED", "None", "DIMORPHOS")[1]*1000 for et in et_range]
-    d2_d1 = [SPICE.spkpos("DIMORPHOS", et, "DIDYMOS_FIXED", "None", "DIDYMOS")[1]*1000 for et in et_range]
+    sun_d1 = [SVector{3}(SPICE.spkpos("SUN", et, "DIDYMOS_FIXED", "None", "DIDYMOS")[1])*1000 for et in et_range]
+    sun_d2 = [SVector{3}(SPICE.spkpos("SUN", et, "DIMORPHOS_FIXED", "None", "DIMORPHOS")[1])*1000 for et in et_range]
+    d1_d2 = [SVector{3}(SPICE.spkpos("DIDYMOS", et, "DIMORPHOS_FIXED", "None", "DIMORPHOS")[1])*1000 for et in et_range]
+    d2_d1 = [SVector{3}(SPICE.spkpos("DIMORPHOS", et, "DIDYMOS_FIXED", "None", "DIDYMOS")[1])*1000 for et in et_range]
     # Transformation matrix
-    D1_TO_D2 = [SPICE.pxform("DIDYMOS_FIXED", "DIMORPHOS_FIXED", et) for et in et_range]
-    D2_TO_D1 = [SPICE.pxform("DIMORPHOS_FIXED", "DIDYMOS_FIXED", et) for et in et_range]
-    D1_TO_J2000 = [SPICE.pxform("DIDYMOS_FIXED", "J2000", et) for et in et_range]
-    D2_TO_J2000 = [SPICE.pxform("DIMORPHOS_FIXED", "J2000", et) for et in et_range]
+    D1_TO_D2 = [RotMatrix{3}(SPICE.pxform("DIDYMOS_FIXED", "DIMORPHOS_FIXED", et)) for et in et_range]
+    D2_TO_D1 = [RotMatrix{3}(SPICE.pxform("DIMORPHOS_FIXED", "DIDYMOS_FIXED", et)) for et in et_range]
+    D1_TO_J2000 = [RotMatrix{3}(SPICE.pxform("DIDYMOS_FIXED", "J2000", et)) for et in et_range]
+    D2_TO_J2000 = [RotMatrix{3}(SPICE.pxform("DIMORPHOS_FIXED", "J2000", et)) for et in et_range]
     SPICE.kclear()
 
     ##= Load obj file =##
@@ -76,7 +76,7 @@
     end
 
     ##= TPM =##
-    thermo_params = AsteroidThermoPhysicalModels.ThermoParams(  # [Michel+2016; Naidu+2020]
+    thermo_params = AsteroidThermoPhysicalModels.thermoparams(  # [Michel+2016; Naidu+2020]
         A_B     = 0.059,  # Bolometric Bond albedo
         A_TH    = 0.0,
         k       = 0.125,

@@ -35,7 +35,6 @@ export ShapeModel
 include("thermophysics.jl")
 include("TPM.jl")
 include("non_grav.jl")
-export ThermoParams
 export init_temps_zero!, run_TPM!
 
 # include("roughness.jl")
