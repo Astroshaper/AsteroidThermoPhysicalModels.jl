@@ -64,7 +64,7 @@ end
 equivalent_radius(VOLUME::Real) = (3VOLUME/4π)^(1/3)
 equivalent_radius(shape::ShapeModel) = equivalent_radius(getvolume(shape))
 
-maximum_radius(nodes) = maximum(norm.(nodes))
+maximum_radius(nodes::Vector{<:StaticVector{3}}) = maximum(norm, nodes)
 maximum_radius(shape::ShapeModel) = maximum_radius(shape.nodes)
 
 minimum_radius(nodes) = minimum(norm.(nodes))
