@@ -34,7 +34,6 @@ struct ShapeModel{T}
     RADIUS_EQ ::Float64
     RADIUS_MAX::Float64
     RADIUS_MIN::Float64
-    COF       ::SVector{3, Float64}
     force     ::MVector{3, Float64}
     torque    ::MVector{3, Float64}
 end
@@ -50,7 +49,6 @@ function Base.show(io::IO, shape::ShapeModel)
     msg *= "Equivalent radius : $(shape.RADIUS_EQ)\n"
     msg *= "Maximum radius    : $(shape.RADIUS_MAX)\n"
     msg *= "Minimum radius    : $(shape.RADIUS_MIN)\n"
-    msg *= "Center-of-Figure  : $(shape.COF)\n"
     print(io, msg)
 end
 
@@ -74,14 +72,13 @@ function ShapeModel(shapepath; scale=1, find_visible_facets=false, save_shape=fa
         RADIUS_EQ  = equivalent_radius(VOLUME)
         RADIUS_MAX = maximum_radius(nodes)
         RADIUS_MIN = minimum_radius(nodes)
-        COF        = center_of_figure(facets)
         
         force  = zero(MVector{3, Float64})
         torque = zero(MVector{3, Float64})
         
         shape = ShapeModel(
             num_node, num_face, nodes, faces, facets,
-            AREA, VOLUME, RADIUS_EQ, RADIUS_MAX, RADIUS_MIN, COF, force, torque
+            AREA, VOLUME, RADIUS_EQ, RADIUS_MAX, RADIUS_MIN, force, torque
         )
         save_shape && save(splitext(shapepath)[1] * ".jld2", Dict("shape" => shape))
 
@@ -121,21 +118,3 @@ surface_temperature(shape::ShapeModel) = [facet.temps[begin] for facet in shape.
 Calculate volume of a polyhedral
 """
 getvolume(facets) = sum(((facet.A × facet.B) ⋅ facet.C) / 6 for facet in facets)
-
-"""
-    center_of_figure(facets) -> COF
-
-Calculate center-of-figure position of a polyhedral
-"""
-function center_of_figure(facets)
-    VOLUME = getvolume(facets)
-    COF = zeros(3)
-
-    for facet in facets
-        @unpack A, B, C = facet
-        volume = ((A × B) ⋅ C) / 6  # volume of pyramid element O-A-B-C
-        center = (A + B + C) / 4    # center of pyramid element O-A-B-C
-        COF += volume * center
-    end
-    COF / VOLUME
-end
