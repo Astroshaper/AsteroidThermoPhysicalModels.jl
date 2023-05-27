@@ -78,8 +78,8 @@ function ShapeModel(shapepath; scale=1, find_visible_facets=false, save_shape=fa
     return shape
 end
 
-equivalent_radius(VOLUME) = (3VOLUME/4π)^(1/3)
-equivalent_radius(shape::ShapeModel) = equivalent_radius(shape.VOLUME)
+equivalent_radius(VOLUME::Real) = (3VOLUME/4π)^(1/3)
+equivalent_radius(shape::ShapeModel) = equivalent_radius(getvolume(shape))
 
 maximum_radius(nodes) = maximum(norm.(nodes))
 maximum_radius(shape::ShapeModel) = maximum_radius(shape.nodes)
@@ -105,3 +105,4 @@ surface_temperature(shape::ShapeModel) = [facet.temps[begin] for facet in shape.
 Calculate volume of a polyhedral
 """
 getvolume(facets) = sum(((facet.A × facet.B) ⋅ facet.C) / 6 for facet in facets)
+getvolume(shape::ShapeModel) = getvolume(shape.facets)
