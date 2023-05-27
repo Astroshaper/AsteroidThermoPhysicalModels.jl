@@ -13,7 +13,6 @@ A polyhedral shape model of an asteroid.
 
 - `facets`     : 1-D array of surface facets (`Facet`)
 
-- `AREA`       : Surface area
 - `VOLUME`     : Volume
 - `RADIUS_EQ`  : Equivalent radius of a sphere with the same volume
 - `RADIUS_MAX` : Maximum radius
@@ -29,7 +28,6 @@ struct ShapeModel{T}
     nodes     ::Vector{SVector{3, Float64}}
     faces     ::Vector{SVector{3, Int}}
     facets    ::T
-    AREA      ::Float64
     VOLUME    ::Float64
     RADIUS_EQ ::Float64
     RADIUS_MAX::Float64
@@ -44,7 +42,6 @@ function Base.show(io::IO, shape::ShapeModel)
     msg *= "-----------\n"
     msg *= "Nodes             : $(shape.num_node)\n"
     msg *= "Faces             : $(shape.num_face)\n"
-    msg *= "Surface area      : $(shape.AREA)\n"
     msg *= "Volume            : $(shape.VOLUME)\n"
     msg *= "Equivalent radius : $(shape.RADIUS_EQ)\n"
     msg *= "Maximum radius    : $(shape.RADIUS_MAX)\n"
@@ -67,7 +64,6 @@ function ShapeModel(shapepath; scale=1, find_visible_facets=false, save_shape=fa
         facets = getfacets(nodes, faces)
         find_visible_facets && findVisibleFacets!(facets)
         
-        AREA       = sum(facets.area)
         VOLUME     = getvolume(facets)
         RADIUS_EQ  = equivalent_radius(VOLUME)
         RADIUS_MAX = maximum_radius(nodes)
@@ -78,7 +74,7 @@ function ShapeModel(shapepath; scale=1, find_visible_facets=false, save_shape=fa
         
         shape = ShapeModel(
             num_node, num_face, nodes, faces, facets,
-            AREA, VOLUME, RADIUS_EQ, RADIUS_MAX, RADIUS_MIN, force, torque
+            VOLUME, RADIUS_EQ, RADIUS_MAX, RADIUS_MIN, force, torque
         )
         save_shape && save(splitext(shapepath)[1] * ".jld2", Dict("shape" => shape))
 
