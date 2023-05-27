@@ -8,13 +8,8 @@ A polyhedral shape model of an asteroid.
 # Fields
 - `nodes`      : 1-D array of node positions
 - `faces`      : 1-D array of vertex indices of faces
-
 - `facets`     : 1-D array of surface facets (`Facet`)
-
 - `RADIUS_MAX` : Maximum radius
-- `RADIUS_MIN` : Minimum radius
-- `COF`        : Center-of-figure
-
 - `force`      : Thermal recoil force at body-fixed frame (Yarkovsky effect)
 - `torque`     : Thermal recoil torque at body-fixed frame (YORP effect)
 """
@@ -23,7 +18,6 @@ struct ShapeModel{T}
     faces     ::Vector{SVector{3, Int}}
     facets    ::T
     RADIUS_MAX::Float64
-    RADIUS_MIN::Float64
     force     ::MVector{3, Float64}
     torque    ::MVector{3, Float64}
 end
@@ -33,7 +27,6 @@ function Base.show(io::IO, shape::ShapeModel)
     msg = "Shape model\n"
     msg *= "-----------\n"
     msg *= "Maximum radius    : $(shape.RADIUS_MAX)\n"
-    msg *= "Minimum radius    : $(shape.RADIUS_MIN)\n"
     print(io, msg)
 end
 
@@ -50,14 +43,12 @@ function ShapeModel(shapepath; scale=1, find_visible_facets=false, save_shape=fa
         find_visible_facets && findVisibleFacets!(facets)
         
         RADIUS_MAX = maximum_radius(nodes)
-        RADIUS_MIN = minimum_radius(nodes)
         
         force  = zero(MVector{3, Float64})
         torque = zero(MVector{3, Float64})
         
         shape = ShapeModel(
-            nodes, faces, facets,
-            RADIUS_MAX, RADIUS_MIN, force, torque
+            nodes, faces, facets, RADIUS_MAX, force, torque
         )
         save_shape && save(splitext(shapepath)[1] * ".jld2", Dict("shape" => shape))
 
