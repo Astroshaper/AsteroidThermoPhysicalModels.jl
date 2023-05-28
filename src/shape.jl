@@ -24,6 +24,12 @@ end
 function Base.show(io::IO, shape::ShapeModel)
     msg = "Shape model\n"
     msg *= "-----------\n"
+    msg *= "Number of nodes   : $(length(shape.nodes))\n"
+    msg *= "Number of faces   : $(length(shape.faces))\n"
+    msg *= "Volume            : $(getvolume(shape.VOLUME))\n"
+    msg *= "Equivalent radius : $(equivalent_radius(shape.RADIUS_EQ))\n"
+    msg *= "Maximum radius    : $(maximum_radius(shape.RADIUS_MAX))\n"
+    msg *= "Minimum radius    : $(minimum_radius(shape.RADIUS_MIN))\n"
     print(io, msg)
 end
 
