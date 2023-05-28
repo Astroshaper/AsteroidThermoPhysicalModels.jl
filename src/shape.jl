@@ -31,7 +31,7 @@ function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
     # TODO: use MeshIO.jl
     nodes, faces = loadobj(shapepath; scale=scale, static=true, message=false)
     facets = getfacets(nodes, faces)
-    find_visible_facets && findVisibleFacets!(facets)
+    find_visible_facets && find_visiblefacets!(facets)
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
     shape = ShapeModel(nodes, faces, facets, force, torque)
@@ -56,7 +56,7 @@ maximum_radius(shape::ShapeModel) = maximum_radius(shape.nodes)
 minimum_radius(nodes) = minimum(norm.(nodes))
 minimum_radius(shape::ShapeModel) = minimum_radius(shape.nodes)
 
-findVisibleFacets!(shape::ShapeModel) = findVisibleFacets!(shape.facets)
+find_visiblefacets!(shape::ShapeModel) = find_visiblefacets!(shape.facets)
 isIlluminated(obs::Facet, r̂☉, shape::ShapeModel) = isIlluminated(obs, r̂☉, shape.facets)
 isIlluminated(r̂☉, shape::ShapeModel) = [isIlluminated(obs, r̂☉, shape) for obs in shape.facets]
 

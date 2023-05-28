@@ -247,7 +247,7 @@ raycast(A, B, C, R, obs::Facet) = raycast(A, B, C, R, obs.center)
 
 
 """
-    findVisibleFacets!(obs::Facet, facets)
+    find_visiblefacets!(obs::Facet, facets)
 
 Find facets that is visible from the facet where the observer is located.
 
@@ -255,7 +255,7 @@ Find facets that is visible from the facet where the observer is located.
 - `obs`    : Facet where the observer stands
 - `facets` : Array of `Facet`
 """
-function findVisibleFacets!(obs::Facet, facets)
+function find_visiblefacets!(obs::Facet, facets)
     ids = Int64[]
     for (id, tar) in enumerate(facets)
         isAbove(obs, tar) && isFace(obs, tar) && push!(ids, id)
@@ -285,16 +285,16 @@ function findVisibleFacets!(obs::Facet, facets)
 end
 
 """
-    findVisibleFacets!(facets)
+    find_visiblefacets!(facets)
 
 Find facets that is visible from each facet
 
 # Parameters
 - `facets` : Array of `Facet`
 """
-function findVisibleFacets!(facets)
+function find_visiblefacets!(facets)
     for obs in facets
-        findVisibleFacets!(obs, facets)
+        find_visiblefacets!(obs, facets)
     end
 end
 
