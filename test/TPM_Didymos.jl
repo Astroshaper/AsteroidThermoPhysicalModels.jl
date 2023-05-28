@@ -67,12 +67,12 @@
     if isfile(path_shape1_jld)
         shape1 = AsteroidThermoPhysicalModels.load_shape_jld(path_shape1_jld)
     else
-        shape1 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape1_obj; scale=1000, find_visible_facets=true, save_shape=true)
+        shape1 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape1_obj; scale=1000, find_visible_facets=true)
     end
     if isfile(path_shape2_jld)
         shape2 = AsteroidThermoPhysicalModels.load_shape_jld(path_shape2_jld)
     else
-        shape2 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape2_obj; scale=1000, find_visible_facets=true, save_shape=true)
+        shape2 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape2_obj; scale=1000, find_visible_facets=true)
     end
 
     ##= TPM =##

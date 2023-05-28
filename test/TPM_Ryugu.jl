@@ -55,7 +55,7 @@
     if isfile(path_jld)
         shape = AsteroidThermoPhysicalModels.load_shape_jld(path_jld)
     else
-        shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj; scale=1000, find_visible_facets=true, save_shape=true)
+        shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj; scale=1000, find_visible_facets=true)
     end
 
     ##= TPM =##
