@@ -27,32 +27,24 @@ function Base.show(io::IO, shape::ShapeModel)
     print(io, msg)
 end
 
-
-function ShapeModel(shapepath; scale=1, find_visible_facets=false, save_shape=false)
+function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
     # TODO: use MeshIO.jl
-    
-    ext = splitext(shapepath)[2]
-    
-    if ext == ".obj"
-        nodes, faces = loadobj(shapepath; scale=scale, static=true, message=false)
-        
-        facets = getfacets(nodes, faces)
-        find_visible_facets && findVisibleFacets!(facets)
-        force  = zero(MVector{3, Float64})
-        torque = zero(MVector{3, Float64})
-        
-        shape = ShapeModel(
-            nodes, faces, facets, force, torque
-        )
-        save_shape && save(splitext(shapepath)[1] * ".jld2", Dict("shape" => shape))
-
-    elseif ext == ".jld2"
-        shape = load(shapepath)["shape"]
-    else
-        return ArgumentError("Give a filepath of *.obj or *.jld2.")
-    end
-
+    nodes, faces = loadobj(shapepath; scale=scale, static=true, message=false)
+    facets = getfacets(nodes, faces)
+    find_visible_facets && findVisibleFacets!(facets)
+    force  = zero(MVector{3, Float64})
+    torque = zero(MVector{3, Float64})
+    shape = ShapeModel(nodes, faces, facets, force, torque)
     return shape
+end
+
+function load_shape_jld(shapepath)
+    shape = load(shapepath)["shape"]
+    return shape
+end
+
+function save_shape_jld(shapepath, shape)
+    save(splitext(shapepath)[1] * ".jld2", Dict("shape" => shape))
 end
 
 equivalent_radius(VOLUME::Real) = (3VOLUME/4π)^(1/3)
