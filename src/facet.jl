@@ -165,7 +165,7 @@ view_factor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * d�
 
 Determine if the two facets are facing each other
 """
-isFace(obs::Facet, tar::Facet) = (tar.center - obs.center) ⋅ tar.normal < 0 ? true : false
+isFace(obs::Facet, tar::Facet) = (tar.center - obs.center) ⋅ tar.normal < 0
 
 """
     isAbove(A, B, C, D)             -> Bool
@@ -181,7 +181,7 @@ function isAbove(A, B, C, D)
         C[1]-D[1] C[2]-D[2] C[3]-D[3]
     ]
 
-    det(G) < 0 ? true : false
+    return det(G) < 0
 end
 
 """
@@ -198,7 +198,7 @@ function isBelow(A, B, C, D)
         C[1]-D[1] C[2]-D[2] C[3]-D[3]
     ]
 
-    det(G) > 0 ? true : false
+    return det(G) > 0
 end
 
 isAbove(facet::Facet, D) = isAbove(facet.A, facet.B, facet.C, D)
@@ -235,7 +235,7 @@ function raycast(A, B, C, R)
     v = (Q ⋅ R)  / P_dot_E1
     t = (Q ⋅ E2) / P_dot_E1
 
-    0 ≤ u ≤ 1 && 0 ≤ v ≤ 1 && 0 ≤ u + v ≤ 1 && t > 0 ? true : false
+    return 0 ≤ u ≤ 1 && 0 ≤ v ≤ 1 && 0 ≤ u + v ≤ 1 && t > 0
 end
 
 raycast(facet::Facet, R) = raycast(facet.A, facet.B, facet.C, R)

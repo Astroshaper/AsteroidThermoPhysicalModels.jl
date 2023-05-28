@@ -2,7 +2,7 @@
 
 function isobj(filepath)
     base, ext = splitext(filepath)
-    ext == ".obj" ? true : false
+    return ext == ".obj"
 end
 
 
