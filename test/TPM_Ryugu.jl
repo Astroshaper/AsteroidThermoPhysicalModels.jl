@@ -53,7 +53,7 @@
     path_obj = joinpath("shape", "SHAPE_SFM_49k_v20180804.obj")
     path_jld = joinpath("shape", "SHAPE_SFM_49k_v20180804.jld2")
     if isfile(path_jld)
-        shape = AsteroidThermoPhysicalModels.ShapeModel(path_jld; scale=1000, find_visible_facets=true, save_shape=true)
+        shape = AsteroidThermoPhysicalModels.ShapeModel(path_jld)
     else
         shape = AsteroidThermoPhysicalModels.ShapeModel(path_obj; scale=1000, find_visible_facets=true, save_shape=true)
     end
