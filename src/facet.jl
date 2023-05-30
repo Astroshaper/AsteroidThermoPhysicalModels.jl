@@ -312,8 +312,8 @@ end
 
 function isIlluminated(obs::Facet, r̂☉, facets)
     obs.normal ⋅ r̂☉ < 0 && return false
-    for id in obs.visiblefacets.id
-        raycast(facets[id], r̂☉, obs) && return false
+    for visiblefacet in obs.visiblefacets
+        raycast(facets[visiblefacet.id], r̂☉, obs) && return false
     end
     return true
 end
