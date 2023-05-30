@@ -80,7 +80,7 @@ Facet(A, B, C) = Facet([A, B, C])
 Facet(vs) = Facet(
     vs[1], vs[2], vs[3],
     facet_center(vs), facet_normal(vs), facet_area(vs),
-    StructArray(VisibleFacet[]), Flux(), Float64[], Float64[], zeros(3)
+    VisibleFacet[], Flux(), Float64[], Float64[], zeros(3)
 )
 
 function Base.show(io::IO, facet::Facet)
