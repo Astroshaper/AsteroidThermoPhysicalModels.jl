@@ -84,8 +84,7 @@ Facet(vs) = Facet(
 )
 
 function Base.show(io::IO, facet::Facet)
-    msg = "Surface facet"
-    msg *= "Surface facet\n"
+    msg = "Surface facet\n"
     msg *= "-------------\n"
 
     msg *= "Vertices\n"
