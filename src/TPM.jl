@@ -47,7 +47,7 @@ end
 
 #     ts = (t_begin:Δt:t_end) * P
 #     timestamp = prep_timestamp(ts)
-#     # surf_temp_table = zeros(shape.num_face, Int(1/thermo_params.Δt)-1)
+#     # surf_temp_table = zeros(length(shape.faces), Int(1/thermo_params.Δt)-1)
 
 #     for (i, t) in enumerate(ts)
 #         update_orbit!(orbit, t)
@@ -94,7 +94,7 @@ function run_TPM!(shape::ShapeModel, et_range, sun, thermo_params::AbstractTherm
  
     init_temps_zero!(shape, thermo_params)
     
-    surf_temps = zeros(shape.num_face, length(save_range))
+    surf_temps = zeros(length(shape.faces), length(save_range))
     forces  = [zeros(3) for _ in eachindex(save_range)]
     torques = [zeros(3) for _ in eachindex(save_range)]
     
@@ -137,7 +137,7 @@ Run TPM for a binary asteroid.
 """
 function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::AbstractThermoParams, savepath, savevalues)
 
-    surf_temps = zeros(shapes[1].num_face, length(et_range)), zeros(shapes[2].num_face, length(et_range))
+    surf_temps = zeros(length(shapes[1].faces), length(et_range)), zeros(length(shapes[2].faces), length(et_range))
     forces  = [zeros(3) for _ in eachindex(et_range)], [zeros(3) for _ in eachindex(et_range)]
     torques = [zeros(3) for _ in eachindex(et_range)], [zeros(3) for _ in eachindex(et_range)]
     
@@ -296,8 +296,8 @@ The secondary is within the critical angle to detect an eclipse event.
 """
 function eclipse_is_possible(shapes, sun_from_pri, sec_from_pri)
 
-    R₁ = shapes[1].RADIUS_MAX
-    R₂ = shapes[2].RADIUS_MAX
+    R₁ = maximum_radius(shapes[1])
+    R₂ = maximum_radius(shapes[2])
     θ_crit = asin((R₁ + R₂) / norm(sec_from_pri))
 
     r̂☉ = SVector{3}(normalize(sun_from_pri))

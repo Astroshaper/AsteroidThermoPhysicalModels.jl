@@ -165,7 +165,7 @@ view_factor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * d�
 
 Determine if the two facets are facing each other
 """
-isFace(obs::Facet, tar::Facet) = (tar.center - obs.center) ⋅ tar.normal < 0 ? true : false
+isFace(obs::Facet, tar::Facet) = (tar.center - obs.center) ⋅ tar.normal < 0
 
 """
     isAbove(A, B, C, D)             -> Bool
@@ -181,7 +181,7 @@ function isAbove(A, B, C, D)
         C[1]-D[1] C[2]-D[2] C[3]-D[3]
     ]
 
-    det(G) < 0 ? true : false
+    return det(G) < 0
 end
 
 """
@@ -198,7 +198,7 @@ function isBelow(A, B, C, D)
         C[1]-D[1] C[2]-D[2] C[3]-D[3]
     ]
 
-    det(G) > 0 ? true : false
+    return det(G) > 0
 end
 
 isAbove(facet::Facet, D) = isAbove(facet.A, facet.B, facet.C, D)
@@ -235,7 +235,7 @@ function raycast(A, B, C, R)
     v = (Q ⋅ R)  / P_dot_E1
     t = (Q ⋅ E2) / P_dot_E1
 
-    0 ≤ u ≤ 1 && 0 ≤ v ≤ 1 && 0 ≤ u + v ≤ 1 && t > 0 ? true : false
+    return 0 ≤ u ≤ 1 && 0 ≤ v ≤ 1 && 0 ≤ u + v ≤ 1 && t > 0
 end
 
 raycast(facet::Facet, R) = raycast(facet.A, facet.B, facet.C, R)
@@ -247,7 +247,7 @@ raycast(A, B, C, R, obs::Facet) = raycast(A, B, C, R, obs.center)
 
 
 """
-    findVisibleFacets!(obs::Facet, facets)
+    find_visiblefacets!(obs::Facet, facets)
 
 Find facets that is visible from the facet where the observer is located.
 
@@ -255,7 +255,7 @@ Find facets that is visible from the facet where the observer is located.
 - `obs`    : Facet where the observer stands
 - `facets` : Array of `Facet`
 """
-function findVisibleFacets!(obs::Facet, facets)
+function find_visiblefacets!(obs::Facet, facets)
     ids = Int64[]
     for (id, tar) in enumerate(facets)
         isAbove(obs, tar) && isFace(obs, tar) && push!(ids, id)
@@ -285,16 +285,16 @@ function findVisibleFacets!(obs::Facet, facets)
 end
 
 """
-    findVisibleFacets!(facets)
+    find_visiblefacets!(facets)
 
 Find facets that is visible from each facet
 
 # Parameters
 - `facets` : Array of `Facet`
 """
-function findVisibleFacets!(facets)
+function find_visiblefacets!(facets)
     for obs in facets
-        findVisibleFacets!(obs, facets)
+        find_visiblefacets!(obs, facets)
     end
 end
 
