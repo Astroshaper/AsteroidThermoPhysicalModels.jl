@@ -69,7 +69,7 @@ struct Facet
     normal::SVector{3, Float64}
     area  ::Float64
     
-    visiblefacets::StructVector{VisibleFacet, NamedTuple{(:id, :f, :d, :d̂), Tuple{Vector{Int64}, Vector{Float64}, Vector{Float64}, Vector{SVector{3, Float64}}}}, Int64}
+    visiblefacets::Vector{VisibleFacet}
     flux         ::Flux
     temps        ::Vector{Float64}
     _temps_      ::Vector{Float64}
@@ -111,7 +111,7 @@ end
 """
 Array of `Facet`, converted from arrays of nodes and faces of a shape model
 """
-getfacets(nodes, faces) = StructArray([Facet(nodes[face]) for face in faces])
+getfacets(nodes, faces) = [Facet(nodes[face]) for face in faces]
 
 
 # ################################################################
