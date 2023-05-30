@@ -45,7 +45,7 @@ function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
 end
 
 function load_shape_jld(shapepath)
-    shape = load(shapepath)["shape"]
+    shape = load(shapepath, "shape")
     return shape
 end
 
