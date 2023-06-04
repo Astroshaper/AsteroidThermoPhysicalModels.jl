@@ -356,8 +356,8 @@ update_flux_scat_single!(shape, params::AbstractThermoParams) = update_flux_scat
 function update_flux_scat_single!(shape, A_B::Real)
     for facet in shape.facets
         facet.flux.scat = 0
-        for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
-            facet.flux.scat += f * A_B * shape.facets[id].flux.sun
+        for visiblefacet in facet.visiblefacets
+            facet.flux.scat += visiblefacet.f * A_B * shape.facets[visiblefacet.id].flux.sun
         end
     end
 end
@@ -365,8 +365,8 @@ end
 function update_flux_scat_single!(shape, A_B::AbstractVector)
     for facet in shape.facets
         facet.flux.scat = 0
-        for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
-            facet.flux.scat += f * A_B[id] * shape.facets[id].flux.sun
+        for visiblefacet in facet.visiblefacets
+            facet.flux.scat += visiblefacet.f * A_B[visiblefacet.id] * shape.facets[visiblefacet.id].flux.sun
         end
     end
 end
@@ -409,9 +409,9 @@ update_flux_rad_single!(shape, params::AbstractThermoParams) = update_flux_rad_s
 function update_flux_rad_single!(shape, ε::Real)
     for facet in shape.facets
         facet.flux.rad = 0
-        for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
-            T = shape.facets[id].temps[begin]
-            facet.flux.rad += f * ε * σ_SB * T^4
+        for visiblefacet in facet.visiblefacets
+            T = shape.facets[visiblefacet.id].temps[begin]
+            facet.flux.rad += visiblefacet.f * ε * σ_SB * T^4
         end
     end
 end
@@ -419,9 +419,9 @@ end
 function update_flux_rad_single!(shape, ε::AbstractVector)
     for facet in shape.facets
         facet.flux.rad = 0
-        for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
-            T = shape.facets[id].temps[begin]
-            facet.flux.rad += f * ε[id] * σ_SB * T^4
+        for visiblefacet in facet.visiblefacets
+            T = shape.facets[visiblefacet.id].temps[begin]
+            facet.flux.rad += visiblefacet.f * ε[visiblefacet.id] * σ_SB * T^4
         end
     end
 end

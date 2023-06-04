@@ -69,7 +69,7 @@ struct Facet
     normal::SVector{3, Float64}
     area  ::Float64
     
-    visiblefacets::StructVector{VisibleFacet, NamedTuple{(:id, :f, :d, :d̂), Tuple{Vector{Int64}, Vector{Float64}, Vector{Float64}, Vector{SVector{3, Float64}}}}, Int64}
+    visiblefacets::Vector{VisibleFacet}
     flux         ::Flux
     temps        ::Vector{Float64}
     _temps_      ::Vector{Float64}
@@ -80,12 +80,11 @@ Facet(A, B, C) = Facet([A, B, C])
 Facet(vs) = Facet(
     vs[1], vs[2], vs[3],
     facet_center(vs), facet_normal(vs), facet_area(vs),
-    StructArray(VisibleFacet[]), Flux(), Float64[], Float64[], zeros(3)
+    VisibleFacet[], Flux(), Float64[], Float64[], zeros(3)
 )
 
 function Base.show(io::IO, facet::Facet)
-    msg = "Surface facet"
-    msg *= "Surface facet\n"
+    msg = "Surface facet\n"
     msg *= "-------------\n"
 
     msg *= "Vertices\n"
@@ -111,7 +110,7 @@ end
 """
 Array of `Facet`, converted from arrays of nodes and faces of a shape model
 """
-getfacets(nodes, faces) = StructArray([Facet(nodes[face]) for face in faces])
+getfacets(nodes, faces) = [Facet(nodes[face]) for face in faces]
 
 
 # ################################################################
@@ -313,8 +312,8 @@ end
 
 function isIlluminated(obs::Facet, r̂☉, facets)
     obs.normal ⋅ r̂☉ < 0 && return false
-    for id in obs.visiblefacets.id
-        raycast(facets[id], r̂☉, obs) && return false
+    for visiblefacet in obs.visiblefacets
+        raycast(facets[visiblefacet.id], r̂☉, obs) && return false
     end
     return true
 end
