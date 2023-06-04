@@ -53,10 +53,11 @@
     ##= Load obj file =##
     path_obj = joinpath("shape", "SHAPE_SFM_49k_v20180804.obj")
     path_jld = joinpath("shape", "SHAPE_SFM_49k_v20180804.jld2")
-    if isfile(path_jld)
+    if isfile(path_jld) && ENABLE_JLD
         shape = AsteroidThermoPhysicalModels.load_shape_jld(path_jld)
     else
         shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj; scale=1000, find_visible_facets=true)
+        AsteroidThermoPhysicalModels.save_shape_jld(path_jld, shape)
     end
 
     ##= TPM =##
