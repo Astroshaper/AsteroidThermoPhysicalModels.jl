@@ -1,7 +1,7 @@
 
 
 """
-    ShapeModel{T}
+    ShapeModel
 
 A polyhedral shape model of an asteroid.
 
@@ -12,10 +12,10 @@ A polyhedral shape model of an asteroid.
 - `force`      : Thermal recoil force at body-fixed frame (Yarkovsky effect)
 - `torque`     : Thermal recoil torque at body-fixed frame (YORP effect)
 """
-struct ShapeModel{T}
+struct ShapeModel
     nodes     ::Vector{SVector{3, Float64}}
     faces     ::Vector{SVector{3, Int}}
-    facets    ::T
+    facets    ::Vector{AsteroidThermoPhysicalModels.Facet}
     force     ::MVector{3, Float64}
     torque    ::MVector{3, Float64}
 end
