@@ -10,6 +10,7 @@ using LinearAlgebra
 using StaticArrays
 using Rotations
 
+ENABLE_JLD = true
 Aqua.test_all(AsteroidThermoPhysicalModels, ambiguities=false)
 
 include("TPM_Ryugu.jl")

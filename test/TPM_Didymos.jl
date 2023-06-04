@@ -64,13 +64,13 @@
     path_shape1_jld = joinpath("shape", "g_50677mm_rad_obj_dida_0000n00000_v001.jld2")
     path_shape2_jld = joinpath("shape", "g_06650mm_rad_obj_didb_0000n00000_v001.jld2")
 
-    if isfile(path_shape1_jld)
+    if isfile(path_shape1_jld) && ENABLE_JLD
         shape1 = AsteroidThermoPhysicalModels.load_shape_jld(path_shape1_jld)
     else
         shape1 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape1_obj; scale=1000, find_visible_facets=true)
         AsteroidThermoPhysicalModels.save_shape_jld(path_shape1_jld, shape1)
     end
-    if isfile(path_shape2_jld)
+    if isfile(path_shape2_jld) && ENABLE_JLD
         shape2 = AsteroidThermoPhysicalModels.load_shape_jld(path_shape2_jld)
     else
         shape2 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape2_obj; scale=1000, find_visible_facets=true)
