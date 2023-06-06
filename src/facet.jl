@@ -284,35 +284,6 @@ function find_visiblefacets!(obs::Facet, facets)
 
         push!(obs.visiblefacets, VisibleFacet(obs, facets[j], j))
     end
-
-    ############################################################
-
-    # ids = Int64[]
-    # for (id, tar) in enumerate(facets)
-    #     isAbove(obs, tar) && isFace(obs, tar) && push!(ids, id)
-    # end
-    
-    # ii = copy(ids)
-
-    # for i in ii
-    #     tar_i = facets[i]
-    #     Rᵢ = tar_i.center - obs.center
-    #     dᵢ = norm(Rᵢ)      # distance to facet i
-    #     for j in ii
-    #         i == j && continue
-
-    #         tar_j = facets[j]
-    #         Rⱼ = tar_j.center - obs.center
-    #         dⱼ = norm(Rⱼ)  # distance to facet j
-
-    #         raycast(tar_j, Rᵢ, obs) && (dᵢ < dⱼ ? filter!(x->x≠j, ids) : filter!(x->x≠i, ids))
-    #     end
-    # end
-    
-    # for id in ids
-    #     tar = facets[id]
-    #     push!(obs.visiblefacets, VisibleFacet(obs, tar, id))
-    # end
 end
 
 """
