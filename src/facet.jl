@@ -97,11 +97,13 @@ function Base.show(io::IO, facet::Facet)
     msg *= "Area   : $(facet.area)\n"
     
     if isempty(facet.visiblefacets)
-        msg *= "No visible facets.\n"
+        msg *= "No visible facets from this facet.\n"
     else
-        @unpack visiblefacets = facet
-        msg *= "$(length(visiblefacets)) facets are visible:\n"
-        df = DataFrame(id=visiblefacets.id, f=visiblefacets.f, d=visiblefacets.d)
+        msg *= "$(length(facet.visiblefacets)) facets are visible from this facet:\n"
+        id = [visiblefacet.id for visiblefacet in facet.visiblefacets]
+        f  = [visiblefacet.f  for visiblefacet in facet.visiblefacets]
+        d  = [visiblefacet.d  for visiblefacet in facet.visiblefacets]
+        df = DataFrame(id=id, f=f, d=d)
         msg *= "$(df)\n"
     end
     print(io, msg)
@@ -255,32 +257,62 @@ Find facets that is visible from the facet where the observer is located.
 - `facets` : Array of `Facet`
 """
 function find_visiblefacets!(obs::Facet, facets)
-    ids = Int64[]
-    for (id, tar) in enumerate(facets)
-        isAbove(obs, tar) && isFace(obs, tar) && push!(ids, id)
-    end
     
-    ii = copy(ids)
+    candidates = Int64[]
+    for (j, facet) in enumerate(facets)
+        isAbove(obs, facet) && isFace(obs, facet) && push!(candidates, j)
+    end
 
-    for i in ii
-        tar_i = facets[i]
-        Rᵢ = tar_i.center - obs.center
-        dᵢ = norm(Rᵢ)      # distance to facet i
-        for j in ii
-            i == j && continue
+    for j in candidates
+        Rⱼ = facets[j].center - obs.center   # Vector from the facet `obs` to j
+        dⱼ = norm(Rⱼ)                        # Distance to facet j
 
-            tar_j = facets[j]
-            Rⱼ = tar_j.center - obs.center
-            dⱼ = norm(Rⱼ)  # distance to facet j
+        blocked = false
+        for k in candidates
+            j == k && continue
+            Rₖ = facets[k].center - obs.center  # Vector from the facet `obs` to k
+            dₖ = norm(Rₖ)                       # Distance to facet k
 
-            raycast(tar_j, Rᵢ, obs) && (dᵢ < dⱼ ? filter!(x->x≠j, ids) : filter!(x->x≠i, ids))
+            dⱼ < dₖ && continue
+
+            if raycast(facets[k], Rⱼ, obs)      # Not visible because the facet k blocks the view to j
+                blocked = true
+                break
+            end
         end
+        blocked && continue
+
+        push!(obs.visiblefacets, VisibleFacet(obs, facets[j], j))
     end
+
+    ############################################################
+
+    # ids = Int64[]
+    # for (id, tar) in enumerate(facets)
+    #     isAbove(obs, tar) && isFace(obs, tar) && push!(ids, id)
+    # end
     
-    for id in ids
-        tar = facets[id]
-        push!(obs.visiblefacets, VisibleFacet(obs, tar, id))
-    end
+    # ii = copy(ids)
+
+    # for i in ii
+    #     tar_i = facets[i]
+    #     Rᵢ = tar_i.center - obs.center
+    #     dᵢ = norm(Rᵢ)      # distance to facet i
+    #     for j in ii
+    #         i == j && continue
+
+    #         tar_j = facets[j]
+    #         Rⱼ = tar_j.center - obs.center
+    #         dⱼ = norm(Rⱼ)  # distance to facet j
+
+    #         raycast(tar_j, Rᵢ, obs) && (dᵢ < dⱼ ? filter!(x->x≠j, ids) : filter!(x->x≠i, ids))
+    #     end
+    # end
+    
+    # for id in ids
+    #     tar = facets[id]
+    #     push!(obs.visiblefacets, VisibleFacet(obs, tar, id))
+    # end
 end
 
 """
