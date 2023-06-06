@@ -256,49 +256,87 @@ Find facets that is visible from the facet where the observer is located.
 - `obs`    : Facet where the observer stands
 - `facets` : Array of `Facet`
 """
-function find_visiblefacets!(obs::Facet, facets)
-    
-    candidates = Int64[]
-    for (j, facet) in enumerate(facets)
-        isAbove(obs, facet) && isFace(obs, facet) && push!(candidates, j)
-    end
-
-    for j in candidates
-        Rⱼ = facets[j].center - obs.center   # Vector from the facet `obs` to j
-        dⱼ = norm(Rⱼ)                        # Distance to facet j
-
-        blocked = false
-        for k in candidates
-            j == k && continue
-            Rₖ = facets[k].center - obs.center  # Vector from the facet `obs` to k
-            dₖ = norm(Rₖ)                       # Distance to facet k
-
-            dⱼ < dₖ && continue
-
-            if raycast(facets[k], Rⱼ, obs)      # Not visible because the facet k blocks the view to j
-                blocked = true
-                break
-            end
-        end
-        blocked && continue
-
-        push!(obs.visiblefacets, VisibleFacet(obs, facets[j], j))
-    end
-end
-
-"""
-    find_visiblefacets!(facets)
-
-Find facets that is visible from each facet
-
-# Parameters
-- `facets` : Array of `Facet`
-"""
 function find_visiblefacets!(facets)
-    for obs in facets
-        find_visiblefacets!(obs, facets)
+    for i in eachindex(facets)
+        candidates = Int64[]
+        for j in eachindex(facets)
+            isAbove(facets[i], facets[j]) && isFace(facets[i], facets[j]) && push!(candidates, j)
+        end
+        
+        for j in candidates
+            j in (visiblefacet.id for visiblefacet in facets[i].visiblefacets) && continue
+
+            Rⱼ = facets[j].center - facets[i].center  # Vector from facet i to j
+            dⱼ = norm(Rⱼ)                             # Distance from facet i to j
+            
+            blocked = false
+            for k in candidates
+                j == k && continue
+                Rₖ = facets[k].center - facets[i].center  # Vector from facet i to k
+                dₖ = norm(Rₖ)                             # Distance from facet i to k
+                
+                dⱼ < dₖ && continue
+                
+                if raycast(facets[k], Rⱼ, facets[i])      # if facet k blocks the view to facet j
+                    blocked = true
+                    break
+                end
+            end
+
+            blocked && continue
+            push!(facets[i].visiblefacets, VisibleFacet(facets[i], facets[j], j))
+            push!(facets[j].visiblefacets, VisibleFacet(facets[j], facets[i], i))
+        end
     end
 end
+
+
+# """
+#     This function will be reused when parallelizing the code.
+# """
+# function find_visiblefacets!(obs::Facet, facets)
+    
+#     candidates = Int64[]
+#     for (j, facet) in enumerate(facets)
+#         isAbove(obs, facet) && isFace(obs, facet) && push!(candidates, j)
+#     end
+
+#     for j in candidates
+#         Rⱼ = facets[j].center - obs.center   # Vector from the facet `obs` to j
+#         dⱼ = norm(Rⱼ)                        # Distance to facet j
+
+#         blocked = false
+#         for k in candidates
+#             j == k && continue
+#             Rₖ = facets[k].center - obs.center  # Vector from the facet `obs` to k
+#             dₖ = norm(Rₖ)                       # Distance to facet k
+
+#             dⱼ < dₖ && continue
+
+#             if raycast(facets[k], Rⱼ, obs)      # Not visible because the facet k blocks the view to j
+#                 blocked = true
+#                 break
+#             end
+#         end
+#         blocked && continue
+
+#         push!(obs.visiblefacets, VisibleFacet(obs, facets[j], j))
+#     end
+# end
+
+# """
+#     find_visiblefacets!(facets)
+
+# Find facets that is visible from each facet
+
+# # Parameters
+# - `facets` : Array of `Facet`
+# """
+# function find_visiblefacets!(facets)
+#     for obs in facets
+#         find_visiblefacets!(obs, facets)
+#     end
+# end
 
 """
     isIlluminated(obs::AbstractVector, r̂☉, facets) -> Bool
