@@ -15,8 +15,6 @@
     println("==== $(filepath) ====")
     println(shape)
 
-    for (id, facet) in enumerate(shape.facets)
-        println("==== Facet #$id ====")
-        println(facet)
-    end
+    total_visiblefacets = sum(length(facet.visiblefacets) for facet in shape.facets)
+    println("Number of total visible facets: $total_visiblefacets")  # This should be zero for an icosahedron.
 end
