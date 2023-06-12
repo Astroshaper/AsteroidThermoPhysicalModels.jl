@@ -120,15 +120,14 @@ getfacets(nodes, faces) = [Facet(nodes[face]) for face in faces]
 """
     grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix) -> nodes, faces, facets
 
-Convert a grid of points to facets
+Convert a regular grid (x, y) to triangular facets
 
   C    D
---+----+--
-  |\   |
-  | \  |       y
-  |  \ |       ^
-  |   \|       |
---+----+--     +----> x
+--∘---∘--
+  |⋅  |       y
+  | ⋅ |       ^
+  |  ⋅|       |
+--∘---∘--     ⦿ ---> x
   A    B
 
 # Arguments
