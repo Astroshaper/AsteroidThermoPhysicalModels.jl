@@ -83,6 +83,7 @@ Facet(vs) = Facet(
     VisibleFacet[], Flux(), Float64[], Float64[], zeros(3)
 )
 
+
 function Base.show(io::IO, facet::Facet)
     msg = "Surface facet\n"
     msg *= "-------------\n"
@@ -109,10 +110,62 @@ function Base.show(io::IO, facet::Facet)
     print(io, msg)
 end
 
+
 """
 Array of `Facet`, converted from arrays of nodes and faces of a shape model
 """
 getfacets(nodes, faces) = [Facet(nodes[face]) for face in faces]
+
+
+"""
+    grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix) -> nodes, faces, facets
+
+Convert a grid of points to facets
+
+  C    D
+--+----+--
+  |\   |
+  | \  |       y
+  |  \ |       ^
+  |   \|       |
+--+----+--     +----> x
+  A    B
+
+# Arguments
+- `xs::AbstractVector` : x-coordinates of grid points
+- `ys::AbstractVector` : y-coordinates of grid points
+- `zs::AbstractMatrix` : z-coordinates of grid points
+"""
+function grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix)
+    nodes = SVector{3, Float64}[]
+    faces = SVector{3, Int}[]
+    facets = Facet[]
+
+    for y in ys
+        for x in xs
+            push!(nodes, [x, y, 0])
+        end
+    end
+
+    for j in eachindex(ys)[begin:end-1]
+        for i in eachindex(xs)[begin:end-1]
+            ABC = [i + (j-1)*length(xs), i+1 + (j-1)*length(xs), i + j*length(xs)]  # Indices of nodes of a facet ABC
+            DCB = [i+1 + j*length(xs), i + j*length(xs), i+1 + (j-1)*length(xs)]    # Indices of nodes of a facet DCB
+            
+            push!(faces, ABC)
+            push!(faces, DCB)
+
+            A = SVector{3, Float64}(xs[i  ], ys[j  ], 0)
+            B = SVector{3, Float64}(xs[i+1], ys[j  ], 0)
+            C = SVector{3, Float64}(xs[i  ], ys[j+1], 0)
+            D = SVector{3, Float64}(xs[i+1], ys[j+1], 0)
+
+            push!(facets, Facet(A, B, C))
+            push!(facets, Facet(D, C, B))
+        end
+    end
+    nodes, faces, facets
+end
 
 
 # ################################################################
