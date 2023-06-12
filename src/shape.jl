@@ -53,6 +53,31 @@ function save_shape_jld(shapepath, shape)
     save(splitext(shapepath)[1] * ".jld2", Dict("shape" => shape))
 end
 
+
+"""
+    load_shape_grid(xs, ys, zs; scale=1.0, find_visible_facets=false) -> shape
+
+Convert a regular grid (x, y) to a shape model
+
+# Arguments
+- `xs::AbstractVector` : x-coordinates of grid points
+- `ys::AbstractVector` : y-coordinates of grid points
+- `zs::AbstractMatrix` : z-coordinates of grid points
+"""
+function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix; scale=1.0, find_visible_facets=false)
+    nodes, faces, facets = grid_to_facets(xs, ys, zs)
+    find_visible_facets && find_visiblefacets!(facets)
+    force  = zero(MVector{3, Float64})
+    torque = zero(MVector{3, Float64})
+    shape = ShapeModel(nodes, faces, facets, force, torque)
+    return shape
+end
+
+
+################################################################
+#                      Shape properites
+################################################################
+
 equivalent_radius(VOLUME::Real) = (3VOLUME/4π)^(1/3)
 equivalent_radius(shape::ShapeModel) = equivalent_radius(getvolume(shape))
 
@@ -67,12 +92,6 @@ isIlluminated(obs::Facet, r̂☉, shape::ShapeModel) = isIlluminated(obs, r̂☉
 isIlluminated(r̂☉, shape::ShapeModel) = [isIlluminated(obs, r̂☉, shape) for obs in shape.facets]
 
 surface_temperature(shape::ShapeModel) = [facet.temps[begin] for facet in shape.facets]
-
-
-################################################################
-#                      Shape properites
-################################################################
-
 
 """
     getvolume(facets) -> VOLUME
