@@ -46,15 +46,15 @@ Triangular surface facet of a polyhedral shape model.
 Note that the mesh normal indicates outward the polyhedron.
 
 # Fields
-- `center::T1` : Position of mesh center
-- `normal::T1` : Normal vector to mesh
-- `area  ::T2`   : Area of mesh
+- `center` : Position of mesh center
+- `normal` : Normal vector to mesh
+- `area  `   : Area of mesh
     
-- `visiblefacets::T3` : 1-D array of `VisibleFacet`
-- `flux         ::T4` : Energy flux from surrounding facets
-- `temps        ::T5` : Temperature profile in depth direction
-- `_temps_      ::T5` : Pre-allocated vector for updating temperature profile
-- `force        ::T6` : Photon recoil force
+- `visiblefacets` : 1-D array of `VisibleFacet`
+- `flux         ` : Energy flux from surrounding facets
+- `temps        ` : Temperature profile in depth direction
+- `_temps_      ` : Pre-allocated vector for updating temperature profile
+- `force        ` : Photon recoil force
 """
 struct Facet
     center::SVector{3, Float64}
@@ -94,12 +94,6 @@ function Base.show(io::IO, facet::Facet)
     end
     print(io, msg)
 end
-
-
-"""
-Array of `Facet`, converted from arrays of nodes and faces of a shape model
-"""
-getfacets(nodes, faces) = [Facet(nodes[face]) for face in faces]
 
 
 """
