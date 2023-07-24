@@ -363,10 +363,10 @@ end
 
 Return if the observation facet is illuminated by the direct sunlight or not
 """
-function isIlluminated(obs::Facet, r̂☉, nodes, faces)
+function isIlluminated(obs::Facet, r̂☉, shape)
     obs.normal ⋅ r̂☉ < 0 && return false
     for visiblefacet in obs.visiblefacets
-        A, B, C = nodes[faces[visiblefacet.id]]
+        A, B, C = shape.nodes[shape.faces[visiblefacet.id]]
         raycast(A, B, C, r̂☉, obs.center) && return false
     end
     return true
