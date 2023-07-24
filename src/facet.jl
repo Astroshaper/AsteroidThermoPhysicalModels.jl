@@ -46,10 +46,6 @@ Triangular surface facet of a polyhedral shape model.
 Note that the mesh normal indicates outward the polyhedron.
 
 # Fields
-- `A::T1` : Position of 1st vertex
-- `B::T1` : Position of 2nd vertex
-- `C::T1` : Position of 3rd vertex
-
 - `center::T1` : Position of mesh center
 - `normal::T1` : Normal vector to mesh
 - `area  ::T2`   : Area of mesh
@@ -61,10 +57,6 @@ Note that the mesh normal indicates outward the polyhedron.
 - `force        ::T6` : Photon recoil force
 """
 struct Facet
-    A::SVector{3, Float64}
-    B::SVector{3, Float64}
-    C::SVector{3, Float64}
-    
     center::SVector{3, Float64}
     normal::SVector{3, Float64}
     area  ::Float64
@@ -76,9 +68,7 @@ struct Facet
     force        ::Vector{Float64}
 end
 
-Facet(A, B, C) = Facet([A, B, C])
 Facet(vs) = Facet(
-    vs[1], vs[2], vs[3],
     facet_center(vs), facet_normal(vs), facet_area(vs),
     VisibleFacet[], Flux(), Float64[], Float64[], zeros(3)
 )
@@ -87,11 +77,6 @@ Facet(vs) = Facet(
 function Base.show(io::IO, facet::Facet)
     msg = "Surface facet\n"
     msg *= "-------------\n"
-
-    msg *= "Vertices\n"
-    msg *= "    A : $(facet.A)\n"
-    msg *= "    B : $(facet.B)\n"
-    msg *= "    C : $(facet.C)\n"
 
     msg *= "Center : $(facet.center)\n"
     msg *= "Normal : $(facet.normal)\n"
@@ -222,10 +207,8 @@ isFace(obs::Facet, tar::Facet) = (tar.center - obs.center) ⋅ tar.normal < 0
 
 """
     isAbove(A, B, C, D)             -> Bool
-    isAbove(facet::Facet, D)        -> Bool
-    isAbove(obs::Facet, tar::Facet) -> Bool
 
-Determine if point D is above triangle facet ABC.
+Determine if point D is above triangle face ABC.
 """
 function isAbove(A, B, C, D)
     G = SA_F64[
@@ -239,10 +222,8 @@ end
 
 """
     isBelow(A, B, C, D)             -> Bool
-    isBelow(facet::Facet, D)        -> Bool
-    isBelow(obs::Facet, tar::Facet) -> Bool
 
-Determine if point D is below triangle facet ABC.
+Determine if point D is below triangle face ABC.
 """
 function isBelow(A, B, C, D)
     G = SA_F64[
@@ -254,25 +235,16 @@ function isBelow(A, B, C, D)
     return det(G) > 0
 end
 
-isAbove(facet::Facet, D) = isAbove(facet.A, facet.B, facet.C, D)
-isBelow(facet::Facet, D) = isBelow(facet.A, facet.B, facet.C, D)
-
-isAbove(obs::Facet, tar::Facet) = isAbove(obs.A, obs.B, obs.C, tar.center)
-isBelow(obs::Facet, tar::Facet) = isBelow(obs.A, obs.B, obs.C, tar.center)
-
 
 ################################################################
 #                           Raycast
 ################################################################
 
 """
-    raycast(A, B, C, R)                           -> Bool
-    raycast(facet::Facet, R)                      -> Bool
-    raycast(facet::Facet, R, obs::AbstractVector) -> Bool
-    raycast(facet::Facet, R, obs::Facet)          -> Bool
+    raycast(A, B, C, R) -> Bool
 
-Ray-triangle intersection detection.
-The ray R starts from the origin.
+Intersection detection between ray R and triangle ABC.
+Note that the starting point of the ray is the origin (0, 0, 0).
 """
 function raycast(A, B, C, R)
     E1 = B - A
@@ -291,12 +263,13 @@ function raycast(A, B, C, R)
     return 0 ≤ u ≤ 1 && 0 ≤ v ≤ 1 && 0 ≤ u + v ≤ 1 && t > 0
 end
 
-raycast(facet::Facet, R) = raycast(facet.A, facet.B, facet.C, R)
-raycast(facet::Facet, R, obs::AbstractVector) = raycast(facet.A - obs, facet.B - obs, facet.C - obs, R)
-raycast(facet::Facet, R, obs::Facet) = raycast(facet, R, obs.center)
+"""
+    raycast(A, B, C, R, O) -> Bool
 
-raycast(A, B, C, R, obs::AbstractVector) = raycast(A - obs, B - obs, C - obs, R)
-raycast(A, B, C, R, obs::Facet) = raycast(A, B, C, R, obs.center)
+Intersection detection between ray R and triangle ABC.
+Use when the starting point of the ray is an arbitrary point `O`.
+"""
+raycast(A, B, C, R, O) = raycast(A - O, B - O, C - O, R)
 
 
 """
@@ -308,11 +281,12 @@ Find facets that is visible from the facet where the observer is located.
 - `obs`    : Facet where the observer stands
 - `facets` : Array of `Facet`
 """
-function find_visiblefacets!(facets)
-    for i in eachindex(facets)
+function find_visiblefacets!(nodes, faces, facets)
+    for i in eachindex(faces)
         candidates = Int64[]
-        for j in eachindex(facets)
-            isAbove(facets[i], facets[j]) && isFace(facets[i], facets[j]) && push!(candidates, j)
+        for j in eachindex(faces)
+            i == j && continue
+            isAbove(nodes[faces[i]]..., facets[j].center) && isFace(facets[i], facets[j]) && push!(candidates, j)
         end
         
         for j in candidates
@@ -329,7 +303,7 @@ function find_visiblefacets!(facets)
                 
                 dⱼ < dₖ && continue
                 
-                if raycast(facets[k], Rⱼ, facets[i])      # if facet k blocks the view to facet j
+                if raycast(nodes[faces[k]]..., Rⱼ, facets[i].center)      # if facet k blocks the view to facet j
                     blocked = true
                     break
                 end
@@ -391,30 +365,17 @@ end
 # end
 
 """
-    isIlluminated(obs::AbstractVector, r̂☉, facets) -> Bool
-    isIlluminated(obs::Facet, r̂☉, facets)          -> Bool
+    isIlluminated(obs::Facet, r̂☉, facets) -> Bool
 
-Return if the observation point/facet is illuminated by the direct sunlight or not
+Return if the observation facet is illuminated by the direct sunlight or not
 """
-function isIlluminated(obs::AbstractVector, r̂☉, facets)
-    for facet in facets
-        raycast(facet, r̂☉, obs) && return false
-    end
-    return true
-end
-
-function isIlluminated(obs::Facet, r̂☉, facets)
+function isIlluminated(obs::Facet, r̂☉, nodes, faces)
     obs.normal ⋅ r̂☉ < 0 && return false
     for visiblefacet in obs.visiblefacets
-        raycast(facets[visiblefacet.id], r̂☉, obs) && return false
+        A, B, C = nodes[faces[visiblefacet.id]]
+        raycast(A, B, C, r̂☉, obs.center) && return false
     end
     return true
 end
 
-"""
-    isAboveHorizon(facet::Facet) -> Bool
-
-Return if the facet is above its local horizon or not
-"""
-isAboveHorizon(facet::Facet) = length(facet.visiblefaces) == 0
 
