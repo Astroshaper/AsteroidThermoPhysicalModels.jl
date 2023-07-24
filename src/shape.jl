@@ -26,7 +26,7 @@ function Base.show(io::IO, shape::ShapeModel)
     msg *= "-----------\n"
     msg *= "Number of nodes   : $(length(shape.nodes))\n"
     msg *= "Number of faces   : $(length(shape.faces))\n"
-    msg *= "Volume            : $(getvolume(shape))\n"
+    msg *= "Volume            : $(polyhedron_volume(shape.nodes, shape.faces))\n"
     msg *= "Equivalent radius : $(equivalent_radius(shape))\n"
     msg *= "Maximum radius    : $(maximum_radius(shape))\n"
     msg *= "Minimum radius    : $(minimum_radius(shape))\n"
@@ -37,7 +37,7 @@ function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
     # TODO: use MeshIO.jl
     nodes, faces = loadobj(shapepath; scale=scale, static=true, message=false)
     facets = getfacets(nodes, faces)
-    find_visible_facets && find_visiblefacets!(facets)
+    find_visible_facets && find_visiblefacets!(nodes, faces, facets)
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
     shape = ShapeModel(nodes, faces, facets, force, torque)
@@ -79,7 +79,7 @@ end
 ################################################################
 
 equivalent_radius(VOLUME::Real) = (3VOLUME/4π)^(1/3)
-equivalent_radius(shape::ShapeModel) = equivalent_radius(getvolume(shape))
+equivalent_radius(shape::ShapeModel) = equivalent_radius(polyhedron_volume(shape.nodes, shape.faces))
 
 maximum_radius(nodes::Vector{<:StaticVector{3}}) = maximum(norm, nodes)
 maximum_radius(shape::ShapeModel) = maximum_radius(shape.nodes)
@@ -93,10 +93,17 @@ isIlluminated(r̂☉, shape::ShapeModel) = [isIlluminated(obs, r̂☉, shape) fo
 
 surface_temperature(shape::ShapeModel) = [facet.temps[begin] for facet in shape.facets]
 
+
 """
-    getvolume(facets) -> VOLUME
+    polyhedron_volume(nodes, faces) -> vol
 
 Calculate volume of a polyhedral
 """
-getvolume(facets) = sum(((facet.A × facet.B) ⋅ facet.C) / 6 for facet in facets)
-getvolume(shape::ShapeModel) = getvolume(shape.facets)
+function polyhedron_volume(nodes, faces)
+    vol = 0.
+    for face in faces
+        A, B, C = nodes[face]
+        vol += (A × B) ⋅ C / 6
+    end
+    vol
+end
