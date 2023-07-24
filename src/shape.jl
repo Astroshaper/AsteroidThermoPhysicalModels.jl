@@ -78,22 +78,6 @@ end
 #                      Shape properites
 ################################################################
 
-equivalent_radius(VOLUME::Real) = (3VOLUME/4π)^(1/3)
-equivalent_radius(shape::ShapeModel) = equivalent_radius(polyhedron_volume(shape))
-
-maximum_radius(nodes::Vector{<:StaticVector{3}}) = maximum(norm, nodes)
-maximum_radius(shape::ShapeModel) = maximum_radius(shape.nodes)
-
-minimum_radius(nodes) = minimum(norm.(nodes))
-minimum_radius(shape::ShapeModel) = minimum_radius(shape.nodes)
-
-find_visiblefacets!(shape::ShapeModel) = find_visiblefacets!(shape.facets)
-isIlluminated(obs::Facet, r̂☉, shape::ShapeModel) = isIlluminated(obs, r̂☉, shape.facets)
-isIlluminated(r̂☉, shape::ShapeModel) = [isIlluminated(obs, r̂☉, shape) for obs in shape.facets]
-
-surface_temperature(shape::ShapeModel) = [facet.temps[begin] for facet in shape.facets]
-
-
 """
     polyhedron_volume(nodes, faces) -> vol
     polyhedron_volume(shape)        -> vol
@@ -109,4 +93,20 @@ function polyhedron_volume(nodes, faces)
     vol
 end
 
-polyhedron_volume(shape) = polyhedron_volume(shape.nodes, shape.faces)
+polyhedron_volume(shape::ShapeModel) = polyhedron_volume(shape.nodes, shape.faces)
+
+equivalent_radius(VOLUME::Real) = (3VOLUME/4π)^(1/3)
+equivalent_radius(shape::ShapeModel) = equivalent_radius(polyhedron_volume(shape))
+
+maximum_radius(nodes::Vector{<:StaticVector{3}}) = maximum(norm, nodes)
+maximum_radius(shape::ShapeModel) = maximum_radius(shape.nodes)
+
+minimum_radius(nodes) = minimum(norm.(nodes))
+minimum_radius(shape::ShapeModel) = minimum_radius(shape.nodes)
+
+find_visiblefacets!(shape::ShapeModel) = find_visiblefacets!(shape.facets)
+
+surface_temperature(shape::ShapeModel) = [facet.temps[begin] for facet in shape.facets]
+
+
+
