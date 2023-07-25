@@ -66,7 +66,7 @@ Convert a regular grid (x, y) to a shape model
 """
 function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix; scale=1.0, find_visible_facets=false)
     nodes, faces, facets = grid_to_facets(xs, ys, zs)
-    find_visible_facets && find_visiblefacets!(facets)
+    find_visible_facets && find_visiblefacets!(nodes, faces, facets)
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
     shape = ShapeModel(nodes, faces, facets, force, torque)
@@ -104,7 +104,7 @@ maximum_radius(shape::ShapeModel) = maximum_radius(shape.nodes)
 minimum_radius(nodes) = minimum(norm.(nodes))
 minimum_radius(shape::ShapeModel) = minimum_radius(shape.nodes)
 
-find_visiblefacets!(shape::ShapeModel) = find_visiblefacets!(shape.facets)
+find_visiblefacets!(shape::ShapeModel) = find_visiblefacets!(shape.nodes, shape.faces, shape.facets)
 
 surface_temperature(shape::ShapeModel) = [facet.temps[begin] for facet in shape.facets]
 
