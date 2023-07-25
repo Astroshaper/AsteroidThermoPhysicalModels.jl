@@ -129,8 +129,8 @@ function grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatr
 
     for j in eachindex(ys)[begin:end-1]
         for i in eachindex(xs)[begin:end-1]
-            ABC = [i + (j-1)*length(xs), i+1 + (j-1)*length(xs), i + j*length(xs)]  # Indices of nodes of a facet ABC
-            DCB = [i+1 + j*length(xs), i + j*length(xs), i+1 + (j-1)*length(xs)]    # Indices of nodes of a facet DCB
+            ABC = [i + (j-1)*length(xs), i+1 + (j-1)*length(xs), i + j*length(xs)]  # Indices of nodes of △ABC
+            DCB = [i+1 + j*length(xs), i + j*length(xs), i+1 + (j-1)*length(xs)]    # Indices of nodes of △DCB
             
             push!(faces, ABC)
             push!(faces, DCB)
@@ -279,6 +279,7 @@ Find facets that is visible from the facet where the observer is located.
 """
 function find_visiblefacets!(nodes, faces, facets)
     for i in eachindex(faces)
+
         candidates = Int64[]
         for j in eachindex(faces)
             i == j && continue
@@ -299,7 +300,7 @@ function find_visiblefacets!(nodes, faces, facets)
                 
                 dⱼ < dₖ && continue
                 
-                if raycast(nodes[faces[k]]..., Rⱼ, facets[i].center)      # if facet k blocks the view to facet j
+                if raycast(nodes[faces[k]]..., Rⱼ, facets[i].center)  # if facet k blocks the view to facet j
                     blocked = true
                     break
                 end
