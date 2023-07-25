@@ -139,8 +139,8 @@ function grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatr
             C = SVector{3, Float64}(xs[i  ], ys[j+1], zs[i  , j+1])
             D = SVector{3, Float64}(xs[i+1], ys[j+1], zs[i+1, j+1])
 
-            push!(facets, Facet(A, B, C))
-            push!(facets, Facet(D, C, B))
+            push!(facets, Facet((A, B, C)))
+            push!(facets, Facet((D, C, B)))
         end
     end
     nodes, faces, facets
