@@ -79,18 +79,18 @@ end
 ################################################################
 
 """
-    polyhedron_volume(nodes, faces) -> vol
-    polyhedron_volume(shape)        -> vol
+    polyhedron_volume(nodes, faces)      -> vol
+    polyhedron_volume(shape::ShapeModel) -> vol
 
 Calculate volume of a polyhedral
 """
 function polyhedron_volume(nodes, faces)
-    vol = 0.
+    volume = 0.
     for face in faces
         A, B, C = nodes[face]
-        vol += (A × B) ⋅ C / 6
+        volume += (A × B) ⋅ C / 6
     end
-    vol
+    volume
 end
 
 polyhedron_volume(shape::ShapeModel) = polyhedron_volume(shape.nodes, shape.faces)
@@ -98,10 +98,10 @@ polyhedron_volume(shape::ShapeModel) = polyhedron_volume(shape.nodes, shape.face
 equivalent_radius(VOLUME::Real) = (3VOLUME/4π)^(1/3)
 equivalent_radius(shape::ShapeModel) = equivalent_radius(polyhedron_volume(shape))
 
-maximum_radius(nodes::Vector{<:StaticVector{3}}) = maximum(norm, nodes)
+maximum_radius(nodes) = maximum(norm, nodes)
 maximum_radius(shape::ShapeModel) = maximum_radius(shape.nodes)
 
-minimum_radius(nodes) = minimum(norm.(nodes))
+minimum_radius(nodes) = minimum(norm, nodes)
 minimum_radius(shape::ShapeModel) = minimum_radius(shape.nodes)
 
 find_visiblefacets!(shape::ShapeModel) = find_visiblefacets!(shape.nodes, shape.faces, shape.facets)

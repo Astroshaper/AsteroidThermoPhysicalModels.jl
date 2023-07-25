@@ -86,10 +86,11 @@ function Base.show(io::IO, facet::Facet)
         msg *= "No visible facets from this facet.\n"
     else
         msg *= "$(length(facet.visiblefacets)) facets are visible from this facet:\n"
-        id = [visiblefacet.id for visiblefacet in facet.visiblefacets]
-        f  = [visiblefacet.f  for visiblefacet in facet.visiblefacets]
-        d  = [visiblefacet.d  for visiblefacet in facet.visiblefacets]
-        df = DataFrame(id=id, f=f, d=d)
+        df = DataFrame(
+            id = [visiblefacet.id for visiblefacet in facet.visiblefacets],
+            f  = [visiblefacet.f  for visiblefacet in facet.visiblefacets],
+            d  = [visiblefacet.d  for visiblefacet in facet.visiblefacets],
+        )
         msg *= "$(df)\n"
     end
     print(io, msg)
