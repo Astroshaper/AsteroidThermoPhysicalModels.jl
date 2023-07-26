@@ -121,9 +121,9 @@ function grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatr
     faces = SVector{3, Int}[]
     facets = Facet[]
 
-    for y in ys
-        for x in xs
-            push!(nodes, [x, y, 0])
+    for j in eachindex(ys)
+        for i in eachindex(xs)
+            push!(nodes, [xs[i], ys[j], zs[i, j]])
         end
     end
 
@@ -202,7 +202,7 @@ Determine if the two facets are facing each other
 isFace(obs::Facet, tar::Facet) = (tar.center - obs.center) ⋅ tar.normal < 0
 
 """
-    isAbove(A, B, C, D)             -> Bool
+    isAbove(A, B, C, D) -> Bool
 
 Determine if point D is above triangle face ABC.
 """
@@ -217,7 +217,7 @@ function isAbove(A, B, C, D)
 end
 
 """
-    isBelow(A, B, C, D)             -> Bool
+    isBelow(A, B, C, D) -> Bool
 
 Determine if point D is below triangle face ABC.
 """
