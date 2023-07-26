@@ -123,22 +123,22 @@ function grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatr
 
     for j in eachindex(ys)
         for i in eachindex(xs)
-            push!(nodes, [xs[i], ys[j], zs[i, j]])
+            push!(nodes, @SVector [xs[i], ys[j], zs[i, j]])
         end
     end
 
     for j in eachindex(ys)[begin:end-1]
         for i in eachindex(xs)[begin:end-1]
-            ABC = [i + (j-1)*length(xs), i+1 + (j-1)*length(xs), i + j*length(xs)]  # Indices of nodes of △ABC
-            DCB = [i+1 + j*length(xs), i + j*length(xs), i+1 + (j-1)*length(xs)]    # Indices of nodes of △DCB
+            ABC = @SVector [i + (j-1)*length(xs), i+1 + (j-1)*length(xs), i + j*length(xs)]  # Indices of nodes of △ABC
+            DCB = @SVector [i+1 + j*length(xs), i + j*length(xs), i+1 + (j-1)*length(xs)]    # Indices of nodes of △DCB
             
             push!(faces, ABC)
             push!(faces, DCB)
 
-            A = SVector{3, Float64}(xs[i  ], ys[j  ], zs[i  , j  ])
-            B = SVector{3, Float64}(xs[i+1], ys[j  ], zs[i+1, j  ])
-            C = SVector{3, Float64}(xs[i  ], ys[j+1], zs[i  , j+1])
-            D = SVector{3, Float64}(xs[i+1], ys[j+1], zs[i+1, j+1])
+            A = @SVector [xs[i  ], ys[j  ], zs[i  , j  ]]
+            B = @SVector [xs[i+1], ys[j  ], zs[i+1, j  ]]
+            C = @SVector [xs[i  ], ys[j+1], zs[i  , j+1]]
+            D = @SVector [xs[i+1], ys[j+1], zs[i+1, j+1]]
 
             push!(facets, Facet((A, B, C)))
             push!(facets, Facet((D, C, B)))
