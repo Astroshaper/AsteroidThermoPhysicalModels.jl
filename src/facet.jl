@@ -46,10 +46,6 @@ Triangular surface facet of a polyhedral shape model.
 Note that the mesh normal indicates outward the polyhedron.
 
 # Fields
-- `center` : Position of mesh center
-- `normal` : Normal vector to mesh
-- `area  `   : Area of mesh
-    
 - `visiblefacets` : 1-D array of `VisibleFacet`
 - `flux         ` : Energy flux from surrounding facets
 - `temps        ` : Temperature profile in depth direction
@@ -57,10 +53,6 @@ Note that the mesh normal indicates outward the polyhedron.
 - `force        ` : Photon recoil force
 """
 struct Facet
-    center::SVector{3, Float64}
-    normal::SVector{3, Float64}
-    area  ::Float64
-    
     visiblefacets::Vector{VisibleFacet}
     flux         ::Flux
     temps        ::Vector{Float64}
@@ -68,19 +60,12 @@ struct Facet
     force        ::Vector{Float64}
 end
 
-Facet(vs) = Facet(
-    facet_center(vs), facet_normal(vs), facet_area(vs),
-    VisibleFacet[], Flux(), Float64[], Float64[], zeros(3)
-)
+Facet() = Facet(VisibleFacet[], Flux(), Float64[], Float64[], zeros(3))
 
 
 function Base.show(io::IO, facet::Facet)
     msg = "Surface facet\n"
     msg *= "-------------\n"
-
-    msg *= "Center : $(facet.center)\n"
-    msg *= "Normal : $(facet.normal)\n"
-    msg *= "Area   : $(facet.area)\n"
     
     if isempty(facet.visiblefacets)
         msg *= "No visible facets from this facet.\n"
@@ -139,8 +124,8 @@ function grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatr
             C = @SVector [xs[i  ], ys[j+1], zs[i  , j+1]]
             D = @SVector [xs[i+1], ys[j+1], zs[i+1, j+1]]
 
-            push!(facets, Facet((A, B, C)))
-            push!(facets, Facet((D, C, B)))
+            push!(facets, Facet())
+            push!(facets, Facet())
         end
     end
     nodes, faces, facets
@@ -148,17 +133,17 @@ end
 
 
 # ################################################################
-# #                      Facet properties
+# #                      Face properties
 # ################################################################
 
-facet_center(vs) = facet_center(vs...)
-facet_center(v1, v2, v3) = (v1 + v2 + v3) / 3
+face_center(vs) = face_center(vs...)
+face_center(v1, v2, v3) = (v1 + v2 + v3) / 3
 
-facet_normal(vs) = facet_normal(vs...)
-facet_normal(v1, v2, v3) = normalize((v2 - v1) × (v3 - v2)) 
+face_normal(vs) = face_normal(vs...)
+face_normal(v1, v2, v3) = normalize((v2 - v1) × (v3 - v2)) 
 
-facet_area(vs) = facet_area(vs...)
-facet_area(v1, v2, v3) = norm((v2 - v1) × (v3 - v2)) / 2
+face_area(vs) = face_area(vs...)
+face_area(v1, v2, v3) = norm((v2 - v1) × (v3 - v2)) / 2
 
 
 ################################################################
@@ -166,39 +151,58 @@ facet_area(v1, v2, v3) = norm((v2 - v1) × (v3 - v2)) / 2
 ################################################################
 
 
-VisibleFacet(i::Facet, j::Facet, id) = VisibleFacet(id, view_factor(i, j)...)
+# VisibleFacet(i::Facet, j::Facet, id) = VisibleFacet(id, view_factor(i, j)...)
+
+
+# """
+#     view_factor(i::Facet, j::Facet) -> fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
+
+# View factor from facet i to j, assuming Lambertian emission
+# """
+# function view_factor(i::Integer, j::Integer, face_centers, face_normals, face_area)
+#     d⃗ᵢⱼ = face_centers[j] - face_centers[i]  # vector from facet i to j
+#     dᵢⱼ = norm(d⃗ᵢⱼ)
+#     d̂ᵢⱼ = normalize(d⃗ᵢⱼ)
+
+#     cosθᵢ = i.normal ⋅ d̂ᵢⱼ
+#     cosθⱼ = j.normal ⋅ (-d̂ᵢⱼ)
+
+#     fᵢⱼ = view_factor(cosθᵢ, cosθⱼ, dᵢⱼ, j.area)
+#     fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
+# end
+
+# view_factor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * dᵢⱼ^2) * aⱼ
 
 
 """
-    view_factor(i::Facet, j::Facet) -> fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
+    view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ) -> fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
 
-View factor from facet i to j, assuming Lambertian emission
+View factor from facet i to j, assuming Lambertian emission.
+
+---------------
+(i)   fᵢⱼ   (j)
+ △    -->    △
+---------------
+ cᵢ          cⱼ  : Center of each face
+ n̂ᵢ          n̂ⱼ  : Normal vector of each face
+ -           aⱼ  : Area of j-th face
+---------------
 """
-function view_factor(i::Facet, j::Facet)
-    d⃗ᵢⱼ = j.center - i.center  # vector from facet i to j
-    dᵢⱼ = norm(d⃗ᵢⱼ)
-    d̂ᵢⱼ = normalize(d⃗ᵢⱼ)
+function view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)
+    dᵢⱼ = norm(cⱼ - cᵢ)       # Distance from i to j
+    d̂ᵢⱼ = normalize(cⱼ - cᵢ)  # Direction from i to j
 
-    cosθᵢ = i.normal ⋅ d̂ᵢⱼ
-    cosθⱼ = j.normal ⋅ (-d̂ᵢⱼ)
+    cosθᵢ = n̂ᵢ ⋅ d̂ᵢⱼ
+    cosθⱼ = n̂ⱼ ⋅ (-d̂ᵢⱼ)
 
-    fᵢⱼ = view_factor(cosθᵢ, cosθⱼ, dᵢⱼ, j.area)
+    fᵢⱼ = cosθᵢ * cosθⱼ / (π * dᵢⱼ^2) * aⱼ
     fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
 end
-
-view_factor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * dᵢⱼ^2) * aⱼ
 
 
 ################################################################
 #                           Orinet3D
 ################################################################
-
-"""
-    isFace(obs::Facet, tar::Facet) -> true/false
-
-Determine if the two facets are facing each other
-"""
-isFace(obs::Facet, tar::Facet) = (tar.center - obs.center) ⋅ tar.normal < 0
 
 """
     isAbove(A, B, C, D) -> Bool
@@ -276,38 +280,49 @@ Find facets that is visible from the facet where the observer is located.
 - `obs`    : Facet where the observer stands
 - `facets` : Array of `Facet`
 """
-function find_visiblefacets!(nodes, faces, facets)
-    for i in eachindex(faces)
+function find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, face_areas)
+    @showprogress 1 "Searching for visible faces..." for i in eachindex(faces)
+        cᵢ = face_centers[i]
+        n̂ᵢ = face_normals[i]
+        aᵢ = face_areas[i]
 
         candidates = Int64[]
         for j in eachindex(faces)
             i == j && continue
-            isAbove(nodes[faces[i]]..., facets[j].center) && isFace(facets[i], facets[j]) && push!(candidates, j)
+            cⱼ = face_centers[j]
+            n̂ⱼ = face_normals[j]
+
+            (cⱼ - cᵢ) ⋅ n̂ᵢ > 0 && (cⱼ - cᵢ) ⋅ n̂ⱼ < 0 && push!(candidates, j)  # if two faces are facing each other
         end
         
         for j in candidates
             j in (visiblefacet.id for visiblefacet in facets[i].visiblefacets) && continue
+            cⱼ = face_centers[j]
+            n̂ⱼ = face_normals[j]
+            aⱼ = face_areas[j]
 
-            Rⱼ = facets[j].center - facets[i].center  # Vector from facet i to j
-            dⱼ = norm(Rⱼ)                             # Distance from facet i to j
+            Rᵢⱼ = cⱼ - cᵢ    # Vector from facet i to j
+            dᵢⱼ = norm(Rᵢⱼ)  # Distance from facet i to j
             
             blocked = false
             for k in candidates
                 j == k && continue
-                Rₖ = facets[k].center - facets[i].center  # Vector from facet i to k
-                dₖ = norm(Rₖ)                             # Distance from facet i to k
+                cₖ = face_centers[k]
+
+                Rᵢₖ = cₖ - cᵢ    # Vector from facet i to k
+                dᵢₖ = norm(Rᵢₖ)  # Distance from facet i to k
                 
-                dⱼ < dₖ && continue
+                dᵢⱼ < dᵢₖ && continue
                 
-                if raycast(nodes[faces[k]]..., Rⱼ, facets[i].center)  # if facet k blocks the view to facet j
+                if raycast(nodes[faces[k]]..., Rᵢⱼ, cᵢ)  # if facet k blocks the view to facet j
                     blocked = true
                     break
                 end
             end
 
             blocked && continue
-            push!(facets[i].visiblefacets, VisibleFacet(facets[i], facets[j], j))
-            push!(facets[j].visiblefacets, VisibleFacet(facets[j], facets[i], i))
+            push!(facets[i].visiblefacets, VisibleFacet(j, view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)...))  # i -> j
+            push!(facets[j].visiblefacets, VisibleFacet(i, view_factor(cⱼ, cᵢ, n̂ⱼ, n̂ᵢ, aᵢ)...))  # j -> i
         end
     end
 end
