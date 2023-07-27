@@ -385,7 +385,8 @@ function update_flux_scat_single!(shape, A_B)
         for visiblefacet in shape.facets[i].visiblefacets
             j = visiblefacet.id
             fᵢⱼ = visiblefacet.f
-            shape.flux[i, 2] += fᵢⱼ * (A_B isa Real ? A_B : A_B[j]) * shape.flux[j, 1]
+            A_B = (A_B isa Real ? A_B : A_B[j])
+            shape.flux[i, 2] += fᵢⱼ * A_B * shape.flux[j, 1]
         end
     end
 end
@@ -420,8 +421,11 @@ function update_flux_rad_single!(shape, ε, A_TH)
         for visiblefacet in shape.facets[i].visiblefacets
             j = visiblefacet.id
             fᵢⱼ = visiblefacet.f
+            ε = (ε isa Real ? ε : ε[j])
+            A_TH = (A_TH isa Real ? A_TH : A_TH[j])
             Tⱼ = shape.facets[j].temps[begin]
-            shape.flux[i, 3] += (ε isa Real ? ε : ε[j]) * σ_SB * (1 - (A_TH isa Real ? A_TH : A_TH[j])) * fᵢⱼ * Tⱼ^4
+            
+            shape.flux[i, 3] += ε * σ_SB * (1 - A_TH) * fᵢⱼ * Tⱼ^4
         end
     end
 end

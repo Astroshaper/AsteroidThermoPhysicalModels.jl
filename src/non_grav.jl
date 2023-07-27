@@ -25,7 +25,9 @@ function update_thermal_force!(shape::ShapeModel, A_B, ε)
 
         ## Total amount of scattered light and radiation [W/m²].
         ## Note that both are assumed to be isotropic.
-        Eᵢ = (A_B isa Real ? A_B : A_B[i]) * F_scat + (ε isa Real ? ε : ε[i]) * σ_SB * Tᵢ^4
+        A_B = (A_B isa Real ? A_B : A_B[i])
+        ε = (ε isa Real ? ε : ε[i])
+        Eᵢ = A_B * F_scat + ε * σ_SB * Tᵢ^4
 
         ## Thermal force on each face
         @. shape.facets[i].force = - 2/3 * Eᵢ * aᵢ / c₀ * n̂ᵢ      # The first term normal to the face
