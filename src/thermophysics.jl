@@ -281,15 +281,14 @@ end
 
 
 """
+    update_surf_temp!(shape::ShapeModel, params::AbstractThermoParams)
     update_surf_temp!(shape::ShapeModel, A_B, A_TH, k, l, Δz, ε)
-    update_surf_temp!(shape::ShapeModel, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ε::Real)
-    update_surf_temp!(facet::Facet,      A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ε::Real)
     update_surf_temp!(T::AbstractVector, F_total::Real, k::Real, l::Real, Δz::Real, ε::Real)
 
 Update surface temperature under radiative boundary condition using Newton's method
 
 # Arguments
-- `facet`   : surface facet (`Facet`)
+- `shape`   : Shape model (`ShapeModel`)
 - `A_B`     : Bond albedo
 - `A_TH`    : Albedo in thermal infrared wavelength
 - `k`       : Thermal conductivity
@@ -304,22 +303,24 @@ In the normalized equation of the surface boundary condition,
 the coefficient `Γ / √(4π * P)` is equivalent for `k / l`,
 where `Γ` is the thermal inertia and `P` the rotation period.
 """
+update_surf_temp!(shape::ShapeModel, params::AbstractThermoParams) = update_surf_temp!(shape, params.A_B, params.A_TH, params.k, params.l, params.Δz, params.ε)
+
+
 function update_surf_temp!(shape::ShapeModel, A_B, A_TH, k, l, Δz, ε)
-    for (i, facet) in enumerate(shape.facets)
-        update_surf_temp!(facet, A_B[i], A_TH[i], k[i], l[i], Δz[i], ε[i])
+    for i in eachindex(shape.faces)
+        A_B = (A_B isa Real ? A_B : A_B[i])
+        A_TH = (A_TH isa Real ? A_TH : A_TH[i])
+        F_sun, F_scat, F_rad = shape.flux[i, :]
+        k = (k isa Real ? k : k[i])
+        l = (l isa Real ? l : l[i])
+        Δz = (Δz isa Real ? Δz : Δz[i])
+        ε = (ε isa Real ? ε : ε[i])
+
+        F_total = total_flux(A_B, A_TH, F_sun, F_scat, F_rad)
+        update_surf_temp!(shape.facets[i].temps, F_total, k, l, Δz, ε)
     end
 end
 
-function update_surf_temp!(shape::ShapeModel, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ε::Real)
-    for facet in shape.facets
-        update_surf_temp!(facet, A_B, A_TH, k, l, Δz, ε)
-    end
-end
-
-function update_surf_temp!(facet::Facet, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ε::Real)
-    F_total = flux_total(facet, A_B, A_TH)
-    update_surf_temp!(facet.temps, F_total, k, l, Δz, ε)
-end
 
 function update_surf_temp!(T::AbstractVector, F_total::Real, k::Real, l::Real, Δz::Real, ε::Real)
     εσ = ε * σ_SB
@@ -351,24 +352,8 @@ end
 
 
 """
-    flux_total(shape::Shape, A_B::AbstractVector, A_TH::AbstractVector) -> F_total
-    flux_total(facet::Facet, A_B::Real,           A_TH::Real)           -> F_total
+    total_flux(A_B, A_TH, F_sun, F_scat, F_rad) -> F_total
 
-# Arguments
-- `shape` : Shape model (`Shape`)
-- `facet` : Surface facet (`Facet`)
-- `A_B`   : Bond albedo
-- `A_TH`  : Albedo in thermal infrared wavelength
-
-Total energy absorbed by the facet
+Total energy absorbed by the face
 """
-flux_total(shape::ShapeModel, A_B::AbstractVector, A_TH::AbstractVector) = [flux_total(facet, A_B[i], A_TH[i]) for (i, facet) in enumerate(shape.facets)]
-
-function flux_total(facet::Facet, A_B::Real, A_TH::Real)
-    F_sun  = facet.flux.sun
-    F_scat = facet.flux.scat
-    F_rad  = facet.flux.rad
-    
-    F_total = (1 - A_B)*(F_sun + F_scat) + (1 - A_TH)*F_rad
-end
-
+total_flux(A_B, A_TH, F_sun, F_scat, F_rad) = (1 - A_B) * (F_sun + F_scat) + (1 - A_TH) * F_rad
