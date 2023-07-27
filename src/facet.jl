@@ -131,30 +131,6 @@ face_area(v1, v2, v3) = norm((v2 - v1) × (v3 - v2)) / 2
 #                 Face-to-face interactions
 ################################################################
 
-
-# VisibleFacet(i::Facet, j::Facet, id) = VisibleFacet(id, view_factor(i, j)...)
-
-
-# """
-#     view_factor(i::Facet, j::Facet) -> fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
-
-# View factor from facet i to j, assuming Lambertian emission
-# """
-# function view_factor(i::Integer, j::Integer, face_centers, face_normals, face_area)
-#     d⃗ᵢⱼ = face_centers[j] - face_centers[i]  # vector from facet i to j
-#     dᵢⱼ = norm(d⃗ᵢⱼ)
-#     d̂ᵢⱼ = normalize(d⃗ᵢⱼ)
-
-#     cosθᵢ = i.normal ⋅ d̂ᵢⱼ
-#     cosθⱼ = j.normal ⋅ (-d̂ᵢⱼ)
-
-#     fᵢⱼ = view_factor(cosθᵢ, cosθⱼ, dᵢⱼ, j.area)
-#     fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
-# end
-
-# view_factor(cosθᵢ, cosθⱼ, dᵢⱼ, aⱼ) = cosθᵢ * cosθⱼ / (π * dᵢⱼ^2) * aⱼ
-
-
 """
     view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ) -> fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
 
@@ -309,53 +285,6 @@ function find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, f
     end
 end
 
-
-# """
-#     This function will be reused when parallelizing the code.
-# """
-# function find_visiblefacets!(obs::Facet, facets)
-    
-#     candidates = Int64[]
-#     for (j, facet) in enumerate(facets)
-#         isAbove(obs, facet) && isFace(obs, facet) && push!(candidates, j)
-#     end
-
-#     for j in candidates
-#         Rⱼ = facets[j].center - obs.center   # Vector from the facet `obs` to j
-#         dⱼ = norm(Rⱼ)                        # Distance to facet j
-
-#         blocked = false
-#         for k in candidates
-#             j == k && continue
-#             Rₖ = facets[k].center - obs.center  # Vector from the facet `obs` to k
-#             dₖ = norm(Rₖ)                       # Distance to facet k
-
-#             dⱼ < dₖ && continue
-
-#             if raycast(facets[k], Rⱼ, obs)      # Not visible because the facet k blocks the view to j
-#                 blocked = true
-#                 break
-#             end
-#         end
-#         blocked && continue
-
-#         push!(obs.visiblefacets, VisibleFacet(obs, facets[j], j))
-#     end
-# end
-
-# """
-#     find_visiblefacets!(facets)
-
-# Find facets that is visible from each facet
-
-# # Parameters
-# - `facets` : Array of `Facet`
-# """
-# function find_visiblefacets!(facets)
-#     for obs in facets
-#         find_visiblefacets!(obs, facets)
-#     end
-# end
 
 """
     isilluminated(shape, r☉, i::Integer) -> Bool
