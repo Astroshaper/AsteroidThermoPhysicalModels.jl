@@ -5,66 +5,38 @@
 # ****************************************************************
 
 """
-    update_force!(shape::ShapeModel, params)
-    update_force!(shape::ShapeModel, A_B::Real,           ε::Real)
-    update_force!(shape::ShapeModel, A_B::AbstractVector, ε::Real)
-    update_force!(shape::ShapeModel, A_B::Real,           ε::AbstractVector)
-    update_force!(shape::ShapeModel, A_B::AbstractVector, ε::AbstractVector)
-    update_force!(facet::Facet,      A_B::Real,           ε::Real)
+    update_thermal_force!(shape::ShapeModel, params)
+    update_thermal_force!(shape::ShapeModel, A_B, ε)
+    update_thermal_force!(facet::Facet, A_B::Real, ε::Real, n̂, a)
 
-Update photon recoil force on every facet (dfᵢ)
+Calculate the thermal force and torque on every facet and update the total force/torque.
 """
-update_force!(shape::ShapeModel, params) = update_force!(shape, params.A_B, params.ε)
+update_thermal_force!(shape::ShapeModel, params) = update_thermal_force!(shape, params.A_B, params.ε)
 
-function update_force!(shape::ShapeModel, A_B::Real, ε::Real)
-    for facet in shape.facets
-        update_force!(facet, A_B, ε)
-    end
-end
-
-function update_force!(shape::ShapeModel, A_B::AbstractVector, ε::Real)
-    for (i, facet) in enumerate(shape.facets)
-        update_force!(facet, A_B[i], ε)
-    end
-end
-
-function update_force!(shape::ShapeModel, A_B::Real, ε::AbstractVector)
-    for (i, facet) in enumerate(shape.facets)
-        update_force!(facet, A_B, ε[i])
-    end
-end
-
-function update_force!(shape::ShapeModel, A_B::AbstractVector, ε::AbstractVector)
-    for (i, facet) in enumerate(shape.facets)
-        update_force!(facet, A_B[i], ε[i])
-    end
-end
-
-function update_force!(facet::Facet, A_B::Real, ε::Real)
-    E = A_B * facet.flux.scat + ε * σ_SB * facet.temps[begin]^4
-
-    @. facet.force = facet.normal
-    for vf in facet.visiblefacets
-        @. facet.force -= 3/2 * vf.f * vf.d̂
-    end
-    @. facet.force *= - 2/3 * E * facet.area / c₀
-end
-
-"""
-    sum_force_torque!(shape::Shape)
-
-Integrate the force and torque over the global surface
-"""
-function sum_force_torque!(shape::ShapeModel)
+function update_thermal_force!(shape::ShapeModel, A_B, ε)
     shape.force  .= 0
     shape.torque .= 0
-    for facet in shape.facets
-        r  = SVector{3}(facet.center)
-        r̂  = normalize(r)
-        df = SVector{3}(facet.force)
-        
+    for i in eachindex(shape.faces)
+        update_thermal_force!(shape.facets[i], (A_B isa Real ? A_B : A_B[i]), (ε isa Real ? ε : ε[i]), shape.face_normals[i], shape.face_areas[i])
+
+        r = shape.face_centers[i]
+        r̂ = normalize(r)
+        df = SVector{3}(shape.facets[i].force)
+
         shape.force  .+= (r̂ ⋅ df) * r̂  # Photon recoil force
         shape.torque .+= r × df        # Photon recoil torque
     end
 end
+
+function update_thermal_force!(facet::Facet, A_B::Real, ε::Real, n̂, a)
+    E = A_B * facet.flux.scat + ε * σ_SB * facet.temps[begin]^4  # Sum of scattering and emission [W/m²]
+
+    @. facet.force = - 2/3 * E * a / c₀ * n̂                      # The first term normal to the face
+
+    for vf in facet.visiblefacets
+        @. facet.force += E * a / c₀ * vf.f * vf.d̂               # The second term of self-heating
+    end
+end
+
+
 

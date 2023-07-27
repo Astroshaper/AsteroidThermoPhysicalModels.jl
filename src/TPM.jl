@@ -105,8 +105,7 @@ function run_TPM!(shape::ShapeModel, et_range, sun, thermo_params::AbstractTherm
         update_flux!(shape, r☉, thermo_params)
 
         if et_range[save_range[begin]] ≤ et ≤ et_range[save_range[end]]
-            update_force!(shape, thermo_params)
-            sum_force_torque!(shape)
+            update_thermal_force!(shape, thermo_params)
 
             surf_temps[:, idx] .= surface_temperature(shape)
             forces[idx]  .= shape.force   # Body-fixed frame
@@ -161,8 +160,7 @@ function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::Abst
         #
 
         for (idx_shape, shape) in enumerate(shapes)
-            update_force!(shape, thermo_params)
-            sum_force_torque!(shape)
+            update_thermal_force!(shape, thermo_params)
 
             surf_temps[idx_shape][:, i] .= surface_temperature(shape)
             forces[idx_shape][i]  .= shape.force   # Body-fixed frame
@@ -214,30 +212,42 @@ end
 
 """
     energy_in(shape::ShapeModel, params::AbstractThermoParams) -> E_in
-    energy_in(shape::ShapeModel, A_B::AbstractVector         ) -> E_in
-    energy_in(shape::ShapeModel, A_B::Real                   ) -> E_in
-    energy_in(facet::Facet,      A_B::Real                   ) -> E_in
+    energy_in(shape::ShapeModel, A_B)                          -> E_in
+    energy_in(facet::Facet, A_B::Real, area)                   -> E_in
 
-Input energy per second at a certain time [W]
+Input energy per second on a facet or a whole surface [W]
 """
 energy_in(shape::ShapeModel, params::AbstractThermoParams) = energy_in(shape, params.A_B)
-energy_in(shape::ShapeModel, A_B::AbstractVector) = sum(energy_in(facet, A_B[i]) for (i, facet) in enumerate(shape.facets))
-energy_in(shape::ShapeModel, A_B::Real) = sum(energy_in(facet, A_B) for facet in shape.facets)
-energy_in(facet::Facet, A_B::Real) = (1 - A_B) * (facet.flux.sun + facet.flux.scat) * facet.area
+
+function energy_in(shape::ShapeModel, A_B)
+    E_in = 0.
+    for i in eachindex(shape.faces)
+        E_in += energy_in(shape.facets[i], (A_B isa Real ? A_B : A_B[i]), shape.face_areas[i])
+    end
+    E_in
+end
+
+energy_in(facet::Facet, A_B::Real, area) = (1 - A_B) * (facet.flux.sun + facet.flux.scat) * area
 
 
 """
-    energy_out(shape::ShapeModel, params::AbstractThermoParams           ) -> E_out
-    energy_out(shape::ShapeModel, ε::AbstractVector, A_TH::AbstractVector) -> E_out
-    energy_out(shape::ShapeModel, ε::Real,           A_TH::Real          ) -> E_out
-    energy_out(facet::Facet,      ε::Real,           A_TH::Real          ) -> E_out
+    energy_out(shape::ShapeModel, params::AbstractThermoParams) -> E_out
+    energy_out(shape::ShapeModel, ε, A_TH)                      -> E_out
+    energy_out(facet::Facet, ε::Real, A_TH::Real, area)         -> E_out
 
-Output enegey per second at a certain time [W]
+Output enegey per second from a facet or a whole surface [W]
 """
 energy_out(shape::ShapeModel, params::AbstractThermoParams) = energy_out(shape, params.ε, params.A_TH)
-energy_out(shape::ShapeModel, ε::AbstractVector, A_TH::AbstractVector) = sum(energy_out(facet, ε[i], A_TH[i]) for (i, facet) in enumerate(shape.facets))
-energy_out(shape::ShapeModel, ε::Real, A_TH::Real) = sum(energy_out(facet, ε, A_TH) for facet in shape.facets)
-energy_out(facet::Facet, ε::Real, A_TH::Real) = ( ε*σ_SB*facet.temps[begin]^4 - (1 - A_TH)*facet.flux.rad ) * facet.area
+
+function energy_out(shape::ShapeModel, ε, A_TH)
+    E_out = 0.
+    for i in eachindex(shape.faces)
+        E_out += energy_out(shape.facets[i], (ε isa Real ? ε : ε[i]), (A_TH isa Real ? A_TH : A_TH[i]), shape.face_areas[i])
+    end
+    E_out
+end
+
+energy_out(facet::Facet, ε::Real, A_TH::Real, area) = ( ε*σ_SB*facet.temps[begin]^4 - (1 - A_TH)*facet.flux.rad ) * area
 
 
 # ****************************************************************
@@ -257,37 +267,37 @@ function update_flux!(shape, r☉::AbstractVector, thermo_params)
 end
 
 """
-    update_flux_sun!(shape, F☉, r̂☉)
+    update_flux_sun!(shape, r̂☉, F☉)
 
 Update solar radiation flux on every facet of a shape model.
 
 - `shape` : Shape model
-- `F☉`    : Solar radiation flux
-- `r̂☉`    : Unit vector indicating the direction of the sun in the body-fixed frame
+- `r̂☉`    : Normalized vector indicating the direction of the sun in the body-fixed frame
+- `F☉`    : Solar radiation flux [W/m²]
 """
-function update_flux_sun!(shape, F☉, r̂☉)
-    for facet in shape.facets
-        if isIlluminated(facet, r̂☉, shape)
-            facet.flux.sun = F☉ * (facet.normal ⋅ r̂☉)
+function update_flux_sun!(shape, r̂☉, F☉)
+    for i in eachindex(shape.faces)
+        if isilluminated(shape, r̂☉, i)
+            shape.facets[i].flux.sun = F☉ * (shape.face_normals[i] ⋅ r̂☉)
         else
-            facet.flux.sun = 0
+            shape.facets[i].flux.sun = 0
         end
     end
 end
 
 """
-    update_flux_sun!(shape, r☉::AbstractVector)
+    update_flux_sun!(shape, r☉)
 
 Update solar radiation flux on every facet of a shape model.
 
 - `shape` : Shape model
 - `r☉`    : Position of the sun in the body-fixed frame, which is not normalized.
 """
-function update_flux_sun!(shape, r☉::AbstractVector)
+function update_flux_sun!(shape, r☉)
     r̂☉ = SVector{3}(normalize(r☉))
     F☉ = SOLAR_CONST / SPICE.convrt(norm(r☉), "m", "au")^2
 
-    update_flux_sun!(shape, F☉, r̂☉)
+    update_flux_sun!(shape, r̂☉, F☉)
 end
 
 
@@ -327,24 +337,23 @@ function find_eclipse!(shapes, sun_from_pri, sec_from_pri, R₂₁)
     eclipse_is_possible(shapes, r̂☉, rₛ) == false && return
 
     for i in eachindex(shapes[1].faces)
-        facet1 = shapes[1].facets[i]
-        facet1.flux.sun == 0 && continue
+        shapes[1].facets[i].flux.sun == 0 && continue
         A₁, B₁, C₁ = shapes[1].nodes[shapes[1].faces[i]]  # △ABC in primary
-        
+        G₁ = shapes[1].face_centers[i]                    # Center of △ABC in primary
 
         for j in eachindex(shapes[2].faces)
-            facet2 = shapes[2].facets[j]
-            facet2.flux.sun == 0 && continue
+            shapes[2].facets[j].flux.sun == 0 && continue
             A₂, B₂, C₂ = shapes[2].nodes[shapes[2].faces[j]]  # △ABC in secondary
+            G₂ = shapes[2].face_centers[j]                    # Center of △ABC in secondary
             
             ## Transform coordinates from secondary- to primary-fixed frame
             A₂ = R₂₁ * A₂ + rₛ
             B₂ = R₂₁ * B₂ + rₛ
             C₂ = R₂₁ * C₂ + rₛ
-            center2 = R₂₁ * facet2.center + rₛ
-
-            raycast(A₂, B₂, C₂, r̂☉, facet1.center) && (facet1.flux.sun = 0)  # something wrong?
-            raycast(A₁, B₁, C₁, r̂☉, center2) && (facet2.flux.sun = 0)        # something wrong?
+            G₂ = R₂₁ * G₂ + rₛ
+            
+            raycast(A₂, B₂, C₂, r̂☉, G₁) && (shapes[1].facets[i].flux.sun = 0)  # something wrong?
+            raycast(A₁, B₁, C₁, r̂☉, G₂) && (shapes[2].facets[j].flux.sun = 0)  # something wrong?
         end
     end
 end

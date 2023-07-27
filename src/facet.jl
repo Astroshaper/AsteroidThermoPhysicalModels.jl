@@ -179,14 +179,14 @@ face_area(v1, v2, v3) = norm((v2 - v1) × (v3 - v2)) / 2
 
 View factor from facet i to j, assuming Lambertian emission.
 
----------------
-(i)   fᵢⱼ   (j)
- △    -->    △
----------------
- cᵢ          cⱼ  : Center of each face
- n̂ᵢ          n̂ⱼ  : Normal vector of each face
- -           aⱼ  : Area of j-th face
----------------
+- ---------------
+- (i)   fᵢⱼ   (j)
+-  △    -->    △
+- ---------------
+-  cᵢ          cⱼ  : Center of each face
+-  n̂ᵢ          n̂ⱼ  : Normal vector of each face
+-  -           aⱼ  : Area of j-th face
+- ---------------
 """
 function view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)
     dᵢⱼ = norm(cⱼ - cᵢ)       # Distance from i to j
@@ -292,7 +292,8 @@ function find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, f
             cⱼ = face_centers[j]
             n̂ⱼ = face_normals[j]
 
-            (cⱼ - cᵢ) ⋅ n̂ᵢ > 0 && (cⱼ - cᵢ) ⋅ n̂ⱼ < 0 && push!(candidates, j)  # if two faces are facing each other
+            Rᵢⱼ = cⱼ - cᵢ                                         # Vector from facet i to j
+            Rᵢⱼ ⋅ n̂ᵢ > 0 && Rᵢⱼ ⋅ n̂ⱼ < 0 && push!(candidates, j)  # if two faces are facing each other
         end
         
         for j in candidates
@@ -376,15 +377,20 @@ end
 # end
 
 """
-    isIlluminated(obs::Facet, r̂☉, facets) -> Bool
+    isilluminated(shape, r☉, i::Integer) -> Bool
 
-Return if the observation facet is illuminated by the direct sunlight or not
+Return if the `i`-th facet of the `shape` model is illuminated by the direct sunlight or not
 """
-function isIlluminated(obs::Facet, r̂☉, shape)
-    obs.normal ⋅ r̂☉ < 0 && return false
-    for visiblefacet in obs.visiblefacets
+function isilluminated(shape, r☉, i::Integer)
+    cᵢ = shape.face_centers[i]
+    n̂ᵢ = shape.face_normals[i]
+    r̂☉ = normalize(r☉)
+
+    n̂ᵢ ⋅ r̂☉ < 0 && return false
+
+    for visiblefacet in shape.facets[i].visiblefacets
         A, B, C = shape.nodes[shape.faces[visiblefacet.id]]
-        raycast(A, B, C, r̂☉, obs.center) && return false
+        raycast(A, B, C, r̂☉, cᵢ) && return false
     end
     return true
 end
