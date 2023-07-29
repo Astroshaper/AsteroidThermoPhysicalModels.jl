@@ -23,7 +23,7 @@ A polyhedral shape model of an asteroid.
 - `face_forces` : Thermal force on each face
 - `temperature` : 3D array in size of (Nz, Nt, Ns). Temperature according to depth cells (Nz), time steps in one periodic cycle (Nt), and faces (Ns).
 """
-struct ShapeModel
+mutable struct ShapeModel
     nodes        ::Vector{SVector{3, Float64}}
     faces        ::Vector{SVector{3, Int}}
     facets       ::Vector{AsteroidThermoPhysicalModels.Facet}
@@ -142,7 +142,6 @@ maximum_radius(shape::ShapeModel) = maximum_radius(shape.nodes)
 minimum_radius(nodes) = minimum(norm, nodes)
 minimum_radius(shape::ShapeModel) = minimum_radius(shape.nodes)
 
-surface_temperature(shape::ShapeModel) = [facet.temps[begin] for facet in shape.facets]
-
-
+surface_temperature(shape::ShapeModel, nₜ::Integer) = shape.temperature[begin, nₜ, :]
+surface_temperature(shape::ShapeModel) = shape.temperature[begin, end, :] 
 

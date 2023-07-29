@@ -226,103 +226,80 @@ end
 # ****************************************************************
 
 """
-    update_temps!(shape::ShapeModel, params::AbstractThermoParams)
-    update_temps!(shape::ShapeModel, λ, A_B, A_TH, k, l, Δz, ε)
-    update_temps!(facet::Facet, λ::Real, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ε::Real)
+    forward_temperature(shape::ShapeModel, λ, nₜ::Integer)
 
-Update temerature profie (`Facet.temps`) based on 1-D heat diffusion
-"""
-update_temps!(shape::ShapeModel, params::AbstractThermoParams) = update_temps!(shape, params.λ, params.A_B, params.A_TH, params.k, params.l, params.Δz, params.ε)
+Calculate the temperature for the next time step (`nₜ + 1`) based on 1D heat conductivity equation.
 
-function update_temps!(shape::ShapeModel, λ, A_B, A_TH, k, l, Δz, ε)
-    step_heat_cond!(shape, λ)
-    update_surf_temp!(shape, A_B, A_TH, k, l, Δz, ε)  # Surface boundary condition (Radiation)
-    update_bottom_temp!(shape)                        # Internal boundary condition (Insulation)
-end
-
-function update_temps!(facet::Facet, λ::Real, A_B::Real, A_TH::Real, k::Real, l::Real, Δz::Real, ε::Real)
-    step_heat_cond!(facet, λ)
-    update_surf_temp!(facet, A_B, A_TH, k, l, Δz, ε)  # Surface boundary condition (Radiation)
-    update_bottom_temp!(facet)                        # Internal boundary condition (Insulation)
-end
-
-"""
-    step_heat_cond!(shape::ShapeModel, λ::AbstractVector)
-    step_heat_cond!(shape::ShapeModel, λ::Real)
-    step_heat_cond!(facet::Facet,      λ::Real)
-    step_heat_cond!(Tⱼ::AbstractVector, Tⱼ₊₁::AbstractVector, λ::Real)
-
-Calculate temperature profile at the next step and update `Facet.temps`
+TO DO: Allow selection of boundary conditions and solvers
 
 # Arguments
-- `facet` : Surface facet (`Facet`)
-- `λ`     : Coefficient of heat conduction equation
-- `Tⱼ`     : Temperatures
-- `Tⱼ₊₁`   : Temperatures at the next timestep
+- `shape`  : Shape model
+- `params` : Thermophysical parameters
+- `nₜ`     : Index of the current time step
 """
-function step_heat_cond!(shape::ShapeModel, λ::AbstractVector)
-    for (i, facet) in enumerate(shape.facets)
-        step_heat_cond!(facet, λ[i])
-    end
-end
+function update_temperature!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer)
+    λ = params.λ
+    Tⱼ   = shape.temperature[:, nₜ  , :]
+    Tⱼ₊₁ = shape.temperature[:, nₜ+1, :]
 
-function step_heat_cond!(shape::ShapeModel, λ::Real)
-    for facet in shape.facets
-        step_heat_cond!(facet, λ)
-    end
-end
-
-step_heat_cond!(facet::Facet, λ::Real) = step_heat_cond!(facet.temps, facet._temps_, λ)
-
-function step_heat_cond!(Tⱼ::AbstractVector, Tⱼ₊₁::AbstractVector, λ::Real)
+    ## Forward Euler method
     @. Tⱼ₊₁[begin+1:end-1] = @views (1-2λ)*Tⱼ[begin+1:end-1] + λ*(Tⱼ[begin+2:end] + Tⱼ[begin:end-2])
-    @. Tⱼ = Tⱼ₊₁  # Update cells for next step
+
+    ## Boundary conditions
+    update_surface_temperature!(shape, params, nₜ)  # Radiation at surface
+    update_bottom_temperature!(shape, nₜ)           # Insulation at bottom
 end
 
 
+# ****************************************************************
+#                   Surface boundary condition
+# ****************************************************************
+
 """
-    update_surf_temp!(shape::ShapeModel, params::AbstractThermoParams)
-    update_surf_temp!(shape::ShapeModel, A_B, A_TH, k, l, Δz, ε)
-    update_surf_temp!(T::AbstractVector, F_total::Real, k::Real, l::Real, Δz::Real, ε::Real)
+    update_surface_temperature!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer)
 
 Update surface temperature under radiative boundary condition using Newton's method
 
 # Arguments
-- `shape`   : Shape model (`ShapeModel`)
-- `A_B`     : Bond albedo
-- `A_TH`    : Albedo in thermal infrared wavelength
-- `k`       : Thermal conductivity
-- `l`       : Thermal skin depth
-- `Δz`      : Step width in depth direction (normalized by thermal skin depth `l`)
-- `ε`       : Emissivity
-
-- `T`       : 1-D array of temperatures
-- `F_total` : Total energy absorbed by the facet
+- `shape`  : Shape model (`ShapeModel`)
+- `params` : Thermophysical prameters
+- `nₜ`     : Index of the current time step
 
 In the normalized equation of the surface boundary condition,
 the coefficient `Γ / √(4π * P)` is equivalent for `k / l`,
 where `Γ` is the thermal inertia and `P` the rotation period.
 """
-update_surf_temp!(shape::ShapeModel, params::AbstractThermoParams) = update_surf_temp!(shape, params.A_B, params.A_TH, params.k, params.l, params.Δz, params.ε)
-
-
-function update_surf_temp!(shape::ShapeModel, A_B, A_TH, k, l, Δz, ε)
+function update_surface_temperature!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer)
     for i in eachindex(shape.faces)
-        A_B = (A_B isa Real ? A_B : A_B[i])
-        A_TH = (A_TH isa Real ? A_TH : A_TH[i])
         F_sun, F_scat, F_rad = shape.flux[i, :]
-        k = (k isa Real ? k : k[i])
-        l = (l isa Real ? l : l[i])
-        Δz = (Δz isa Real ? Δz : Δz[i])
-        ε = (ε isa Real ? ε : ε[i])
+
+        A_B  = (params.A_B  isa Real ? params.A_B  : params.A_B[i] )
+        A_TH = (params.A_TH isa Real ? params.A_TH : params.A_TH[i])
+        k    = (params.k    isa Real ? params.k    : params.k[i]   )
+        l    = (params.l    isa Real ? params.l    : params.l[i]   )
+        Δz   = (params.Δz   isa Real ? params.Δz   : params.Δz[i]  )
+        ε    = (params.ε    isa Real ? params.ε    : params.ε[i]   )
 
         F_total = total_flux(A_B, A_TH, F_sun, F_scat, F_rad)
-        update_surf_temp!(shape.facets[i].temps, F_total, k, l, Δz, ε)
+        update_surface_temperature!(shape.temperature[:, nₜ, i], F_total, k, l, Δz, ε)
     end
 end
 
 
-function update_surf_temp!(T::AbstractVector, F_total::Real, k::Real, l::Real, Δz::Real, ε::Real)
+"""
+    update_surface_temperature!(T::AbstractVector, F_total::Real, k::Real, l::Real, Δz::Real, ε::Real)
+
+Newton's method to update the surface temperature under radiative boundary condition
+
+# Arguments
+- `T`       : 1-D array of temperatures
+- `F_total` : Total energy absorbed by the facet
+- `k`       : Thermal conductivity [W/m/K]
+- `l`       : Thermal skin depth [m]
+- `Δz`      : Non-dimensional step in depth, normalized by thermal skin depth `l`
+- `ε`       : Emissivity
+"""
+function update_surface_temperature!(T::AbstractVector, F_total::Real, k::Real, l::Real, Δz::Real, ε::Real)
     εσ = ε * σ_SB
     for _ in 1:20
         T_pri = T[begin]
@@ -337,23 +314,18 @@ function update_surf_temp!(T::AbstractVector, F_total::Real, k::Real, l::Real, �
 end
 
 
+# ****************************************************************
+#                   Bottom boundary condition
+# ****************************************************************
+
 """
+    update_bottom_temperature!(shape::ShapeModel, nₜ::Integer)
+
 Update bottom temperature under boundary condition of insulation
 """
-function update_bottom_temp!(shape::ShapeModel)
-    for facet in shape.facets
-        update_bottom_temp!(facet)
+function update_bottom_temperature!(shape::ShapeModel, nₜ::Integer)
+    for i in eachindex(shape.faces)
+        shape.temperature[end, nₜ, i] = shape.temperature[end-1, nₜ, i]
     end
 end
 
-function update_bottom_temp!(facet::Facet)
-    facet.temps[end] = facet.temps[end-1] 
-end
-
-
-"""
-    total_flux(A_B, A_TH, F_sun, F_scat, F_rad) -> F_total
-
-Total energy absorbed by the face
-"""
-total_flux(A_B, A_TH, F_sun, F_scat, F_rad) = (1 - A_B) * (F_sun + F_scat) + (1 - A_TH) * F_rad

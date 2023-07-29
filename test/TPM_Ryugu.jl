@@ -76,6 +76,7 @@
     )
 
     # Run TPM and save the result
+    AsteroidThermoPhysicalModels.init_temperature_zero!(shape, thermo_params)
     savepath = joinpath("TPM_Ryugu.jld2")
     AsteroidThermoPhysicalModels.run_TPM!(shape, et_range, sun_ryugu, thermo_params, savepath, save_range)
 

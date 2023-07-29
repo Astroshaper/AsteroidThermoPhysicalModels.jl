@@ -5,14 +5,14 @@
 # ****************************************************************
 
 """
-    update_thermal_force!(shape::ShapeModel, params)
-    update_thermal_force!(shape::ShapeModel, A_B, ε)
+    update_thermal_force!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer)
+    update_thermal_force!(shape, A_B, ε, nₜ)
 
 Calculate the thermal force and torque on every facet and update their totals.
 """
-update_thermal_force!(shape::ShapeModel, params::AbstractThermoParams) = update_thermal_force!(shape, params.A_B, params.ε)
+update_thermal_force!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer) = update_thermal_force!(shape, params.A_B, params.ε, nₜ)
 
-function update_thermal_force!(shape::ShapeModel, A_B, ε)
+function update_thermal_force!(shape, A_B, ε, nₜ)
     shape.force  .= 0
     shape.torque .= 0
     for i in eachindex(shape.faces)
@@ -22,7 +22,7 @@ function update_thermal_force!(shape::ShapeModel, A_B, ε)
         aᵢ = shape.face_areas[i]
 
         F_scat = shape.flux[i, 2]
-        Tᵢ = shape.facets[i].temps[begin]
+        Tᵢ = shape.temperature[begin, nₜ, i]
 
         ## Total amount of scattered light and radiation [W/m²].
         ## Note that both are assumed to be isotropic.
