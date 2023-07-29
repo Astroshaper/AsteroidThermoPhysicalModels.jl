@@ -76,19 +76,19 @@ struct NonUniformThermoParams <: AbstractThermoParams
     Cp   ::Vector{Float64}
     ε    ::Vector{Float64}
 
-    t_begin::Float64  # Common for all facets
-    t_end::Float64  # Common for all facets
-    Δt   ::Float64  # Common for all facets
-    Nt   ::Int    # Common for all facets
+    t_begin ::Float64  # Common for all facets
+    t_end   ::Float64  # Common for all facets
+    Δt      ::Float64  # Common for all facets
+    Nt      ::Int      # Common for all facets
 
-    z_max::Vector{Float64}
-    Δz   ::Vector{Float64}
-    Nz   ::Vector{Int}
+    z_max ::Vector{Float64}
+    Δz    ::Vector{Float64}
+    Nz    ::Int  # Common for all facets
 
-    P    ::Float64  # Common for all facets
-    l    ::Vector{Float64}
-    Γ    ::Vector{Float64}
-    λ    ::Vector{Float64}
+    P ::Float64  # Common for all facets
+    l ::Vector{Float64}
+    Γ ::Vector{Float64}
+    λ ::Vector{Float64}
 end
 
 """
@@ -166,7 +166,6 @@ function thermoparams(; A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Nt, z_max, Nz,
         
         z_max isa Real && (z_max = fill(z_max, LENGTH))
         Δz    isa Real && (Δz    = fill(Δz,    LENGTH))
-        Nz    isa Real && (Nz    = fill(Nz,    LENGTH))
         
         l     isa Real && (l     = fill(l,     LENGTH))
         Γ     isa Real && (Γ     = fill(Γ,     LENGTH))
