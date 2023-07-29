@@ -155,9 +155,9 @@ function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::Abst
         for (idx_shape, shape) in enumerate(shapes)
             update_thermal_force!(shape, thermo_params, nₜ)
 
-            surf_temps[idx_shape][:, i] .= surface_temperature(shape, nₜ)
-            forces[idx_shape][i]  .= shape.force   # Body-fixed frame
-            torques[idx_shape][i] .= shape.torque  # Body-fixed frame
+            surf_temps[idx_shape][:, nₜ] .= surface_temperature(shape, nₜ)
+            forces[idx_shape][nₜ]  .= shape.force   # Body-fixed frame
+            torques[idx_shape][nₜ] .= shape.torque  # Body-fixed frame
         end
     
         ## Energy input/output
