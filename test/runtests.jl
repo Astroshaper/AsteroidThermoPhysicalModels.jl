@@ -15,5 +15,5 @@ Aqua.test_all(AsteroidThermoPhysicalModels, ambiguities=false)
 
 include("TPM_Ryugu.jl")
 include("TPM_Didymos.jl")
-include("thermal_property_distribution.jl")
+include("non-uniform_thermoparams.jl")
 include("find_visiblefacets.jl")
