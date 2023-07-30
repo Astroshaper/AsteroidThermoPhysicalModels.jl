@@ -10,4 +10,4 @@
 /test/shape
 /test/TPM_Ryugu.jld2
 /test/TPM_Didymos.jld2
-/test/thermal_property_distribution.jld2
+/test/non-uniform_thermoparams.jld2
