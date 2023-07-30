@@ -54,13 +54,13 @@ abstract type AbstractThermoParams end
 - `Cp`    : Heat capacity [J/kg/K]
 - `ε`     : Emissivity
 
-- `t_begin` : Start time of the simulation, normalized by period `P`
-- `t_end`   : End time of the simulation, normalized by period `P`
-- `Δt`      : Non-dimensional timesteps, normalized by period `P`
+- `t_begin` : Start time of the thermophysical simulation [sec]
+- `t_end`   : End time of the thermophysical simulation [sec]
+- `Δt`      : Timestep [sec]
 - `Nt`      : Number of timesteps
 
-- `z_max` : Maximum depth for thermophysical simualtion, normalized by thermal skin depth `l`
-- `Δz`    : Non-dimensional step in depth, normalized by thermal skin depth `l`
+- `z_max` : Depth of the bottom of a heat conduction equation [m]
+- `Δz`    : Depth step width [m]
 - `Nz`    : Number of depth steps
 
 - `P`     : Cycle of thermal cycle (rotation period) [sec]
@@ -102,16 +102,16 @@ end
 - `Cp`    : Heat capacity [J/kg/K]
 - `ε`     : Emissivity
 
-- `t_begin` : Start time of the simulation, normalized by period `P`
-- `t_end` : End time of the simulation, normalized by period `P`
-- `Δt`    : Non-dimensional timesteps, normalized by period `P`
-- `Nt`    : Number of timesteps
+- `t_begin` : Start time of the thermophysical simulation [sec]
+- `t_end`   : End time of the thermophysical simulation [sec]
+- `Δt`      : Timestep [sec]
+- `Nt`      : Number of timesteps
 
-- `z_max` : Maximum depth for thermophysical simualtion, normalized by thermal skin depth `l`
-- `Δz`    : Non-dimensional step in depth, normalized by thermal skin depth `l`
+- `z_max` : Depth of the bottom of a heat conduction equation [m]
+- `Δz`    : Depth step width [m]
 - `Nz`    : Number of depth steps
 
-- `P`     : Cycle of thermal cycle (rotation period) [sec]
+- `P`     : Thermal cycle (rotation period) [sec]
 - `l`     : Thermal skin depth [m]
 - `Γ`     : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
 - `λ`     : Non-dimensional coefficient for heat diffusion equation
@@ -144,18 +144,15 @@ end
     thermoparams(; A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Nt, z_max, Nz, P)
 """
 function thermoparams(; A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Nt, z_max, Nz, P)
-    t_begin /= P                       # Normalized by period P
-    t_end   /= P                       # Normalized by period P
-    Δt = (t_end - t_begin) / (Nt - 1)  # Normalized by period P
 
     l = thermal_skin_depth(P, k, ρ, Cp)
     Γ = thermal_inertia(k, ρ, Cp)
 
-    z_max = @. z_max / l      # Normalized by skin depth l
-    Δz = @. z_max / (Nz - 1)  # Normalized by skin depth l
+    Δt = (t_end - t_begin) / (Nt - 1)
+    Δz = z_max / (Nz - 1)
 
-    λ = @. (Δt/Δz^2) / 4π
-    maximum(λ) > 0.5 && println("λ should be smaller than 0.5 for convergence.")
+    λ = @. (Δt/P) / (Δz/l)^2 / 4π
+    maximum(λ) > 0.5 && error("λ should be smaller than 0.5 for convergence of the forward Euler method.")
 
     LENGTH = maximum(length.([A_B, A_TH, k, ρ, Cp, ε, z_max, Δz, Nz, l, Γ, λ]))
 
@@ -184,39 +181,40 @@ function Base.show(io::IO, params::AbstractThermoParams)
     @unpack z_max, Δz, Nz          = params
     @unpack P, l, Γ, λ             = params
     
-    msg = "Thermophysical parameters\n"
-    msg *= "-------------------------\n"
+    msg =  "⋅-----------------------------------⋅\n"
+    msg *= "|     Thermophysical parameters     |\n"
+    msg *= "⋅-----------------------------------⋅\n"
     
-    msg *= "A_B   : $(A_B)\n"
-    msg *= "A_TH  : $(A_TH)\n"
-    msg *= "k     : $(k)\n"
-    msg *= "ρ     : $(ρ)\n"
-    msg *= "Cp    : $(Cp)\n"
-    msg *= "ε     : $(ε)\n"
+    msg *= "  A_B     : $(A_B)\n"
+    msg *= "  A_TH    : $(A_TH)\n"
+    msg *= "  k       : $(k)\n"
+    msg *= "  ρ       : $(ρ)\n"
+    msg *= "  Cp      : $(Cp)\n"
+    msg *= "  ε       : $(ε)\n"
 
-    msg *= "-------------------------\n"
-    msg *= "t_begin : $(t_begin * P)\n"
-    msg *= "t_begin : $(t_begin), (Normalized by period P)\n"
-    msg *= "t_end   : $(t_end * P)\n"
-    msg *= "t_end   : $(t_end), (Normalized by period P)\n"
-    msg *= "Nt      : $(Nt)\n"
-    msg *= "Δt      : $(Δt * P)\n"
-    msg *= "Δt      : $(Δt), (Normalized by period P)\n"
+    msg *= "-----------------------------------\n"
+    msg *= "  t_begin : $(t_begin) [sec]\n"
+    msg *= "            = $(t_begin / P) [P]\n"
+    msg *= "  t_end   : $(t_end) [sec]\n"
+    msg *= "            = $(t_end / P) [P]\n"
+    msg *= "  Δt      : $(Δt) [sec]\n"
+    msg *= "            = $(Δt / P) [P]\n"
+    msg *= "  Nt      : $(Nt)\n"
 
-    msg *= "-------------------------\n"
-    msg *= "z_max : $(z_max * l)\n"
-    msg *= "z_max : $(z_max), (Normalized by skin depth l)\n"
-    msg *= "Nz    : $(Nz)\n"
-    msg *= "Δz    : $(Δz * l)\n"
-    msg *= "Δz    : $(Δz), (Normalized by skin depth l)\n"
+    msg *= "-----------------------------------\n"
+    msg *= "  z_max   : $(z_max) [m]\n"
+    msg *= "            = $(z_max / l) [l]\n"
+    msg *= "  Δz      : $(Δz) [m]\n"
+    msg *= "            = $(Δz / l) [l]\n"
+    msg *= "  Nz      : $(Nz)\n"
     
-    msg *= "-------------------------\n"
-    msg *= "P     : $(P)\n"
-    msg *= "l     : $(l)\n"
-    msg *= "Γ     : $(Γ)\n"
-    msg *= "λ     : $(λ)\n"
+    msg *= "-----------------------------------\n"
+    msg *= "  P       : $(P)\n"
+    msg *= "  l       : $(l)\n"
+    msg *= "  Γ       : $(Γ)\n"
+    msg *= "  λ       : $(λ)\n"
 
-    msg *= "-------------------------\n"
+    msg *= "-----------------------------------\n"
     print(io, msg)
 end
 
@@ -243,7 +241,7 @@ function update_temperature!(shape::ShapeModel, params::AbstractThermoParams, n�
     Tⱼ₊₁ = @views shape.temperature[:, :, nₜ+1]
 
     ## Forward Euler method
-    @. Tⱼ₊₁[begin+1:end-1] = @views (1-2λ)*Tⱼ[begin+1:end-1] + λ*(Tⱼ[begin+2:end] + Tⱼ[begin:end-2])
+    @. Tⱼ₊₁[begin+1:end-1, :] = @views (1-2λ')*Tⱼ[begin+1:end-1, :] + λ'*(Tⱼ[begin+2:end, :] + Tⱼ[begin:end-2, :])
 
     ## Boundary conditions
     update_surface_temperature!(shape, params, nₜ+1)  # Radiation (surface)
@@ -281,7 +279,7 @@ function update_surface_temperature!(shape::ShapeModel, params::AbstractThermoPa
         ε    = (params.ε    isa Real ? params.ε    : params.ε[i]   )
 
         F_total = total_flux(A_B, A_TH, F_sun, F_scat, F_rad)
-        update_surface_temperature!((@views shape.temperature[:, i, nₜ]), F_total, k, l, Δz, ε)
+        update_surface_temperature!((@views shape.temperature[:, i, nₜ]), F_total, k, l, Δz/l, ε)  # Δz should be normalized by l
     end
 end
 
@@ -296,16 +294,16 @@ Newton's method to update the surface temperature under radiative boundary condi
 - `F_total` : Total energy absorbed by the facet
 - `k`       : Thermal conductivity [W/m/K]
 - `l`       : Thermal skin depth [m]
-- `Δz`      : Non-dimensional step in depth, normalized by thermal skin depth `l`
+- `Δz̄`      : Non-dimensional step in depth, normalized by thermal skin depth `l`
 - `ε`       : Emissivity
 """
-function update_surface_temperature!(T::AbstractVector, F_total::Real, k::Real, l::Real, Δz::Real, ε::Real)
+function update_surface_temperature!(T::AbstractVector, F_total::Real, k::Real, l::Real, Δz̄::Real, ε::Real)
     εσ = ε * σ_SB
     for _ in 1:20
         T_pri = T[begin]
 
-        f = F_total + k / l * (T[begin+1] - T[begin]) / Δz - εσ*T[begin]^4
-        df = - k / l / Δz - 4*εσ*T[begin]^3             
+        f = F_total + k / l * (T[begin+1] - T[begin]) / Δz̄ - εσ*T[begin]^4
+        df = - k / l / Δz̄ - 4*εσ*T[begin]^3             
         T[begin] -= f / df
 
         err = abs(1 - T_pri / T[begin])
