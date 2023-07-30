@@ -238,15 +238,15 @@ TO DO: Allow selection of boundary conditions and solvers
 """
 function update_temperature!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer)
     λ = params.λ
-    Tⱼ   = shape.temperature[:, nₜ  , :]
-    Tⱼ₊₁ = shape.temperature[:, nₜ+1, :]
+    Tⱼ   = @views shape.temperature[:, :, nₜ  ]
+    Tⱼ₊₁ = @views shape.temperature[:, :, nₜ+1]
 
     ## Forward Euler method
     @. Tⱼ₊₁[begin+1:end-1] = @views (1-2λ)*Tⱼ[begin+1:end-1] + λ*(Tⱼ[begin+2:end] + Tⱼ[begin:end-2])
 
     ## Boundary conditions
-    update_surface_temperature!(shape, params, nₜ)  # Radiation at surface
-    update_bottom_temperature!(shape, nₜ)           # Insulation at bottom
+    update_surface_temperature!(shape, params, nₜ+1)  # Radiation (surface)
+    update_bottom_temperature!(shape, nₜ+1)           # Insulation (bottom)
 end
 
 
@@ -280,7 +280,7 @@ function update_surface_temperature!(shape::ShapeModel, params::AbstractThermoPa
         ε    = (params.ε    isa Real ? params.ε    : params.ε[i]   )
 
         F_total = total_flux(A_B, A_TH, F_sun, F_scat, F_rad)
-        update_surface_temperature!(shape.temperature[:, i, nₜ], F_total, k, l, Δz, ε)  # ここで温度が更新されていない！
+        update_surface_temperature!((@views shape.temperature[:, i, nₜ]), F_total, k, l, Δz, ε)
     end
 end
 
