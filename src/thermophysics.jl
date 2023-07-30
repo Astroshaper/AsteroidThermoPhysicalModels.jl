@@ -280,7 +280,7 @@ function update_surface_temperature!(shape::ShapeModel, params::AbstractThermoPa
         ε    = (params.ε    isa Real ? params.ε    : params.ε[i]   )
 
         F_total = total_flux(A_B, A_TH, F_sun, F_scat, F_rad)
-        update_surface_temperature!(shape.temperature[:, nₜ, i], F_total, k, l, Δz, ε)
+        update_surface_temperature!(shape.temperature[:, i, nₜ], F_total, k, l, Δz, ε)  # ここで温度が更新されていない！
     end
 end
 
@@ -324,7 +324,7 @@ Update bottom temperature under boundary condition of insulation
 """
 function update_bottom_temperature!(shape::ShapeModel, nₜ::Integer)
     for i in eachindex(shape.faces)
-        shape.temperature[end, nₜ, i] = shape.temperature[end-1, nₜ, i]
+        shape.temperature[end, i, nₜ] = shape.temperature[end-1, i, nₜ]
     end
 end
 

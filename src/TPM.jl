@@ -12,12 +12,12 @@ Initialize all cells in the temperature array at 0 K.
 """
 function init_temperature_zero!(shape::ShapeModel, params::AbstractThermoParams)
     Nz = params.Nz
-    Nt = params.Nt
     Ns = length(shape.faces)
+    Nt = params.Nt
 
     if size(shape.temperature) == (0, 0, 0)
-        shape.temperature = zeros(Nz, Nt, Ns)
-    elseif size(shape.temperature) == (Nz, Nt, Ns)
+        shape.temperature = zeros(Nz, Ns, Nt)
+    elseif size(shape.temperature) == (Nz, Ns, Nt)
         shape.temperature .= 0.
     else
         error("ShapeModel.temperature has a wrong size.")
@@ -247,7 +247,7 @@ energy_out(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer) = ene
 function energy_out(shape, ε, A_TH, nₜ)
     E_out = 0.
     for i in eachindex(shape.faces)
-        Tᵢ = shape.temperature[begin, nₜ, i]
+        Tᵢ = shape.temperature[begin, i, nₜ]
         F_rad = shape.flux[i, 3]
         aᵢ = shape.face_areas[i]
 
@@ -429,7 +429,7 @@ function update_flux_rad_single!(shape, ε, A_TH, nₜ)
             fᵢⱼ = visiblefacet.f
             ε = (ε isa Real ? ε : ε[j])
             A_TH = (A_TH isa Real ? A_TH : A_TH[j])
-            Tⱼ = shape.temperature[begin, nₜ, j]
+            Tⱼ = shape.temperature[begin, j, nₜ]
             
             shape.flux[i, 3] += ε * σ_SB * (1 - A_TH) * fᵢⱼ * Tⱼ^4
         end

@@ -22,7 +22,7 @@ function update_thermal_force!(shape, A_B, ε, nₜ)
         aᵢ = shape.face_areas[i]
 
         F_scat = shape.flux[i, 2]
-        Tᵢ = shape.temperature[begin, nₜ, i]
+        Tᵢ = shape.temperature[begin, i, nₜ]
 
         ## Total amount of scattered light and radiation [W/m²].
         ## Note that both are assumed to be isotropic.

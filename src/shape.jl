@@ -21,7 +21,7 @@ A polyhedral shape model of an asteroid.
     - `flux[:, 2]` : F_scat, flux of scattered light
     - `flux[:, 3]` : F_rad,  flux of thermal emission from surrounding surface
 - `face_forces` : Thermal force on each face
-- `temperature` : 3D array in size of (Nz, Nt, Ns). Temperature according to depth cells (Nz), time steps in one periodic cycle (Nt), and faces (Ns).
+- `temperature` : 3D array in size of (Nz, Ns, Nt). Temperature according to depth cells (Nz), faces (Ns), and time steps in one periodic cycle (Nt).
 """
 mutable struct ShapeModel
     nodes        ::Vector{SVector{3, Float64}}
@@ -66,7 +66,7 @@ function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
 
     flux = zeros(length(faces), 3)
     face_forces = [zero(SVector{3, Float64}) for _ in faces]
-    temperature = zeros(0, 0, 0)  # Later initiallized in size of (Nz, Nt, Ns)
+    temperature = zeros(0, 0, 0)  # Later initiallized in size of (Nz, Ns, Nt)
 
     find_visible_facets && find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, face_areas)
     shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas, flux, face_forces, temperature)
@@ -104,7 +104,7 @@ function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMat
 
     flux = zeros(length(faces), 3)
     face_forces = [zero(SVector{3, Float64}) for _ in faces]
-    temperature = zeros(0, 0, 0)  # Later initiallized in size of (Nz, Nt, Ns)
+    temperature = zeros(0, 0, 0)  # Later initiallized in size of (Nz, Ns, Nt)
 
     find_visible_facets && find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, face_areas)
     shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas, flux, face_forces, temperature)
@@ -142,6 +142,6 @@ maximum_radius(shape::ShapeModel) = maximum_radius(shape.nodes)
 minimum_radius(nodes) = minimum(norm, nodes)
 minimum_radius(shape::ShapeModel) = minimum_radius(shape.nodes)
 
-surface_temperature(shape::ShapeModel, nₜ::Integer) = shape.temperature[begin, nₜ, :]
-surface_temperature(shape::ShapeModel) = shape.temperature[begin, end, :] 
+surface_temperature(shape::ShapeModel, nₜ::Integer) = shape.temperature[begin, :, nₜ]
+surface_temperature(shape::ShapeModel) = shape.temperature[begin, :, end] 
 
