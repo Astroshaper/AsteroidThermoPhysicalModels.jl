@@ -33,7 +33,7 @@
         SPICE.furnsh(filepath)
     end
     et_begin = SPICE.utc2et("2027-02-18T00:00:00")
-    et_end   = SPICE.utc2et("2027-02-18T01:00:00")
+    et_end   = SPICE.utc2et("2027-02-19T00:00:00")
     step     = 300
     et_range = et_begin : step : et_end
     @show et_range

@@ -86,6 +86,10 @@ function run_TPM!(shape::ShapeModel, et_range, sun, thermo_params::AbstractTherm
     surf_temps = zeros(length(shape.faces), length(save_range))
     forces  = [zeros(3) for _ in eachindex(save_range)]
     torques = [zeros(3) for _ in eachindex(save_range)]
+
+    ## ProgressMeter setting
+    p = Progress(length(et_range); dt=1, desc="Running TPM...", showspeed=true)
+    ProgressMeter.ijulia_behavior(:clear)
     
     idx = 1  # Index to save data
 
@@ -106,7 +110,10 @@ function run_TPM!(shape::ShapeModel, et_range, sun, thermo_params::AbstractTherm
         end
 
         E_in, E_out, E_cons = energy_io(shape, thermo_params, nₜ)
-        println(E_cons)
+
+        ## Update the progress meter
+        showvalues = [("Timestep", nₜ), ("E_cons = E_out / E_in", E_cons)]
+        ProgressMeter.next!(p; showvalues)
 
         nₜ == length(et_range) && break  # Stop to update the temperature at the final step
         update_temperature!(shape, thermo_params, nₜ)
@@ -133,11 +140,11 @@ function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::Abst
     torques = [zeros(3) for _ in eachindex(et_range)], [zeros(3) for _ in eachindex(et_range)]
     
     ## ProgressMeter setting
-    # p = Progress(length(et_range); dt=1, desc="Running TPM...", showspeed=true)
-    # ProgressMeter.ijulia_behavior(:clear)
+    p = Progress(length(et_range); dt=1, desc="Running TPM...", showspeed=true)
+    ProgressMeter.ijulia_behavior(:clear)
 
     for nₜ in eachindex(et_range)
-        et = et_range[nₜ]
+        # et = et_range[nₜ]
         r☉₁ = suns[1][nₜ]
         r☉₂ = suns[2][nₜ]
         sec_from_pri = d2_d1[nₜ]
@@ -161,13 +168,12 @@ function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::Abst
         end
     
         ## Energy input/output
-        E_io_pri = energy_io(shapes[1], thermo_params, nₜ)
-        E_io_sec = energy_io(shapes[2], thermo_params, nₜ)
-        println(E_io_pri[3], ", ",  E_io_sec[3])
+        E_cons_pri = energy_io(shapes[1], thermo_params, nₜ)[3]
+        E_cons_sec = energy_io(shapes[2], thermo_params, nₜ)[3]
 
         ## Update the progress meter
-        # showvalues = [(:i, i), (:E_cons_pri, E_io_pri[3]), (:E_cons_sec, E_io_sec[3])]
-        # ProgressMeter.next!(p; showvalues)
+        showvalues = [("Timestep", nₜ), ("E_cons for primary", E_cons_pri), ("E_cons for secondary", E_cons_sec)]
+        ProgressMeter.next!(p; showvalues)
         
         ## Update temperature distribution
         nₜ == length(et_range) && break  # Stop to update the temperature at the final step
