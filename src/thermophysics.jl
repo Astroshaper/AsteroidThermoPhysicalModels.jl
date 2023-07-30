@@ -69,26 +69,26 @@ abstract type AbstractThermoParams end
 - `λ`     : Non-dimensional coefficient for heat diffusion equation
 """
 struct NonUniformThermoParams <: AbstractThermoParams
-    A_B  ::Vector{Float64}
-    A_TH ::Vector{Float64}
-    k    ::Vector{Float64}
-    ρ    ::Vector{Float64}
-    Cp   ::Vector{Float64}
-    ε    ::Vector{Float64}
+    A_B ::Vector{Float64}
+    A_TH::Vector{Float64}
+    k   ::Vector{Float64}
+    ρ   ::Vector{Float64}
+    Cp  ::Vector{Float64}
+    ε   ::Vector{Float64}
 
-    t_begin ::Float64  # Common for all facets
-    t_end   ::Float64  # Common for all facets
-    Δt      ::Float64  # Common for all facets
-    Nt      ::Int      # Common for all facets
+    t_begin::Float64    # Common for all faces
+    t_end  ::Float64    # Common for all faces
+    Δt     ::Float64    # Common for all faces
+    Nt     ::Int        # Common for all faces
 
-    z_max ::Vector{Float64}
-    Δz    ::Vector{Float64}
-    Nz    ::Int  # Common for all facets
+    z_max::Float64      # Common for all faces
+    Δz   ::Float64      # Common for all faces
+    Nz   ::Int          # Common for all faces
 
-    P ::Float64  # Common for all facets
-    l ::Vector{Float64}
-    Γ ::Vector{Float64}
-    λ ::Vector{Float64}
+    P::Float64          # Common for all faces
+    l::Vector{Float64}
+    Γ::Vector{Float64}
+    λ::Vector{Float64}
 end
 
 """
@@ -117,32 +117,35 @@ end
 - `λ`     : Non-dimensional coefficient for heat diffusion equation
 """
 struct UniformThermoParams <: AbstractThermoParams
-    A_B  ::Float64
-    A_TH ::Float64
-    k    ::Float64
-    ρ    ::Float64
-    Cp   ::Float64
-    ε    ::Float64
+    A_B ::Float64
+    A_TH::Float64
+    k   ::Float64
+    ρ   ::Float64
+    Cp  ::Float64
+    ε   ::Float64
 
-    t_begin::Float64  # Common for all facets
-    t_end::Float64  # Common for all facets
-    Δt   ::Float64  # Common for all facets
-    Nt   ::Int    # Common for all facets
+    t_begin::Float64
+    t_end  ::Float64
+    Δt     ::Float64
+    Nt     ::Int
 
     z_max::Float64
     Δz   ::Float64
     Nz   ::Int
 
-    P    ::Float64  # Common for all facets
-    l    ::Float64
-    Γ    ::Float64
-    λ    ::Float64
+    P::Float64
+    l::Float64
+    Γ::Float64
+    λ::Float64
 end
 
 
+"""
+    thermoparams(; A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Nt, z_max, Nz, P)
+"""
 function thermoparams(; A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Nt, z_max, Nz, P)
     t_begin /= P                       # Normalized by period P
-    t_end /= P                       # Normalized by period P
+    t_end   /= P                       # Normalized by period P
     Δt = (t_end - t_begin) / (Nt - 1)  # Normalized by period P
 
     l = thermal_skin_depth(P, k, ρ, Cp)
@@ -157,19 +160,17 @@ function thermoparams(; A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Nt, z_max, Nz,
     LENGTH = maximum(length.([A_B, A_TH, k, ρ, Cp, ε, z_max, Δz, Nz, l, Γ, λ]))
 
     if LENGTH > 1
-        A_B   isa Real && (A_B   = fill(A_B,   LENGTH))
-        A_TH  isa Real && (A_TH  = fill(A_TH,  LENGTH))
-        k     isa Real && (k     = fill(k,     LENGTH))
-        ρ     isa Real && (ρ     = fill(ρ,     LENGTH))
-        Cp    isa Real && (Cp    = fill(Cp,    LENGTH))
-        ε     isa Real && (ε     = fill(ε,     LENGTH))
+        A_B   isa Real && (A_B  = fill(A_B,  LENGTH))
+        A_TH  isa Real && (A_TH = fill(A_TH, LENGTH))
+        k     isa Real && (k    = fill(k,    LENGTH))
+        ρ     isa Real && (ρ    = fill(ρ,    LENGTH))
+        Cp    isa Real && (Cp   = fill(Cp,   LENGTH))
+        ε     isa Real && (ε    = fill(ε,    LENGTH))
+                
+        l     isa Real && (l    = fill(l,    LENGTH))
+        Γ     isa Real && (Γ    = fill(Γ,    LENGTH))
+        λ     isa Real && (λ    = fill(λ,    LENGTH))
         
-        z_max isa Real && (z_max = fill(z_max, LENGTH))
-        Δz    isa Real && (Δz    = fill(Δz,    LENGTH))
-        
-        l     isa Real && (l     = fill(l,     LENGTH))
-        Γ     isa Real && (Γ     = fill(Γ,     LENGTH))
-        λ     isa Real && (λ     = fill(λ,     LENGTH))
         NonUniformThermoParams(A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Δt, Nt, z_max, Δz, Nz, P, l, Γ, λ)
     else
         UniformThermoParams(A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Δt, Nt, z_max, Δz, Nz, P, l, Γ, λ)
