@@ -15,7 +15,7 @@
     println("==== $(filepath) ====")
     println(shape)
 
-    total_visiblefacets = sum(length(facet.visiblefacets) for facet in shape.facets)
+    total_visiblefacets = sum(length(visiblefacets) for visiblefacets in shape.visiblefacets)
     println("Number of total visible facets: $total_visiblefacets")  # This should be zero for an icosahedron.
 
     ##= Concave spherical segment =##
@@ -24,5 +24,5 @@
 
     println("==== Concave spherical segment ====")
     println("A facet around the crater center:")
-    println(shape.facets[992])
+    println(shape.visiblefacets[992])
 end

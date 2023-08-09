@@ -32,7 +32,7 @@ function update_thermal_force!(shape, A_B, ε, nₜ)
 
         ## Thermal force on each face
         shape.face_forces[i] = - 2/3 * Eᵢ * aᵢ / c₀ * n̂ᵢ      # The first term normal to the face
-        for visiblefacet in shape.facets[i].visiblefacets
+        for visiblefacet in shape.visiblefacets[i]
             fᵢⱼ = visiblefacet.f
             d̂ᵢⱼ = visiblefacet.d̂
 
