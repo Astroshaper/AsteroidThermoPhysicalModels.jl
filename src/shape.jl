@@ -39,6 +39,13 @@ A polyhedral shape model of an asteroid.
     - `flux[:, 3]` : F_rad,  flux of thermal emission from surrounding surface
 - `face_forces` : Thermal force on each face
 - `temperature` : 3D array in size of (Nz, Ns, Nt). Temperature according to depth cells (Nz), faces (Ns), and time steps in one periodic cycle (Nt).
+    -       ⋅----------⋅
+    -   Nt /          /|
+    -     ⋅--- Ns ---⋅ |
+    -     |          | |
+    -  Nz |          | ⋅
+    -     |          |/
+    -     ⋅----------⋅
 - `visiblefacets` : Vector of vector of `VisibleFacet`
 """
 mutable struct ShapeModel
