@@ -1,4 +1,62 @@
 
+"""
+    struct VisibleFacet
+
+Index of an interfacing facet and its view factor
+
+# Fields
+- `id` : Index of the interfacing facet
+- `f`  : View factor from facet i to j
+- `d`  : Distance from facet i to j
+- `d̂`  : Normal vector from facet i to j
+"""
+struct VisibleFacet
+    id::Int64
+    f ::Float64
+    d ::Float64
+    d̂ ::SVector{3, Float64}
+end
+
+
+################################################################
+#                  Triangular surface facet
+################################################################
+
+"""
+    struct Facet
+
+Triangular surface facet of a polyhedral shape model.
+
+Note that the mesh normal indicates outward the polyhedron.
+
+# Fields
+- `visiblefacets` : 1-D array of `VisibleFacet`
+"""
+struct Facet
+    visiblefacets::Vector{VisibleFacet}
+end
+
+Facet() = Facet(VisibleFacet[])
+
+
+function Base.show(io::IO, facet::Facet)
+    msg = "Surface facet\n"
+    msg *= "-------------\n"
+    
+    if isempty(facet.visiblefacets)
+        msg *= "No visible facets from this facet.\n"
+    else
+        msg *= "$(length(facet.visiblefacets)) facets are visible from this facet:\n"
+        df = DataFrame(
+            id = [visiblefacet.id for visiblefacet in facet.visiblefacets],
+            f  = [visiblefacet.f  for visiblefacet in facet.visiblefacets],
+            d  = [visiblefacet.d  for visiblefacet in facet.visiblefacets],
+        )
+        msg *= "$(df)\n"
+    end
+    print(io, msg)
+end
+
 
 """
     ShapeModel
@@ -69,9 +127,11 @@ function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
     flux = zeros(length(faces), 3)
     face_forces = [zero(SVector{3, Float64}) for _ in faces]
     temperature = zeros(0, 0, 0)  # Later initiallized in size of (Nz, Ns, Nt)
+    visiblefacets = [VisibleFacet[] for _ in faces]
 
-    find_visible_facets && find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, face_areas)
-    shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas, flux, face_forces, temperature)
+    shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas, flux, face_forces, temperature, visiblefacets)
+    find_visible_facets && find_visiblefacets!(shape)
+    
     return shape
 end
 
@@ -107,9 +167,11 @@ function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMat
     flux = zeros(length(faces), 3)
     face_forces = [zero(SVector{3, Float64}) for _ in faces]
     temperature = zeros(0, 0, 0)  # Later initiallized in size of (Nz, Ns, Nt)
+    visiblefacets = [VisibleFacet[] for _ in faces]
 
-    find_visible_facets && find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, face_areas)
-    shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas, flux, face_forces, temperature)
+    shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas, flux, face_forces, temperature, visiblefacets)
+    find_visible_facets && find_visiblefacets!(shape)
+    
     return shape
 end
 
