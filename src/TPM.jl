@@ -5,10 +5,27 @@
 #                   Initialize temperatures
 # ****************************************************************
 
+
+"""
+    subsolar_temperature(r☉) -> Tₛₛ
+
+Subsolar temperature [K] on an asteroid at a heliocentric distance `r☉` [m],
+assuming radiative equilibrium with zero conductivity.
+"""
+subsolar_temperature(r☉, params::AbstractThermoParams) = subsolar_temperature(r☉, params.A_B, params.ε)
+
+function subsolar_temperature(r☉, A_B, ε)
+    Φ = SOLAR_CONST / SPICE.convrt(norm(r☉), "m", "au")^2  # Energy flux at the solar distance [W/m²]
+    Tₛₛ = ((1 - A_B) * Φ / (ε * σ_SB))^(1/4)
+
+    return Tₛₛ
+end
+
+
 """
     init_temperature_zero!(shape::ShapeModel, params::AbstractThermoParams)
 
-Initialize all cells in the temperature array at 0 K.
+Initialize all temperature cells at 0 K.
 """
 function init_temperature_zero!(shape::ShapeModel, params::AbstractThermoParams)
     Nz = params.Nz
@@ -22,6 +39,17 @@ function init_temperature_zero!(shape::ShapeModel, params::AbstractThermoParams)
     else
         error("ShapeModel.temperature has a wrong size.")
     end
+end
+
+
+"""
+    init_temperature!(shape::ShapeModel, params::AbstractThermoParams, T₀::Real)
+
+Initialize all temperature cells at the given temperature `T₀`
+"""
+function init_temperature!(shape::ShapeModel, params::AbstractThermoParams, T₀::Real)
+    init_temperature_zero!(shape, params)
+    shape.temperature[:, :, begin] .= T₀
 end
 
 

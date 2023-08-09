@@ -95,8 +95,8 @@
         P       = SPICE.convrt(AsteroidThermoPhysicalModels.DIDYMOS[:P], "hours", "seconds"),
     )
 
-    AsteroidThermoPhysicalModels.init_temperature_zero!(shape1, thermo_params)
-    AsteroidThermoPhysicalModels.init_temperature_zero!(shape2, thermo_params)
+    AsteroidThermoPhysicalModels.init_temperature!(shape1, thermo_params, 200.)
+    AsteroidThermoPhysicalModels.init_temperature!(shape2, thermo_params, 200.)
 
     # Run TPM and save the result
     savepath = joinpath("TPM_Didymos.jld2")
