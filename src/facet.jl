@@ -87,41 +87,6 @@ end
 
 
 ################################################################
-#                           Orinet3D
-################################################################
-
-"""
-    isAbove(A, B, C, D) -> Bool
-
-Determine if point D is above triangle face ABC.
-"""
-function isAbove(A, B, C, D)
-    G = SA_F64[
-        A[1]-D[1] A[2]-D[2] A[3]-D[3]
-        B[1]-D[1] B[2]-D[2] B[3]-D[3]
-        C[1]-D[1] C[2]-D[2] C[3]-D[3]
-    ]
-
-    return det(G) < 0
-end
-
-"""
-    isBelow(A, B, C, D) -> Bool
-
-Determine if point D is below triangle face ABC.
-"""
-function isBelow(A, B, C, D)
-    G = SA_F64[
-        A[1]-D[1] A[2]-D[2] A[3]-D[3]
-        B[1]-D[1] B[2]-D[2] B[3]-D[3]
-        C[1]-D[1] C[2]-D[2] C[3]-D[3]
-    ]
-
-    return det(G) > 0
-end
-
-
-################################################################
 #                           Raycast
 ################################################################
 
