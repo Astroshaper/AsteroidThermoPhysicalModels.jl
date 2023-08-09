@@ -18,46 +18,6 @@ struct VisibleFacet
 end
 
 
-################################################################
-#                  Triangular surface facet
-################################################################
-
-"""
-    struct Facet
-
-Triangular surface facet of a polyhedral shape model.
-
-Note that the mesh normal indicates outward the polyhedron.
-
-# Fields
-- `visiblefacets` : 1-D array of `VisibleFacet`
-"""
-struct Facet
-    visiblefacets::Vector{VisibleFacet}
-end
-
-Facet() = Facet(VisibleFacet[])
-
-
-function Base.show(io::IO, facet::Facet)
-    msg = "Surface facet\n"
-    msg *= "-------------\n"
-    
-    if isempty(facet.visiblefacets)
-        msg *= "No visible facets from this facet.\n"
-    else
-        msg *= "$(length(facet.visiblefacets)) facets are visible from this facet:\n"
-        df = DataFrame(
-            id = [visiblefacet.id for visiblefacet in facet.visiblefacets],
-            f  = [visiblefacet.f  for visiblefacet in facet.visiblefacets],
-            d  = [visiblefacet.d  for visiblefacet in facet.visiblefacets],
-        )
-        msg *= "$(df)\n"
-    end
-    print(io, msg)
-end
-
-
 """
     ShapeModel
 
@@ -66,7 +26,6 @@ A polyhedral shape model of an asteroid.
 # Fields
 - `nodes`      : 1-D array of node positions
 - `faces`      : 1-D array of vertex indices of faces
-- `facets`     : 1-D array of surface facets (`Facet`)
 - `force`      : Thermal recoil force at body-fixed frame (Yarkovsky effect)
 - `torque`     : Thermal recoil torque at body-fixed frame (YORP effect)
 
@@ -85,7 +44,6 @@ A polyhedral shape model of an asteroid.
 mutable struct ShapeModel
     nodes        ::Vector{SVector{3, Float64}}
     faces        ::Vector{SVector{3, Int}}
-    facets       ::Vector{AsteroidThermoPhysicalModels.Facet}
 
     force        ::MVector{3, Float64}
     torque       ::MVector{3, Float64}
@@ -116,7 +74,6 @@ end
 function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
     # TODO: use MeshIO.jl
     nodes, faces = loadobj(shapepath; scale=scale, static=true, message=false)
-    facets = [Facet() for _ in faces]
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
 
@@ -129,7 +86,7 @@ function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
     temperature = zeros(0, 0, 0)  # Later initiallized in size of (Nz, Ns, Nt)
     visiblefacets = [VisibleFacet[] for _ in faces]
 
-    shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas, flux, face_forces, temperature, visiblefacets)
+    shape = ShapeModel(nodes, faces, force, torque, face_centers, face_normals, face_areas, flux, face_forces, temperature, visiblefacets)
     find_visible_facets && find_visiblefacets!(shape)
     
     return shape
@@ -156,7 +113,7 @@ Convert a regular grid (x, y) to a shape model
 - `zs::AbstractMatrix` : z-coordinates of grid points
 """
 function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix; scale=1.0, find_visible_facets=false)
-    nodes, faces, facets = grid_to_facets(xs, ys, zs)
+    nodes, faces = grid_to_facets(xs, ys, zs)
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
 
@@ -169,7 +126,7 @@ function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMat
     temperature = zeros(0, 0, 0)  # Later initiallized in size of (Nz, Ns, Nt)
     visiblefacets = [VisibleFacet[] for _ in faces]
 
-    shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas, flux, face_forces, temperature, visiblefacets)
+    shape = ShapeModel(nodes, faces, force, torque, face_centers, face_normals, face_areas, flux, face_forces, temperature, visiblefacets)
     find_visible_facets && find_visiblefacets!(shape)
     
     return shape

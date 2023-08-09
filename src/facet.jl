@@ -1,7 +1,7 @@
 
 
 """
-    grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix) -> nodes, faces, facets
+    grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix) -> nodes, faces
 
 Convert a regular grid (x, y) and corresponding z-coordinates to triangular facets
 
@@ -21,7 +21,6 @@ j   ・--A--B--・
 function grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix)
     nodes = SVector{3, Float64}[]
     faces = SVector{3, Int}[]
-    facets = Facet[]
 
     for j in eachindex(ys)
         for i in eachindex(xs)
@@ -36,17 +35,10 @@ function grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatr
             
             push!(faces, ABC)
             push!(faces, DCB)
-
-            A = @SVector [xs[i  ], ys[j  ], zs[i  , j  ]]
-            B = @SVector [xs[i+1], ys[j  ], zs[i+1, j  ]]
-            C = @SVector [xs[i  ], ys[j+1], zs[i  , j+1]]
-            D = @SVector [xs[i+1], ys[j+1], zs[i+1, j+1]]
-
-            push!(facets, Facet())
-            push!(facets, Facet())
         end
     end
-    nodes, faces, facets
+
+    return nodes, faces
 end
 
 
@@ -231,19 +223,21 @@ end
 
 
 """
-    isilluminated(shape, r☉, i::Integer) -> Bool
+    isilluminated(shape::ShapeModel, r☉::AbstractVector, i::Integer) -> Bool
 
-Return if the `i`-th facet of the `shape` model is illuminated by the direct sunlight or not
+Return if the `i`-th face of the shape model is illuminated by the direct sunlight or not
 """
-function isilluminated(shape, r☉, i::Integer)
+function isilluminated(shape::ShapeModel, r☉::AbstractVector, i::Integer)
+    nodes = shape.nodes
+    faces = shape.faces
     cᵢ = shape.face_centers[i]
     n̂ᵢ = shape.face_normals[i]
     r̂☉ = normalize(r☉)
 
     n̂ᵢ ⋅ r̂☉ < 0 && return false
 
-    for visiblefacet in shape.facets[i].visiblefacets
-        A, B, C = shape.nodes[shape.faces[visiblefacet.id]]
+    for visiblefacet in shape.visiblefacets[i]
+        A, B, C = nodes[faces[visiblefacet.id]]
         raycast(A, B, C, r̂☉, cᵢ) && return false
     end
     return true
