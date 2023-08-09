@@ -1,5 +1,13 @@
 # See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for more information.
 @testset "find_visiblefacets" begin
+    msg = """
+    
+    ⋅----------------------------------------⋅
+    |        Test: find_visiblefacets        |
+    ⋅----------------------------------------⋅
+    """
+    println(msg)
+
     ##= Shape model of Ryugu =##
     filename = "SHAPE_SFM_49k_v20180804.obj"
     url_shape = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/paper/Watanabe_2019/$(filename)"
