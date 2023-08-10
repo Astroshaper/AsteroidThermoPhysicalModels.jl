@@ -109,6 +109,11 @@ function save_shape_jld(shapepath, shape)
 end
 
 
+################################################################
+#               Create a shape model from grid
+################################################################
+
+
 """
     grid_to_faces(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix) -> nodes, faces
 
