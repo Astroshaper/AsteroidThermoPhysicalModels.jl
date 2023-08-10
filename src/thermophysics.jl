@@ -176,43 +176,39 @@ end
 
 
 function Base.show(io::IO, params::AbstractThermoParams)
-    @unpack A_B, A_TH, k, ρ, Cp, ε = params
-    @unpack t_begin, t_end, Δt, Nt = params
-    @unpack z_max, Δz, Nz          = params
-    @unpack P, l, Γ, λ             = params
     
     msg =  "⋅-----------------------------------⋅\n"
     msg *= "|     Thermophysical parameters     |\n"
     msg *= "⋅-----------------------------------⋅\n"
     
-    msg *= "  A_B     : $(A_B)\n"
-    msg *= "  A_TH    : $(A_TH)\n"
-    msg *= "  k       : $(k)\n"
-    msg *= "  ρ       : $(ρ)\n"
-    msg *= "  Cp      : $(Cp)\n"
-    msg *= "  ε       : $(ε)\n"
+    msg *= "  A_B     : $(params.A_B)\n"
+    msg *= "  A_TH    : $(params.A_TH)\n"
+    msg *= "  k       : $(params.k)\n"
+    msg *= "  ρ       : $(params.ρ)\n"
+    msg *= "  Cp      : $(params.Cp)\n"
+    msg *= "  ε       : $(params.ε)\n"
 
     msg *= "-----------------------------------\n"
-    msg *= "  t_begin : $(t_begin) [sec]\n"
-    msg *= "            = $(t_begin / P) [P]\n"
-    msg *= "  t_end   : $(t_end) [sec]\n"
-    msg *= "            = $(t_end / P) [P]\n"
-    msg *= "  Δt      : $(Δt) [sec]\n"
-    msg *= "            = $(Δt / P) [P]\n"
-    msg *= "  Nt      : $(Nt)\n"
+    msg *= "  t_begin : $(params.t_begin) [sec]\n"
+    msg *= "            = $(params.t_begin / params.P) [P]\n"
+    msg *= "  t_end   : $(params.t_end) [sec]\n"
+    msg *= "            = $(params.t_end / params.P) [P]\n"
+    msg *= "  Δt      : $(params.Δt) [sec]\n"
+    msg *= "            = $(params.Δt / params.P) [P]\n"
+    msg *= "  Nt      : $(params.Nt)\n"
 
     msg *= "-----------------------------------\n"
-    msg *= "  z_max   : $(z_max) [m]\n"
-    msg *= "            = $(z_max / l) [l]\n"
-    msg *= "  Δz      : $(Δz) [m]\n"
-    msg *= "            = $(Δz / l) [l]\n"
-    msg *= "  Nz      : $(Nz)\n"
+    msg *= "  z_max   : $(params.z_max) [m]\n"
+    msg *= "            = $(params.z_max / params.l) [l]\n"
+    msg *= "  Δz      : $(params.Δz) [m]\n"
+    msg *= "            = $(params.Δz / params.l) [l]\n"
+    msg *= "  Nz      : $(params.Nz)\n"
     
     msg *= "-----------------------------------\n"
-    msg *= "  P       : $(P)\n"
-    msg *= "  l       : $(l)\n"
-    msg *= "  Γ       : $(Γ)\n"
-    msg *= "  λ       : $(λ)\n"
+    msg *= "  P       : $(params.P)\n"
+    msg *= "  l       : $(params.l)\n"
+    msg *= "  Γ       : $(params.Γ)\n"
+    msg *= "  λ       : $(params.λ)\n"
 
     msg *= "-----------------------------------\n"
     print(io, msg)
