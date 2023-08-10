@@ -10,7 +10,7 @@ import SPICE
 # using SharedArrays
 
 using DataFrames
-using Parameters
+# using Parameters
 using ProgressMeter
 
 using FileIO
