@@ -31,6 +31,7 @@ export ShapeModel
 
 include("thermophysics.jl")
 include("TPM.jl")
+include("energy_flux.jl")
 include("non_grav.jl")
 export init_temperature!, run_TPM!
 
