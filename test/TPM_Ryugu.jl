@@ -77,6 +77,9 @@
     Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)
 
     thermo_params = AsteroidThermoPhysicalModels.thermoparams(
+        P       = P,
+        l       = l,
+        Γ       = Γ,
         A_B     = 0.04,  # Bolometric Bond albedo
         A_TH    = 0.0,
         ε       = 1.0,
@@ -85,9 +88,6 @@
         Nt      = length(et_range),
         z_max   = 0.6,
         Nz      = 41,
-        P       = P,
-        l       = l,
-        Γ       = Γ,
     )
 
     # Run TPM and save the result

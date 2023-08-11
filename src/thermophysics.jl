@@ -45,6 +45,10 @@ abstract type AbstractThermoParams end
     struct NonUniformThermoParams
 
 # Fields
+- `P`     : Cycle of thermal cycle (rotation period) [sec]
+- `l`     : Thermal skin depth [m]
+- `Γ`     : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
+- `λ`     : Non-dimensional coefficient for heat diffusion equation
 - `A_B`   : Bond albedo
 - `A_TH`  : Albedo at thermal radiation wavelength
 - `ε`     : Emissivity
@@ -57,36 +61,34 @@ abstract type AbstractThermoParams end
 - `z_max` : Depth of the bottom of a heat conduction equation [m]
 - `Δz`    : Depth step width [m]
 - `Nz`    : Number of depth steps
-
-- `P`     : Cycle of thermal cycle (rotation period) [sec]
-- `l`     : Thermal skin depth [m]
-- `Γ`     : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
-- `λ`     : Non-dimensional coefficient for heat diffusion equation
 """
 struct NonUniformThermoParams <: AbstractThermoParams
-    A_B ::Vector{Float64}
-    A_TH::Vector{Float64}
-    ε   ::Vector{Float64}
+    P       ::Float64          # Common for all faces
+    l       ::Vector{Float64}
+    Γ       ::Vector{Float64}
+    λ       ::Vector{Float64}
+    A_B     ::Vector{Float64}
+    A_TH    ::Vector{Float64}
+    ε       ::Vector{Float64}
 
-    t_begin::Float64    # Common for all faces
-    t_end  ::Float64    # Common for all faces
-    Δt     ::Float64    # Common for all faces
-    Nt     ::Int        # Common for all faces
+    t_begin ::Float64          # Common for all faces
+    t_end   ::Float64          # Common for all faces
+    Δt      ::Float64          # Common for all faces
+    Nt      ::Int              # Common for all faces
 
-    z_max::Float64      # Common for all faces
-    Δz   ::Float64      # Common for all faces
-    Nz   ::Int          # Common for all faces
-
-    P::Float64          # Common for all faces
-    l::Vector{Float64}
-    Γ::Vector{Float64}
-    λ::Vector{Float64}
+    z_max   ::Float64          # Common for all faces
+    Δz      ::Float64          # Common for all faces
+    Nz      ::Int              # Common for all faces
 end
 
 """
     struct UniformThermoParams
 
 # Fields
+- `P`     : Thermal cycle (rotation period) [sec]
+- `l`     : Thermal skin depth [m]
+- `Γ`     : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
+- `λ`     : Non-dimensional coefficient for heat diffusion equation
 - `A_B`   : Bond albedo
 - `A_TH`  : Albedo at thermal radiation wavelength
 - `ε`     : Emissivity
@@ -99,37 +101,31 @@ end
 - `z_max` : Depth of the bottom of a heat conduction equation [m]
 - `Δz`    : Depth step width [m]
 - `Nz`    : Number of depth steps
-
-- `P`     : Thermal cycle (rotation period) [sec]
-- `l`     : Thermal skin depth [m]
-- `Γ`     : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
-- `λ`     : Non-dimensional coefficient for heat diffusion equation
 """
 struct UniformThermoParams <: AbstractThermoParams
-    A_B ::Float64
-    A_TH::Float64
-    ε   ::Float64
+    P       ::Float64
+    l       ::Float64
+    Γ       ::Float64
+    λ       ::Float64
+    A_B     ::Float64
+    A_TH    ::Float64
+    ε       ::Float64
 
-    t_begin::Float64
-    t_end  ::Float64
-    Δt     ::Float64
-    Nt     ::Int
+    t_begin ::Float64
+    t_end   ::Float64
+    Δt      ::Float64
+    Nt      ::Int
 
-    z_max::Float64
-    Δz   ::Float64
-    Nz   ::Int
-
-    P::Float64
-    l::Float64
-    Γ::Float64
-    λ::Float64
+    z_max   ::Float64
+    Δz      ::Float64
+    Nz      ::Int
 end
 
 
 """
     thermoparams(; A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Nt, z_max, Nz, P)
 """
-function thermoparams(; A_B, A_TH, ε, t_begin, t_end, Nt, z_max, Nz, P, l, Γ)
+function thermoparams(; P, l, Γ, A_B, A_TH, ε, t_begin, t_end, Nt, z_max, Nz)
 
     Δt = (t_end - t_begin) / (Nt - 1)
     Δz = z_max / (Nz - 1)
@@ -147,9 +143,9 @@ function thermoparams(; A_B, A_TH, ε, t_begin, t_end, Nt, z_max, Nz, P, l, Γ)
         Γ     isa Real && (Γ    = fill(Γ,    LENGTH))
         λ     isa Real && (λ    = fill(λ,    LENGTH))
         
-        NonUniformThermoParams(A_B, A_TH, ε, t_begin, t_end, Δt, Nt, z_max, Δz, Nz, P, l, Γ, λ)
+        NonUniformThermoParams(P, l, Γ, λ, A_B, A_TH, ε, t_begin, t_end, Δt, Nt, z_max, Δz, Nz)
     else
-        UniformThermoParams(A_B, A_TH, ε, t_begin, t_end, Δt, Nt, z_max, Δz, Nz, P, l, Γ, λ)
+        UniformThermoParams(P, l, Γ, λ, A_B, A_TH, ε, t_begin, t_end, Δt, Nt, z_max, Δz, Nz)
     end
 end
 
