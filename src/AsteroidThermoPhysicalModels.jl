@@ -23,13 +23,13 @@ export RYUGU, DIDYMOS, DIMORPHOS
 include("obj.jl")
 include("shape.jl")
 include("facet.jl")
-export ShapeModel
+export ShapeModel, load_shape_obj
 
 include("thermophysics.jl")
 include("TPM.jl")
 include("energy_flux.jl")
 include("non_grav.jl")
-export init_temperature!, run_TPM!
+export thermal_skin_depth, thermal_inertia, init_temperature!, run_TPM!
 
 include("roughness.jl")
 
