@@ -5,7 +5,6 @@
 # ****************************************************************
 
 """
-    thermal_skin_depth(params)      -> l_2π
     thermal_skin_depth(P, k, ρ, Cp) -> l_2π
 
 # Arguments
@@ -21,7 +20,6 @@ thermal_skin_depth(P, k, ρ, Cₚ) = @. √(4π * P * k / (ρ * Cₚ))
 
 
 """
-    thermal_inertia(params)   -> Γ
     thermal_inertia(k, ρ, Cp) -> Γ
 
 # Arguments
@@ -234,18 +232,18 @@ Update surface temperature under radiative boundary condition using Newton's met
 - `nₜ`     : Index of the current time step
 """
 function update_surface_temperature!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer)
-    for i in eachindex(shape.faces)
+    for nₛ in eachindex(shape.faces)
         P    = params.P
-        l    = (params.l    isa Real ? params.l    : params.l[i]   )
-        Γ    = (params.Γ    isa Real ? params.Γ    : params.Γ[i]   )
-        A_B  = (params.A_B  isa Real ? params.A_B  : params.A_B[i] )
-        A_TH = (params.A_TH isa Real ? params.A_TH : params.A_TH[i])
-        ε    = (params.ε    isa Real ? params.ε    : params.ε[i]   )
+        l    = (params.l    isa Real ? params.l    : params.l[nₛ]   )
+        Γ    = (params.Γ    isa Real ? params.Γ    : params.Γ[nₛ]   )
+        A_B  = (params.A_B  isa Real ? params.A_B  : params.A_B[nₛ] )
+        A_TH = (params.A_TH isa Real ? params.A_TH : params.A_TH[nₛ])
+        ε    = (params.ε    isa Real ? params.ε    : params.ε[nₛ]   )
         Δz   = params.Δz
 
-        F_sun, F_scat, F_rad = shape.flux[i, :]
+        F_sun, F_scat, F_rad = shape.flux[nₛ, :]
         F_total = total_flux(A_B, A_TH, F_sun, F_scat, F_rad)
-        update_surface_temperature!((@views shape.temperature[:, i, nₜ]), F_total, P, l, Γ, ε, Δz)  # Δz should be normalized by l
+        update_surface_temperature!((@views shape.temperature[:, nₛ, nₜ]), F_total, P, l, Γ, ε, Δz)  # Δz should be normalized by l
     end
 end
 
@@ -290,8 +288,8 @@ end
 Update bottom temperature under boundary condition of insulation
 """
 function update_bottom_temperature!(shape::ShapeModel, nₜ::Integer)
-    for i in eachindex(shape.faces)
-        shape.temperature[end, i, nₜ] = shape.temperature[end-1, i, nₜ]
+    for nₛ in eachindex(shape.faces)
+        shape.temperature[end, nₛ, nₜ] = shape.temperature[end-1, nₛ, nₜ]
     end
 end
 
