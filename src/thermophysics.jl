@@ -232,10 +232,6 @@ Update surface temperature under radiative boundary condition using Newton's met
 - `shape`  : Shape model (`ShapeModel`)
 - `params` : Thermophysical prameters
 - `nₜ`     : Index of the current time step
-
-In the normalized equation of the surface boundary condition,
-the coefficient `Γ / √(4π * P)` is equivalent for `k / l`,
-where `Γ` is the thermal inertia and `P` the rotation period.
 """
 function update_surface_temperature!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer)
     for i in eachindex(shape.faces)
@@ -258,13 +254,14 @@ end
 """
     update_surface_temperature!(T::AbstractVector, F_total::Real, k::Real, l::Real, Δz::Real, ε::Real)
 
-Newton's method to update the surface temperature under radiative boundary condition
+Newton's method to update the surface temperature under radiative boundary condition.
+The length in this equation is normalized by thermal skin depth `l`.
 
 # Arguments
 - `T`       : 1-D array of temperatures
 - `F_total` : Total energy absorbed by the facet
-- `k`       : Thermal conductivity [W/m/K]
-- `l`       : Thermal skin depth [m]
+- `Γ`       : Thermal inertia [tiu]
+- `P`       : Period of thermal cycle [sec]
 - `Δz̄`      : Non-dimensional step in depth, normalized by thermal skin depth `l`
 - `ε`       : Emissivity
 """
