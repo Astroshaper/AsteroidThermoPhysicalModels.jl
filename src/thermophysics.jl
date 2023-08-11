@@ -212,13 +212,13 @@ function update_temperature!(shape::ShapeModel, params::AbstractThermoParams, n�
     @. Tⱼ₊₁[begin+1:end-1, :] = @views (1-2λ')*Tⱼ[begin+1:end-1, :] + λ'*(Tⱼ[begin+2:end, :] + Tⱼ[begin:end-2, :])
 
     ## Boundary conditions
-    update_surface_temperature!(shape, params, nₜ+1, Radiation)  # Radiation B.C. on the surface
-    update_bottom_temperature!(shape, nₜ+1, Insulation)          # Insulation B.C. at the bottom
+    update_surface_temperature!(shape, params, nₜ+1, Radiation)  # Upper boundary condition of radiation
+    update_bottom_temperature!(shape, nₜ+1, Insulation)          # Lower boundary condition of insulation
 end
 
 
 # ****************************************************************
-#                     Boundary condition
+#                   Types for boundary condition
 # ****************************************************************
 
 abstract type BoundaryCondition end
@@ -241,6 +241,10 @@ Singleton type for isothermal boundary condition
 struct IsothermalBoundaryCondition <: BoundaryCondition end
 const Isothermal = IsothermalBoundaryCondition()
 
+
+# ****************************************************************
+#                    Upper boundary condition
+# ****************************************************************
 
 """
     update_surface_temperature!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer, ::RadiationBoundaryCondition)
@@ -301,6 +305,45 @@ end
 
 
 """
+    update_surface_temperature!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer, ::InsulationBoundaryCondition)
+
+Update surface temperature based on insulation boundary condition
+
+# Arguments
+- `shape`      : Shape model (`ShapeModel`)
+- `params`     : Thermophysical prameters
+- `nₜ`         : Index of the current time step
+- `Insulation` : Singleton of `InsulationBoundaryCondition` to select boundary condition
+"""
+function update_surface_temperature!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer, ::InsulationBoundaryCondition)
+    for nₛ in eachindex(shape.faces)
+        shape.temperature[begin, nₛ, nₜ] = shape.temperature[begin+1, nₛ, nₜ]
+    end
+end
+
+
+"""
+    update_surface_temperature!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer, ::IsothermalBoundaryCondition)
+
+Update bottom temperature based on isothermal boundary condition
+
+# Arguments
+- `shape`       : Shape model (`ShapeModel`)
+- `nₜ`          : Index of the current time step
+- `Isothermal`  : Singleton of `IsothermalBoundaryCondition` to select boundary condition
+"""
+function update_surface_temperature!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer, ::IsothermalBoundaryCondition)
+    # for nₛ in eachindex(shape.faces)
+    #     shape.temperature[begin, nₛ, nₜ] = T_upper
+    # end
+end
+
+
+# ****************************************************************
+#                    Lower boundary condition
+# ****************************************************************
+
+"""
     update_bottom_temperature!(shape::ShapeModel, nₜ::Integer, ::InsulationBoundaryCondition)
 
 Update bottom temperature based on insulation boundary condition
@@ -316,3 +359,19 @@ function update_bottom_temperature!(shape::ShapeModel, nₜ::Integer, ::Insulati
     end
 end
 
+
+"""
+    update_bottom_temperature!(shape::ShapeModel, nₜ::Integer, ::IsothermalBoundaryCondition)
+
+Update bottom temperature based on isothermal boundary condition
+
+# Arguments
+- `shape`       : Shape model (`ShapeModel`)
+- `nₜ`          : Index of the current time step
+- `Isothermal`  : Singleton of `IsothermalBoundaryCondition` to select boundary condition
+"""
+function update_bottom_temperature!(shape::ShapeModel, nₜ::Integer, ::IsothermalBoundaryCondition)
+    # for nₛ in eachindex(shape.faces)
+    #     shape.temperature[end, nₛ, nₜ] = T_lower
+    # end
+end
