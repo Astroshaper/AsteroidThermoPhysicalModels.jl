@@ -2,7 +2,7 @@
 @testset "TPM_Didymos" begin
     msg = """
 
-    ⋅--------------------------- -----⋅
+    ⋅---------------------------------⋅
     |        Test: TPM_Didymos        |
     ⋅---------------------------------⋅
     """
@@ -102,10 +102,12 @@
         Nz      = 41,
     )
 
+    println(thermo_params)
+
+    ##= Run TPM and save the result =##
     AsteroidThermoPhysicalModels.init_temperature!(shape1, thermo_params, 200.)
     AsteroidThermoPhysicalModels.init_temperature!(shape2, thermo_params, 200.)
 
-    # Run TPM and save the result
     savepath = joinpath("TPM_Didymos.jld2")
     shapes = (shape1, shape2)
     suns = (sun_d1, sun_d2)

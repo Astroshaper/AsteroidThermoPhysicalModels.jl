@@ -90,6 +90,8 @@
         Nz      = 41,
     )
 
+    println(thermo_params)
+
     # Run TPM and save the result
     AsteroidThermoPhysicalModels.init_temperature!(shape, thermo_params, 200.)
     savepath = joinpath("TPM_Ryugu.jld2")

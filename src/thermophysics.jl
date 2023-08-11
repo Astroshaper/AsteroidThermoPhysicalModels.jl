@@ -150,7 +150,7 @@ function thermoparams(; P, l, Γ, A_B, A_TH, ε, t_begin, t_end, Nt, z_max, Nz)
 end
 
 
-function Base.show(io::IO, params::AbstractThermoParams)
+function Base.show(io::IO, params::UniformThermoParams)
 
     msg =  "⋅-----------------------------------⋅\n"
     msg *= "|     Thermophysical parameters     |\n"
