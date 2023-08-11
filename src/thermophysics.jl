@@ -235,18 +235,17 @@ Update surface temperature under radiative boundary condition using Newton's met
 """
 function update_surface_temperature!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer)
     for i in eachindex(shape.faces)
-        F_sun, F_scat, F_rad = shape.flux[i, :]
-
+        P    = params.P
+        l    = (params.l    isa Real ? params.l    : params.l[i]   )
+        Γ    = (params.Γ    isa Real ? params.Γ    : params.Γ[i]   )
         A_B  = (params.A_B  isa Real ? params.A_B  : params.A_B[i] )
         A_TH = (params.A_TH isa Real ? params.A_TH : params.A_TH[i])
-        Γ    = (params.Γ    isa Real ? params.Γ    : params.Γ[i]   )
-        P    = (params.P    isa Real ? params.P    : params.P[i]   )
-        Δz   = (params.Δz   isa Real ? params.Δz   : params.Δz[i]  )
-        l    = (params.l    isa Real ? params.l    : params.l[i]   )
         ε    = (params.ε    isa Real ? params.ε    : params.ε[i]   )
+        Δz   = params.Δz
 
+        F_sun, F_scat, F_rad = shape.flux[i, :]
         F_total = total_flux(A_B, A_TH, F_sun, F_scat, F_rad)
-        update_surface_temperature!((@views shape.temperature[:, i, nₜ]), F_total, Γ, P, Δz/l, ε)  # Δz should be normalized by l
+        update_surface_temperature!((@views shape.temperature[:, i, nₜ]), F_total, P, l, Γ, ε, Δz)  # Δz should be normalized by l
     end
 end
 
@@ -255,7 +254,6 @@ end
     update_surface_temperature!(T::AbstractVector, F_total::Real, k::Real, l::Real, Δz::Real, ε::Real)
 
 Newton's method to update the surface temperature under radiative boundary condition.
-The length in this equation is normalized by thermal skin depth `l`.
 
 # Arguments
 - `T`       : 1-D array of temperatures
@@ -265,8 +263,10 @@ The length in this equation is normalized by thermal skin depth `l`.
 - `Δz̄`      : Non-dimensional step in depth, normalized by thermal skin depth `l`
 - `ε`       : Emissivity
 """
-function update_surface_temperature!(T::AbstractVector, F_total::Real, Γ::Real, P::Real, Δz̄::Real, ε::Real)
+function update_surface_temperature!(T::AbstractVector, F_total::Float64, P::Float64, l::Float64, Γ::Float64, ε::Float64, Δz::Float64)
+    Δz̄ = Δz / l    # Dimensionless length of depth step
     εσ = ε * σ_SB
+
     for _ in 1:20
         T_pri = T[begin]
 
