@@ -49,7 +49,7 @@ Initialize all temperature cells at the given temperature `T₀`
 """
 function init_temperature!(shape::ShapeModel, params::AbstractThermoParams, T₀::Real)
     init_temperature_zero!(shape, params)
-    shape.temperature[:, :, begin] .= T₀
+    shape.temperature[:, :, :] .= T₀
 end
 
 
