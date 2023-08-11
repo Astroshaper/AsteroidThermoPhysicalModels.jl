@@ -221,23 +221,25 @@ end
 #                     Boundary condition
 # ****************************************************************
 
+abstract type BoundaryCondition end
+
 """
 Singleton type for radiation boundary condition
 """
-struct RadiationBoundaryCondition end
+struct RadiationBoundaryCondition <: BoundaryCondition end
 const Radiation = RadiationBoundaryCondition()
 
 """
 Singleton type for insulation boundary condition
 """
-struct InsulationBoundaryCondition end
+struct InsulationBoundaryCondition <: BoundaryCondition end
 const Insulation = InsulationBoundaryCondition()
 
 """
 Singleton type for isothermal boundary condition
 """
-struct IsothermalBounaryCondition end
-const Isothermal = IsothermalBounaryCondition()
+struct IsothermalBoundaryCondition <: BoundaryCondition end
+const Isothermal = IsothermalBoundaryCondition()
 
 
 """
