@@ -12,13 +12,12 @@
 - `P`  : Cycle of thermal cycle [sec]
 - `k`  : Thermal conductivity [W/m/K]
 - `ρ`  : Material density [kg/m³]
-- `Cp` : Heat capacity [J/kg/K]
+- `Cₚ` : Heat capacity [J/kg/K]
 
 # Return
-- `l_2π` : Thermal skin depth [m]
+- `l_2π` : Thermal skin depth [m], as defined in Rozitis & Green (2011).
 """
-thermal_skin_depth(params) = thermal_skin_depth(params.P, params.k, params.ρ, params.Cp)
-thermal_skin_depth(P, k, ρ, Cp) = @. √(4π * P * k / (ρ * Cp))
+thermal_skin_depth(P, k, ρ, Cₚ) = @. √(4π * P * k / (ρ * Cₚ))
 
 
 """
@@ -28,13 +27,12 @@ thermal_skin_depth(P, k, ρ, Cp) = @. √(4π * P * k / (ρ * Cp))
 # Arguments
 - `k`  : Thermal conductivity [W/m/K]
 - `ρ`  : Material density [kg/m³]
-- `Cp` : Heat capacity [J/kg/K]
+- `Cₚ` : Heat capacity [J/kg/K]
 
 # Return
 - `Γ` : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
 """
-thermal_inertia(params) = thermal_inertia(params.k, params.ρ, params.Cp)
-thermal_inertia(k, ρ, Cp) = @. √(k * ρ * Cp)
+thermal_inertia(k, ρ, Cₚ) = @. √(k * ρ * Cₚ)
 
 
 # ****************************************************************
@@ -49,9 +47,6 @@ abstract type AbstractThermoParams end
 # Fields
 - `A_B`   : Bond albedo
 - `A_TH`  : Albedo at thermal radiation wavelength
-- `k`     : Thermal conductivity [W/m/K]
-- `ρ`     : Material density [kg/m³]
-- `Cp`    : Heat capacity [J/kg/K]
 - `ε`     : Emissivity
 
 - `t_begin` : Start time of the thermophysical simulation [sec]
@@ -71,9 +66,6 @@ abstract type AbstractThermoParams end
 struct NonUniformThermoParams <: AbstractThermoParams
     A_B ::Vector{Float64}
     A_TH::Vector{Float64}
-    k   ::Vector{Float64}
-    ρ   ::Vector{Float64}
-    Cp  ::Vector{Float64}
     ε   ::Vector{Float64}
 
     t_begin::Float64    # Common for all faces
@@ -97,9 +89,6 @@ end
 # Fields
 - `A_B`   : Bond albedo
 - `A_TH`  : Albedo at thermal radiation wavelength
-- `k`     : Thermal conductivity [W/m/K]
-- `ρ`     : Material density [kg/m³]
-- `Cp`    : Heat capacity [J/kg/K]
 - `ε`     : Emissivity
 
 - `t_begin` : Start time of the thermophysical simulation [sec]
@@ -119,9 +108,6 @@ end
 struct UniformThermoParams <: AbstractThermoParams
     A_B ::Float64
     A_TH::Float64
-    k   ::Float64
-    ρ   ::Float64
-    Cp  ::Float64
     ε   ::Float64
 
     t_begin::Float64
@@ -143,10 +129,7 @@ end
 """
     thermoparams(; A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Nt, z_max, Nz, P)
 """
-function thermoparams(; A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Nt, z_max, Nz, P)
-
-    l = thermal_skin_depth(P, k, ρ, Cp)
-    Γ = thermal_inertia(k, ρ, Cp)
+function thermoparams(; A_B, A_TH, ε, t_begin, t_end, Nt, z_max, Nz, P, l, Γ)
 
     Δt = (t_end - t_begin) / (Nt - 1)
     Δz = z_max / (Nz - 1)
@@ -154,23 +137,19 @@ function thermoparams(; A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Nt, z_max, Nz,
     λ = @. (Δt/P) / (Δz/l)^2 / 4π
     maximum(λ) > 0.5 && error("λ should be smaller than 0.5 for convergence of the forward Euler method.")
 
-    LENGTH = maximum(length.([A_B, A_TH, k, ρ, Cp, ε, z_max, Δz, Nz, l, Γ, λ]))
+    LENGTH = maximum(length, [A_B, A_TH, ε, l, Γ, λ])
 
     if LENGTH > 1
         A_B   isa Real && (A_B  = fill(A_B,  LENGTH))
         A_TH  isa Real && (A_TH = fill(A_TH, LENGTH))
-        k     isa Real && (k    = fill(k,    LENGTH))
-        ρ     isa Real && (ρ    = fill(ρ,    LENGTH))
-        Cp    isa Real && (Cp   = fill(Cp,   LENGTH))
         ε     isa Real && (ε    = fill(ε,    LENGTH))
-                
         l     isa Real && (l    = fill(l,    LENGTH))
         Γ     isa Real && (Γ    = fill(Γ,    LENGTH))
         λ     isa Real && (λ    = fill(λ,    LENGTH))
         
-        NonUniformThermoParams(A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Δt, Nt, z_max, Δz, Nz, P, l, Γ, λ)
+        NonUniformThermoParams(A_B, A_TH, ε, t_begin, t_end, Δt, Nt, z_max, Δz, Nz, P, l, Γ, λ)
     else
-        UniformThermoParams(A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Δt, Nt, z_max, Δz, Nz, P, l, Γ, λ)
+        UniformThermoParams(A_B, A_TH, ε, t_begin, t_end, Δt, Nt, z_max, Δz, Nz, P, l, Γ, λ)
     end
 end
 
@@ -180,37 +159,36 @@ function Base.show(io::IO, params::AbstractThermoParams)
     msg =  "⋅-----------------------------------⋅\n"
     msg *= "|     Thermophysical parameters     |\n"
     msg *= "⋅-----------------------------------⋅\n"
-    
-    msg *= "  A_B     : $(params.A_B)\n"
-    msg *= "  A_TH    : $(params.A_TH)\n"
-    msg *= "  k       : $(params.k)\n"
-    msg *= "  ρ       : $(params.ρ)\n"
-    msg *= "  Cp      : $(params.Cp)\n"
-    msg *= "  ε       : $(params.ε)\n"
 
-    msg *= "-----------------------------------\n"
-    msg *= "  t_begin : $(params.t_begin) [sec]\n"
-    msg *= "            = $(params.t_begin / params.P) [P]\n"
-    msg *= "  t_end   : $(params.t_end) [sec]\n"
-    msg *= "            = $(params.t_end / params.P) [P]\n"
-    msg *= "  Δt      : $(params.Δt) [sec]\n"
-    msg *= "            = $(params.Δt / params.P) [P]\n"
-    msg *= "  Nt      : $(params.Nt)\n"
-
-    msg *= "-----------------------------------\n"
-    msg *= "  z_max   : $(params.z_max) [m]\n"
-    msg *= "            = $(params.z_max / params.l) [l]\n"
-    msg *= "  Δz      : $(params.Δz) [m]\n"
-    msg *= "            = $(params.Δz / params.l) [l]\n"
-    msg *= "  Nz      : $(params.Nz)\n"
+    msg *= "  P       = $(params.P) [sec]\n"
+    msg *= "          = $(SPICE.convrt(params.P, "seconds", "hours")) [h]\n"
+    msg *= "  l       = $(params.l) [m]\n"
+    msg *= "  Γ       = $(params.Γ) [tiu]\n"
+    msg *= "  λ       = $(params.λ)\n"
+    msg *= "  A_B     = $(params.A_B)\n"
+    msg *= "  A_TH    = $(params.A_TH)\n"
+    msg *= "  ε       = $(params.ε)\n"
     
     msg *= "-----------------------------------\n"
-    msg *= "  P       : $(params.P)\n"
-    msg *= "  l       : $(params.l)\n"
-    msg *= "  Γ       : $(params.Γ)\n"
-    msg *= "  λ       : $(params.λ)\n"
+
+    msg *= "  t_begin = $(params.t_begin) [sec]\n"
+    msg *= "          = $(params.t_begin / params.P) [P]\n"
+    msg *= "  t_end   = $(params.t_end) [sec]\n"
+    msg *= "          = $(params.t_end / params.P) [P]\n"
+    msg *= "  Δt      = $(params.Δt) [sec]\n"
+    msg *= "          = $(params.Δt / params.P) [P]\n"
+    msg *= "  Nt      = $(params.Nt)\n"
 
     msg *= "-----------------------------------\n"
+
+    msg *= "  z_max   = $(params.z_max) [m]\n"
+    msg *= "          = $(params.z_max / params.l) [l]\n"
+    msg *= "  Δz      = $(params.Δz) [m]\n"
+    msg *= "          = $(params.Δz / params.l) [l]\n"
+    msg *= "  Nz      = $(params.Nz)\n"
+    
+    msg *= "-----------------------------------\n"
+    
     print(io, msg)
 end
 
