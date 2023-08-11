@@ -78,21 +78,28 @@
         shape2 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape2_obj; scale=1000, find_visible_facets=true)
         AsteroidThermoPhysicalModels.save_shape_jld(path_shape2_jld, shape2)
     end
+    
+    ##= Thermal properties =##
+    P  = SPICE.convrt(AsteroidThermoPhysicalModels.DIDYMOS[:P], "hours", "seconds")
+    k  = 0.125
+    ρ  = 2170.
+    Cₚ = 600.
 
-    ##= TPM =##
+    l = AsteroidThermoPhysicalModels.thermal_skin_depth(P, k, ρ, Cₚ)
+    Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)
+
     thermo_params = AsteroidThermoPhysicalModels.thermoparams(  # [Michel+2016; Naidu+2020]
         A_B     = 0.059,  # Bolometric Bond albedo
         A_TH    = 0.0,
-        k       = 0.125,
-        ρ       = 2170.,
-        Cp      = 600.,
         ε       = 0.9,
         t_begin = et_range[begin],
         t_end   = et_range[end],
         Nt      = length(et_range),
         z_max   = 0.6,
         Nz      = 41,
-        P       = SPICE.convrt(AsteroidThermoPhysicalModels.DIDYMOS[:P], "hours", "seconds"),
+        P       = P,
+        l       = l,
+        Γ       = Γ,
     )
 
     AsteroidThermoPhysicalModels.init_temperature!(shape1, thermo_params, 200.)
