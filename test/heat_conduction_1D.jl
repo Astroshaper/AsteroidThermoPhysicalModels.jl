@@ -9,7 +9,8 @@
     println(msg)
 
     ##= Shape model =##
-    shape = AsteroidThermoPhysicalModels.load_shape_obj("single_face.obj")
+    path_obj = joinpath("shape", "single_face.obj")
+    shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj)
 
     ##= Seeting of time step =##
     et_begin = 0.0
