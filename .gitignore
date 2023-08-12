@@ -7,5 +7,11 @@
 .ipynb_checkpoints
 
 /test/kernel
-/test/shape
+/test/shape/*.obj
+/test/shape/*.jld2
 /test/*.jld2
+
+# Keep these shape models
+!/test/shape/icosahedron.obj
+!/test/shape/single_face.obj
+!/test/shape/ryugu_test.obj
