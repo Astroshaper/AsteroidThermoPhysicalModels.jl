@@ -14,14 +14,14 @@
     filepath = joinpath("shape", filename)
     isfile(filepath) || Downloads.download(url_shape, filepath)
 
-    println("========  $(filepath)  ========")
     shape = AsteroidThermoPhysicalModels.load_shape_obj(filepath; scale=1000, find_visible_facets=true)
+    println("========  $(filepath)  ========")
     println(shape)
 
     ##= Icosahedron =##
-    filepath = "icosahedron.obj"
-    println("========  $(filepath)  ========")
+    filepath = joinpath("shape", "icosahedron.obj")
     shape = AsteroidThermoPhysicalModels.load_shape_obj(filepath; scale=1, find_visible_facets=true)
+    println("========  $(filepath)  ========")
     println(shape)
 
     println("Number of total visible facets: ", sum(length.(shape.visiblefacets)))  # This should be zero for an icosahedron.
