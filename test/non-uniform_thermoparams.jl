@@ -59,6 +59,12 @@
     RYUGU_TO_J2000 = [SPICE.pxform("RYUGU_FIXED", "J2000", et) for et in et_range]
     SPICE.kclear()
 
+    ##= Ephemerides =##
+    ephem = (
+        time = et_range,
+        sun  = sun_ryugu,
+    )
+
     ##= Load obj file =##
     path_obj = joinpath("shape", "SHAPE_SFM_49k_v20180804.obj")
     path_jld = joinpath("shape", "SHAPE_SFM_49k_v20180804.jld2")
@@ -108,5 +114,5 @@
     ##= Run TPM and save the result =##
     AsteroidThermoPhysicalModels.init_temperature!(shape, thermo_params, 200.)
     savepath = joinpath("non-uniform_thermoparams.jld2")
-    AsteroidThermoPhysicalModels.run_TPM!(shape, et_range, sun_ryugu, thermo_params, savepath, save_range)
+    AsteroidThermoPhysicalModels.run_TPM!(shape, thermo_params, ephem, savepath, save_range)
 end
