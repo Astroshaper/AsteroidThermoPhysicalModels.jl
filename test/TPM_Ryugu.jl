@@ -37,6 +37,7 @@
         filepath = joinpath("kernel", path_kernel)
         SPICE.furnsh(filepath)
     end
+
     et_begin = SPICE.utc2et("2018-07-01T00:00:00")
     et_end   = SPICE.utc2et("2018-07-01T01:00:00")
     step     = 76.3262  # Rotation of 1 deg
@@ -56,6 +57,12 @@
     # Transformation matrix from RYUGU_FIXED to J2000
     RYUGU_TO_J2000 = [SPICE.pxform("RYUGU_FIXED", "J2000", et) for et in et_range]
     SPICE.kclear()
+
+    ##= Ephemerides =##
+    ephem = (
+        time = et_range,
+        sun  = sun_ryugu,
+    )
 
     ##= Load obj file =##
     path_obj = joinpath("shape", "SHAPE_SFM_49k_v20180804.obj")
@@ -95,7 +102,7 @@
     # Run TPM and save the result
     AsteroidThermoPhysicalModels.init_temperature!(shape, thermo_params, 200.)
     savepath = joinpath("TPM_Ryugu.jld2")
-    AsteroidThermoPhysicalModels.run_TPM!(shape, et_range, sun_ryugu, thermo_params, savepath, save_range)
+    AsteroidThermoPhysicalModels.run_TPM!(shape, thermo_params, ephem, savepath, save_range)
 
     JLD2.jldopen(savepath, "r+") do file
         file["RYUGU_TO_J2000"] = RYUGU_TO_J2000[save_range]
