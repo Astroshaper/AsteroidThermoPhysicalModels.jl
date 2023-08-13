@@ -1,10 +1,9 @@
 # See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for more information.
 @testset "find_visiblefacets" begin
-    msg = """
-    
-    ⋅----------------------------------------⋅
-    |        Test: find_visiblefacets        |
-    ⋅----------------------------------------⋅
+    msg = """\n
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    |                Test: find_visiblefacets                |
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     """
     println(msg)
 

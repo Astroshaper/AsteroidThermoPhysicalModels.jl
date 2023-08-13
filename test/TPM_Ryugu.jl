@@ -1,10 +1,9 @@
 # See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for more information.
 @testset "TPM_Ryugu" begin
-    msg = """
-
-    ⋅-------------------------------⋅
-    |        Test: TPM_Ryugu        |
-    ⋅-------------------------------⋅
+    msg = """\n
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    |                    Test: TPM_Ryugu                     |
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     """
     println(msg)
 

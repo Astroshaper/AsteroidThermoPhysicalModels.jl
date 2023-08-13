@@ -1,10 +1,9 @@
 # See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos for more information.
 @testset "TPM_Didymos" begin
-    msg = """
-
-    ⋅---------------------------------⋅
-    |        Test: TPM_Didymos        |
-    ⋅---------------------------------⋅
+    msg = """\n
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    |                   Test: TPM_Didymos                    |
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     """
     println(msg)
 

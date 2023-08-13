@@ -1,11 +1,10 @@
 # The following tests are almost the same as `TPM_Ryugu.jl`.
 # The only difference is that the thermophysical properties vary depending on the location of the asteroid.
 @testset "non-uniform_thermoparams" begin
-    msg = """
-    
-    ⋅----------------------------------------------⋅
-    |        Test: non-uniform_thermoparams        |
-    ⋅----------------------------------------------⋅
+    msg = """\n
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    |             Test: non-uniform_thermoparams             |
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     """
     println(msg)
 
