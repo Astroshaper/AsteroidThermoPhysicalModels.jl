@@ -109,25 +109,25 @@ end
 - `save_range`    : Indices in `et_range` to be saved
 
 """
-function run_TPM!(shape::ShapeModel, et_range, sun, thermo_params::AbstractThermoParams, savepath, save_range)
+function run_TPM!(shape::ShapeModel, thermo_params::AbstractThermoParams, ephem, savepath, save_range)
     
     surf_temps = zeros(length(shape.faces), length(save_range))
     forces  = [zeros(3) for _ in eachindex(save_range)]
     torques = [zeros(3) for _ in eachindex(save_range)]
 
     ## ProgressMeter setting
-    p = Progress(length(et_range); dt=1, desc="Running TPM...", showspeed=true)
+    p = Progress(length(ephem.time); dt=1, desc="Running TPM...", showspeed=true)
     ProgressMeter.ijulia_behavior(:clear)
     
     idx = 1  # Index to save data
 
-    for nₜ in eachindex(et_range)
-        et = et_range[nₜ]
-        r☉ = sun[nₜ]
+    for nₜ in eachindex(ephem.time)
+        et = ephem.time[nₜ]
+        r☉ = ephem.sun[nₜ]
 
         update_flux!(shape, r☉, thermo_params, nₜ)
 
-        if et_range[save_range[begin]] ≤ et ≤ et_range[save_range[end]]
+        if ephem.time[save_range[begin]] ≤ et ≤ ephem.time[save_range[end]]
             update_thermal_force!(shape, thermo_params, nₜ)
 
             surf_temps[:, idx] .= surface_temperature(shape, nₜ)
@@ -143,11 +143,11 @@ function run_TPM!(shape::ShapeModel, et_range, sun, thermo_params::AbstractTherm
         showvalues = [("Timestep", nₜ), ("E_cons = E_out / E_in", E_cons)]
         ProgressMeter.next!(p; showvalues)
 
-        nₜ == length(et_range) && break  # Stop to update the temperature at the final step
+        nₜ == length(ephem.time) && break  # Stop to update the temperature at the final step
         update_temperature!(shape, thermo_params, nₜ)
     end
     
-    jldsave(savepath; shape, et_range=et_range[save_range], sun=sun[save_range], thermo_params, surf_temps, forces, torques)
+    jldsave(savepath; shape, thermo_params, time=ephem.time[save_range], sun=ephem.sun[save_range], surf_temps, forces, torques)
 end
 
 """
