@@ -59,7 +59,7 @@
     """
     ephem = (
         time = collect(et_range),
-        sun  = [SPICE.spkpos("SUN", et, "RYUGU_FIXED", "None", "RYUGU")[1]*1000 for et in et_range],
+        sun  = [SVector{3}(SPICE.spkpos("SUN", et, "RYUGU_FIXED", "None", "RYUGU")[1]) * 1000 for et in et_range],
     )
 
     SPICE.kclear()
