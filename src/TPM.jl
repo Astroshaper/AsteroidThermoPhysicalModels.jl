@@ -161,22 +161,21 @@ Run TPM for a binary asteroid.
 - savepath
 - savevalues
 """
-function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::AbstractThermoParams, savepath, savevalues)
+function run_TPM!(shapes::Tuple, thermo_params::AbstractThermoParams, ephem, savepath)
 
-    surf_temps = zeros(length(shapes[1].faces), length(et_range)), zeros(length(shapes[2].faces), length(et_range))
-    forces  = [zeros(3) for _ in eachindex(et_range)], [zeros(3) for _ in eachindex(et_range)]
-    torques = [zeros(3) for _ in eachindex(et_range)], [zeros(3) for _ in eachindex(et_range)]
+    surf_temps = zeros(length(shapes[1].faces), length(ephem.time)), zeros(length(shapes[2].faces), length(ephem.time))
+    forces  = [zeros(3) for _ in eachindex(ephem.time)], [zeros(3) for _ in eachindex(ephem.time)]
+    torques = [zeros(3) for _ in eachindex(ephem.time)], [zeros(3) for _ in eachindex(ephem.time)]
     
     ## ProgressMeter setting
-    p = Progress(length(et_range); dt=1, desc="Running TPM...", showspeed=true)
+    p = Progress(length(ephem.time); dt=1, desc="Running TPM...", showspeed=true)
     ProgressMeter.ijulia_behavior(:clear)
 
-    for nₜ in eachindex(et_range)
-        # et = et_range[nₜ]
-        r☉₁ = suns[1][nₜ]
-        r☉₂ = suns[2][nₜ]
-        sec_from_pri = d2_d1[nₜ]
-        R₂₁ = S2P[nₜ]
+    for nₜ in eachindex(ephem.time)
+        r☉₁ = ephem.sun1[nₜ]
+        r☉₂ = ephem.sun2[nₜ]
+        sec_from_pri = ephem.sec[nₜ]
+        R₂₁ = ephem.S2P[nₜ]
 
         ## Update enegey flux
         update_flux!(shapes[1], r☉₁, thermo_params, nₜ)
@@ -204,12 +203,11 @@ function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::Abst
         ProgressMeter.next!(p; showvalues)
         
         ## Update temperature distribution
-        nₜ == length(et_range) && break  # Stop to update the temperature at the final step
+        nₜ == length(ephem.time) && break  # Stop to update the temperature at the final step
         update_temperature!(shapes[1], thermo_params, nₜ)
         update_temperature!(shapes[2], thermo_params, nₜ)
     end
     
-    # jldsave(savepath; shapes, et_range, suns, S2P, thermo_params)
-    jldsave(savepath; shapes, et_range, suns, S2P, thermo_params, surf_temps, forces, torques)
+    jldsave(savepath; shapes, thermo_params, ephem, surf_temps, forces, torques)
 end
 
