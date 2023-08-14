@@ -51,6 +51,23 @@ struct SingleTPM <: ThermoPhysicalModel
 end
 
 
+function SingleTPM(shape, thermo_params, SELF_SHADOWING, SELF_HEATING)
+
+    Nz = thermo_params.Nz
+    Ns = length(shape.faces)
+    Nt = thermo_params.Nt
+
+    flux = zeros(Ns, 3)
+    temperature = zeros(Nz, Ns, Nt)
+
+    face_forces = [zero(SVector{3, Float64}) for _ in shape.faces]
+    force  = zero(MVector{3, Float64})
+    torque = zero(MVector{3, Float64})
+
+    SingleTPM(shape, thermo_params, flux, temperature, face_forces, force, torque, SELF_SHADOWING, SELF_HEATING)
+end
+
+
 """
     struct BinaryTPM <: ThermoPhysicalModel
 
