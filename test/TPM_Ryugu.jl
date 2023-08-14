@@ -24,6 +24,7 @@
         mkpath(dirname(filepath))
         isfile(filepath) || Downloads.download(url_kernel, filepath)
     end
+    
     for path_shape in paths_shape
         url_shape = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/paper/Watanabe_2019/$(path_shape)"
         filepath = joinpath("shape", path_shape)
