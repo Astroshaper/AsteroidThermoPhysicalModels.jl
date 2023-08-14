@@ -140,8 +140,7 @@ function run_TPM!(shape::ShapeModel, thermo_params::AbstractThermoParams, ephem,
         nₜ == length(ephem.time) && break  # Stop to update the temperature at the final step
         update_temperature!(shape, thermo_params, nₜ)
     end
-    @show size(shape.temperature)
-    
+        
     jldsave(savepath; shape, thermo_params, ephem, surf_temps, forces, torques)
 end
 
