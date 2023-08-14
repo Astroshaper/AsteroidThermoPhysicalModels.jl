@@ -109,9 +109,9 @@
 
     ##= Setting of TPM =##
     stpm = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params, true, true)
+    AsteroidThermoPhysicalModels.init_temperature!(stpm, 200.)
 
     ##= Run TPM and save the result =##
-    AsteroidThermoPhysicalModels.init_temperature!(shape, thermo_params, 200.)
-    savepath = joinpath("non-uniform_thermoparams.jld2")
+    savepath = "non-uniform_thermoparams.jld2"
     AsteroidThermoPhysicalModels.run_TPM!(stpm, shape, thermo_params, ephem, savepath)
 end

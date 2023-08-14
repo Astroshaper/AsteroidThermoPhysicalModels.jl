@@ -108,33 +108,23 @@ end
 
 
 """
-    init_temperature_zero!(shape::ShapeModel, params::AbstractThermoParams)
+    init_temperature!(stpm::SingleTPM, T₀::Real)
 
-Initialize all temperature cells at 0 K.
+Initialize all temperature cells at the given temperature `T₀`
 """
-function init_temperature_zero!(shape::ShapeModel, params::AbstractThermoParams)
-    Nz = params.Nz
-    Ns = length(shape.faces)
-    Nt = params.Nt
-
-    if size(shape.temperature) == (0, 0, 0)
-        shape.temperature = zeros(Nz, Ns, Nt)
-    elseif size(shape.temperature) == (Nz, Ns, Nt)
-        shape.temperature .= 0.
-    else
-        error("ShapeModel.temperature has a wrong size.")
-    end
+function init_temperature!(stpm::SingleTPM, T₀::Real)
+    stpm.temperature[:, :, :] .= T₀
 end
 
 
 """
-    init_temperature!(shape::ShapeModel, params::AbstractThermoParams, T₀::Real)
+    init_temperature!(btpm::BinaryTPM, T₀::Real)
 
 Initialize all temperature cells at the given temperature `T₀`
 """
-function init_temperature!(shape::ShapeModel, params::AbstractThermoParams, T₀::Real)
-    init_temperature_zero!(shape, params)
-    shape.temperature[:, :, :] .= T₀
+function init_temperature!(btpm::BinaryTPM, T₀::Real)
+    btpm.pri.temperature[:, :, :] .= T₀
+    btpm.sec.temperature[:, :, :] .= T₀
 end
 
 
