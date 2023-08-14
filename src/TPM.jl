@@ -1,6 +1,74 @@
 
 
 
+abstract type ThermoPhysicalModel end
+
+
+"""
+    struct SingleTPM <: ThermoPhysicalModel
+
+#Fields
+- `shape`          : Shape model
+- `thermo_params`  : Thermophysical parameters
+
+- `flux`           : Flux on each face. Matrix of size (Number of faces, 3). Three components are:
+    - `flux[:, 1]`     : F_sun,  flux of direct sunlight
+    - `flux[:, 2]`     : F_scat, flux of scattered light
+    - `flux[:, 3]`     : F_rad,  flux of thermal emission from surrounding surface
+- `temperature`    : 3D array in size of (Nz, Ns, Nt). Temperature according to depth cells (Nz), faces (Ns), and time steps in one periodic cycle (Nt).
+    -         ⋅----------⋅
+    -     Nt /          /|
+    -       ⋅--- Ns ---⋅ |
+    -       |          | |
+    -    Nz |          | ⋅
+    -       |          |/
+    -       ⋅----------⋅
+
+- `face_forces`    : Thermal force on each face
+- `force`          : Thermal recoil force at body-fixed frame (Yarkovsky effect)
+- `torque`         : Thermal recoil torque at body-fixed frame (YORP effect)
+
+- `SELF_SHADOWING` : Flag to consider self-shadowing
+- `SELF_HEATING`   : Flag to consider self-heating
+
+# TO DO:
+- 同時に time step と depth step に関するベクトルをもつのが良いかもしれない
+- roughness_maps   ::ShapeModel[]
+"""
+struct SingleTPM <: ThermoPhysicalModel
+    shape          ::ShapeModel
+    thermo_params  ::Union{UniformThermoParams, NonUniformThermoParams}
+
+    flux           ::Matrix{Float64}
+    temperature    ::Array{Float64, 3}
+
+    face_forces    ::Vector{SVector{3, Float64}}
+    force          ::MVector{3, Float64}
+    torque         ::MVector{3, Float64}
+
+    SELF_SHADOWING ::Bool
+    SELF_HEATING   ::Bool
+end
+
+
+"""
+    struct BinaryTPM <: ThermoPhysicalModel
+
+#Fields
+- `pri`              : TPM for the primary
+- `sec`              : TPM for the secondary
+- `MUTUAL_SHADOWING` : Flag to consider mutual shadowing
+- `MUTUAL_HEATING`   : Flag to consider mutual heating
+"""
+struct BinaryTPM <: ThermoPhysicalModel
+    pri              ::SingleTPM
+    sec              ::SingleTPM
+
+    MUTUAL_SHADOWING ::Bool
+    MUTUAL_HEATING   ::Bool
+end
+
+
 # ****************************************************************
 #                   Initialize temperatures
 # ****************************************************************
@@ -140,7 +208,7 @@ function run_TPM!(shape::ShapeModel, thermo_params::AbstractThermoParams, ephem,
         nₜ == length(ephem.time) && break  # Stop to update the temperature at the final step
         update_temperature!(shape, thermo_params, nₜ)
     end
-        
+
     jldsave(savepath; shape, thermo_params, ephem, surf_temps, forces, torques)
 end
 
