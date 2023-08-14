@@ -37,6 +37,7 @@
         SPICE.furnsh(filepath)
     end
 
+    ##= Ephemerides =##
     et_begin = SPICE.utc2et("2018-07-01T00:00:00")
     et_end   = SPICE.utc2et("2018-07-01T01:00:00")
     step     = 76.3262  # Rotation of 1 deg
@@ -44,14 +45,6 @@
     @show et_range
     @show length(et_range)
 
-    # Indices of et_range to be saved.
-    # Save only the last rotation.
-    save_range = findall(et_range .> et_range[end] - 7.63262 * 3600)
-    @show save_range[begin]
-    @show save_range[end]
-    @show length(save_range)
-
-    ##= Ephemerides =##
     """
     - `time` : Ephemeris times
     - `sun`  : Sun's position in the RYUGU_FIXED frame
@@ -101,5 +94,5 @@
     # Run TPM and save the result
     AsteroidThermoPhysicalModels.init_temperature!(shape, thermo_params, 200.)
     savepath = joinpath("TPM_Ryugu.jld2")
-    AsteroidThermoPhysicalModels.run_TPM!(shape, thermo_params, ephem, savepath, save_range)
+    AsteroidThermoPhysicalModels.run_TPM!(shape, thermo_params, ephem, savepath)
 end
