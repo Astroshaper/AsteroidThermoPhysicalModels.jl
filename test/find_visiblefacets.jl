@@ -8,7 +8,7 @@
     println(msg)
 
     ##= Shape model of Ryugu =##
-    filepath = joinpath("shape", "ryugu_test.obj")
+    filepath = joinpath("shape", "ryugu_test.obj")  # Small model for test
     println("========  $(filepath)  ========")
     shape = AsteroidThermoPhysicalModels.load_shape_obj(filepath; scale=1000, find_visible_facets=true)
     println(shape)

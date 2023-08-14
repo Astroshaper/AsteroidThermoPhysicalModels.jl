@@ -57,8 +57,10 @@
     SPICE.kclear()
 
     ##= Load obj file =##
-    path_obj = joinpath("shape", "SHAPE_SFM_49k_v20180804.obj")
-    path_jld = joinpath("shape", "SHAPE_SFM_49k_v20180804.jld2")
+    path_obj = joinpath("shape", "ryugu_test.obj")   # Small model for test
+    path_jld = joinpath("shape", "ryugu_test.jld2")  # Small model for test
+    # path_obj = joinpath("shape", "SHAPE_SFM_49k_v20180804.obj")
+    # path_jld = joinpath("shape", "SHAPE_SFM_49k_v20180804.jld2")
     if isfile(path_jld) && ENABLE_JLD
         shape = AsteroidThermoPhysicalModels.load_shape_jld(path_jld)
     else
