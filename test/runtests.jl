@@ -10,7 +10,7 @@ using LinearAlgebra
 using StaticArrays
 using Rotations
 
-ENABLE_JLD = true
+ENABLE_JLD = false
 Aqua.test_all(AsteroidThermoPhysicalModels, ambiguities=false)
 
 include("heat_conduction_1D.jl")
