@@ -39,8 +39,8 @@ struct SingleTPM <: ThermoPhysicalModel
     shape          ::ShapeModel
     thermo_params  ::Union{UniformThermoParams, NonUniformThermoParams}
 
-    flux           ::Matrix{Float64}
-    temperature    ::Array{Float64, 3}
+    flux           ::Matrix{Float64}    # (Ns, 3)
+    temperature    ::Array{Float64, 3}  # (Nz, Ns, Nt)
 
     face_forces    ::Vector{SVector{3, Float64}}
     force          ::MVector{3, Float64}
@@ -194,7 +194,7 @@ end
 - `save_range`    : Indices in `et_range` to be saved
 
 """
-function run_TPM!(shape::ShapeModel, thermo_params::AbstractThermoParams, ephem, savepath)
+function run_TPM!(stpm::SingleTPM, shape::ShapeModel, thermo_params::AbstractThermoParams, ephem, savepath)
     
     surf_temps = zeros(length(shape.faces), length(ephem.time))
     forces  = [zeros(3) for _ in eachindex(ephem.time)]
@@ -240,7 +240,7 @@ Run TPM for a binary asteroid.
 - savepath
 - savevalues
 """
-function run_TPM!(shapes::Tuple, thermo_params::AbstractThermoParams, ephem, savepath)
+function run_TPM!(btpm::BinaryTPM, shapes::Tuple, thermo_params::AbstractThermoParams, ephem, savepath)
 
     surf_temps = zeros(length(shapes[1].faces), length(ephem.time)), zeros(length(shapes[2].faces), length(ephem.time))
     forces  = [zeros(3) for _ in eachindex(ephem.time)], [zeros(3) for _ in eachindex(ephem.time)]

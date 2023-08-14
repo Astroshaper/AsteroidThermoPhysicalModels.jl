@@ -111,10 +111,15 @@
 
     println(thermo_params)
 
+    ##= Setting of TPM =##
+    tpm1 = AsteroidThermoPhysicalModels.SingleTPM(shape1, thermo_params, true, true)
+    tpm2 = AsteroidThermoPhysicalModels.SingleTPM(shape2, thermo_params, true, true)
+    btpm = AsteroidThermoPhysicalModels.BinaryTPM(tpm1, tpm2, true, true)
+
     ##= Run TPM and save the result =##
     AsteroidThermoPhysicalModels.init_temperature!(shape1, thermo_params, 200.)
     AsteroidThermoPhysicalModels.init_temperature!(shape2, thermo_params, 200.)
 
     savepath = joinpath("TPM_Didymos.jld2")
-    AsteroidThermoPhysicalModels.run_TPM!((shape1, shape2), thermo_params, ephem, savepath)
+    AsteroidThermoPhysicalModels.run_TPM!(btpm, (shape1, shape2), thermo_params, ephem, savepath)
 end

@@ -24,7 +24,7 @@
         mkpath(dirname(filepath))
         isfile(filepath) || Downloads.download(url_kernel, filepath)
     end
-    
+
     for path_shape in paths_shape
         url_shape = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/paper/Watanabe_2019/$(path_shape)"
         filepath = joinpath("shape", path_shape)
@@ -94,8 +94,11 @@
 
     println(thermo_params)
 
+    ##= Setting of TPM =##
+    stpm = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params, true, true)
+
     # Run TPM and save the result
     AsteroidThermoPhysicalModels.init_temperature!(shape, thermo_params, 200.)
     savepath = joinpath("TPM_Ryugu.jld2")
-    AsteroidThermoPhysicalModels.run_TPM!(shape, thermo_params, ephem, savepath)
+    AsteroidThermoPhysicalModels.run_TPM!(stpm, shape, thermo_params, ephem, savepath)
 end
