@@ -17,6 +17,10 @@
     step     = 0.001
     et_range = et_begin : step : et_end
 
+    ephem = (
+        time = collect(et_range),
+    )
+
     ##= Thermal properties =##
     P  = 1.0
     k  = 1.0
@@ -42,35 +46,34 @@
 
     println(thermo_params)
 
-    ##= Initial temperature =##
-    AsteroidThermoPhysicalModels.init_temperature_zero!(shape, thermo_params)
+    ##= Setting of TPM =##
+    stpm = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params, false, false)
 
-    for n in 1:size(shape.temperature, 1)
+    ##= Initial temperature =##
+    for n in 1:size(stpm.temperature, 1)
         z = thermo_params.Δz * (n - 1)
         if  z < 0.5
-            shape.temperature[n, :, :] .= 2z
+            stpm.temperature[n, :, :] .= 2z
         else
-            shape.temperature[n, :, :] .= 2(1 - z)
+            stpm.temperature[n, :, :] .= 2(1 - z)
         end
     end
 
-    for nₜ in eachindex(et_range)
-        et = et_range[nₜ]
-
+    for nₜ in eachindex(ephem.time)
         nₜ == length(et_range) && break  # Stop to update the temperature at the final step
         
-        λ = thermo_params.λ
-        Tⱼ   = @views shape.temperature[:, :, nₜ  ]
-        Tⱼ₊₁ = @views shape.temperature[:, :, nₜ+1]
+        λ = stpm.thermo_params.λ
+        Tⱼ   = @views stpm.temperature[:, :, nₜ  ]
+        Tⱼ₊₁ = @views stpm.temperature[:, :, nₜ+1]
         
         ## Forward Euler method
         @. Tⱼ₊₁[begin+1:end-1, :] = @views (1-2λ')*Tⱼ[begin+1:end-1, :] + λ'*(Tⱼ[begin+2:end, :] + Tⱼ[begin:end-2, :])
         
         ## Isothermal boundary condition
-        AsteroidThermoPhysicalModels.update_surface_temperature!(shape, thermo_params, nₜ+1, AsteroidThermoPhysicalModels.Isothermal)
-        AsteroidThermoPhysicalModels.update_bottom_temperature!(shape, nₜ+1, AsteroidThermoPhysicalModels.Isothermal)
+        AsteroidThermoPhysicalModels.update_surface_temperature!(stpm, nₜ+1, AsteroidThermoPhysicalModels.Isothermal)
+        AsteroidThermoPhysicalModels.update_bottom_temperature!(stpm, nₜ+1, AsteroidThermoPhysicalModels.Isothermal)
     end
 
     savepath = "heat_conduction_1D.jld2"
-    jldsave(savepath; shape, et_range, thermo_params)
+    jldsave(savepath; stpm, ephem)
 end

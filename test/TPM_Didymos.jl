@@ -119,5 +119,5 @@
 
     ##= Run TPM and save the result =##
     savepath = "TPM_Didymos.jld2"
-    AsteroidThermoPhysicalModels.run_TPM!(btpm, (shape1, shape2), thermo_params, ephem, savepath)
+    AsteroidThermoPhysicalModels.run_TPM!(btpm, ephem, savepath)
 end

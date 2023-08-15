@@ -86,6 +86,10 @@ struct BinaryTPM <: ThermoPhysicalModel
 end
 
 
+surface_temperature(stpm::SingleTPM, nₜ::Integer) = stpm.temperature[begin, :, nₜ]
+surface_temperature(stpm::SingleTPM) = stpm.temperature[begin, :, end] 
+
+
 # ****************************************************************
 #                   Initialize temperatures
 # ****************************************************************
@@ -132,6 +136,7 @@ end
 #                    Thermophysical modeling
 # ****************************************************************
 
+
 # """
 # """
 # function run_TPM!(shape::ShapeModel, orbit::OrbitalElements, spin::SpinParams, thermo_params::AbstractThermoParams, savepath="tmp.jld2")
@@ -176,17 +181,20 @@ end
 # end
 
 """
-- `shape`         : Shape model
-- `et_range`      : Range of ephemeris times to run
-- `sun`           : Sun's position in the body-fixed frame at epochs (Not normalized)
-- `thermo_params` : Thermophysical parametes
-- `savepath`      : Path to save data file
-- `save_range`    : Indices in `et_range` to be saved
+    run_TPM!(stpm::SingleTPM, ephem, savepath)
 
+Run TPM for a single asteroid.
+
+# Arguments
+- `stpm`     : Thermophysical model for a single asteroid
+- `ephem`    : Ephemerides
+    - `ephem.time` : Ephemeris times
+    - `ephem.sun`  : Sun's position in the asteroid-fixed frame (Not normalized)
+- `savepath` : Path to save data file
 """
-function run_TPM!(stpm::SingleTPM, shape::ShapeModel, thermo_params::AbstractThermoParams, ephem, savepath)
+function run_TPM!(stpm::SingleTPM, ephem, savepath)
     
-    surf_temps = zeros(length(shape.faces), length(ephem.time))
+    surf_temps = zeros(length(stpm.shape.faces), length(ephem.time))
     forces  = [zeros(3) for _ in eachindex(ephem.time)]
     torques = [zeros(3) for _ in eachindex(ephem.time)]
 
@@ -195,44 +203,52 @@ function run_TPM!(stpm::SingleTPM, shape::ShapeModel, thermo_params::AbstractThe
     ProgressMeter.ijulia_behavior(:clear)
     
     for nₜ in eachindex(ephem.time)
-        et = ephem.time[nₜ]
         r☉ = ephem.sun[nₜ]
 
-        update_flux!(shape, r☉, thermo_params, nₜ)
-        update_thermal_force!(shape, thermo_params, nₜ)
+        update_flux_sun!(stpm, r☉)
+        update_flux_scat_single!(stpm)
+        update_flux_rad_single!(stpm, nₜ)
+        
+        update_thermal_force!(stpm, nₜ)
 
         ## Save data
-        surf_temps[:, nₜ] .= surface_temperature(shape, nₜ)
-        forces[nₜ]  .= shape.force   # Body-fixed frame
-        torques[nₜ] .= shape.torque  # Body-fixed frame
+        surf_temps[:, nₜ] .= surface_temperature(stpm, nₜ)
+        forces[nₜ]  .= stpm.force   # Body-fixed frame
+        torques[nₜ] .= stpm.torque  # Body-fixed frame
 
-        E_in, E_out, E_cons = energy_io(shape, thermo_params, nₜ)
-
+        ## Energy input/output
+        E_in, E_out, E_cons = energy_io(stpm, nₜ)
+        
         ## Update the progress meter
         showvalues = [("Timestep", nₜ), ("E_cons = E_out / E_in", E_cons)]
         ProgressMeter.next!(p; showvalues)
 
         nₜ == length(ephem.time) && break  # Stop to update the temperature at the final step
-        update_temperature!(shape, thermo_params, nₜ)
+        update_temperature!(stpm, nₜ)
     end
 
-    jldsave(savepath; shape, thermo_params, ephem, surf_temps, forces, torques)
+    jldsave(savepath; stpm, ephem, surf_temps, forces, torques)
 end
 
 """
-    run_TPM!
+    run_TPM!(btpm::BinaryTPM, ephem, savepath)
 
 Run TPM for a binary asteroid.
 
-- shapes
-- ephemerides
-- thermo_params
-- savepath
-- savevalues
+# Arguments
+- `stpm`     : Thermophysical model for a binary asteroid
+- `ephem`    : Ephemerides
+    - `time` : Ephemeris times
+    - `sun1` : Sun's position in the primary's frame
+    - `sun2` : Sun's position in the secondary's frame
+    - `sec`  : Secondary's position in the primary's frame
+    - `P2S`  : Rotation matrix from primary to secondary frames
+    - `S2P`  : Rotation matrix from secondary to primary frames
+- `savepath` : Path to save data file
 """
-function run_TPM!(btpm::BinaryTPM, shapes::Tuple, thermo_params::AbstractThermoParams, ephem, savepath)
+function run_TPM!(btpm::BinaryTPM, ephem, savepath)
 
-    surf_temps = zeros(length(shapes[1].faces), length(ephem.time)), zeros(length(shapes[2].faces), length(ephem.time))
+    surf_temps = zeros(length(btpm.pri.shape.faces), length(ephem.time)), zeros(length(btpm.sec.shape.faces), length(ephem.time))
     forces  = [zeros(3) for _ in eachindex(ephem.time)], [zeros(3) for _ in eachindex(ephem.time)]
     torques = [zeros(3) for _ in eachindex(ephem.time)], [zeros(3) for _ in eachindex(ephem.time)]
     
@@ -247,25 +263,32 @@ function run_TPM!(btpm::BinaryTPM, shapes::Tuple, thermo_params::AbstractThermoP
         R₂₁ = ephem.S2P[nₜ]
 
         ## Update enegey flux
-        update_flux!(shapes[1], r☉₁, thermo_params, nₜ)
-        update_flux!(shapes[2], r☉₂, thermo_params, nₜ)
-        find_eclipse!(shapes, r☉₁, sec_from_pri, R₂₁)  # Mutual-shadowing
+        update_flux_sun!(btpm, r☉₁, r☉₂)
+        update_flux_scat_single!(btpm)
+        update_flux_rad_single!(btpm, nₜ)
+
+        ## Mutual-shadowing
+        find_eclipse!(btpm, r☉₁, sec_from_pri, R₂₁)
 
         ## Mutual-heating
         #
         #
 
-        for (idx_shape, shape) in enumerate(shapes)
-            update_thermal_force!(shape, thermo_params, nₜ)
+        update_thermal_force!(btpm, nₜ)
 
-            surf_temps[idx_shape][:, nₜ] .= surface_temperature(shape, nₜ)
-            forces[idx_shape][nₜ]  .= shape.force   # Body-fixed frame
-            torques[idx_shape][nₜ] .= shape.torque  # Body-fixed frame
-        end
+        ## Save data for primary
+        surf_temps[1][:, nₜ] .= surface_temperature(btpm.pri, nₜ)
+        forces[1][nₜ]  .= btpm.pri.force   # Body-fixed frame
+        torques[1][nₜ] .= btpm.pri.torque  # Body-fixed frame
+
+        ## Save data for secondary
+        surf_temps[2][:, nₜ] .= surface_temperature(btpm.sec, nₜ)
+        forces[2][nₜ]  .= btpm.sec.force   # Body-fixed frame
+        torques[2][nₜ] .= btpm.sec.torque  # Body-fixed frame
     
         ## Energy input/output
-        E_cons_pri = energy_io(shapes[1], thermo_params, nₜ)[3]
-        E_cons_sec = energy_io(shapes[2], thermo_params, nₜ)[3]
+        E_cons_pri = energy_io(btpm.pri, nₜ)[3]
+        E_cons_sec = energy_io(btpm.sec, nₜ)[3]
 
         ## Update the progress meter
         showvalues = [("Timestep", nₜ), ("E_cons for primary", E_cons_pri), ("E_cons for secondary", E_cons_sec)]
@@ -273,10 +296,9 @@ function run_TPM!(btpm::BinaryTPM, shapes::Tuple, thermo_params::AbstractThermoP
         
         ## Update temperature distribution
         nₜ == length(ephem.time) && break  # Stop to update the temperature at the final step
-        update_temperature!(shapes[1], thermo_params, nₜ)
-        update_temperature!(shapes[2], thermo_params, nₜ)
+        update_temperature!(btpm, nₜ)
     end
     
-    jldsave(savepath; shapes, thermo_params, ephem, surf_temps, forces, torques)
+    jldsave(savepath; btpm, ephem, surf_temps, forces, torques)
 end
 

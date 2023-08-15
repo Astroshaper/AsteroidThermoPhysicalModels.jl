@@ -100,5 +100,5 @@
 
     # Run TPM and save the result
     savepath = "TPM_Ryugu.jld2"
-    AsteroidThermoPhysicalModels.run_TPM!(stpm, shape, thermo_params, ephem, savepath)
+    AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, savepath)
 end

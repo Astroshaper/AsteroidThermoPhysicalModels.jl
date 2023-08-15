@@ -113,5 +113,5 @@
 
     ##= Run TPM and save the result =##
     savepath = "non-uniform_thermoparams.jld2"
-    AsteroidThermoPhysicalModels.run_TPM!(stpm, shape, thermo_params, ephem, savepath)
+    AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, savepath)
 end

@@ -38,14 +38,6 @@ A polyhedral shape model of an asteroid.
     - `flux[:, 2]` : F_scat, flux of scattered light
     - `flux[:, 3]` : F_rad,  flux of thermal emission from surrounding surface
 - `face_forces` : Thermal force on each face
-- `temperature` : 3D array in size of (Nz, Ns, Nt). Temperature according to depth cells (Nz), faces (Ns), and time steps in one periodic cycle (Nt).
-    -       ⋅----------⋅
-    -   Nt /          /|
-    -     ⋅--- Ns ---⋅ |
-    -     |          | |
-    -  Nz |          | ⋅
-    -     |          |/
-    -     ⋅----------⋅
 - `visiblefacets` : Vector of vector of `VisibleFacet`
 """
 mutable struct ShapeModel
@@ -61,7 +53,6 @@ mutable struct ShapeModel
 
     flux         ::Matrix{Float64}
     face_forces  ::Vector{SVector{3, Float64}}
-    temperature  ::Array{Float64, 3}
     visiblefacets::Vector{Vector{VisibleFacet}}
 end
 
@@ -90,10 +81,9 @@ function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
 
     flux = zeros(length(faces), 3)
     face_forces = [zero(SVector{3, Float64}) for _ in faces]
-    temperature = zeros(0, 0, 0)  # Later initiallized in size of (Nz, Ns, Nt)
     visiblefacets = [VisibleFacet[] for _ in faces]
 
-    shape = ShapeModel(nodes, faces, force, torque, face_centers, face_normals, face_areas, flux, face_forces, temperature, visiblefacets)
+    shape = ShapeModel(nodes, faces, force, torque, face_centers, face_normals, face_areas, flux, face_forces, visiblefacets)
     find_visible_facets && find_visiblefacets!(shape)
     
     return shape
@@ -177,10 +167,9 @@ function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMat
 
     flux = zeros(length(faces), 3)
     face_forces = [zero(SVector{3, Float64}) for _ in faces]
-    temperature = zeros(0, 0, 0)  # Later initiallized in size of (Nz, Ns, Nt)
     visiblefacets = [VisibleFacet[] for _ in faces]
 
-    shape = ShapeModel(nodes, faces, force, torque, face_centers, face_normals, face_areas, flux, face_forces, temperature, visiblefacets)
+    shape = ShapeModel(nodes, faces, force, torque, face_centers, face_normals, face_areas, flux, face_forces, visiblefacets)
     find_visible_facets && find_visiblefacets!(shape)
     
     return shape
@@ -216,7 +205,4 @@ maximum_radius(shape::ShapeModel) = maximum_radius(shape.nodes)
 
 minimum_radius(nodes) = minimum(norm, nodes)
 minimum_radius(shape::ShapeModel) = minimum_radius(shape.nodes)
-
-surface_temperature(shape::ShapeModel, nₜ::Integer) = shape.temperature[begin, :, nₜ]
-surface_temperature(shape::ShapeModel) = shape.temperature[begin, :, end] 
 
