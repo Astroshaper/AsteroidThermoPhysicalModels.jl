@@ -272,16 +272,18 @@ end
 
 """
 The secondary is within the critical angle to detect an eclipse event.
+
+# Arguments
+- `btpm` : Thermophysical model for a binary asteroid
+- `r☉`   : Position of the sun relative to the primary       (NOT normalized)
+- `rₛ`   : Position of the secondary relative to the primary (NOT normalized)
 """
-function binary_is_aligned(btpm::BinaryTPM, sun_from_pri, sec_from_pri)
+function binary_is_aligned(btpm::BinaryTPM, r☉, rₛ)
+    θ = acos((r☉ ⋅ rₛ) / (norm(r☉) * norm(rₛ)))  # Angle of Sun-Primary-Secondary
 
     R₁ = maximum_radius(btpm.pri.shape)
     R₂ = maximum_radius(btpm.sec.shape)
-    θ_crit = asin((R₁ + R₂) / norm(sec_from_pri))
-
-    r̂☉ = SVector{3}(normalize(sun_from_pri))
-    r̂ₛ = SVector{3}(normalize(sec_from_pri))
-    θ = acos(r̂☉ ⋅ r̂ₛ)  # Angle of Sun-Primary-Secondary
+    θ_crit = asin((R₁ + R₂) / norm(rₛ))          # Critical angle at which ecripse can occur
 
     θ_crit < θ < π - θ_crit ? false : true
 end
@@ -290,18 +292,22 @@ end
 """
     find_eclipse!(shapes, sun_from_pri, sec_from_pri, R₂₁)
 
-- `shapes`
-- `sun_from_pri`
-- `sec_from_pri` : Position of the secondary relative to primary
-- `R₂₁`          : Rotation matrix from secondary to primary
+# Arguments
+- `btpm` : Thermophysical model for a binary asteroid
+- `r☉`   : Position of the sun relative to the primary       (NOT normalized)
+- `rₛ`   : Position of the secondary relative to the primary (NOT normalized)
+- `R₂₁`  : Rotation matrix from secondary to primary
+
+# TO DO:
+Determine the following cases:
+- Primary eclipse
+- Secondary eclipse (total or partial)
+- No eclipse
 """
-function find_eclipse!(btpm::BinaryTPM, sun_from_pri, sec_from_pri, R₂₁)
+function find_eclipse!(btpm::BinaryTPM, r☉, rₛ, R₂₁)
 
-    r̂☉ = SVector{3}(normalize(sun_from_pri))
-    # r̂ₛ = SVector{3}(normalize(sec_from_pri))
-    rₛ = SVector{3}(sec_from_pri)
-
-    binary_is_aligned(btpm, r̂☉, rₛ) == false && return
+    binary_is_aligned(btpm, r☉, rₛ) == false && return
+    r̂☉ = normalize(r☉)
 
     for i in eachindex(btpm.pri.shape.faces)
         btpm.pri.flux[i, 1] == 0 && continue                        # something wrong?
