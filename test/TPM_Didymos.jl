@@ -41,9 +41,10 @@
     end
 
     ##= Ephemerides =##
-    et_begin = SPICE.utc2et("2027-02-18T00:00:00")
-    et_end   = SPICE.utc2et("2027-02-19T00:00:00")
-    step     = 300
+    P        = SPICE.convrt(AsteroidThermoPhysicalModels.DIDYMOS[:P], "hours", "seconds")  # Rotation period of Didymos
+    et_begin = SPICE.utc2et("2027-02-18T00:00:00")                                         # Start time of TPM
+    et_end   = et_begin + 10P                                                              # End time of TPM
+    step     = P / 72                                                                      # Time step of TPM
     et_range = et_begin : step : et_end
     @show length(et_range)
 
