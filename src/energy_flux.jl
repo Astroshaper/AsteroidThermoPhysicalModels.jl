@@ -273,7 +273,7 @@ end
 """
 The secondary is within the critical angle to detect an eclipse event.
 """
-function eclipse_is_possible(btpm::BinaryTPM, sun_from_pri, sec_from_pri)
+function binary_is_aligned(btpm::BinaryTPM, sun_from_pri, sec_from_pri)
 
     R₁ = maximum_radius(btpm.pri.shape)
     R₂ = maximum_radius(btpm.sec.shape)
@@ -301,7 +301,7 @@ function find_eclipse!(btpm::BinaryTPM, sun_from_pri, sec_from_pri, R₂₁)
     # r̂ₛ = SVector{3}(normalize(sec_from_pri))
     rₛ = SVector{3}(sec_from_pri)
 
-    eclipse_is_possible(btpm, r̂☉, rₛ) == false && return
+    binary_is_aligned(btpm, r̂☉, rₛ) == false && return
 
     for i in eachindex(btpm.pri.shape.faces)
         btpm.pri.flux[i, 1] == 0 && continue                        # something wrong?
