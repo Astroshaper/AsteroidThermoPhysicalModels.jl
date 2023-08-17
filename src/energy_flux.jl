@@ -270,24 +270,6 @@ end
 #                  Eclipse of binary asteroid
 # ****************************************************************
 
-"""
-The secondary is within the critical angle to detect an eclipse event.
-
-# Arguments
-- `btpm` : Thermophysical model for a binary asteroid
-- `r☉`   : Position of the sun relative to the primary       (NOT normalized)
-- `rₛ`   : Position of the secondary relative to the primary (NOT normalized)
-"""
-function binary_is_aligned(btpm::BinaryTPM, r☉, rₛ)
-    θ = acos((r☉ ⋅ rₛ) / (norm(r☉) * norm(rₛ)))  # Angle of Sun-Primary-Secondary
-
-    R₁ = maximum_radius(btpm.pri.shape)
-    R₂ = maximum_radius(btpm.sec.shape)
-    θ_crit = asin((R₁ + R₂) / norm(rₛ))          # Critical angle at which ecripse can occur
-
-    θ_crit < θ < π - θ_crit ? false : true
-end
-
 
 """
     find_eclipse!(btpm::BinaryTPM, r☉, rₛ, R₂₁)
