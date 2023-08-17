@@ -272,22 +272,17 @@ end
 
 
 """
-    find_eclipse!(btpm::BinaryTPM, r☉, rₛ, R₂₁)
+    mutual_shadowing!(btpm::BinaryTPM, r☉, rₛ, R₂₁)
 
-Find eclipse events between the primary and secondary, and update the solar fluxes of the faces.
+Detect eclipse events between the primary and secondary, and update the solar fluxes of the faces.
 
 # Arguments
 - `btpm` : Thermophysical model for a binary asteroid
 - `r☉`   : Position of the sun relative to the primary       (NOT normalized)
 - `rₛ`   : Position of the secondary relative to the primary (NOT normalized)
 - `R₂₁`  : Rotation matrix from secondary to primary
-
-# TO DO:
-- r₁ = minimum_radius(shape1)
-- r₂ = minimum_radius(shape2)
-Use these radii and conduct early out of shadowed faces before calling `raycast`.
 """
-function find_eclipse!(btpm::BinaryTPM, r☉, rₛ, R₂₁)
+function mutual_shadowing!(btpm::BinaryTPM, r☉, rₛ, R₂₁)
 
     shape1 = btpm.pri.shape
     shape2 = btpm.sec.shape
