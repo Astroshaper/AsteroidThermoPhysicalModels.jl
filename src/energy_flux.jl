@@ -317,46 +317,69 @@ function find_eclipse!(btpm::BinaryTPM, r☉, rₛ, R₂₁)
     R₂ = maximum_radius(shape2)
     R₁ < R₂ && error("Error: The primary radius is smaller than the secondary.")
     
-    θ⁺ = asin((R₁ + R₂) / norm(rₛ))  # Critical angle at which partial ecripse can occur
-    θ⁻ = asin((R₁ - R₂) / norm(rₛ))  # Critical angle at which total ecripse can occur
+    θ₊ = asin((R₁ + R₂) / norm(rₛ))  # Critical angle at which partial ecripse can occur
+    θ₋ = asin((R₁ - R₂) / norm(rₛ))  # Critical angle at which total ecripse can occur
 
     #### Partital eclipse of the primary ####
-    if 0 ≤ θ < θ⁺
+    if 0 ≤ θ < θ₊
+        r₂ = minimum_radius(shape2)
+
         for i in eachindex(shape1.faces)
             G₁ = shape1.face_centers[i]  # Center of △A₁B₁C₁ in primary
             n̂₁ = shape1.face_normals[i]  # Normal vector of △A₁B₁C₁ in primary
 
-            ## if △A₁B₁C₁ is not facing the sun,
+            ## if △A₁B₁C₁ is NOT facing the sun
             if r̂☉ ⋅ n̂₁ < 0
                 btpm.pri.flux[i, 1] = 0
                 continue
             end
-            
-            for j in eachindex(shape2.faces)
-                A₂, B₂, C₂ = shape2.nodes[shape2.faces[j]]  # △ABC in secondary
-                G₂ = shape2.face_centers[j]                 # Center of △A₂B₂C₂ in secondary
-                n̂₂ = shape2.face_normals[j]                 # Normal vector of △A₂B₂C₂ in secondary
-            
-                ## Transformation from secondary to primary frame
-                A₂ = R₂₁ * A₂ + rₛ
-                B₂ = R₂₁ * B₂ + rₛ
-                C₂ = R₂₁ * C₂ + rₛ
-                G₂ = R₂₁ * G₂ + rₛ
-                n̂₂ = R₂₁ * n̂₂
 
-                d₁₂ = G₂ - G₁                     # Vector from primary face i to secondary face j
-                if d₁₂ ⋅ n̂₁ > 0 && d₁₂ ⋅ n̂₂ < 0   # if △A₁B₁C₁ and △A₂B₂C₂ are facing each other
-                    raycast(A₂, B₂, C₂, r̂☉, G₁) && (btpm.pri.flux[i, 1] = 0)
+            d₁ₛ = rₛ - G₁                   # Vector from △A₁B₁C₁ to secondary center
+            θ₁ = acos(r̂☉ ⋅ normalize(d₁ₛ))  # Angle of Sun-△A₁B₁C₁-Secondary
+            θ_R₂ = asin(R₂ / norm(d₁ₛ))     # Critical angle related to the maximum radius of the secondary
+            θ_r₂ = asin(r₂ / norm(d₁ₛ))     # Critical angle related to the minimum radius of the secondary
+
+            ## In the secondary shadow
+            if θ₁ < θ_r₂
+                btpm.pri.flux[i, 1] = 0
+                continue
+            ## Out of the secondary shadow
+            elseif θ₁ > θ_R₂
+                continue
+            else
+                for j in eachindex(shape2.faces)
+                    A₂, B₂, C₂ = shape2.nodes[shape2.faces[j]]  # △A₂B₂C₂ in secondary
+                    G₂ = shape2.face_centers[j]                 # Center of △A₂B₂C₂
+                    n̂₂ = shape2.face_normals[j]                 # Normal vector of △A₂B₂C₂
+            
+                    ## Transformation from secondary to primary frame
+                    A₂ = R₂₁ * A₂ + rₛ
+                    B₂ = R₂₁ * B₂ + rₛ
+                    C₂ = R₂₁ * C₂ + rₛ
+                    G₂ = R₂₁ * G₂ + rₛ
+                    n̂₂ = R₂₁ * n̂₂
+
+                    d₁₂ = G₂ - G₁  # Vector from primary face i to secondary face j
+                
+                    ## if △A₁B₁C₁ and △A₂B₂C₂ are facing each other
+                    if d₁₂ ⋅ n̂₁ > 0 && d₁₂ ⋅ n̂₂ < 0
+                        if raycast(A₂, B₂, C₂, r̂☉, G₁)
+                            btpm.pri.flux[i, 1] = 0
+                            break
+                        end
+                    end
                 end
             end
         end
     
     #### No eclipse ####
-    # elseif θ⁺ ≤ θ < π - θ⁺
+    # elseif θ₊ ≤ θ < π - θ₊
     # Do nothing
     
     #### Partial eclipse of the secondary ####
-    elseif π - θ⁺ ≤ θ < π - θ⁻
+    elseif π - θ₊ ≤ θ < π - θ₋
+        r₁ = minimum_radius(shape1)
+
         for j in eachindex(shape2.faces)
             G₂ = shape2.face_centers[j]  # Center of △A₂B₂C₂ in secondary
             n̂₂ = shape2.face_normals[j]  # Normal vector of △A₂B₂C₂ in secondary
@@ -365,26 +388,45 @@ function find_eclipse!(btpm::BinaryTPM, r☉, rₛ, R₂₁)
             G₂ = R₂₁ * G₂ + rₛ
             n̂₂ = R₂₁ * n̂₂
 
-            ## if △A₂B₂C₂ is not facing the sun,
+            ## if △A₂B₂C₂ is NOT facing the sun
             if r̂☉ ⋅ n̂₂ < 0
                 btpm.sec.flux[j, 1] = 0
                 continue
             end
 
-            for i in eachindex(shape1.faces)
-                A₁, B₁, C₁ = shape1.nodes[shape1.faces[i]]  # △ABC in primary
-                G₁ = shape1.face_centers[i]                 # Center of △A₁B₁C₁ in primary
-                n̂₁ = shape1.face_normals[i]                 # Normal vector of △A₁B₁C₁ in primary
+            d₂ₚ = - G₂                      # Vector from △A₂B₂C₂ to primary center (origin)
+            θ₂ = acos(r̂☉ ⋅ normalize(d₂ₚ))  # Angle of Sun-△A₂B₂C₂-Primary
+            θ_R₁ = asin(R₁ / norm(d₂ₚ))     # Critical angle related to the maximum radius of the primary
+            θ_r₁ = asin(r₁ / norm(d₂ₚ))     # Critical angle related to the minimum radius of the primary
 
-                d₁₂ = G₂ - G₁                     # Vector from primary face i to secondary face j
-                if d₁₂ ⋅ n̂₁ > 0 && d₁₂ ⋅ n̂₂ < 0   # if △A₁B₁C₁ and △A₂B₂C₂ are facing each other
-                    raycast(A₁, B₁, C₁, r̂☉, G₂) && (btpm.sec.flux[j, 1] = 0)
+            ## In the primary shadow
+            if θ₂ < θ_r₁
+                btpm.sec.flux[j, 1] = 0
+                continue
+            ## Out of the primary shadow
+            elseif θ₂ > θ_R₁
+                continue
+            else
+                for i in eachindex(shape1.faces)
+                    A₁, B₁, C₁ = shape1.nodes[shape1.faces[i]]  # △A₁B₁C₁ in primary
+                    G₁ = shape1.face_centers[i]                 # Center of △A₁B₁C₁
+                    n̂₁ = shape1.face_normals[i]                 # Normal vector of △A₁B₁C₁
+
+                    d₁₂ = G₂ - G₁  # Vector from primary face i to secondary face j
+                
+                    ## if △A₁B₁C₁ and △A₂B₂C₂ are facing each other
+                    if d₁₂ ⋅ n̂₁ > 0 && d₁₂ ⋅ n̂₂ < 0
+                        if raycast(A₁, B₁, C₁, r̂☉, G₂)
+                            btpm.sec.flux[j, 1] = 0
+                            break
+                        end
+                    end
                 end
             end
         end
     
     #### Total eclipse of the secondary ####
-    elseif π - θ⁻ ≤ θ < π
+    elseif π - θ₋ ≤ θ < π
         btpm.sec.flux[:, 1] .= 0
     end
 end
