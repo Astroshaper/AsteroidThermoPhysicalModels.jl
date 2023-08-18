@@ -457,15 +457,21 @@ function mutual_heating!(btpm::BinaryTPM, nₜ::Integer, rₛ, R₂₁)
                 T₁ = btpm.pri.temperature[begin, i, nₜ]
                 T₂ = btpm.sec.temperature[begin, j, nₜ]
 
-                ε₁ = (thermo_params1.ε isa Real ? thermo_params1.ε : thermo_params1.ε[i])
-                ε₂ = (thermo_params2.ε isa Real ? thermo_params2.ε : thermo_params2.ε[j])
+                ε₁    = (thermo_params1.ε    isa Real ? thermo_params1.ε    : thermo_params1.ε[i])
+                ε₂    = (thermo_params2.ε    isa Real ? thermo_params2.ε    : thermo_params2.ε[j])
+                A_B₁  = (thermo_params1.A_B  isa Real ? thermo_params1.A_B  : thermo_params1.A_B[i])
+                A_B₂  = (thermo_params2.A_B  isa Real ? thermo_params2.A_B  : thermo_params2.A_B[j])
                 A_TH₁ = (thermo_params1.A_TH isa Real ? thermo_params1.A_TH : thermo_params1.A_TH[i])
                 A_TH₂ = (thermo_params2.A_TH isa Real ? thermo_params2.A_TH : thermo_params2.A_TH[j])
 
+                ## Mutual heating by scattered light
+                btpm.pri.flux[i, 2] += f₁₂ * A_B₂ * btpm.sec.flux[j, 1]
+                btpm.sec.flux[j, 2] += f₂₁ * A_B₁ * btpm.pri.flux[i, 1]
+
+                ## Mutual heating by thermal radiation
                 btpm.pri.flux[i, 3] += ε₂ * σ_SB * (1 - A_TH₂) * f₁₂ * T₂^4
                 btpm.sec.flux[j, 3] += ε₁ * σ_SB * (1 - A_TH₁) * f₂₁ * T₁^4
             end
         end
     end
-
 end
