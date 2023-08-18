@@ -51,7 +51,12 @@ struct SingleTPM <: ThermoPhysicalModel
 end
 
 
-function SingleTPM(shape, thermo_params, SELF_SHADOWING, SELF_HEATING)
+"""
+    SingleTPM(shape, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true) -> stpm
+
+Construct a thermophysical model for a single asteroid (`SingleTPM`).
+"""
+function SingleTPM(shape, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true)
 
     Nz = thermo_params.Nz
     Ns = length(shape.faces)
@@ -83,6 +88,16 @@ struct BinaryTPM <: ThermoPhysicalModel
 
     MUTUAL_SHADOWING ::Bool
     MUTUAL_HEATING   ::Bool
+end
+
+
+"""
+    BinaryTPM(pri, sec; MUTUAL_SHADOWING=true, MUTUAL_HEATING=true) -> btpm
+
+Construct a thermophysical model for a binary asteroid (`BinaryTPM`).
+"""
+function BinaryTPM(pri, sec; MUTUAL_SHADOWING=true, MUTUAL_HEATING=true)
+    BinaryTPM(pri, sec, MUTUAL_SHADOWING, MUTUAL_HEATING)
 end
 
 
