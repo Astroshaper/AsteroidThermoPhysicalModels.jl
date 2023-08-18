@@ -1,6 +1,31 @@
 
 
 # ****************************************************************
+#         Types of solvers for heat conduction equations
+# ****************************************************************
+
+abstract type HeatConductionSolver end
+
+"""
+Singleton type of the forward Euler method
+"""
+struct ForwardEulerSolver <: HeatConductionSolver end
+const ForwardEuler = ForwardEulerSolver()
+
+"""
+Singleton type of the backward Euler method
+"""
+struct BackwardEulerSolver <: HeatConductionSolver end
+const BackwardEuler = BackwardEulerSolver()
+
+"""
+Singleton type of the Crank-Nicolson method
+"""
+struct CrankNicolsonSolver <: HeatConductionSolver end
+const CrankNicolson = CrankNicolsonSolver()
+
+
+# ****************************************************************
 #                      1D heat conduction
 # ****************************************************************
 
@@ -45,25 +70,25 @@ end
 
 
 # ****************************************************************
-#                   Types for boundary condition
+#                 Types of boundary conditions
 # ****************************************************************
 
 abstract type BoundaryCondition end
 
 """
-Singleton type for radiation boundary condition
+Singleton type of radiation boundary condition
 """
 struct RadiationBoundaryCondition <: BoundaryCondition end
 const Radiation = RadiationBoundaryCondition()
 
 """
-Singleton type for insulation boundary condition
+Singleton type of insulation boundary condition
 """
 struct InsulationBoundaryCondition <: BoundaryCondition end
 const Insulation = InsulationBoundaryCondition()
 
 """
-Singleton type for isothermal boundary condition
+Singleton type of isothermal boundary condition
 """
 struct IsothermalBoundaryCondition <: BoundaryCondition end
 const Isothermal = IsothermalBoundaryCondition()
