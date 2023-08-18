@@ -126,8 +126,9 @@ Update solar irradiation flux on every face of a shape model.
 - `r̂☉`    : Normalized vector indicating the direction of the sun in the body-fixed frame
 - `F☉`    : Solar radiation flux [W/m²]
 """
-function update_flux_sun!(stpm::SingleTPM, r̂☉::AbstractVector, F☉::Real)
-    r̂☉ = SVector{3}(normalize(r̂☉))
+function update_flux_sun!(stpm::SingleTPM, r̂☉::StaticVector, F☉::Real)
+    r̂☉ = normalize(r̂☉)
+
     for nₛ in eachindex(stpm.shape.faces)
         if isilluminated(stpm.shape, r̂☉, nₛ)
             n̂ = stpm.shape.face_normals[nₛ]
@@ -146,9 +147,9 @@ Update solar irradiation flux on every face of a shape model.
 
 # Arguments
 - `stpm` : Thermophysical model for a single asteroid
-- `r☉`   : Position of the sun in the body-fixed frame, which is not normalized.
+- `r☉`   : Position of the sun in the body-fixed frame (NOT normalized)
 """
-function update_flux_sun!(stpm::SingleTPM, r☉::AbstractVector)
+function update_flux_sun!(stpm::SingleTPM, r☉::StaticVector)
     r̂☉ = SVector{3}(normalize(r☉))
     F☉ = SOLAR_CONST / SPICE.convrt(norm(r☉), "m", "au")^2
 
@@ -164,7 +165,7 @@ end
 - `r☉₁`  : Sun's position in the body-fixed frame of the primary, which is not normalized.
 - `r☉₂`  : Sun's position in the body-fixed frame of the secondary, which is not normalized.
 """
-function update_flux_sun!(btpm::BinaryTPM, r☉₁::AbstractVector, r☉₂::AbstractVector)
+function update_flux_sun!(btpm::BinaryTPM, r☉₁::StaticVector, r☉₂::StaticVector)
     update_flux_sun!(btpm.pri, r☉₁)
     update_flux_sun!(btpm.sec, r☉₂)
 end
@@ -183,6 +184,8 @@ Update flux of scattered sunlight, only considering single scattering.
 - `stpm` : Thermophysical model for a single asteroid
 """
 function update_flux_scat_single!(stpm::SingleTPM)
+    stpm.SELF_HEATING == false && return
+
     for nₛ in eachindex(stpm.shape.faces)
         stpm.flux[nₛ, 2] = 0.
         for visiblefacet in stpm.shape.visiblefacets[nₛ]
@@ -235,6 +238,8 @@ Single radiation-absorption is only considered, assuming albedo is close to zero
 - `nₜ`   : Index of time step
 """
 function update_flux_rad_single!(stpm::SingleTPM, nₜ::Integer)
+    stpm.SELF_HEATING == false && return
+
     for nₛ in eachindex(stpm.shape.faces)
         stpm.flux[nₛ, 3] = 0.
         for visiblefacet in stpm.shape.visiblefacets[nₛ]
@@ -283,6 +288,7 @@ Detect eclipse events between the primary and secondary, and update the solar fl
 - `R₂₁`  : Rotation matrix from secondary to primary
 """
 function mutual_shadowing!(btpm::BinaryTPM, r☉, rₛ, R₂₁)
+    btpm.MUTUAL_SHADOWING == false && return
 
     shape1 = btpm.pri.shape
     shape2 = btpm.sec.shape
@@ -429,6 +435,7 @@ Calculate the mutual heating between the primary and secondary asteroids.
 - Need to consider local horizon?
 """
 function mutual_heating!(btpm::BinaryTPM, nₜ::Integer, rₛ, R₂₁)
+    btpm.MUTUAL_HEATING == false && return
 
     shape1 = btpm.pri.shape
     shape2 = btpm.sec.shape
