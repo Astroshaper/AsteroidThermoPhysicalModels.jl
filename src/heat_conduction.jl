@@ -4,22 +4,35 @@
 #         Types of solvers for heat conduction equations
 # ****************************************************************
 
+"""
+Abstract type of a solver for a heat conduction equation 
+"""
 abstract type HeatConductionSolver end
 
 """
 Singleton type of the forward Euler method
+- Explicit in time
+- First order in time
 """
 struct ForwardEulerSolver <: HeatConductionSolver end
 const ForwardEuler = ForwardEulerSolver()
 
 """
 Singleton type of the backward Euler method
+- Implicit in time
+- First order in time
 """
 struct BackwardEulerSolver <: HeatConductionSolver end
 const BackwardEuler = BackwardEulerSolver()
 
 """
-Singleton type of the Crank-Nicolson method
+Singleton type of the Crank-Nicolson method:
+- Implicit in time
+- Second order in time
+- Stable for any (Δt, Δz) in a diffusion equation
+
+# References
+- https://en.wikipedia.org/wiki/Crank–Nicolson_method
 """
 struct CrankNicolsonSolver <: HeatConductionSolver end
 const CrankNicolson = CrankNicolsonSolver()
@@ -30,9 +43,9 @@ const CrankNicolson = CrankNicolsonSolver()
 # ****************************************************************
 
 """
-    forward_temperature(stpm::SingleTPM, nₜ::Integer)
+    update_temperature!(stpm::SingleTPM, nₜ::Integer)
 
-Calculate the temperature for the next time step (`nₜ + 1`) based on 1D heat conductivity equation.
+Calculate the temperature for the next time step (`nₜ + 1`) based on 1D heat conduction equation.
 
 TO DO: Allow selection of boundary conditions and solvers
 
@@ -40,13 +53,17 @@ TO DO: Allow selection of boundary conditions and solvers
 - `stpm` : Thermophysical model for a single asteroid
 - `nₜ`   : Index of the current time step
 """
-function update_temperature!(stpm::SingleTPM, nₜ::Integer)
-    λ = stpm.thermo_params.λ
-    Tⱼ   = @views stpm.temperature[:, :, nₜ  ]
-    Tⱼ₊₁ = @views stpm.temperature[:, :, nₜ+1]
+function update_temperature!(stpm::SingleTPM, nₜ::Integer, ::ForwardEulerSolver)
+    T = stpm.temperature
+    Nz = size(T, 1)
+    Ns = size(T, 2)
 
-    ## Forward Euler method
-    @. Tⱼ₊₁[begin+1:end-1, :] = @views (1-2λ')*Tⱼ[begin+1:end-1, :] + λ'*(Tⱼ[begin+2:end, :] + Tⱼ[begin:end-2, :])
+    for nₛ in 1:Ns
+        λ = (stpm.thermo_params.λ isa Real ? stpm.thermo_params.λ : stpm.thermo_params.λ[nₛ])
+        for nz in 2:(Nz-1)
+            T[nz, nₛ, nₜ+1] = (1-2λ)*T[nz, nₛ, nₜ] + λ*(T[nz+1, nₛ, nₜ] + T[nz-1, nₛ, nₜ])
+        end
+    end
 
     ## Boundary conditions
     update_surface_temperature!(stpm, nₜ+1, Radiation)  # Upper boundary condition of radiation
@@ -55,7 +72,7 @@ end
 
 
 """
-    forward_temperature(btpm::BinaryTPM, nₜ::Integer)
+    update_temperature!(btpm::BinaryTPM, nₜ::Integer)
 
 Calculate the temperature for the next time step (`nₜ + 1`) based on 1D heat conductivity equation.
 
@@ -63,9 +80,9 @@ Calculate the temperature for the next time step (`nₜ + 1`) based on 1D heat c
 - `btpm` : Thermophysical model for a binary asteroid
 - `nₜ`   : Index of the current time step
 """
-function update_temperature!(btpm::BinaryTPM, nₜ::Integer)
-    update_temperature!(btpm.pri, nₜ)
-    update_temperature!(btpm.sec, nₜ)
+function update_temperature!(btpm::BinaryTPM, nₜ::Integer, solver::HeatConductionSolver)
+    update_temperature!(btpm.pri, nₜ, solver)
+    update_temperature!(btpm.sec, nₜ, solver)
 end
 
 
@@ -73,6 +90,9 @@ end
 #                 Types of boundary conditions
 # ****************************************************************
 
+"""
+Abstract type of a boundary condition for a heat conduction equation
+"""
 abstract type BoundaryCondition end
 
 """
