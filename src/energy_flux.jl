@@ -129,12 +129,23 @@ Update solar irradiation flux on every face of a shape model.
 function update_flux_sun!(stpm::SingleTPM, r̂☉::StaticVector, F☉::Real)
     r̂☉ = normalize(r̂☉)
 
-    for nₛ in eachindex(stpm.shape.faces)
-        if isilluminated(stpm.shape, r̂☉, nₛ)
+    if stpm.SELF_SHADOWING
+        for nₛ in eachindex(stpm.shape.faces)
+            if isilluminated(stpm.shape, r̂☉, nₛ)
+                n̂ = stpm.shape.face_normals[nₛ]
+                stpm.flux[nₛ, 1] = F☉ * (n̂ ⋅ r̂☉)
+            else
+                stpm.flux[nₛ, 1] = 0
+            end
+        end
+    else
+        for nₛ in eachindex(stpm.shape.faces)
             n̂ = stpm.shape.face_normals[nₛ]
-            stpm.flux[nₛ, 1] = F☉ * (n̂ ⋅ r̂☉)
-        else
-            stpm.flux[nₛ, 1] = 0.
+            if n̂ ⋅ r̂☉ > 0
+                stpm.flux[nₛ, 1] = F☉ * (n̂ ⋅ r̂☉)
+            else
+                stpm.flux[nₛ, 1] = 0
+            end
         end
     end
 end
