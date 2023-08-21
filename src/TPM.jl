@@ -8,33 +8,54 @@ Abstract type of a solver for a heat conduction equation
 """
 abstract type HeatConductionSolver end
 
+
 """
-Singleton type of the forward Euler method
+Singleton type of the forward Euler method:
 - Explicit in time
 - First order in time
 """
 struct ForwardEulerSolver <: HeatConductionSolver end
-const ForwardEuler = ForwardEulerSolver()
+
 
 """
-Singleton type of the backward Euler method
-- Implicit in time
+Type of the backward Euler method:
+- Implicit in time (Unconditionally stable in the heat conduction equation)
 - First order in time
+
+The `BackwardEulerSolver` type has vectors for the tridiagonal matrix algorithm.
 """
-struct BackwardEulerSolver <: HeatConductionSolver end
-const BackwardEuler = BackwardEulerSolver()
+struct BackwardEulerSolver <: HeatConductionSolver
+    a::Vector{Float64}
+    b::Vector{Float64}
+    c::Vector{Float64}
+    d::Vector{Float64}
+    x::Vector{Float64}
+end
+
+BackwardEulerSolver(thermo_params::AbstractThermoParams) = BackwardEulerSolver(thermo_params.Nz)
+BackwardEulerSolver(N::Integer) = BackwardEulerSolver(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
+
 
 """
-Singleton type of the Crank-Nicolson method:
-- Implicit in time
+Type of the Crank-Nicolson method:
+- Implicit in time (Unconditionally stable in the heat conduction equation)
 - Second order in time
-- Stable for any (Δt, Δz) in a diffusion equation
+
+The `CrankNicolsonSolver` type has vectors for the tridiagonal matrix algorithm.
 
 # References
 - https://en.wikipedia.org/wiki/Crank–Nicolson_method
 """
-struct CrankNicolsonSolver <: HeatConductionSolver end
-const CrankNicolson = CrankNicolsonSolver()
+struct CrankNicolsonSolver <: HeatConductionSolver
+    a::Vector{Float64}
+    b::Vector{Float64}
+    c::Vector{Float64}
+    d::Vector{Float64}
+    x::Vector{Float64}
+end
+
+CrankNicolsonSolver(thermo_params::AbstractThermoParams) = CrankNicolsonSolver(thermo_params.Nz)
+CrankNicolsonSolver(N::Integer) = CrankNicolsonSolver(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
 
 
 # ****************************************************************
