@@ -25,9 +25,9 @@ function update_temperature!(stpm::SingleTPM, nₜ::Integer)
         error("The solver is not implemented.")
     end
     
-    ## Boundary conditions
-    update_surface_temperature!(stpm, nₜ+1, Radiation)  # Upper boundary condition of radiation
-    update_bottom_temperature!(stpm, nₜ+1, Insulation)  # Lower boundary condition of insulation
+    ## Apply boundary conditions
+    update_upper_temperature!(stpm, nₜ+1)
+    update_lower_temperature!(stpm, nₜ+1)
 end
 
 
@@ -193,28 +193,39 @@ tridiagonal_matrix_algorithm!(stpm::SingleTPM) = tridiagonal_matrix_algorithm!(s
 # ****************************************************************
 
 """
-    update_surface_temperature!(stpm::SingleTPM, nₜ::Integer, ::RadiationBoundaryCondition)
+    update_upper_temperature!(stpm::SingleTPM, nₜ::Integer)
 
-Update surface temperature under radiation boundary condition using Newton's method
+Update the temperature of the upper surface based on a boundary condition.
 
 # Arguments
 - `stpm`      : Thermophysical model for a single asteroid
 - `nₜ`        : Index of the current time step
-- `Radiation` : Singleton of `RadiationBoundaryCondition` to select boundary condition
 """
-function update_surface_temperature!(stpm::SingleTPM, nₜ::Integer, ::RadiationBoundaryCondition)
-    for nₛ in eachindex(stpm.shape.faces)
-        P    = stpm.thermo_params.P
-        l    = (stpm.thermo_params.l    isa Real ? stpm.thermo_params.l    : stpm.thermo_params.l[nₛ]   )
-        Γ    = (stpm.thermo_params.Γ    isa Real ? stpm.thermo_params.Γ    : stpm.thermo_params.Γ[nₛ]   )
-        A_B  = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[nₛ] )
-        A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[nₛ])
-        ε    = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[nₛ]   )
-        Δz   = stpm.thermo_params.Δz
+function update_upper_temperature!(stpm::SingleTPM, nₜ::Integer)
 
-        F_sun, F_scat, F_rad = stpm.flux[nₛ, :]
-        F_total = flux_total(A_B, A_TH, F_sun, F_scat, F_rad)
-        update_surface_temperature!((@views stpm.temperature[:, nₛ, nₜ]), F_total, P, l, Γ, ε, Δz)
+    #### Radiation boundary condition ####
+    if stpm.BC_UPPER isa RadiationBoundaryCondition
+        for nₛ in eachindex(stpm.shape.faces)
+            P    = stpm.thermo_params.P
+            l    = (stpm.thermo_params.l    isa Real ? stpm.thermo_params.l    : stpm.thermo_params.l[nₛ]   )
+            Γ    = (stpm.thermo_params.Γ    isa Real ? stpm.thermo_params.Γ    : stpm.thermo_params.Γ[nₛ]   )
+            A_B  = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[nₛ] )
+            A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[nₛ])
+            ε    = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[nₛ]   )
+            Δz   = stpm.thermo_params.Δz
+    
+            F_sun, F_scat, F_rad = stpm.flux[nₛ, :]
+            F_total = flux_total(A_B, A_TH, F_sun, F_scat, F_rad)
+            update_surface_temperature!((@views stpm.temperature[:, nₛ, nₜ]), F_total, P, l, Γ, ε, Δz)
+        end
+    #### Insulation boundary condition ####
+    elseif stpm.BC_UPPER isa InsulationBoundaryCondition
+        stpm.temperature[begin, :, nₜ] = stpm.temperature[begin+1, :, nₜ]
+    #### Isothermal boundary condition ####
+    elseif stpm.BC_UPPER isa IsothermalBoundaryCondition
+        stpm.temperature[begin, :, nₜ] .= stpm.BC_UPPER.T_iso
+    else
+        error("The upper boundary condition is not implemented.")
     end
 end
 
@@ -249,40 +260,6 @@ function update_surface_temperature!(T::AbstractVector, F_total::Float64, P::Flo
 end
 
 
-"""
-    update_surface_temperature!(stpm::SingleTPM, nₜ::Integer, ::InsulationBoundaryCondition)
-
-Update surface temperature based on insulation boundary condition
-
-# Arguments
-- `stpm`       : Thermophysical model for a single asteroid
-- `nₜ`         : Index of the current time step
-- `Insulation` : Singleton of `InsulationBoundaryCondition` to select boundary condition
-"""
-function update_surface_temperature!(stpm::SingleTPM, nₜ::Integer, ::InsulationBoundaryCondition)
-    for nₛ in eachindex(stpm.shape.faces)
-        stpm.temperature[begin, nₛ, nₜ] = stpm.temperature[begin+1, nₛ, nₜ]
-    end
-end
-
-
-"""
-    update_surface_temperature!(stpm::SingleTPM, nₜ::Integer, ::IsothermalBoundaryCondition)
-
-Update bottom temperature based on isothermal boundary condition
-
-# Arguments
-- `stpm`       : Thermophysical model for a single asteroid
-- `nₜ`         : Index of the current time step
-- `Isothermal` : Singleton of `IsothermalBoundaryCondition` to select boundary condition
-"""
-function update_surface_temperature!(stpm::SingleTPM, nₜ::Integer, ::IsothermalBoundaryCondition)
-    # for nₛ in eachindex(stpm.shape.faces)
-    #     stpm.temperature[begin, nₛ, nₜ] = T_upper
-    # end
-end
-
-
 # ****************************************************************
 #                    Lower boundary condition
 # ****************************************************************
@@ -295,27 +272,17 @@ Update bottom temperature based on insulation boundary condition
 # Arguments
 - `stpm`       : Thermophysical model for a single asteroid
 - `nₜ`         : Index of the current time step
-- `Insulation` : Singleton of `InsulationBoundaryCondition` to select boundary condition
 """
-function update_bottom_temperature!(stpm::SingleTPM, nₜ::Integer, ::InsulationBoundaryCondition)
-    for nₛ in eachindex(stpm.shape.faces)
-        stpm.temperature[end, nₛ, nₜ] = stpm.temperature[end-1, nₛ, nₜ]
+function update_lower_temperature!(stpm::SingleTPM, nₜ::Integer)
+
+    #### Insulation boundary condition ####
+    if stpm.BC_LOWER isa InsulationBoundaryCondition
+        stpm.temperature[end, :, nₜ] = stpm.temperature[end-1, :, nₜ]
+    #### Isothermal boundary condition ####
+    elseif stpm.BC_LOWER isa IsothermalBoundaryCondition
+        stpm.temperature[end, :, nₜ] .= stpm.BC_LOWER.T_iso
+    else
+        error("The lower boundary condition is not implemented.")
     end
 end
 
-
-"""
-    update_bottom_temperature!(shape::ShapeModel, nₜ::Integer, ::IsothermalBoundaryCondition)
-
-Update bottom temperature based on isothermal boundary condition
-
-# Arguments
-- `stpm`       : Thermophysical model for a single asteroid
-- `nₜ`         : Index of the current time step
-- `Isothermal` : Singleton of `IsothermalBoundaryCondition` to select boundary condition
-"""
-function update_bottom_temperature!(stpm::SingleTPM, nₜ::Integer, ::IsothermalBoundaryCondition)
-    # for nₛ in eachindex(stpm.shape.faces)
-    #     stpm.temperature[end, nₛ, nₜ] = T_lower
-    # end
-end
