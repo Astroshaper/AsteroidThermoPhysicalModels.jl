@@ -43,7 +43,7 @@
     ##= Ephemerides =##
     P        = SPICE.convrt(AsteroidThermoPhysicalModels.DIDYMOS[:P], "hours", "seconds")  # Rotation period of Didymos
     et_begin = SPICE.utc2et("2027-02-18T00:00:00")                                         # Start time of TPM
-    et_end   = et_begin + 7P                                                               # End time of TPM
+    et_end   = et_begin + 1P                                                               # End time of TPM
     step     = P / 72                                                                      # Time step of TPM
     et_range = et_begin : step : et_end
     @show length(et_range)
@@ -112,8 +112,8 @@
     println(thermo_params)
 
     ##= Setting of TPM =##
-    stpm1 = AsteroidThermoPhysicalModels.SingleTPM(shape1, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true)
-    stpm2 = AsteroidThermoPhysicalModels.SingleTPM(shape2, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true)
+    stpm1 = AsteroidThermoPhysicalModels.SingleTPM(shape1, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true, SOLVER=AsteroidThermoPhysicalModels.ForwardEulerSolver())
+    stpm2 = AsteroidThermoPhysicalModels.SingleTPM(shape2, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true, SOLVER=AsteroidThermoPhysicalModels.ForwardEulerSolver())
     btpm  = AsteroidThermoPhysicalModels.BinaryTPM(stpm1, stpm2; MUTUAL_SHADOWING=true, MUTUAL_HEATING=true)
 
     AsteroidThermoPhysicalModels.init_temperature!(btpm, 200.)
