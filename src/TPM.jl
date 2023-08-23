@@ -208,7 +208,7 @@ end
 
 Construct a thermophysical model for a binary asteroid (`BinaryTPM`).
 """
-function BinaryTPM(pri, sec; MUTUAL_SHADOWING=true, MUTUAL_HEATING=true)
+function BinaryTPM(pri, sec; MUTUAL_SHADOWING, MUTUAL_HEATING)
     BinaryTPM(pri, sec, MUTUAL_SHADOWING, MUTUAL_HEATING)
 end
 
