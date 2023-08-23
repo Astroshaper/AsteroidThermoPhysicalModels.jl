@@ -242,6 +242,10 @@ end
     init_temperature!(stpm::SingleTPM, T₀::Real)
 
 Initialize all temperature cells at the given temperature `T₀`
+
+# Arguments
+- `stpm` : Thermophysical model for a single asteroid
+- `T₀`   : Initial temperature of all cells [K]
 """
 function init_temperature!(stpm::SingleTPM, T₀::Real)
     stpm.temperature[:, :, :] .= T₀
@@ -252,10 +256,14 @@ end
     init_temperature!(btpm::BinaryTPM, T₀::Real)
 
 Initialize all temperature cells at the given temperature `T₀`
+
+# Arguments
+- `btpm` : Thermophysical model for a binary asteroid
+- `T₀`   : Initial temperature of all cells [K]
 """
 function init_temperature!(btpm::BinaryTPM, T₀::Real)
-    btpm.pri.temperature[:, :, :] .= T₀
-    btpm.sec.temperature[:, :, :] .= T₀
+    init_temperature!(btpm.pri, T₀)
+    init_temperature!(btpm.sec, T₀)
 end
 
 
