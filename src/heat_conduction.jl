@@ -1,44 +1,6 @@
 
 
 # ****************************************************************
-#         Types of solvers for heat conduction equations
-# ****************************************************************
-
-"""
-Abstract type of a solver for a heat conduction equation 
-"""
-abstract type HeatConductionSolver end
-
-"""
-Singleton type of the forward Euler method
-- Explicit in time
-- First order in time
-"""
-struct ForwardEulerSolver <: HeatConductionSolver end
-const ForwardEuler = ForwardEulerSolver()
-
-"""
-Singleton type of the backward Euler method
-- Implicit in time
-- First order in time
-"""
-struct BackwardEulerSolver <: HeatConductionSolver end
-const BackwardEuler = BackwardEulerSolver()
-
-"""
-Singleton type of the Crank-Nicolson method:
-- Implicit in time
-- Second order in time
-- Stable for any (Δt, Δz) in a diffusion equation
-
-# References
-- https://en.wikipedia.org/wiki/Crank–Nicolson_method
-"""
-struct CrankNicolsonSolver <: HeatConductionSolver end
-const CrankNicolson = CrankNicolsonSolver()
-
-
-# ****************************************************************
 #                      1D heat conduction
 # ****************************************************************
 
@@ -47,24 +9,22 @@ const CrankNicolson = CrankNicolsonSolver()
 
 Calculate the temperature for the next time step (`nₜ + 1`) based on 1D heat conduction equation.
 
-TO DO: Allow selection of boundary conditions and solvers
-
 # Arguments
 - `stpm` : Thermophysical model for a single asteroid
 - `nₜ`   : Index of the current time step
 """
-function update_temperature!(stpm::SingleTPM, nₜ::Integer, ::ForwardEulerSolver)
-    T = stpm.temperature
-    Nz = size(T, 1)
-    Ns = size(T, 2)
+function update_temperature!(stpm::SingleTPM, nₜ::Integer)
 
-    for nₛ in 1:Ns
-        λ = (stpm.thermo_params.λ isa Real ? stpm.thermo_params.λ : stpm.thermo_params.λ[nₛ])
-        for nz in 2:(Nz-1)
-            T[nz, nₛ, nₜ+1] = (1-2λ)*T[nz, nₛ, nₜ] + λ*(T[nz+1, nₛ, nₜ] + T[nz-1, nₛ, nₜ])
-        end
+    if stpm.SOLVER isa ForwardEulerSolver
+        forward_euler!(stpm, nₜ)
+    elseif stpm.SOLVER isa BackwardEulerSolver
+        backward_euler!(stpm, nₜ)
+    elseif stpm.SOLVER isa CrankNicolsonSolver
+        crank_nicolson!(stpm, nₜ)
+    else
+        error("The solver is not implemented.")
     end
-
+    
     ## Boundary conditions
     update_surface_temperature!(stpm, nₜ+1, Radiation)  # Upper boundary condition of radiation
     update_bottom_temperature!(stpm, nₜ+1, Insulation)  # Lower boundary condition of insulation
@@ -80,38 +40,152 @@ Calculate the temperature for the next time step (`nₜ + 1`) based on 1D heat c
 - `btpm` : Thermophysical model for a binary asteroid
 - `nₜ`   : Index of the current time step
 """
-function update_temperature!(btpm::BinaryTPM, nₜ::Integer, solver::HeatConductionSolver)
-    update_temperature!(btpm.pri, nₜ, solver)
-    update_temperature!(btpm.sec, nₜ, solver)
+function update_temperature!(btpm::BinaryTPM, nₜ::Integer)
+    update_temperature!(btpm.pri, nₜ)
+    update_temperature!(btpm.sec, nₜ)
+end
+
+# ****************************************************************
+#               Solvers of a heat conduction equation
+# ****************************************************************
+
+
+"""
+    forward_euler!(stpm::SingleTPM, nₜ::Integer)
+
+Predict the temperature at the next time step (`nₜ + 1`) by the forward Euler method.
+- Explicit in time
+- First order in time
+In this function, the heat conduction equation is non-dimensionalized in time and length.
+"""
+function forward_euler!(stpm::SingleTPM, nₜ::Integer)
+    T = stpm.temperature
+    Nz = size(T, 1)
+    Ns = size(T, 2)
+
+    for nₛ in 1:Ns
+        λ = (stpm.thermo_params.λ isa Real ? stpm.thermo_params.λ : stpm.thermo_params.λ[nₛ])
+        for nz in 2:(Nz-1)
+            T[nz, nₛ, nₜ+1] = (1-2λ)*T[nz, nₛ, nₜ] + λ*(T[nz+1, nₛ, nₜ] + T[nz-1, nₛ, nₜ])
+        end
+    end
 end
 
 
-# ****************************************************************
-#                 Types of boundary conditions
-# ****************************************************************
+"""
+    backward_euler!(stpm::SingleTPM, nₜ::Integer)
+
+Predict the temperature at the next time step (`nₜ + 1`) by the backward Euler method.
+- Implicit in time (Unconditionally stable in the heat conduction equation)
+- First order in time
+- Second order in space
+In this function, the heat conduction equation is non-dimensionalized in time and length.
+"""
+function backward_euler!(stpm::SingleTPM, nₜ::Integer)
+    T = stpm.temperature
+    Nz = size(T, 1)
+    Ns = size(T, 2)
+
+    for nₛ in 1:Ns
+        λ = (stpm.thermo_params.λ isa Real ? stpm.thermo_params.λ : stpm.thermo_params.λ[nₛ])
+
+        stpm.SOLVER.a .= -λ
+        stpm.SOLVER.a[begin] = 0
+        stpm.SOLVER.a[end]   = 0
+
+        stpm.SOLVER.b .= 1 + 2λ
+        stpm.SOLVER.b[begin] = 1
+        stpm.SOLVER.b[end]   = 1
+
+        stpm.SOLVER.c .= -λ
+        stpm.SOLVER.c[begin] = 0
+        stpm.SOLVER.c[end]   = 0
+
+        stpm.SOLVER.d .= T[:, nₛ, nₜ]
+
+        tridiagonal_matrix_algorithm!(stpm)
+        T[:, nₛ, nₜ+1] .= stpm.SOLVER.x
+    end
+end
+
 
 """
-Abstract type of a boundary condition for a heat conduction equation
+    crank_nicolson!(stpm::SingleTPM, nₜ::Integer)
+
+Predict the temperature at the next time step (`nₜ + 1`) by the Crank-Nicolson method.
+- Implicit in time (Unconditionally stable in the heat conduction equation)
+- Second order in time
+- Second order in space
+In this function, the heat conduction equation is non-dimensionalized in time and length.
 """
-abstract type BoundaryCondition end
+function crank_nicolson!(stpm::SingleTPM, nₜ::Integer)
+    T = stpm.temperature
+    Nz = size(T, 1)
+    Ns = size(T, 2)
+
+    Δt̄ = stpm.thermo_params.Δt / stpm.thermo_params.P  # Non-dimensional timestep, normalized by period
+    Δz̄ = stpm.thermo_params.Δz / stpm.thermo_params.l  # Non-dimensional step in depth, normalized by thermal skin depth
+    r = (1/4π) * (Δt̄ / 2Δz̄^2)
+
+    for nₛ in 1:Ns
+        stpm.SOLVER.a .= -r
+        stpm.SOLVER.a[begin] = 0
+        stpm.SOLVER.a[end]   = 0
+
+        stpm.SOLVER.b .= 1 + 2r
+        stpm.SOLVER.b[begin] = 1
+        stpm.SOLVER.b[end]   = 1
+
+        stpm.SOLVER.c .= -r
+        stpm.SOLVER.c[begin] = 0
+        stpm.SOLVER.c[end]   = 0
+
+        for nz in 2:Nz-1
+            stpm.SOLVER.d[nz] = r*T[nz+1, nₛ, nₜ] + (1-2r)*T[nz, nₛ, nₜ] + r*T[nz-1, nₛ, nₜ]
+        end
+
+        # stpm.SOLVER.d[1]  = 0  # Upper boundary condition
+        # stpm.SOLVER.d[Nz] = 0 # Lower boundary condition
+
+        tridiagonal_matrix_algorithm!(stpm)
+        T[:, nₛ, nₜ+1] .= stpm.SOLVER.x
+    end
+end
+
 
 """
-Singleton type of radiation boundary condition
-"""
-struct RadiationBoundaryCondition <: BoundaryCondition end
-const Radiation = RadiationBoundaryCondition()
+    tridiagonal_matrix_algorithm!(a, b, c, d, x)
+    tridiagonal_matrix_algorithm!(stpm::SingleTPM)
 
-"""
-Singleton type of insulation boundary condition
-"""
-struct InsulationBoundaryCondition <: BoundaryCondition end
-const Insulation = InsulationBoundaryCondition()
+Tridiagonal matrix algorithm to solve the heat conduction equation by the backward Euler and Crank-Nicolson methods.
 
+    | b₁ c₁ 0  ⋯  0   | | x₁ |   | d₁ |
+    | a₂ b₂ c₂ ⋯  0   | | x₂ |   | d₂ |
+    | 0  a₃ b₃ ⋯  0   | | x₃ | = | d₃ |
+    | ⋮  ⋮  ⋮  ⋱  cₙ₋₁| | ⋮  |   | ⋮  |
+    | 0  0  0  aₙ bₙ  | | xₙ |   | dₙ |     
+
+# References
+- https://en.wikipedia.org/wiki/Tridiagonal_matrix_algorithm
 """
-Singleton type of isothermal boundary condition
-"""
-struct IsothermalBoundaryCondition <: BoundaryCondition end
-const Isothermal = IsothermalBoundaryCondition()
+function tridiagonal_matrix_algorithm!(a, b, c, d, x)
+    N = length(d)
+
+    # Forward sweep
+    for i in 2:N
+        w = a[i] / b[i - 1]
+        b[i] -= w * c[i-1]
+        d[i] -= w * d[i-1]
+    end
+
+    # Back substitution
+    x[N] = d[N] / b[N]
+    for i in N-1:-1:1
+        x[i] = (d[i] - c[i] * x[i+1]) / b[i]
+    end
+end
+
+tridiagonal_matrix_algorithm!(stpm::SingleTPM) = tridiagonal_matrix_algorithm!(stpm.SOLVER.a, stpm.SOLVER.b, stpm.SOLVER.c, stpm.SOLVER.d, stpm.SOLVER.x)
 
 
 # ****************************************************************
