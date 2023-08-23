@@ -67,23 +67,25 @@ Abstract type of a boundary condition for a heat conduction equation
 """
 abstract type BoundaryCondition end
 
+
 """
 Singleton type of radiation boundary condition
 """
 struct RadiationBoundaryCondition <: BoundaryCondition end
-const Radiation = RadiationBoundaryCondition()
+
 
 """
 Singleton type of insulation boundary condition
 """
 struct InsulationBoundaryCondition <: BoundaryCondition end
-const Insulation = InsulationBoundaryCondition()
+
 
 """
-Singleton type of isothermal boundary condition
+Type of isothermal boundary condition
 """
-struct IsothermalBoundaryCondition <: BoundaryCondition end
-const Isothermal = IsothermalBoundaryCondition()
+struct IsothermalBoundaryCondition <: BoundaryCondition
+    T_iso::Float64
+end
 
 
 # ****************************************************************
@@ -124,6 +126,8 @@ abstract type ThermoPhysicalModel end
 - `SELF_SHADOWING` : Flag to consider self-shadowing
 - `SELF_HEATING`   : Flag to consider self-heating
 - `SOLVER`         : Solver of heat conduction equation
+- `BC_UPPER`       : Boundary condition at the upper boundary
+- `BC_LOWER`       : Boundary condition at the lower boundary
 
 # TO DO:
 - 同時に time step と depth step に関するベクトルをもつのが良いかもしれない
@@ -143,6 +147,8 @@ struct SingleTPM <: ThermoPhysicalModel
     SELF_SHADOWING ::Bool
     SELF_HEATING   ::Bool
     SOLVER         ::Union{ForwardEulerSolver, BackwardEulerSolver, CrankNicolsonSolver}
+    BC_UPPER       ::Union{RadiationBoundaryCondition, InsulationBoundaryCondition, IsothermalBoundaryCondition}
+    BC_LOWER       ::Union{RadiationBoundaryCondition, InsulationBoundaryCondition, IsothermalBoundaryCondition}
 end
 
 
@@ -150,8 +156,19 @@ end
     SingleTPM(shape, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true) -> stpm
 
 Construct a thermophysical model for a single asteroid (`SingleTPM`).
+
+# Arguments
+- `shape`          : Shape model
+- `thermo_params`  : Thermophysical parameters
+
+# Keyword arguments
+- `SELF_SHADOWING` : Flag to consider self-shadowing
+- `SELF_HEATING`   : Flag to consider self-heating
+- `SOLVER`         : Solver of heat conduction equation
+- `BC_UPPER`       : Boundary condition at the upper boundary
+- `BC_LOWER`       : Boundary condition at the lower boundary
 """
-function SingleTPM(shape, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true, SOLVER=ForwardEuler)
+function SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
 
     Nz = thermo_params.Nz
     Ns = length(shape.faces)
@@ -164,7 +181,7 @@ function SingleTPM(shape, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true,
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
 
-    SingleTPM(shape, thermo_params, flux, temperature, face_forces, force, torque, SELF_SHADOWING, SELF_HEATING, SOLVER)
+    SingleTPM(shape, thermo_params, flux, temperature, face_forces, force, torque, SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
 end
 
 
