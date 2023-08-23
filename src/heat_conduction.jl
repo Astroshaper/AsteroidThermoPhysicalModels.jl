@@ -220,7 +220,7 @@ function update_upper_temperature!(stpm::SingleTPM, nₜ::Integer)
         end
     #### Insulation boundary condition ####
     elseif stpm.BC_UPPER isa InsulationBoundaryCondition
-        stpm.temperature[begin, :, nₜ] = stpm.temperature[begin+1, :, nₜ]
+        stpm.temperature[begin, :, nₜ] .= stpm.temperature[begin+1, :, nₜ]
     #### Isothermal boundary condition ####
     elseif stpm.BC_UPPER isa IsothermalBoundaryCondition
         stpm.temperature[begin, :, nₜ] .= stpm.BC_UPPER.T_iso
@@ -277,7 +277,7 @@ function update_lower_temperature!(stpm::SingleTPM, nₜ::Integer)
 
     #### Insulation boundary condition ####
     if stpm.BC_LOWER isa InsulationBoundaryCondition
-        stpm.temperature[end, :, nₜ] = stpm.temperature[end-1, :, nₜ]
+        stpm.temperature[end, :, nₜ] .= stpm.temperature[end-1, :, nₜ]
     #### Isothermal boundary condition ####
     elseif stpm.BC_LOWER isa IsothermalBoundaryCondition
         stpm.temperature[end, :, nₜ] .= stpm.BC_LOWER.T_iso
