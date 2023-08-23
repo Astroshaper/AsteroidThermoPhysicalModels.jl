@@ -90,10 +90,6 @@
         shape2 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape2_obj; scale=1000, find_visible_facets=true)
         AsteroidThermoPhysicalModels.save_shape_jld(path_shape2_jld, shape2)
     end
-
-    println(shape1)
-    println(shape2)
-
     
     ##= Thermal properties =##
     P  = SPICE.convrt(AsteroidThermoPhysicalModels.DIDYMOS[:P], "hours", "seconds")
