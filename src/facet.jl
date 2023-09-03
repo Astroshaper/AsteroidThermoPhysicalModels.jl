@@ -83,6 +83,7 @@ Facet(vs) = Facet(
     VisibleFacet[], Flux(), Float64[], Float64[], zeros(3)
 )
 
+
 function Base.show(io::IO, facet::Facet)
     msg = "Surface facet\n"
     msg *= "-------------\n"
@@ -97,20 +98,74 @@ function Base.show(io::IO, facet::Facet)
     msg *= "Area   : $(facet.area)\n"
     
     if isempty(facet.visiblefacets)
-        msg *= "No visible facets.\n"
+        msg *= "No visible facets from this facet.\n"
     else
-        @unpack visiblefacets = facet
-        msg *= "$(length(visiblefacets)) facets are visible:\n"
-        df = DataFrame(id=visiblefacets.id, f=visiblefacets.f, d=visiblefacets.d)
+        msg *= "$(length(facet.visiblefacets)) facets are visible from this facet:\n"
+        id = [visiblefacet.id for visiblefacet in facet.visiblefacets]
+        f  = [visiblefacet.f  for visiblefacet in facet.visiblefacets]
+        d  = [visiblefacet.d  for visiblefacet in facet.visiblefacets]
+        df = DataFrame(id=id, f=f, d=d)
         msg *= "$(df)\n"
     end
     print(io, msg)
 end
 
+
 """
 Array of `Facet`, converted from arrays of nodes and faces of a shape model
 """
 getfacets(nodes, faces) = [Facet(nodes[face]) for face in faces]
+
+
+"""
+    grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix) -> nodes, faces, facets
+
+Convert a regular grid (x, y) and corresponding z-coordinates to triangular facets
+
+    | ⧹| ⧹| ⧹|
+j+1 ・--C--D--・
+    |⧹ |⧹ |⧹ |
+    | ⧹| ⧹| ⧹|
+j   ・--A--B--・
+    |⧹ |⧹ |⧹ |
+       i  i+1
+
+# Arguments
+- `xs::AbstractVector` : x-coordinates of grid points (should be sorted)
+- `ys::AbstractVector` : y-coordinates of grid points (should be sorted)
+
+- `zs::AbstractMatrix` : z-coordinates of grid points
+"""
+function grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix)
+    nodes = SVector{3, Float64}[]
+    faces = SVector{3, Int}[]
+    facets = Facet[]
+
+    for y in ys
+        for x in xs
+            push!(nodes, [x, y, 0])
+        end
+    end
+
+    for j in eachindex(ys)[begin:end-1]
+        for i in eachindex(xs)[begin:end-1]
+            ABC = [i + (j-1)*length(xs), i+1 + (j-1)*length(xs), i + j*length(xs)]  # Indices of nodes of a facet ABC
+            DCB = [i+1 + j*length(xs), i + j*length(xs), i+1 + (j-1)*length(xs)]    # Indices of nodes of a facet DCB
+            
+            push!(faces, ABC)
+            push!(faces, DCB)
+
+            A = SVector{3, Float64}(xs[i  ], ys[j  ], zs[i  , j  ])
+            B = SVector{3, Float64}(xs[i+1], ys[j  ], zs[i+1, j  ])
+            C = SVector{3, Float64}(xs[i  ], ys[j+1], zs[i  , j+1])
+            D = SVector{3, Float64}(xs[i+1], ys[j+1], zs[i+1, j+1])
+
+            push!(facets, Facet(A, B, C))
+            push!(facets, Facet(D, C, B))
+        end
+    end
+    nodes, faces, facets
+end
 
 
 # ################################################################
@@ -254,48 +309,87 @@ Find facets that is visible from the facet where the observer is located.
 - `obs`    : Facet where the observer stands
 - `facets` : Array of `Facet`
 """
-function find_visiblefacets!(obs::Facet, facets)
-    ids = Int64[]
-    for (id, tar) in enumerate(facets)
-        isAbove(obs, tar) && isFace(obs, tar) && push!(ids, id)
-    end
-    
-    ii = copy(ids)
+function find_visiblefacets!(facets)
+    for i in eachindex(facets)
+        candidates = Int64[]
+        for j in eachindex(facets)
+            isAbove(facets[i], facets[j]) && isFace(facets[i], facets[j]) && push!(candidates, j)
+        end
+        
+        for j in candidates
+            j in (visiblefacet.id for visiblefacet in facets[i].visiblefacets) && continue
 
-    for i in ii
-        tar_i = facets[i]
-        Rᵢ = tar_i.center - obs.center
-        dᵢ = norm(Rᵢ)      # distance to facet i
-        for j in ii
-            i == j && continue
+            Rⱼ = facets[j].center - facets[i].center  # Vector from facet i to j
+            dⱼ = norm(Rⱼ)                             # Distance from facet i to j
+            
+            blocked = false
+            for k in candidates
+                j == k && continue
+                Rₖ = facets[k].center - facets[i].center  # Vector from facet i to k
+                dₖ = norm(Rₖ)                             # Distance from facet i to k
+                
+                dⱼ < dₖ && continue
+                
+                if raycast(facets[k], Rⱼ, facets[i])      # if facet k blocks the view to facet j
+                    blocked = true
+                    break
+                end
+            end
 
-            tar_j = facets[j]
-            Rⱼ = tar_j.center - obs.center
-            dⱼ = norm(Rⱼ)  # distance to facet j
-
-            raycast(tar_j, Rᵢ, obs) && (dᵢ < dⱼ ? filter!(x->x≠j, ids) : filter!(x->x≠i, ids))
+            blocked && continue
+            push!(facets[i].visiblefacets, VisibleFacet(facets[i], facets[j], j))
+            push!(facets[j].visiblefacets, VisibleFacet(facets[j], facets[i], i))
         end
     end
+end
+
+
+# """
+#     This function will be reused when parallelizing the code.
+# """
+# function find_visiblefacets!(obs::Facet, facets)
     
-    for id in ids
-        tar = facets[id]
-        push!(obs.visiblefacets, VisibleFacet(obs, tar, id))
-    end
-end
+#     candidates = Int64[]
+#     for (j, facet) in enumerate(facets)
+#         isAbove(obs, facet) && isFace(obs, facet) && push!(candidates, j)
+#     end
 
-"""
-    find_visiblefacets!(facets)
+#     for j in candidates
+#         Rⱼ = facets[j].center - obs.center   # Vector from the facet `obs` to j
+#         dⱼ = norm(Rⱼ)                        # Distance to facet j
 
-Find facets that is visible from each facet
+#         blocked = false
+#         for k in candidates
+#             j == k && continue
+#             Rₖ = facets[k].center - obs.center  # Vector from the facet `obs` to k
+#             dₖ = norm(Rₖ)                       # Distance to facet k
 
-# Parameters
-- `facets` : Array of `Facet`
-"""
-function find_visiblefacets!(facets)
-    for obs in facets
-        find_visiblefacets!(obs, facets)
-    end
-end
+#             dⱼ < dₖ && continue
+
+#             if raycast(facets[k], Rⱼ, obs)      # Not visible because the facet k blocks the view to j
+#                 blocked = true
+#                 break
+#             end
+#         end
+#         blocked && continue
+
+#         push!(obs.visiblefacets, VisibleFacet(obs, facets[j], j))
+#     end
+# end
+
+# """
+#     find_visiblefacets!(facets)
+
+# Find facets that is visible from each facet
+
+# # Parameters
+# - `facets` : Array of `Facet`
+# """
+# function find_visiblefacets!(facets)
+#     for obs in facets
+#         find_visiblefacets!(obs, facets)
+#     end
+# end
 
 """
     isIlluminated(obs::AbstractVector, r̂☉, facets) -> Bool
