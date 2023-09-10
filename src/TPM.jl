@@ -213,7 +213,7 @@ end
 """
     energy_in(shape::ShapeModel, params::AbstractThermoParams) -> E_in
     energy_in(shape::ShapeModel, A_B)                          -> E_in
-    energy_in(facet::Facet, A_B::Real, area)                   -> E_in
+    energy_in(A_B, F_sun, F_scat, area)                        -> E_in
 
 Input energy per second on a facet or a whole surface [W]
 """
@@ -222,18 +222,22 @@ energy_in(shape::ShapeModel, params::AbstractThermoParams) = energy_in(shape, pa
 function energy_in(shape::ShapeModel, A_B)
     E_in = 0.
     for i in eachindex(shape.faces)
-        E_in += energy_in(shape.facets[i], (A_B isa Real ? A_B : A_B[i]), shape.face_areas[i])
+        F_sun = shape.flux[i, 1]
+        F_scat = shape.flux[i, 2]
+        aᵢ = shape.face_areas[i]
+
+        E_in += energy_in((A_B isa Real ? A_B : A_B[i]), F_sun, F_scat, aᵢ)
     end
     E_in
 end
 
-energy_in(facet::Facet, A_B::Real, area) = (1 - A_B) * (facet.flux.sun + facet.flux.scat) * area
+energy_in(A_B, F_sun, F_scat, area) = (1 - A_B) * (F_sun + F_scat) * area
 
 
 """
     energy_out(shape::ShapeModel, params::AbstractThermoParams) -> E_out
     energy_out(shape::ShapeModel, ε, A_TH)                      -> E_out
-    energy_out(facet::Facet, ε::Real, A_TH::Real, area)         -> E_out
+    energy_out(ε, T, A_TH, F_rad, area)                         -> E_out
 
 Output enegey per second from a facet or a whole surface [W]
 """
@@ -242,28 +246,31 @@ energy_out(shape::ShapeModel, params::AbstractThermoParams) = energy_out(shape, 
 function energy_out(shape::ShapeModel, ε, A_TH)
     E_out = 0.
     for i in eachindex(shape.faces)
-        E_out += energy_out(shape.facets[i], (ε isa Real ? ε : ε[i]), (A_TH isa Real ? A_TH : A_TH[i]), shape.face_areas[i])
+        Tᵢ = shape.facets[i].temps[begin] 
+        F_rad = shape.flux[i, 3]
+        aᵢ = shape.face_areas[i]
+
+        E_out += energy_out((ε isa Real ? ε : ε[i]), Tᵢ, (A_TH isa Real ? A_TH : A_TH[i]), F_rad, aᵢ)
     end
     E_out
 end
 
-energy_out(facet::Facet, ε::Real, A_TH::Real, area) = ( ε*σ_SB*facet.temps[begin]^4 - (1 - A_TH)*facet.flux.rad ) * area
+energy_out(ε, T, A_TH, F_rad, area) = (ε * σ_SB * T^4 - (1 - A_TH) * F_rad) * area
 
 
 # ****************************************************************
-#        Energy flux of sunlight, scattering, and radiation
+#                  Energy flux: Sunlight
 # ****************************************************************
-
 
 """
     update_flux!(shape, r☉, thermo_params)
 
 Update energy flux to every facet by solar radiation, scattering, and re-absorption of radiation
 """
-function update_flux!(shape, r☉::AbstractVector, thermo_params)
+function update_flux!(shape, r☉::AbstractVector, params::AbstractThermoParams)
     update_flux_sun!(shape, r☉)
-    update_flux_scat_single!(shape, thermo_params)
-    update_flux_rad_single!(shape, thermo_params)
+    update_flux_scat_single!(shape, params)
+    update_flux_rad_single!(shape, params)
 end
 
 """
@@ -278,9 +285,10 @@ Update solar radiation flux on every facet of a shape model.
 function update_flux_sun!(shape, r̂☉, F☉)
     for i in eachindex(shape.faces)
         if isilluminated(shape, r̂☉, i)
-            shape.facets[i].flux.sun = F☉ * (shape.face_normals[i] ⋅ r̂☉)
+            n̂ = shape.face_normals[i]
+            shape.flux[i, 1] = F☉ * (n̂ ⋅ r̂☉)
         else
-            shape.facets[i].flux.sun = 0
+            shape.flux[i, 1] = 0.
         end
     end
 end
@@ -337,12 +345,12 @@ function find_eclipse!(shapes, sun_from_pri, sec_from_pri, R₂₁)
     eclipse_is_possible(shapes, r̂☉, rₛ) == false && return
 
     for i in eachindex(shapes[1].faces)
-        shapes[1].facets[i].flux.sun == 0 && continue
+        shapes[1].flux[i, 1] == 0 && continue  # something wrong?
         A₁, B₁, C₁ = shapes[1].nodes[shapes[1].faces[i]]  # △ABC in primary
         G₁ = shapes[1].face_centers[i]                    # Center of △ABC in primary
 
         for j in eachindex(shapes[2].faces)
-            shapes[2].facets[j].flux.sun == 0 && continue
+            shapes[2].flux[j, 1] == 0 && continue  # something wrong?
             A₂, B₂, C₂ = shapes[2].nodes[shapes[2].faces[j]]  # △ABC in secondary
             G₂ = shapes[2].face_centers[j]                    # Center of △ABC in secondary
             
@@ -352,91 +360,72 @@ function find_eclipse!(shapes, sun_from_pri, sec_from_pri, R₂₁)
             C₂ = R₂₁ * C₂ + rₛ
             G₂ = R₂₁ * G₂ + rₛ
             
-            raycast(A₂, B₂, C₂, r̂☉, G₁) && (shapes[1].facets[i].flux.sun = 0)  # something wrong?
-            raycast(A₁, B₁, C₁, r̂☉, G₂) && (shapes[2].facets[j].flux.sun = 0)  # something wrong?
+            raycast(A₂, B₂, C₂, r̂☉, G₁) && (shapes[1].flux[i, 1] = 0)  # something wrong?
+            raycast(A₁, B₁, C₁, r̂☉, G₂) && (shapes[2].flux[j, 1] = 0)  # something wrong?
         end
     end
 end
 
 
-"""
-    update_flux_scat_single!(shape, params)
-    update_flux_scat_single!(shape, A_B::Real)
-    update_flux_scat_single!(shape, A_B::AbstractVector)
+# ****************************************************************
+#                 Energy flux: Scattering
+# ****************************************************************
 
-Single scattering of sunlight is considered.
+"""
+    update_flux_scat_single!(shape, params::AbstractThermoParams)
+    update_flux_scat_single!(shape, A_B)
+
+Update flux of scattered sunlight, only considering single scattering.
 """
 update_flux_scat_single!(shape, params::AbstractThermoParams) = update_flux_scat_single!(shape, params.A_B)
 
-function update_flux_scat_single!(shape, A_B::Real)
-    for facet in shape.facets
-        facet.flux.scat = 0
-        for visiblefacet in facet.visiblefacets
-            facet.flux.scat += visiblefacet.f * A_B * shape.facets[visiblefacet.id].flux.sun
+function update_flux_scat_single!(shape, A_B)
+    for i in eachindex(shape.faces)
+        shape.flux[i, 2] = 0.
+        for visiblefacet in shape.facets[i].visiblefacets
+            j = visiblefacet.id
+            fᵢⱼ = visiblefacet.f
+            A_B = (A_B isa Real ? A_B : A_B[j])
+            shape.flux[i, 2] += fᵢⱼ * A_B * shape.flux[j, 1]
         end
     end
 end
 
-function update_flux_scat_single!(shape, A_B::AbstractVector)
-    for facet in shape.facets
-        facet.flux.scat = 0
-        for visiblefacet in facet.visiblefacets
-            facet.flux.scat += visiblefacet.f * A_B[visiblefacet.id] * shape.facets[visiblefacet.id].flux.sun
-        end
-    end
-end
+
+##= TODO: Implement update_flux_scat_mult! =##
 
 # """
-#     update_flux_scat_mult!(shape, params)
+#     update_flux_scat_mult!(shape, params::AbstractThermoParams)
+#     update_flux_scat_mult!(shape, A_B)
 
-# Multiple scattering of sunlight is considered.
+# Update flux of scattered sunlight, considering multiple scattering.
 # """
-# update_flux_scat_mult!(shape, params::AbstractThermoParams) = update_flux_scat_mult!(shape, params.A_B)
 
-# function update_flux_scat_mult!(shape, A_B::Real)
-#     for facet in shape.facets
-#         facet.flux.scat = 0
-#         for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
-#             facet.flux.scat += f * A_B * shape.facets[id].flux.sun
-#         end
-#     end
-# end
 
-# function update_flux_scat_mult!(shape, A_B::AbstractVector)
-#     for facet in shape.facets
-#         facet.flux.scat = 0
-#         for (id, f) in zip(facet.visiblefacets.id, facet.visiblefacets.f)
-#             facet.flux.scat += f * A_B[id] * shape.facets[id].flux.sun
-#         end
-#     end
-# end
+# ****************************************************************
+#                Energy flux: Thermal radiation
+# ****************************************************************
 
 """
-    update_flux_rad_single!(shape, params)
-    update_flux_rad_single!(shape, ε::Real)
-    update_flux_rad_single!(shape, ε::AbstractVector)
+    update_flux_rad_single!(shape, params::AbstractThermoParams)
+    update_flux_rad_single!(shape, ε, A_TH)
 
-Single radiation-reabsorption is considered,
-assuming albedo is close to zero at thermal infrared wavelength.
+Update flux of absorption of thermal radiation from surrounding surface.
+Single radiation-absorption is only considered, assuming albedo is close to zero at thermal infrared wavelength.
 """
-update_flux_rad_single!(shape, params::AbstractThermoParams) = update_flux_rad_single!(shape, params.ε)
+update_flux_rad_single!(shape, params::AbstractThermoParams) = update_flux_rad_single!(shape, params.ε, params.A_TH)
 
-function update_flux_rad_single!(shape, ε::Real)
-    for facet in shape.facets
-        facet.flux.rad = 0
-        for visiblefacet in facet.visiblefacets
-            T = shape.facets[visiblefacet.id].temps[begin]
-            facet.flux.rad += visiblefacet.f * ε * σ_SB * T^4
-        end
-    end
-end
-
-function update_flux_rad_single!(shape, ε::AbstractVector)
-    for facet in shape.facets
-        facet.flux.rad = 0
-        for visiblefacet in facet.visiblefacets
-            T = shape.facets[visiblefacet.id].temps[begin]
-            facet.flux.rad += visiblefacet.f * ε[visiblefacet.id] * σ_SB * T^4
+function update_flux_rad_single!(shape, ε, A_TH)
+    for i in eachindex(shape.faces)
+        shape.flux[i, 3] = 0.
+        for visiblefacet in shape.facets[i].visiblefacets
+            j = visiblefacet.id
+            fᵢⱼ = visiblefacet.f
+            ε = (ε isa Real ? ε : ε[j])
+            A_TH = (A_TH isa Real ? A_TH : A_TH[j])
+            Tⱼ = shape.facets[j].temps[begin]
+            
+            shape.flux[i, 3] += ε * σ_SB * (1 - A_TH) * fᵢⱼ * Tⱼ^4
         end
     end
 end

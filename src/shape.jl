@@ -15,17 +15,25 @@ A polyhedral shape model of an asteroid.
 - `face_centers` : Center position of each face
 - `face_normals` : Normal vector of each face
 - `face_areas`   : Area of of each face
+
+- `flux` : Flux on each face. Matrix of size (Number of faces, 3). Three components are:
+    - `flux[:, 1]` : F_sun,  Flux of direct sun light
+    - `flux[:, 2]` : F_scat, Flux of scattered light
+    - `flux[:, 3]` : F_rad,  Flux of thermal emission from surrounding surface
 """
 struct ShapeModel
     nodes        ::Vector{SVector{3, Float64}}
     faces        ::Vector{SVector{3, Int}}
     facets       ::Vector{AsteroidThermoPhysicalModels.Facet}
+
     force        ::MVector{3, Float64}
     torque       ::MVector{3, Float64}
 
     face_centers ::Vector{SVector{3, Float64}}
     face_normals ::Vector{SVector{3, Float64}}
     face_areas   ::Vector{Float64}
+
+    flux         ::Matrix{Float64}
 end
 
 
@@ -52,9 +60,10 @@ function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
     face_normals = [face_normal(nodes[face]) for face in faces]
     face_areas   = [face_area(nodes[face])   for face in faces]
 
-    find_visible_facets && find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, face_areas)
+    flux = zeros(length(faces), 3)
 
-    shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas)
+    find_visible_facets && find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, face_areas)
+    shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas, flux)
     return shape
 end
 
@@ -87,9 +96,10 @@ function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMat
     face_normals = [face_normal(nodes[face]) for face in faces]
     face_areas   = [face_area(nodes[face])   for face in faces]
 
-    find_visible_facets && find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, face_areas)
+    flux = zeros(length(faces), 3)
 
-    shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas)
+    find_visible_facets && find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, face_areas)
+    shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas, flux)
     return shape
 end
 

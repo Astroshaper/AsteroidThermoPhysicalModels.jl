@@ -1,20 +1,3 @@
-"""
-    mutable struct Flux
-
-Energy flux to a facet
-
-# Fields
-- `sun`  : Flux of solar radiation,    F_sun
-- `scat` : Flux of scattered sunlight, F_scat
-- `rad`  : Flux of thermal radiation,  F_rad
-"""
-mutable struct Flux
-    sun ::Float64
-    scat::Float64
-    rad ::Float64
-end
-
-Flux() = Flux(0., 0., 0.)
 
 """
     struct VisibleFacet
@@ -47,20 +30,18 @@ Note that the mesh normal indicates outward the polyhedron.
 
 # Fields
 - `visiblefacets` : 1-D array of `VisibleFacet`
-- `flux         ` : Energy flux from surrounding facets
 - `temps        ` : Temperature profile in depth direction
 - `_temps_      ` : Pre-allocated vector for updating temperature profile
 - `force        ` : Photon recoil force
 """
 struct Facet
     visiblefacets::Vector{VisibleFacet}
-    flux         ::Flux
     temps        ::Vector{Float64}
     _temps_      ::Vector{Float64}
     force        ::Vector{Float64}
 end
 
-Facet() = Facet(VisibleFacet[], Flux(), Float64[], Float64[], zeros(3))
+Facet() = Facet(VisibleFacet[], Float64[], Float64[], zeros(3))
 
 
 function Base.show(io::IO, facet::Facet)
