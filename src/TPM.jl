@@ -326,19 +326,25 @@ function find_eclipse!(shapes, sun_from_pri, sec_from_pri, R₂₁)
 
     eclipse_is_possible(shapes, r̂☉, rₛ) == false && return
 
-    for facet1 in shapes[1].facets
+    for i in eachindex(shapes[1].faces)
+        facet1 = shapes[1].facets[i]
         facet1.flux.sun == 0 && continue
-        for facet2 in shapes[2].facets
-            facet2.flux.sun == 0 && continue
+        A₁, B₁, C₁ = shapes[1].nodes[shapes[1].faces[i]]  # △ABC in primary
         
-            ## Facet ABC of the secondary in the primary-fixed frame
-            A = rₛ + R₂₁ * facet2.A
-            B = rₛ + R₂₁ * facet2.B
-            C = rₛ + R₂₁ * facet2.C
-            center2 = rₛ + R₂₁ * facet2.center
 
-            raycast(A, B, C, r̂☉, facet1) && (facet1.flux.sun = 0)
-            raycast(facet1, r̂☉, center2) && (facet2.flux.sun = 0)
+        for j in eachindex(shapes[2].faces)
+            facet2 = shapes[2].facets[j]
+            facet2.flux.sun == 0 && continue
+            A₂, B₂, C₂ = shapes[2].nodes[shapes[2].faces[j]]  # △ABC in secondary
+            
+            ## Transform coordinates from secondary- to primary-fixed frame
+            A₂ = R₂₁ * A₂ + rₛ
+            B₂ = R₂₁ * B₂ + rₛ
+            C₂ = R₂₁ * C₂ + rₛ
+            center2 = R₂₁ * facet2.center + rₛ
+
+            raycast(A₂, B₂, C₂, r̂☉, facet1.center) && (facet1.flux.sun = 0)  # something wrong?
+            raycast(A₁, B₁, C₁, r̂☉, center2) && (facet2.flux.sun = 0)        # something wrong?
         end
     end
 end

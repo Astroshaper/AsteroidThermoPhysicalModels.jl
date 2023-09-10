@@ -2,16 +2,16 @@
 @testset "TPM_Didymos" begin
     ##= Download Files =##
     paths_kernel = [
-        "fk/hera_v07.tf",
+        "fk/hera_v08.tf",
         "lsk/naif0012.tls",
-        "pck/hera_didymos_v05.tpc",
+        "pck/hera_didymos_v06.tpc",
         "spk/de432s.bsp",
         "spk/didymos_hor_000101_500101_v01.bsp",
         "spk/didymos_gmv_260901_311001_v01.bsp",
     ]
     paths_shape = [
-        "g_50677mm_rad_obj_dida_0000n00000_v001.obj",
-        "g_06650mm_rad_obj_didb_0000n00000_v001.obj",
+        "g_50677mm_rad_obj_didy_0000n00000_v001.obj",
+        "g_08438mm_lgt_obj_dimo_0000n00000_v002.obj",
     ]
 
     for path_kernel in paths_kernel
@@ -59,10 +59,10 @@
     SPICE.kclear()
 
     ##= Load obj file =##
-    path_shape1_obj = joinpath("shape", "g_50677mm_rad_obj_dida_0000n00000_v001.obj")
-    path_shape2_obj = joinpath("shape", "g_06650mm_rad_obj_didb_0000n00000_v001.obj")
-    path_shape1_jld = joinpath("shape", "g_50677mm_rad_obj_dida_0000n00000_v001.jld2")
-    path_shape2_jld = joinpath("shape", "g_06650mm_rad_obj_didb_0000n00000_v001.jld2")
+    path_shape1_obj = joinpath("shape", "g_50677mm_rad_obj_didy_0000n00000_v001.obj")
+    path_shape2_obj = joinpath("shape", "g_08438mm_lgt_obj_dimo_0000n00000_v002.obj")
+    path_shape1_jld = joinpath("shape", "g_50677mm_rad_obj_didy_0000n00000_v001.jld2")
+    path_shape2_jld = joinpath("shape", "g_08438mm_lgt_obj_dimo_0000n00000_v002.jld2")
 
     if isfile(path_shape1_jld) && ENABLE_JLD
         shape1 = AsteroidThermoPhysicalModels.load_shape_jld(path_shape1_jld)
