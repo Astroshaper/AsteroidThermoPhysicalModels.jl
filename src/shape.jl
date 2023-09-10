@@ -11,13 +11,21 @@ A polyhedral shape model of an asteroid.
 - `facets`     : 1-D array of surface facets (`Facet`)
 - `force`      : Thermal recoil force at body-fixed frame (Yarkovsky effect)
 - `torque`     : Thermal recoil torque at body-fixed frame (YORP effect)
+
+- `face_centers` : Center position of each face
+- `face_normals` : Normal vector of each face
+- `face_areas`   : Area of of each face
 """
 struct ShapeModel
-    nodes     ::Vector{SVector{3, Float64}}
-    faces     ::Vector{SVector{3, Int}}
-    facets    ::Vector{AsteroidThermoPhysicalModels.Facet}
-    force     ::MVector{3, Float64}
-    torque    ::MVector{3, Float64}
+    nodes        ::Vector{SVector{3, Float64}}
+    faces        ::Vector{SVector{3, Int}}
+    facets       ::Vector{AsteroidThermoPhysicalModels.Facet}
+    force        ::MVector{3, Float64}
+    torque       ::MVector{3, Float64}
+
+    face_centers ::Vector{SVector{3, Float64}}
+    face_normals ::Vector{SVector{3, Float64}}
+    face_areas   ::Vector{Float64}
 end
 
 
@@ -36,11 +44,17 @@ end
 function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
     # TODO: use MeshIO.jl
     nodes, faces = loadobj(shapepath; scale=scale, static=true, message=false)
-    facets = [Facet(nodes[face]) for face in faces]
-    find_visible_facets && find_visiblefacets!(nodes, faces, facets)
+    facets = [Facet() for _ in faces]
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
-    shape = ShapeModel(nodes, faces, facets, force, torque)
+
+    face_centers = [face_center(nodes[face]) for face in faces]
+    face_normals = [face_normal(nodes[face]) for face in faces]
+    face_areas   = [face_area(nodes[face])   for face in faces]
+
+    find_visible_facets && find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, face_areas)
+
+    shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas)
     return shape
 end
 
@@ -66,10 +80,16 @@ Convert a regular grid (x, y) to a shape model
 """
 function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix; scale=1.0, find_visible_facets=false)
     nodes, faces, facets = grid_to_facets(xs, ys, zs)
-    find_visible_facets && find_visiblefacets!(nodes, faces, facets)
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
-    shape = ShapeModel(nodes, faces, facets, force, torque)
+
+    face_centers = [face_center(nodes[face]) for face in faces]
+    face_normals = [face_normal(nodes[face]) for face in faces]
+    face_areas   = [face_area(nodes[face])   for face in faces]
+
+    find_visible_facets && find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, face_areas)
+
+    shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas)
     return shape
 end
 
@@ -103,8 +123,6 @@ maximum_radius(shape::ShapeModel) = maximum_radius(shape.nodes)
 
 minimum_radius(nodes) = minimum(norm, nodes)
 minimum_radius(shape::ShapeModel) = minimum_radius(shape.nodes)
-
-find_visiblefacets!(shape::ShapeModel) = find_visiblefacets!(shape.nodes, shape.faces, shape.facets)
 
 surface_temperature(shape::ShapeModel) = [facet.temps[begin] for facet in shape.facets]
 

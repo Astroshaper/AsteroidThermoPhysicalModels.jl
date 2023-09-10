@@ -71,12 +71,12 @@
     #     Thermal conductivity : k   = 0.3  [W/m/K]
     #     Emissivity           : ε   = 0.9  [-]
     thermo_params = AsteroidThermoPhysicalModels.thermoparams(
-        A_B     = [facet.center[3] > 0 ? 0.04 : 0.1 for facet in shape.facets],
+        A_B     = [r[3] > 0 ? 0.04 : 0.1 for r in shape.face_centers],
         A_TH    = 0.0,
-        k       = [facet.center[3] > 0 ? 0.1 : 0.3 for facet in shape.facets],
+        k       = [r[3] > 0 ? 0.1 : 0.3  for r in shape.face_centers],
         ρ       = 1270.0,
         Cp      = 600.0,
-        ε       = [facet.center[3] > 0 ? 1.0 : 0.9 for facet in shape.facets],
+        ε       = [r[3] > 0 ? 1.0 : 0.9  for r in shape.face_centers],
         t_begin = et_range[begin],
         t_end   = et_range[end],
         Nt      = length(et_range),
