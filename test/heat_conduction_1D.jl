@@ -52,7 +52,7 @@
     BC_UPPER       = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(0)
     BC_LOWER       = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(0)
 
-    stpm_FE = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.ForwardEulerSolver())
+    stpm_FE = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.ForwardEulerSolver(thermo_params))
     stpm_BE = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.BackwardEulerSolver(thermo_params))
     stpm_CN = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.CrankNicolsonSolver(thermo_params))
 

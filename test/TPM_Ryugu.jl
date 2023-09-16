@@ -98,7 +98,7 @@
     stpm = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params;
         SELF_SHADOWING = true,
         SELF_HEATING   = true,
-        SOLVER         = AsteroidThermoPhysicalModels.ForwardEulerSolver(),
+        SOLVER         = AsteroidThermoPhysicalModels.ForwardEulerSolver(thermo_params),
         BC_UPPER       = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
         BC_LOWER       = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
     )

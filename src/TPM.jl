@@ -10,11 +10,18 @@ abstract type HeatConductionSolver end
 
 
 """
-Singleton type of the forward Euler method:
+Type of the forward Euler method:
 - Explicit in time
 - First order in time
+
+The `ForwardEulerSolver` type includes a vector for the temperature at the next time step.
 """
-struct ForwardEulerSolver <: HeatConductionSolver end
+struct ForwardEulerSolver <: HeatConductionSolver
+    T::Vector{Float64}
+end
+
+ForwardEulerSolver(thermo_params::AbstractThermoParams) = ForwardEulerSolver(thermo_params.Nz)
+ForwardEulerSolver(N::Integer) = ForwardEulerSolver(zeros(N))
 
 
 """
