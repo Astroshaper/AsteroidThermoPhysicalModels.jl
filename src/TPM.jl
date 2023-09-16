@@ -110,14 +110,7 @@ abstract type ThermoPhysicalModel end
     - `flux[:, 1]`     : F_sun,  flux of direct sunlight
     - `flux[:, 2]`     : F_scat, flux of scattered light
     - `flux[:, 3]`     : F_rad,  flux of thermal emission from surrounding surface
-- `temperature`    : 3D array in size of (Nz, Ns, Nt). Temperature according to depth cells (Nz), faces (Ns), and time steps in one periodic cycle (Nt).
-    -         ⋅----------⋅
-    -     Nt /          /|
-    -       ⋅--- Ns ---⋅ |
-    -       |          | |
-    -    Nz |          | ⋅
-    -       |          |/
-    -       ⋅----------⋅
+- `temperature`    : Temperature matrix `(Nz, Ns)` according to the number of depth cells `Nz` and the number of faces `Ns`.
 
 - `face_forces`    : Thermal force on each face
 - `force`          : Thermal recoil force at body-fixed frame (Yarkovsky effect)
@@ -137,8 +130,8 @@ struct SingleTPM <: ThermoPhysicalModel
     shape          ::ShapeModel
     thermo_params  ::Union{UniformThermoParams, NonUniformThermoParams}
 
-    flux           ::Matrix{Float64}    # (Ns, 3)
-    temperature    ::Array{Float64, 3}  # (Nz, Ns, Nt)
+    flux           ::Matrix{Float64}  # (Ns, 3)
+    temperature    ::Matrix{Float64}  # (Nz, Ns)
 
     face_forces    ::Vector{SVector{3, Float64}}
     force          ::MVector{3, Float64}
@@ -172,10 +165,9 @@ function SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, SOLVER, B
 
     Nz = thermo_params.Nz
     Ns = length(shape.faces)
-    Nt = thermo_params.Nt
 
     flux = zeros(Ns, 3)
-    temperature = zeros(Nz, Ns, Nt)
+    temperature = zeros(Nz, Ns)
 
     face_forces = [zero(SVector{3, Float64}) for _ in shape.faces]
     force  = zero(MVector{3, Float64})
@@ -248,7 +240,7 @@ Initialize all temperature cells at the given temperature `T₀`
 - `T₀`   : Initial temperature of all cells [K]
 """
 function init_temperature!(stpm::SingleTPM, T₀::Real)
-    stpm.temperature[:, :, :] .= T₀
+    stpm.temperature .= T₀
 end
 
 
