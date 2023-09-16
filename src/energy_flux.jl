@@ -20,7 +20,7 @@ flux_total(A_B, A_TH, F_sun, F_scat, F_rad) = (1 - A_B) * (F_sun + F_scat) + (1 
 
 
 """
-    energy_io(stpm::SingleTPM, nₜ::Integer) -> E_in, E_out, E_cons
+    energy_io(stpm::SingleTPM) -> E_in, E_out, E_cons
 
 Input and output energy per second at a given time step
 
@@ -29,9 +29,9 @@ Input and output energy per second at a given time step
 - `E_out`  : Output enegey per second at a given time step [W]
 - `E_cons` : Output-input energy ratio (`E_out / E_in`)
 """
-function energy_io(stpm::SingleTPM, nₜ::Integer)
+function energy_io(stpm::SingleTPM)
     E_in   = energy_in(stpm)
-    E_out  = energy_out(stpm, nₜ)
+    E_out  = energy_out(stpm)
     E_cons = E_out / E_in
 
     E_in, E_out, E_cons
@@ -74,24 +74,23 @@ energy_in(A_B, F_sun, F_scat, area) = (1 - A_B) * (F_sun + F_scat) * area
 
 
 """
-    energy_out(stpm::SingleTPM, nₜ::Integer) -> E_out
+    energy_out(stpm::SingleTPM) -> E_out
 
 Output enegey per second from a entire surface [W]
 
 # Arguments
 - `stpm` : Thermophysical model for a single asteroid
-- `nₜ`   : Index of time step
 """
-function energy_out(stpm::SingleTPM, nₜ::Integer)
+function energy_out(stpm::SingleTPM)
     E_out = 0.
-    for i in eachindex(stpm.shape.faces)
-        Tᵢ    = stpm.temperature[begin, i, nₜ]
-        F_rad = stpm.flux[i, 3]
-        aᵢ    = stpm.shape.face_areas[i]
-        ε     = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[i])
-        A_TH  = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[i])
+    for nₛ in eachindex(stpm.shape.faces)
+        Tₛ    = stpm.temperature[begin, nₛ]  # Surface temperature
+        F_rad = stpm.flux[nₛ, 3]
+        a     = stpm.shape.face_areas[nₛ]
+        ε     = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[nₛ])
+        A_TH  = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[nₛ])
 
-        E_out += energy_out(ε, Tᵢ, A_TH, F_rad, aᵢ)
+        E_out += energy_out(ε, Tₛ, A_TH, F_rad, a)
     end
     E_out
 end
@@ -239,16 +238,15 @@ end
 # ****************************************************************
 
 """
-    update_flux_rad_single!(stpm::SingleTPM, nₜ::Integer)
+    update_flux_rad_single!(stpm::SingleTPM)
 
 Update flux of absorption of thermal radiation from surrounding surface.
 Single radiation-absorption is only considered, assuming albedo is close to zero at thermal infrared wavelength.
 
 # Arguments
 - `stpm` : Thermophysical model for a single asteroid
-- `nₜ`   : Index of time step
 """
-function update_flux_rad_single!(stpm::SingleTPM, nₜ::Integer)
+function update_flux_rad_single!(stpm::SingleTPM)
     stpm.SELF_HEATING == false && return
 
     for nₛ in eachindex(stpm.shape.faces)
@@ -258,7 +256,7 @@ function update_flux_rad_single!(stpm::SingleTPM, nₜ::Integer)
             fᵢⱼ  = visiblefacet.f
             ε    = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[j])
             A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[j])
-            Tⱼ   = stpm.temperature[begin, j, nₜ]
+            Tⱼ   = stpm.temperature[begin, j]
             
             stpm.flux[nₛ, 3] += ε * σ_SB * (1 - A_TH) * fᵢⱼ * Tⱼ^4
         end
@@ -267,18 +265,17 @@ end
 
 
 """
-    update_flux_rad_single!(btpm::BinaryTPM, nₜ::Integer)
+    update_flux_rad_single!(btpm::BinaryTPM)
 
 Update flux of absorption of thermal radiation from surrounding surface.
 Single radiation-absorption is only considered, assuming albedo is close to zero at thermal infrared wavelength.
 
 # Arguments
 - `btpm` : Thermophysical model for a binary asteroid
-- `nₜ`   : Index of time step
 """
-function update_flux_rad_single!(btpm::BinaryTPM, nₜ::Integer)
-    update_flux_rad_single!(btpm.pri, nₜ)
-    update_flux_rad_single!(btpm.sec, nₜ)
+function update_flux_rad_single!(btpm::BinaryTPM)
+    update_flux_rad_single!(btpm.pri)
+    update_flux_rad_single!(btpm.sec)
 end
 
 
@@ -432,20 +429,19 @@ end
 
 
 """
-    mutual_heating!(btpm::BinaryTPM, nₜ::Integer, rₛ, R₂₁)
+    mutual_heating!(btpm::BinaryTPM, rₛ, R₂₁)
 
 Calculate the mutual heating between the primary and secondary asteroids.
 
 # Arguments
 - `btpm` : Thermophysical model for a binary asteroid
-- `nₜ`   : Index of time step
 - `rₛ`   : Position of the secondary relative to the primary (NOT normalized)
 - `R₂₁`  : Rotation matrix from secondary to primary
 
 # TO DO
 - Need to consider local horizon?
 """
-function mutual_heating!(btpm::BinaryTPM, nₜ::Integer, rₛ, R₂₁)
+function mutual_heating!(btpm::BinaryTPM, rₛ, R₂₁)
     btpm.MUTUAL_HEATING == false && return
 
     shape1 = btpm.pri.shape
@@ -472,8 +468,8 @@ function mutual_heating!(btpm::BinaryTPM, nₜ::Integer, rₛ, R₂₁)
 
             ## if △A₁B₁C₁ and △A₂B₂C₂ are facing each other
             if d̂₁₂ ⋅ n̂₁ > 0 && d̂₁₂ ⋅ n̂₂ < 0
-                T₁ = btpm.pri.temperature[begin, i, nₜ]
-                T₂ = btpm.sec.temperature[begin, j, nₜ]
+                T₁ = btpm.pri.temperature[begin, i]
+                T₂ = btpm.sec.temperature[begin, j]
 
                 ε₁    = (thermo_params1.ε    isa Real ? thermo_params1.ε    : thermo_params1.ε[i])
                 ε₂    = (thermo_params2.ε    isa Real ? thermo_params2.ε    : thermo_params2.ε[j])

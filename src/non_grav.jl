@@ -5,15 +5,14 @@
 # ****************************************************************
 
 """
-    update_thermal_force!(stpm::SingleTPM, nₜ::Integer)
+    update_thermal_force!(stpm::SingleTPM)
 
 Calculate the thermal force and torque on every face and integrate them over all faces.
 
 # Arguments
 - `stpm` : Thermophysical model for a single asteroid
-- `nₜ`   : Index of time step
 """
-function update_thermal_force!(stpm::SingleTPM, nₜ::Integer)
+function update_thermal_force!(stpm::SingleTPM)
     stpm.force  .= 0.
     stpm.torque .= 0.
 
@@ -26,7 +25,7 @@ function update_thermal_force!(stpm::SingleTPM, nₜ::Integer)
         F_sun  = stpm.flux[i, 1]
         F_scat = stpm.flux[i, 2]
         F_rad  = stpm.flux[i, 3]
-        Tᵢ = stpm.temperature[begin, i, nₜ]
+        Tᵢ = stpm.temperature[begin, i]
 
         ## Total emittance from face i , Eᵢ [W/m²].
         ## Note that both scattered light and thermal radiation are assumed to be isotropic.
@@ -53,16 +52,15 @@ end
 
 
 """
-    update_thermal_force!(btpm::BinaryTPM, nₜ::Integer)
+    update_thermal_force!(btpm::BinaryTPM)
 
 Calculate the thermal force and torque on every face and integrate them over all faces.
 
 # Arguments
 - `btpm` : Thermophysical model for a binary asteroid
-- `nₜ`   : Index of time step
 """
-function update_thermal_force!(btpm::BinaryTPM, nₜ::Integer)
-    update_thermal_force!(btpm.pri, nₜ)
-    update_thermal_force!(btpm.sec, nₜ)
+function update_thermal_force!(btpm::BinaryTPM)
+    update_thermal_force!(btpm.pri)
+    update_thermal_force!(btpm.sec)
 end
 
