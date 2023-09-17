@@ -1,7 +1,7 @@
 # See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for more information.
 @testset "TPM_Ryugu" begin
     msg = """
-    
+
     ⋅-------------------------------⋅
     |        Test: TPM_Ryugu        |
     ⋅-------------------------------⋅
@@ -84,7 +84,7 @@
     )
 
     # Run TPM and save the result
-    AsteroidThermoPhysicalModels.init_temperature_zero!(shape, thermo_params)
+    AsteroidThermoPhysicalModels.init_temperature!(shape, thermo_params, 200.)
     savepath = joinpath("TPM_Ryugu.jld2")
     AsteroidThermoPhysicalModels.run_TPM!(shape, et_range, sun_ryugu, thermo_params, savepath, save_range)
 

@@ -94,8 +94,8 @@
         P       = 7.63262 * 3600,
     )
 
-    # Run TPM and save the result
-    AsteroidThermoPhysicalModels.init_temperature_zero!(shape, thermo_params)
+    ##= Run TPM and save the result =##
+    AsteroidThermoPhysicalModels.init_temperature!(shape, thermo_params, 200.)
     savepath = joinpath("non-uniform_thermoparams.jld2")
     AsteroidThermoPhysicalModels.run_TPM!(shape, et_range, sun_ryugu, thermo_params, savepath, save_range)
 end

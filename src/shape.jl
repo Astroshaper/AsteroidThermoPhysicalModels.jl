@@ -109,6 +109,53 @@ function save_shape_jld(shapepath, shape)
 end
 
 
+################################################################
+#               Create a shape model from grid
+################################################################
+
+
+"""
+    grid_to_faces(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix) -> nodes, faces
+
+Convert a regular grid (x, y) and corresponding z-coordinates to triangular facets
+
+    | ⧹| ⧹| ⧹|
+j+1 ・--C--D--・
+    |⧹ |⧹ |⧹ |
+    | ⧹| ⧹| ⧹|
+j   ・--A--B--・
+    |⧹ |⧹ |⧹ |
+       i  i+1
+
+# Arguments
+- `xs::AbstractVector` : x-coordinates of grid points (should be sorted)
+- `ys::AbstractVector` : y-coordinates of grid points (should be sorted)
+- `zs::AbstractMatrix` : z-coordinates of grid points
+"""
+function grid_to_faces(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix)
+    nodes = SVector{3, Float64}[]
+    faces = SVector{3, Int}[]
+
+    for j in eachindex(ys)
+        for i in eachindex(xs)
+            push!(nodes, @SVector [xs[i], ys[j], zs[i, j]])
+        end
+    end
+
+    for j in eachindex(ys)[begin:end-1]
+        for i in eachindex(xs)[begin:end-1]
+            ABC = @SVector [i + (j-1)*length(xs), i+1 + (j-1)*length(xs), i + j*length(xs)]  # Indices of nodes of △ABC
+            DCB = @SVector [i+1 + j*length(xs), i + j*length(xs), i+1 + (j-1)*length(xs)]    # Indices of nodes of △DCB
+
+            push!(faces, ABC)
+            push!(faces, DCB)
+        end
+    end
+
+    return nodes, faces
+end
+
+
 """
     load_shape_grid(xs, ys, zs; scale=1.0, find_visible_facets=false) -> shape
 
@@ -120,7 +167,7 @@ Convert a regular grid (x, y) to a shape model
 - `zs::AbstractMatrix` : z-coordinates of grid points
 """
 function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix; scale=1.0, find_visible_facets=false)
-    nodes, faces = grid_to_facets(xs, ys, zs)
+    nodes, faces = grid_to_faces(xs, ys, zs)
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
 

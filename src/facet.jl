@@ -1,47 +1,5 @@
 
 
-"""
-    grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix) -> nodes, faces
-
-Convert a regular grid (x, y) and corresponding z-coordinates to triangular facets
-
-    | ⧹| ⧹| ⧹|
-j+1 ・--C--D--・
-    |⧹ |⧹ |⧹ |
-    | ⧹| ⧹| ⧹|
-j   ・--A--B--・
-    |⧹ |⧹ |⧹ |
-       i  i+1
-
-# Arguments
-- `xs::AbstractVector` : x-coordinates of grid points (should be sorted)
-- `ys::AbstractVector` : y-coordinates of grid points (should be sorted)
-- `zs::AbstractMatrix` : z-coordinates of grid points
-"""
-function grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix)
-    nodes = SVector{3, Float64}[]
-    faces = SVector{3, Int}[]
-
-    for j in eachindex(ys)
-        for i in eachindex(xs)
-            push!(nodes, @SVector [xs[i], ys[j], zs[i, j]])
-        end
-    end
-
-    for j in eachindex(ys)[begin:end-1]
-        for i in eachindex(xs)[begin:end-1]
-            ABC = @SVector [i + (j-1)*length(xs), i+1 + (j-1)*length(xs), i + j*length(xs)]  # Indices of nodes of △ABC
-            DCB = @SVector [i+1 + j*length(xs), i + j*length(xs), i+1 + (j-1)*length(xs)]    # Indices of nodes of △DCB
-            
-            push!(faces, ABC)
-            push!(faces, DCB)
-        end
-    end
-
-    return nodes, faces
-end
-
-
 # ################################################################
 # #                      Face properties
 # ################################################################
@@ -83,41 +41,6 @@ function view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)
 
     fᵢⱼ = cosθᵢ * cosθⱼ / (π * dᵢⱼ^2) * aⱼ
     fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
-end
-
-
-################################################################
-#                           Orinet3D
-################################################################
-
-"""
-    isAbove(A, B, C, D) -> Bool
-
-Determine if point D is above triangle face ABC.
-"""
-function isAbove(A, B, C, D)
-    G = SA_F64[
-        A[1]-D[1] A[2]-D[2] A[3]-D[3]
-        B[1]-D[1] B[2]-D[2] B[3]-D[3]
-        C[1]-D[1] C[2]-D[2] C[3]-D[3]
-    ]
-
-    return det(G) < 0
-end
-
-"""
-    isBelow(A, B, C, D) -> Bool
-
-Determine if point D is below triangle face ABC.
-"""
-function isBelow(A, B, C, D)
-    G = SA_F64[
-        A[1]-D[1] A[2]-D[2] A[3]-D[3]
-        B[1]-D[1] B[2]-D[2] B[3]-D[3]
-        C[1]-D[1] C[2]-D[2] C[3]-D[3]
-    ]
-
-    return det(G) > 0
 end
 
 

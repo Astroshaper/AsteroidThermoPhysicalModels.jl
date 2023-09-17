@@ -6,11 +6,7 @@ using Statistics
 
 import SPICE
 
-# using Distributed
-# using SharedArrays
-
 using DataFrames
-using Parameters
 using ProgressMeter
 
 using FileIO
@@ -25,16 +21,15 @@ export MOON
 export RYUGU, DIDYMOS, DIMORPHOS
 
 include("obj.jl")
-export loadobj
-
 include("shape.jl")
 include("facet.jl")
 export ShapeModel
 
 include("thermophysics.jl")
 include("TPM.jl")
+include("energy_flux.jl")
 include("non_grav.jl")
-export init_temperature_zero!, run_TPM!
+export init_temperature!, run_TPM!
 
 include("roughness.jl")
 
