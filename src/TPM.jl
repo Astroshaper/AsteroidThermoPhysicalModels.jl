@@ -350,7 +350,9 @@ function run_TPM!(stpm::SingleTPM, ephem, savepath)
         torques[nₜ] .= stpm.torque  # Body-fixed frame
 
         ## Energy input/output
-        E_in, E_out, E_cons = energy_io(stpm)
+        E_in   = energy_in(stpm)
+        E_out  = energy_out(stpm)
+        E_cons = E_out / E_in
         
         ## Update the progress meter
         showvalues = [("Timestep", nₜ), ("E_cons = E_out / E_in", E_cons)]
@@ -416,8 +418,8 @@ function run_TPM!(btpm::BinaryTPM, ephem, savepath)
         torques[2][nₜ] .= btpm.sec.torque  # Body-fixed frame
     
         ## Energy input/output
-        E_cons_pri = energy_io(btpm.pri)[3]
-        E_cons_sec = energy_io(btpm.sec)[3]
+        E_cons_pri = energy_out(btpm.pri) / energy_in(btpm.pri)
+        E_cons_sec = energy_out(btpm.sec) / energy_in(btpm.sec)
 
         ## Update the progress meter
         showvalues = [("Timestep", nₜ), ("E_cons for primary", E_cons_pri), ("E_cons for secondary", E_cons_sec)]

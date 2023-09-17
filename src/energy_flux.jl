@@ -20,57 +20,22 @@ flux_total(A_B, A_TH, F_sun, F_scat, F_rad) = (1 - A_B) * (F_sun + F_scat) + (1 
 
 
 """
-    energy_io(stpm::SingleTPM) -> E_in, E_out, E_cons
-
-Input and output energy per second at a given time step
-
-# Returns
-- `E_in`   : Input energy per second at a given time step [W]
-- `E_out`  : Output enegey per second at a given time step [W]
-- `E_cons` : Output-input energy ratio (`E_out / E_in`)
-"""
-function energy_io(stpm::SingleTPM)
-    E_in   = energy_in(stpm)
-    E_out  = energy_out(stpm)
-    E_cons = E_out / E_in
-
-    E_in, E_out, E_cons
-end
-
-
-"""
     energy_in(stpm::SingleTPM) -> E_in
 
-Input energy per second on a facet or a whole surface [W]
+Input energy per second on the whole surface [W]
 """
-energy_in(shape::ShapeModel, params::AbstractThermoParams) = energy_in(shape, params.A_B)
-
 function energy_in(stpm::SingleTPM)
     E_in = 0.
-    for i in eachindex(stpm.shape.faces)
-        A_B    = (stpm.thermo_params.A_B isa Real ? stpm.thermo_params.A_B : stpm.thermo_params.A_B[i])
-        F_sun  = stpm.flux[i, 1]
-        F_scat = stpm.flux[i, 2]
-        aᵢ     = stpm.shape.face_areas[i]
+    for nₛ in eachindex(stpm.shape.faces)
+        A_B    = (stpm.thermo_params.A_B isa Real ? stpm.thermo_params.A_B : stpm.thermo_params.A_B[nₛ])
+        F_sun  = stpm.flux[nₛ, 1]
+        F_scat = stpm.flux[nₛ, 2]
+        a      = stpm.shape.face_areas[nₛ]
         
-        E_in += energy_in(A_B, F_sun, F_scat, aᵢ)
+        E_in += ((1 - A_B) * F_sun + (1 - A_B) * F_scat) * a
     end
     E_in
 end
-
-
-"""
-    energy_in(A_B, F_sun, F_scat, area) -> E_in
-
-Input energy per second on a face [W]
-
-# Arguments
-- `A_B`    : Bond albedo
-- `F_sun`  : Flux of direct sunlight
-- `F_scat` : Flux of scattered light
-- `area`   : Area of the face
-"""
-energy_in(A_B, F_sun, F_scat, area) = (1 - A_B) * (F_sun + F_scat) * area
 
 
 """
@@ -84,31 +49,16 @@ Output enegey per second from a entire surface [W]
 function energy_out(stpm::SingleTPM)
     E_out = 0.
     for nₛ in eachindex(stpm.shape.faces)
-        Tₛ    = stpm.temperature[begin, nₛ]  # Surface temperature
+        T     = stpm.temperature[begin, nₛ]  # Surface temperature
         F_rad = stpm.flux[nₛ, 3]
         a     = stpm.shape.face_areas[nₛ]
         ε     = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[nₛ])
         A_TH  = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[nₛ])
 
-        E_out += energy_out(ε, Tₛ, A_TH, F_rad, a)
+        E_out += (ε * σ_SB * T^4 - (1 - A_TH) * F_rad) * a
     end
     E_out
 end
-
-
-"""
-    energy_out(ε, T, A_TH, F_rad, area) -> E_out
-
-Output enegey per second from a face [W]
-
-# Arguments
-- `ε`     : Emissivity
-- `T`     : Temperature of the face
-- `A_TH`  : Albedo at thermal infrared wavelength
-- `F_rad` : Flux of thermal radiation from surrounding surface
-- `area`  : Area of the face
-"""
-energy_out(ε, T, A_TH, F_rad, area) = (ε * σ_SB * T^4 - (1 - A_TH) * F_rad) * area
 
 
 # ****************************************************************
