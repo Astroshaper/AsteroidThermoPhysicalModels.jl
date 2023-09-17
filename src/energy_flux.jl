@@ -7,16 +7,16 @@
 """
     flux_total(A_B, A_TH, F_sun, F_scat, F_rad) -> F_total
 
-Total energy absorbed by the surface
+Total energy absorbed by the surface [W/m²]
 
 # Arguments
-- `A_B`    : Bond albedo
-- `A_TH`   : Albedo at thermal infrared wavelength
-- `F_sun`  : Flux of direct sunlight
-- `F_scat` : Flux of scattered light
-- `F_rad`  : Flux of thermal radiation from surrounding surface
+- `A_B`    : Bond albedo [-]
+- `A_TH`   : Albedo at thermal infrared wavelength [-]
+- `F_sun`  : Flux of direct sunlight [W/m²]
+- `F_scat` : Flux of scattered light [W/m²]
+- `F_rad`  : Flux of thermal radiation from surrounding surface [W/m²]
 """
-flux_total(A_B, A_TH, F_sun, F_scat, F_rad) = (1 - A_B) * (F_sun + F_scat) + (1 - A_TH) * F_rad
+flux_total(A_B, A_TH, F_sun, F_scat, F_rad) = (1 - A_B) * F_sun + (1 - A_B) * F_scat + (1 - A_TH) * F_rad
 
 
 """
@@ -27,12 +27,14 @@ Input energy per second on the whole surface [W]
 function energy_in(stpm::SingleTPM)
     E_in = 0.
     for nₛ in eachindex(stpm.shape.faces)
-        A_B    = (stpm.thermo_params.A_B isa Real ? stpm.thermo_params.A_B : stpm.thermo_params.A_B[nₛ])
+        A_B    = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[nₛ])
+        A_TH   = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[nₛ])
         F_sun  = stpm.flux[nₛ, 1]
         F_scat = stpm.flux[nₛ, 2]
+        F_rad  = stpm.flux[nₛ, 3]
         a      = stpm.shape.face_areas[nₛ]
         
-        E_in += ((1 - A_B) * F_sun + (1 - A_B) * F_scat) * a
+        E_in += flux_total(A_B, A_TH, F_sun, F_scat, F_rad) * a
     end
     E_in
 end
@@ -41,7 +43,7 @@ end
 """
     energy_out(stpm::SingleTPM) -> E_out
 
-Output enegey per second from a entire surface [W]
+Output enegey per second from the whole surface [W]
 
 # Arguments
 - `stpm` : Thermophysical model for a single asteroid
@@ -49,13 +51,11 @@ Output enegey per second from a entire surface [W]
 function energy_out(stpm::SingleTPM)
     E_out = 0.
     for nₛ in eachindex(stpm.shape.faces)
-        T     = stpm.temperature[begin, nₛ]  # Surface temperature
-        F_rad = stpm.flux[nₛ, 3]
-        a     = stpm.shape.face_areas[nₛ]
-        ε     = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[nₛ])
-        A_TH  = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[nₛ])
+        ε = (stpm.thermo_params.ε isa Real ? stpm.thermo_params.ε : stpm.thermo_params.ε[nₛ])
+        T = stpm.temperature[begin, nₛ]  # Surface temperature
+        a = stpm.shape.face_areas[nₛ]
 
-        E_out += (ε * σ_SB * T^4 - (1 - A_TH) * F_rad) * a
+        E_out += ε * σ_SB * T^4 * a
     end
     E_out
 end
