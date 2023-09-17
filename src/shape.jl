@@ -17,12 +17,13 @@ A polyhedral shape model of an asteroid.
 - `face_areas`   : Area of of each face
 
 - `flux` : Flux on each face. Matrix of size (Number of faces, 3). Three components are:
-    - `flux[:, 1]` : F_sun,  Flux of direct sunlight
-    - `flux[:, 2]` : F_scat, Flux of scattered light
-    - `flux[:, 3]` : F_rad,  Flux of thermal emission from surrounding surface
+    - `flux[:, 1]` : F_sun,  flux of direct sunlight
+    - `flux[:, 2]` : F_scat, flux of scattered light
+    - `flux[:, 3]` : F_rad,  flux of thermal emission from surrounding surface
 - `face_forces` : Thermal force on each face
+- `temperature` : 3D array in size of (Nz, Ns, Nt). Temperature according to depth cells (Nz), faces (Ns), and time steps in one periodic cycle (Nt).
 """
-struct ShapeModel
+mutable struct ShapeModel
     nodes        ::Vector{SVector{3, Float64}}
     faces        ::Vector{SVector{3, Int}}
     facets       ::Vector{AsteroidThermoPhysicalModels.Facet}
@@ -36,6 +37,7 @@ struct ShapeModel
 
     flux         ::Matrix{Float64}
     face_forces  ::Vector{SVector{3, Float64}}
+    temperature  ::Array{Float64, 3}
 end
 
 
@@ -64,9 +66,10 @@ function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
 
     flux = zeros(length(faces), 3)
     face_forces = [zero(SVector{3, Float64}) for _ in faces]
+    temperature = zeros(0, 0, 0)  # Later initiallized in size of (Nz, Ns, Nt)
 
     find_visible_facets && find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, face_areas)
-    shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas, flux, face_forces)
+    shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas, flux, face_forces, temperature)
     return shape
 end
 
@@ -101,9 +104,10 @@ function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMat
 
     flux = zeros(length(faces), 3)
     face_forces = [zero(SVector{3, Float64}) for _ in faces]
+    temperature = zeros(0, 0, 0)  # Later initiallized in size of (Nz, Ns, Nt)
 
     find_visible_facets && find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, face_areas)
-    shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas, flux, face_forces)
+    shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas, flux, face_forces, temperature)
     return shape
 end
 
@@ -138,7 +142,6 @@ maximum_radius(shape::ShapeModel) = maximum_radius(shape.nodes)
 minimum_radius(nodes) = minimum(norm, nodes)
 minimum_radius(shape::ShapeModel) = minimum_radius(shape.nodes)
 
-surface_temperature(shape::ShapeModel) = [facet.temps[begin] for facet in shape.facets]
-
-
+surface_temperature(shape::ShapeModel, nₜ::Integer) = shape.temperature[begin, :, nₜ]
+surface_temperature(shape::ShapeModel) = shape.temperature[begin, :, end] 
 

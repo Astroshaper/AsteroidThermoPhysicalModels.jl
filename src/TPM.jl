@@ -6,31 +6,22 @@
 # ****************************************************************
 
 """
-    init_temps_zero!(shape::ShapeModel, params)
-    init_temps_zero!(shape::ShapeModel, Nz::AbstractVector)
-    init_temps_zero!(shape::ShapeModel, Nz::Integer)
-    init_temps_zero!(facet::Facet,      Nz::Integer)
+    init_temperature_zero!(shape::ShapeModel, params::AbstractThermoParams)
 
-Initialize temperature profile in depth on every facet.
-All elements are intialized as 0 K.
+Initialize all cells in the temperature array at 0 K.
 """
-init_temps_zero!(shape::ShapeModel, params) = init_temps_zero!(shape, params.Nz)
+function init_temperature_zero!(shape::ShapeModel, params::AbstractThermoParams)
+    Nz = params.Nz
+    Ns = length(shape.faces)
+    Nt = params.Nt
 
-function init_temps_zero!(shape::ShapeModel, Nz::AbstractVector)
-    for (i, facet) in enumerate(shape.facets)
-        init_temps_zero!(facet, Nz[i])
+    if size(shape.temperature) == (0, 0, 0)
+        shape.temperature = zeros(Nz, Ns, Nt)
+    elseif size(shape.temperature) == (Nz, Ns, Nt)
+        shape.temperature .= 0.
+    else
+        error("ShapeModel.temperature has a wrong size.")
     end
-end
-
-function init_temps_zero!(shape::ShapeModel, Nz::Integer)
-    for facet in shape.facets
-        init_temps_zero!(facet, Nz)
-    end
-end
-
-function init_temps_zero!(facet::Facet, Nz::Integer)
-    isempty(facet.temps)   ? append!(facet.temps,   zeros(Nz)) : facet.temps   .= 0
-    isempty(facet._temps_) ? append!(facet._temps_, zeros(Nz)) : facet._temps_ .= 0
 end
 
 
@@ -91,33 +82,41 @@ end
 
 """
 function run_TPM!(shape::ShapeModel, et_range, sun, thermo_params::AbstractThermoParams, savepath, save_range)
- 
-    init_temps_zero!(shape, thermo_params)
     
     surf_temps = zeros(length(shape.faces), length(save_range))
     forces  = [zeros(3) for _ in eachindex(save_range)]
     torques = [zeros(3) for _ in eachindex(save_range)]
+
+    ## ProgressMeter setting
+    p = Progress(length(et_range); dt=1, desc="Running TPM...", showspeed=true)
+    ProgressMeter.ijulia_behavior(:clear)
     
     idx = 1  # Index to save data
 
-    for (et, r☉) in zip(et_range, sun)
+    for nₜ in eachindex(et_range)
+        et = et_range[nₜ]
+        r☉ = sun[nₜ]
 
-        update_flux!(shape, r☉, thermo_params)
+        update_flux!(shape, r☉, thermo_params, nₜ)
 
         if et_range[save_range[begin]] ≤ et ≤ et_range[save_range[end]]
-            update_thermal_force!(shape, thermo_params)
+            update_thermal_force!(shape, thermo_params, nₜ)
 
-            surf_temps[:, idx] .= surface_temperature(shape)
+            surf_temps[:, idx] .= surface_temperature(shape, nₜ)
             forces[idx]  .= shape.force   # Body-fixed frame
             torques[idx] .= shape.torque  # Body-fixed frame
     
             idx += 1
         end
 
-        E_in, E_out, E_cons = energy_io(shape, thermo_params)
-        println(E_cons)
+        E_in, E_out, E_cons = energy_io(shape, thermo_params, nₜ)
 
-        update_temps!(shape, thermo_params)
+        ## Update the progress meter
+        showvalues = [("Timestep", nₜ), ("E_cons = E_out / E_in", E_cons)]
+        ProgressMeter.next!(p; showvalues)
+
+        nₜ == length(et_range) && break  # Stop to update the temperature at the final step
+        update_temperature!(shape, thermo_params, nₜ)
     end
     
     jldsave(savepath; shape, et_range=et_range[save_range], sun=sun[save_range], thermo_params, surf_temps, forces, torques)
@@ -141,18 +140,19 @@ function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::Abst
     torques = [zeros(3) for _ in eachindex(et_range)], [zeros(3) for _ in eachindex(et_range)]
     
     ## ProgressMeter setting
-    # p = Progress(length(et_range); dt=1, desc="Running TPM...", showspeed=true)
-    # ProgressMeter.ijulia_behavior(:clear)
+    p = Progress(length(et_range); dt=1, desc="Running TPM...", showspeed=true)
+    ProgressMeter.ijulia_behavior(:clear)
 
-    for (i, et) in enumerate(et_range)
-        r☉₁ = suns[1][i]
-        r☉₂ = suns[2][i]
-        sec_from_pri = d2_d1[i]
-        R₂₁ = S2P[i]
+    for nₜ in eachindex(et_range)
+        # et = et_range[nₜ]
+        r☉₁ = suns[1][nₜ]
+        r☉₂ = suns[2][nₜ]
+        sec_from_pri = d2_d1[nₜ]
+        R₂₁ = S2P[nₜ]
 
         ## Update enegey flux
-        update_flux!(shapes[1], r☉₁, thermo_params)
-        update_flux!(shapes[2], r☉₂, thermo_params)
+        update_flux!(shapes[1], r☉₁, thermo_params, nₜ)
+        update_flux!(shapes[2], r☉₂, thermo_params, nₜ)
         find_eclipse!(shapes, r☉₁, sec_from_pri, R₂₁)  # Mutual-shadowing
 
         ## Mutual-heating
@@ -160,26 +160,25 @@ function run_TPM!(shapes::Tuple, et_range, suns, S2P, d2_d1, thermo_params::Abst
         #
 
         for (idx_shape, shape) in enumerate(shapes)
-            update_thermal_force!(shape, thermo_params)
+            update_thermal_force!(shape, thermo_params, nₜ)
 
-            surf_temps[idx_shape][:, i] .= surface_temperature(shape)
-            forces[idx_shape][i]  .= shape.force   # Body-fixed frame
-            torques[idx_shape][i] .= shape.torque  # Body-fixed frame
+            surf_temps[idx_shape][:, nₜ] .= surface_temperature(shape, nₜ)
+            forces[idx_shape][nₜ]  .= shape.force   # Body-fixed frame
+            torques[idx_shape][nₜ] .= shape.torque  # Body-fixed frame
         end
     
         ## Energy input/output
-        E_io_pri = energy_io(shapes[1], thermo_params)
-        E_io_sec = energy_io(shapes[2], thermo_params)
-        println(E_io_pri[3], ", ",  E_io_sec[3])
+        E_cons_pri = energy_io(shapes[1], thermo_params, nₜ)[3]
+        E_cons_sec = energy_io(shapes[2], thermo_params, nₜ)[3]
 
         ## Update the progress meter
-        # showvalues = [(:i, i), (:E_cons_pri, E_io_pri[3]), (:E_cons_sec, E_io_sec[3])]
-        # ProgressMeter.next!(p; showvalues)
+        showvalues = [("Timestep", nₜ), ("E_cons for primary", E_cons_pri), ("E_cons for secondary", E_cons_sec)]
+        ProgressMeter.next!(p; showvalues)
         
         ## Update temperature distribution
-        et == et_range[end] && break  # Stop to update the temperature at the final step
-        update_temps!(shapes[1], thermo_params)
-        update_temps!(shapes[2], thermo_params)
+        nₜ == length(et_range) && break  # Stop to update the temperature at the final step
+        update_temperature!(shapes[1], thermo_params, nₜ)
+        update_temperature!(shapes[2], thermo_params, nₜ)
     end
     
     # jldsave(savepath; shapes, et_range, suns, S2P, thermo_params)
@@ -188,11 +187,19 @@ end
 
 
 # ****************************************************************
-#                     Convergence decision
+#                     Energy input/output
 # ****************************************************************
 
 """
-    energy_io(shape::ShapeModel, params::AbstractThermoParams) -> E_in, E_out, E_cons
+    total_flux(A_B, A_TH, F_sun, F_scat, F_rad) -> F_total
+
+Total energy absorbed by the face
+"""
+total_flux(A_B, A_TH, F_sun, F_scat, F_rad) = (1 - A_B) * (F_sun + F_scat) + (1 - A_TH) * F_rad
+
+
+"""
+    energy_io(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer) -> E_in, E_out, E_cons
 
 Input and output energy per second at a certain time
 
@@ -201,9 +208,9 @@ Input and output energy per second at a certain time
 - `E_out`  : Output enegey per second at a certain time [W]
 - `E_cons` : Output-input energy ratio (`E_out / E_in`)
 """
-function energy_io(shape::ShapeModel, params::AbstractThermoParams)
+function energy_io(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer)
     E_in   = energy_in(shape, params)
-    E_out  = energy_out(shape, params)
+    E_out  = energy_out(shape, params, nₜ)
     E_cons = E_out / E_in
 
     E_in, E_out, E_cons
@@ -235,18 +242,18 @@ energy_in(A_B, F_sun, F_scat, area) = (1 - A_B) * (F_sun + F_scat) * area
 
 
 """
-    energy_out(shape::ShapeModel, params::AbstractThermoParams) -> E_out
-    energy_out(shape::ShapeModel, ε, A_TH)                      -> E_out
-    energy_out(ε, T, A_TH, F_rad, area)                         -> E_out
+    energy_out(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer) -> E_out
+    energy_out(shape, ε, A_TH, nₜ)                                           -> E_out
+    energy_out(ε, T, A_TH, F_rad, area)                                      -> E_out
 
 Output enegey per second from a facet or a whole surface [W]
 """
-energy_out(shape::ShapeModel, params::AbstractThermoParams) = energy_out(shape, params.ε, params.A_TH)
+energy_out(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer) = energy_out(shape, params.ε, params.A_TH, nₜ)
 
-function energy_out(shape::ShapeModel, ε, A_TH)
+function energy_out(shape, ε, A_TH, nₜ)
     E_out = 0.
     for i in eachindex(shape.faces)
-        Tᵢ = shape.facets[i].temps[begin] 
+        Tᵢ = shape.temperature[begin, i, nₜ]
         F_rad = shape.flux[i, 3]
         aᵢ = shape.face_areas[i]
 
@@ -263,14 +270,14 @@ energy_out(ε, T, A_TH, F_rad, area) = (ε * σ_SB * T^4 - (1 - A_TH) * F_rad) *
 # ****************************************************************
 
 """
-    update_flux!(shape, r☉, thermo_params)
+    update_flux!(shape::ShapeModel, r☉::AbstractVector, params::AbstractThermoParams, nₜ::Integer)
 
 Update energy flux to every facet by solar radiation, scattering, and re-absorption of radiation
 """
-function update_flux!(shape, r☉::AbstractVector, params::AbstractThermoParams)
+function update_flux!(shape::ShapeModel, r☉::AbstractVector, params::AbstractThermoParams, nₜ::Integer)
     update_flux_sun!(shape, r☉)
     update_flux_scat_single!(shape, params)
-    update_flux_rad_single!(shape, params)
+    update_flux_rad_single!(shape, params, nₜ)
 end
 
 """
@@ -282,7 +289,7 @@ Update solar radiation flux on every facet of a shape model.
 - `r̂☉`    : Normalized vector indicating the direction of the sun in the body-fixed frame
 - `F☉`    : Solar radiation flux [W/m²]
 """
-function update_flux_sun!(shape, r̂☉, F☉)
+function update_flux_sun!(shape::ShapeModel, r̂☉, F☉)
     for i in eachindex(shape.faces)
         if isilluminated(shape, r̂☉, i)
             n̂ = shape.face_normals[i]
@@ -301,7 +308,7 @@ Update solar radiation flux on every facet of a shape model.
 - `shape` : Shape model
 - `r☉`    : Position of the sun in the body-fixed frame, which is not normalized.
 """
-function update_flux_sun!(shape, r☉)
+function update_flux_sun!(shape::ShapeModel, r☉)
     r̂☉ = SVector{3}(normalize(r☉))
     F☉ = SOLAR_CONST / SPICE.convrt(norm(r☉), "m", "au")^2
 
@@ -377,7 +384,7 @@ end
 
 Update flux of scattered sunlight, only considering single scattering.
 """
-update_flux_scat_single!(shape, params::AbstractThermoParams) = update_flux_scat_single!(shape, params.A_B)
+update_flux_scat_single!(shape::ShapeModel, params::AbstractThermoParams) = update_flux_scat_single!(shape, params.A_B)
 
 function update_flux_scat_single!(shape, A_B)
     for i in eachindex(shape.faces)
@@ -407,15 +414,20 @@ end
 # ****************************************************************
 
 """
-    update_flux_rad_single!(shape, params::AbstractThermoParams)
-    update_flux_rad_single!(shape, ε, A_TH)
+    update_flux_rad_single!(shape, params::AbstractThermoParams, nₜ::Integer)
+    update_flux_rad_single!(shape, ε, A_TH, nₜ)
 
 Update flux of absorption of thermal radiation from surrounding surface.
 Single radiation-absorption is only considered, assuming albedo is close to zero at thermal infrared wavelength.
-"""
-update_flux_rad_single!(shape, params::AbstractThermoParams) = update_flux_rad_single!(shape, params.ε, params.A_TH)
 
-function update_flux_rad_single!(shape, ε, A_TH)
+# Arguments
+- `shape`  : Shape model
+- `params` : Thermophysical parameters
+- `nₜ`     : Index of time step
+"""
+update_flux_rad_single!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer) = update_flux_rad_single!(shape, params.ε, params.A_TH, nₜ)
+
+function update_flux_rad_single!(shape, ε, A_TH, nₜ)
     for i in eachindex(shape.faces)
         shape.flux[i, 3] = 0.
         for visiblefacet in shape.facets[i].visiblefacets
@@ -423,7 +435,7 @@ function update_flux_rad_single!(shape, ε, A_TH)
             fᵢⱼ = visiblefacet.f
             ε = (ε isa Real ? ε : ε[j])
             A_TH = (A_TH isa Real ? A_TH : A_TH[j])
-            Tⱼ = shape.facets[j].temps[begin]
+            Tⱼ = shape.temperature[begin, j, nₜ]
             
             shape.flux[i, 3] += ε * σ_SB * (1 - A_TH) * fᵢⱼ * Tⱼ^4
         end

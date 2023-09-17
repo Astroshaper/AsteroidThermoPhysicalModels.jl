@@ -1,6 +1,6 @@
 # The following tests are almost the same as `TPM_Ryugu.jl`.
 # The only difference is that the thermophysical properties vary depending on the location of the asteroid.
-@testset "thermal_property_distribution" begin
+@testset "non-uniform_thermoparams" begin
     ##= Download Files =##
     paths_kernel = [
         "lsk/naif0012.tls",
@@ -86,6 +86,7 @@
     )
 
     # Run TPM and save the result
-    savepath = joinpath("thermal_property_distribution.jld2")
+    AsteroidThermoPhysicalModels.init_temperature_zero!(shape, thermo_params)
+    savepath = joinpath("non-uniform_thermoparams.jld2")
     AsteroidThermoPhysicalModels.run_TPM!(shape, et_range, sun_ryugu, thermo_params, savepath, save_range)
 end

@@ -30,16 +30,12 @@ Note that the mesh normal indicates outward the polyhedron.
 
 # Fields
 - `visiblefacets` : 1-D array of `VisibleFacet`
-- `temps        ` : Temperature profile in depth direction
-- `_temps_      ` : Pre-allocated vector for updating temperature profile
 """
 struct Facet
     visiblefacets::Vector{VisibleFacet}
-    temps        ::Vector{Float64}
-    _temps_      ::Vector{Float64}
 end
 
-Facet() = Facet(VisibleFacet[], Float64[], Float64[])
+Facet() = Facet(VisibleFacet[])
 
 
 function Base.show(io::IO, facet::Facet)
