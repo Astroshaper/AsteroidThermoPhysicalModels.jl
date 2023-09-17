@@ -1,5 +1,13 @@
 # See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos for more information.
 @testset "TPM_Didymos" begin
+    msg = """
+
+    ⋅--------------------------- -----⋅
+    |        Test: TPM_Didymos        |
+    ⋅---------------------------------⋅
+    """
+    println(msg)
+
     ##= Download Files =##
     paths_kernel = [
         "fk/hera_v08.tf",
@@ -39,18 +47,12 @@
     @show et_range
     @show length(et_range)
 
-    # Indices of et_range to be saved.
-    # Save only the last rotation.
-    save_range = findall(et_range .> et_range[end] - 7.63262 * 3600)
-    @show save_range[begin]
-    @show save_range[end]
-    @show length(save_range)
-
     # Position 
     sun_d1 = [SVector{3}(SPICE.spkpos("SUN", et, "DIDYMOS_FIXED", "None", "DIDYMOS")[1])*1000 for et in et_range]
     sun_d2 = [SVector{3}(SPICE.spkpos("SUN", et, "DIMORPHOS_FIXED", "None", "DIMORPHOS")[1])*1000 for et in et_range]
     d1_d2 = [SVector{3}(SPICE.spkpos("DIDYMOS", et, "DIMORPHOS_FIXED", "None", "DIMORPHOS")[1])*1000 for et in et_range]
     d2_d1 = [SVector{3}(SPICE.spkpos("DIMORPHOS", et, "DIDYMOS_FIXED", "None", "DIDYMOS")[1])*1000 for et in et_range]
+    
     # Transformation matrix
     D1_TO_D2 = [RotMatrix{3}(SPICE.pxform("DIDYMOS_FIXED", "DIMORPHOS_FIXED", et)) for et in et_range]
     D2_TO_D1 = [RotMatrix{3}(SPICE.pxform("DIMORPHOS_FIXED", "DIDYMOS_FIXED", et)) for et in et_range]

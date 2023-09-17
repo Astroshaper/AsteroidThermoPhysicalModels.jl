@@ -389,7 +389,7 @@ update_flux_scat_single!(shape::ShapeModel, params::AbstractThermoParams) = upda
 function update_flux_scat_single!(shape, A_B)
     for i in eachindex(shape.faces)
         shape.flux[i, 2] = 0.
-        for visiblefacet in shape.facets[i].visiblefacets
+        for visiblefacet in shape.visiblefacets[i]
             j = visiblefacet.id
             fᵢⱼ = visiblefacet.f
             A_B = (A_B isa Real ? A_B : A_B[j])
@@ -430,7 +430,7 @@ update_flux_rad_single!(shape::ShapeModel, params::AbstractThermoParams, nₜ::I
 function update_flux_rad_single!(shape, ε, A_TH, nₜ)
     for i in eachindex(shape.faces)
         shape.flux[i, 3] = 0.
-        for visiblefacet in shape.facets[i].visiblefacets
+        for visiblefacet in shape.visiblefacets[i]
             j = visiblefacet.id
             fᵢⱼ = visiblefacet.f
             ε = (ε isa Real ? ε : ε[j])

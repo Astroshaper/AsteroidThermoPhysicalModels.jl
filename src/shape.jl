@@ -1,4 +1,22 @@
 
+"""
+    struct VisibleFacet
+
+Index of an interfacing facet and its view factor
+
+# Fields
+- `id` : Index of the interfacing facet
+- `f`  : View factor from facet i to j
+- `d`  : Distance from facet i to j
+- `d̂`  : Normal vector from facet i to j
+"""
+struct VisibleFacet
+    id::Int64
+    f ::Float64
+    d ::Float64
+    d̂ ::SVector{3, Float64}
+end
+
 
 """
     ShapeModel
@@ -8,7 +26,6 @@ A polyhedral shape model of an asteroid.
 # Fields
 - `nodes`      : 1-D array of node positions
 - `faces`      : 1-D array of vertex indices of faces
-- `facets`     : 1-D array of surface facets (`Facet`)
 - `force`      : Thermal recoil force at body-fixed frame (Yarkovsky effect)
 - `torque`     : Thermal recoil torque at body-fixed frame (YORP effect)
 
@@ -22,11 +39,18 @@ A polyhedral shape model of an asteroid.
     - `flux[:, 3]` : F_rad,  flux of thermal emission from surrounding surface
 - `face_forces` : Thermal force on each face
 - `temperature` : 3D array in size of (Nz, Ns, Nt). Temperature according to depth cells (Nz), faces (Ns), and time steps in one periodic cycle (Nt).
+    -       ⋅----------⋅
+    -   Nt /          /|
+    -     ⋅--- Ns ---⋅ |
+    -     |          | |
+    -  Nz |          | ⋅
+    -     |          |/
+    -     ⋅----------⋅
+- `visiblefacets` : Vector of vector of `VisibleFacet`
 """
 mutable struct ShapeModel
     nodes        ::Vector{SVector{3, Float64}}
     faces        ::Vector{SVector{3, Int}}
-    facets       ::Vector{AsteroidThermoPhysicalModels.Facet}
 
     force        ::MVector{3, Float64}
     torque       ::MVector{3, Float64}
@@ -38,6 +62,7 @@ mutable struct ShapeModel
     flux         ::Matrix{Float64}
     face_forces  ::Vector{SVector{3, Float64}}
     temperature  ::Array{Float64, 3}
+    visiblefacets::Vector{Vector{VisibleFacet}}
 end
 
 
@@ -56,7 +81,6 @@ end
 function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
     # TODO: use MeshIO.jl
     nodes, faces = loadobj(shapepath; scale=scale, static=true, message=false)
-    facets = [Facet() for _ in faces]
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
 
@@ -67,9 +91,11 @@ function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
     flux = zeros(length(faces), 3)
     face_forces = [zero(SVector{3, Float64}) for _ in faces]
     temperature = zeros(0, 0, 0)  # Later initiallized in size of (Nz, Ns, Nt)
+    visiblefacets = [VisibleFacet[] for _ in faces]
 
-    find_visible_facets && find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, face_areas)
-    shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas, flux, face_forces, temperature)
+    shape = ShapeModel(nodes, faces, force, torque, face_centers, face_normals, face_areas, flux, face_forces, temperature, visiblefacets)
+    find_visible_facets && find_visiblefacets!(shape)
+    
     return shape
 end
 
@@ -94,7 +120,7 @@ Convert a regular grid (x, y) to a shape model
 - `zs::AbstractMatrix` : z-coordinates of grid points
 """
 function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix; scale=1.0, find_visible_facets=false)
-    nodes, faces, facets = grid_to_facets(xs, ys, zs)
+    nodes, faces = grid_to_facets(xs, ys, zs)
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
 
@@ -105,9 +131,11 @@ function load_shape_grid(xs::AbstractVector, ys::AbstractVector, zs::AbstractMat
     flux = zeros(length(faces), 3)
     face_forces = [zero(SVector{3, Float64}) for _ in faces]
     temperature = zeros(0, 0, 0)  # Later initiallized in size of (Nz, Ns, Nt)
+    visiblefacets = [VisibleFacet[] for _ in faces]
 
-    find_visible_facets && find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, face_areas)
-    shape = ShapeModel(nodes, faces, facets, force, torque, face_centers, face_normals, face_areas, flux, face_forces, temperature)
+    shape = ShapeModel(nodes, faces, force, torque, face_centers, face_normals, face_areas, flux, face_forces, temperature, visiblefacets)
+    find_visible_facets && find_visiblefacets!(shape)
+    
     return shape
 end
 

@@ -1,5 +1,13 @@
 # See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for more information.
 @testset "TPM_Ryugu" begin
+    msg = """
+    
+    ⋅-------------------------------⋅
+    |        Test: TPM_Ryugu        |
+    ⋅-------------------------------⋅
+    """
+    println(msg)
+
     ##= Download Files =##
     paths_kernel = [
         "lsk/naif0012.tls",

@@ -1,64 +1,7 @@
 
-"""
-    struct VisibleFacet
-
-Index of an interfacing facet and its view factor
-
-# Fields
-- `id` : Index of the interfacing facet
-- `f`  : View factor from facet i to j
-- `d`  : Distance from facet i to j
-- `d̂`  : Normal vector from facet i to j
-"""
-struct VisibleFacet
-    id::Int64
-    f ::Float64
-    d ::Float64
-    d̂ ::SVector{3, Float64}
-end
-
-################################################################
-#                  Triangular surface facet
-################################################################
 
 """
-    struct Facet
-
-Triangular surface facet of a polyhedral shape model.
-
-Note that the mesh normal indicates outward the polyhedron.
-
-# Fields
-- `visiblefacets` : 1-D array of `VisibleFacet`
-"""
-struct Facet
-    visiblefacets::Vector{VisibleFacet}
-end
-
-Facet() = Facet(VisibleFacet[])
-
-
-function Base.show(io::IO, facet::Facet)
-    msg = "Surface facet\n"
-    msg *= "-------------\n"
-    
-    if isempty(facet.visiblefacets)
-        msg *= "No visible facets from this facet.\n"
-    else
-        msg *= "$(length(facet.visiblefacets)) facets are visible from this facet:\n"
-        df = DataFrame(
-            id = [visiblefacet.id for visiblefacet in facet.visiblefacets],
-            f  = [visiblefacet.f  for visiblefacet in facet.visiblefacets],
-            d  = [visiblefacet.d  for visiblefacet in facet.visiblefacets],
-        )
-        msg *= "$(df)\n"
-    end
-    print(io, msg)
-end
-
-
-"""
-    grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix) -> nodes, faces, facets
+    grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix) -> nodes, faces
 
 Convert a regular grid (x, y) and corresponding z-coordinates to triangular facets
 
@@ -78,7 +21,6 @@ j   ・--A--B--・
 function grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatrix)
     nodes = SVector{3, Float64}[]
     faces = SVector{3, Int}[]
-    facets = Facet[]
 
     for j in eachindex(ys)
         for i in eachindex(xs)
@@ -93,17 +35,10 @@ function grid_to_facets(xs::AbstractVector, ys::AbstractVector, zs::AbstractMatr
             
             push!(faces, ABC)
             push!(faces, DCB)
-
-            A = @SVector [xs[i  ], ys[j  ], zs[i  , j  ]]
-            B = @SVector [xs[i+1], ys[j  ], zs[i+1, j  ]]
-            C = @SVector [xs[i  ], ys[j+1], zs[i  , j+1]]
-            D = @SVector [xs[i+1], ys[j+1], zs[i+1, j+1]]
-
-            push!(facets, Facet())
-            push!(facets, Facet())
         end
     end
-    nodes, faces, facets
+
+    return nodes, faces
 end
 
 
@@ -231,7 +166,14 @@ Find facets that is visible from the facet where the observer is located.
 - `obs`    : Facet where the observer stands
 - `facets` : Array of `Facet`
 """
-function find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, face_areas)
+function find_visiblefacets!(shape::ShapeModel)
+    nodes = shape.nodes
+    faces = shape.faces
+    face_centers = shape.face_centers
+    face_normals = shape.face_normals
+    face_areas = shape.face_areas
+    visiblefacets = shape.visiblefacets
+
     @showprogress 1 "Searching for visible faces..." for i in eachindex(faces)
         cᵢ = face_centers[i]
         n̂ᵢ = face_normals[i]
@@ -248,7 +190,7 @@ function find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, f
         end
         
         for j in candidates
-            j in (visiblefacet.id for visiblefacet in facets[i].visiblefacets) && continue
+            j in (visiblefacet.id for visiblefacet in visiblefacets[i]) && continue
             cⱼ = face_centers[j]
             n̂ⱼ = face_normals[j]
             aⱼ = face_areas[j]
@@ -273,27 +215,29 @@ function find_visiblefacets!(nodes, faces, facets, face_centers, face_normals, f
             end
 
             blocked && continue
-            push!(facets[i].visiblefacets, VisibleFacet(j, view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)...))  # i -> j
-            push!(facets[j].visiblefacets, VisibleFacet(i, view_factor(cⱼ, cᵢ, n̂ⱼ, n̂ᵢ, aᵢ)...))  # j -> i
+            push!(visiblefacets[i], VisibleFacet(j, view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)...))  # i -> j
+            push!(visiblefacets[j], VisibleFacet(i, view_factor(cⱼ, cᵢ, n̂ⱼ, n̂ᵢ, aᵢ)...))  # j -> i
         end
     end
 end
 
 
 """
-    isilluminated(shape, r☉, i::Integer) -> Bool
+    isilluminated(shape::ShapeModel, r☉::AbstractVector, i::Integer) -> Bool
 
-Return if the `i`-th facet of the `shape` model is illuminated by the direct sunlight or not
+Return if the `i`-th face of the shape model is illuminated by the direct sunlight or not
 """
-function isilluminated(shape, r☉, i::Integer)
+function isilluminated(shape::ShapeModel, r☉::AbstractVector, i::Integer)
+    nodes = shape.nodes
+    faces = shape.faces
     cᵢ = shape.face_centers[i]
     n̂ᵢ = shape.face_normals[i]
     r̂☉ = normalize(r☉)
 
     n̂ᵢ ⋅ r̂☉ < 0 && return false
 
-    for visiblefacet in shape.facets[i].visiblefacets
-        A, B, C = shape.nodes[shape.faces[visiblefacet.id]]
+    for visiblefacet in shape.visiblefacets[i]
+        A, B, C = nodes[faces[visiblefacet.id]]
         raycast(A, B, C, r̂☉, cᵢ) && return false
     end
     return true

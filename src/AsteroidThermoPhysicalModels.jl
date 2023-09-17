@@ -27,8 +27,8 @@ export RYUGU, DIDYMOS, DIMORPHOS
 include("obj.jl")
 export loadobj
 
-include("facet.jl")
 include("shape.jl")
+include("facet.jl")
 export ShapeModel
 
 include("thermophysics.jl")
