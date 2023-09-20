@@ -11,6 +11,7 @@ Calculate the temperature for the next time step based on 1D heat conduction equ
 
 # Arguments
 - `stpm` : Thermophysical model for a single asteroid
+- `Δt`   : Time step [sec]
 """
 function update_temperature!(stpm::SingleTPM, Δt)
     if stpm.SOLVER isa ForwardEulerSolver
@@ -32,7 +33,7 @@ Calculate the temperature for the next time step based on 1D heat conductivity e
 
 # Arguments
 - `btpm` : Thermophysical model for a binary asteroid
-- `nₜ`   : Index of the current time step
+- `Δt`   : Time step [sec]
 """
 function update_temperature!(btpm::BinaryTPM, Δt)
     update_temperature!(btpm.pri, Δt)
