@@ -359,7 +359,8 @@ function run_TPM!(stpm::SingleTPM, ephem, savepath)
         ProgressMeter.next!(p; showvalues)
 
         nₜ == length(ephem.time) && break  # Stop to update the temperature at the final step
-        update_temperature!(stpm)
+        Δt = ephem.time[nₜ+1] - ephem.time[nₜ]
+        update_temperature!(stpm, Δt)
     end
 
     jldsave(savepath; stpm, ephem, surf_temps, forces, torques)
@@ -427,7 +428,8 @@ function run_TPM!(btpm::BinaryTPM, ephem, savepath)
         
         ## Update temperature distribution
         nₜ == length(ephem.time) && break  # Stop to update the temperature at the final step
-        update_temperature!(btpm)
+        Δt = ephem.time[nₜ+1] - ephem.time[nₜ]
+        update_temperature!(btpm, Δt)
     end
     
     jldsave(savepath; btpm, ephem, surf_temps, forces, torques)

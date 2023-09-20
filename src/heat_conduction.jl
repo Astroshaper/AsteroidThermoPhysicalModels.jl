@@ -5,20 +5,20 @@
 # ****************************************************************
 
 """
-    update_temperature!(stpm::SingleTPM)
+    update_temperature!(stpm::SingleTPM, Δt)
 
 Calculate the temperature for the next time step based on 1D heat conduction equation.
 
 # Arguments
 - `stpm` : Thermophysical model for a single asteroid
 """
-function update_temperature!(stpm::SingleTPM)
+function update_temperature!(stpm::SingleTPM, Δt)
     if stpm.SOLVER isa ForwardEulerSolver
-        forward_euler!(stpm)
+        forward_euler!(stpm, Δt)
     elseif stpm.SOLVER isa BackwardEulerSolver
-        backward_euler!(stpm)
+        backward_euler!(stpm, Δt)
     elseif stpm.SOLVER isa CrankNicolsonSolver
-        crank_nicolson!(stpm)
+        crank_nicolson!(stpm, Δt)
     else
         error("The solver is not implemented.")
     end
@@ -26,7 +26,7 @@ end
 
 
 """
-    update_temperature!(btpm::BinaryTPM)
+    update_temperature!(btpm::BinaryTPM, Δt)
 
 Calculate the temperature for the next time step based on 1D heat conductivity equation.
 
@@ -34,9 +34,9 @@ Calculate the temperature for the next time step based on 1D heat conductivity e
 - `btpm` : Thermophysical model for a binary asteroid
 - `nₜ`   : Index of the current time step
 """
-function update_temperature!(btpm::BinaryTPM)
-    update_temperature!(btpm.pri)
-    update_temperature!(btpm.sec)
+function update_temperature!(btpm::BinaryTPM, Δt)
+    update_temperature!(btpm.pri, Δt)
+    update_temperature!(btpm.sec, Δt)
 end
 
 # ****************************************************************
@@ -45,20 +45,30 @@ end
 
 
 """
-    forward_euler!(stpm::SingleTPM, nₜ::Integer)
+    forward_euler!(stpm::SingleTPM, Δt)
 
 Predict the temperature at the next time step by the forward Euler method.
 - Explicit in time
 - First order in time
 In this function, the heat conduction equation is non-dimensionalized in time and length.
+
+# Arguments
+- `stpm` : Thermophysical model for a single asteroid
+- `Δt`   : Time step [sec]
 """
-function forward_euler!(stpm::SingleTPM)
+function forward_euler!(stpm::SingleTPM, Δt)
     T = stpm.temperature
     Nz = size(T, 1)
     Ns = size(T, 2)
 
     for nₛ in 1:Ns
-        λ = (stpm.thermo_params.λ isa Real ? stpm.thermo_params.λ : stpm.thermo_params.λ[nₛ])
+        P  = stpm.thermo_params.P
+        Δz = stpm.thermo_params.Δz
+        l  = (stpm.thermo_params.l isa Real ? stpm.thermo_params.l : stpm.thermo_params.l[nₛ])
+
+        λ = (Δt/P) / (Δz/l)^2 / 4π
+        λ ≥ 0.5 && error("The forward Euler method is unstable because λ = $λ. This should be less than 0.5.")
+
         for nz in 2:(Nz-1)
             stpm.SOLVER.T[nz] = (1-2λ)*T[nz, nₛ] + λ*(T[nz+1, nₛ] + T[nz-1, nₛ])  # Predict temperature at next time step
         end
@@ -73,7 +83,7 @@ end
 
 
 """
-    backward_euler!(stpm::SingleTPM)
+    backward_euler!(stpm::SingleTPM, Δt)
 
 Predict the temperature at the next time step by the backward Euler method.
 - Implicit in time (Unconditionally stable in the heat conduction equation)
@@ -81,7 +91,7 @@ Predict the temperature at the next time step by the backward Euler method.
 - Second order in space
 In this function, the heat conduction equation is non-dimensionalized in time and length.
 """
-function backward_euler!(stpm::SingleTPM)
+function backward_euler!(stpm::SingleTPM, Δt)
     # T = stpm.temperature
     # Nz = size(T, 1)
     # Ns = size(T, 2)
@@ -114,7 +124,7 @@ end
 
 
 """
-    crank_nicolson!(stpm::SingleTPM)
+    crank_nicolson!(stpm::SingleTPM, Δt)
 
 Predict the temperature at the next time step by the Crank-Nicolson method.
 - Implicit in time (Unconditionally stable in the heat conduction equation)
@@ -122,7 +132,7 @@ Predict the temperature at the next time step by the Crank-Nicolson method.
 - Second order in space
 In this function, the heat conduction equation is non-dimensionalized in time and length.
 """
-function crank_nicolson!(stpm::SingleTPM)
+function crank_nicolson!(stpm::SingleTPM, Δt)
     # T = stpm.temperature
     # Nz = size(T, 1)
     # Ns = size(T, 2)
