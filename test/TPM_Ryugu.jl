@@ -85,9 +85,6 @@
         A_B     = 0.04,  # Bolometric Bond albedo
         A_TH    = 0.0,
         ε       = 1.0,
-        t_begin = et_range[begin],
-        t_end   = et_range[end],
-        Nt      = length(et_range),
         z_max   = 0.6,
         Nz      = 41,
     )
