@@ -19,3 +19,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+end of terms and conditions
+
+The shape model of asteroid Ryugu in the `test` directory (`ryugu_test.obj`) was downloaded from JAXA's data archives (https://www.darts.isas.jaxa.jp/index.html.en) and modified from the original data. Please refer to the comments within the file for details.
