@@ -1,0 +1,16 @@
+####
+# Object single_face.obj
+#
+# Vertices: 3
+# Faces: 1
+#
+####
+v 0.0 0.0 0.0
+v 1.0 0.0 0.0
+v 0.0 1.0 0.0
+# 3 vertices, 0 vertices normals
+
+f 1 2 3
+# 1 faces, 0 coords texture
+
+# End of File
