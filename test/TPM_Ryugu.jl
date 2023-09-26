@@ -24,6 +24,7 @@
         mkpath(dirname(filepath))
         isfile(filepath) || Downloads.download(url_kernel, filepath)
     end
+    
     for path_shape in paths_shape
         url_shape = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/paper/Watanabe_2019/$(path_shape)"
         filepath = joinpath("shape", path_shape)
@@ -37,6 +38,7 @@
         SPICE.furnsh(filepath)
     end
 
+    ##= Ephemerides =##
     et_begin = SPICE.utc2et("2018-07-01T00:00:00")
     et_end   = SPICE.utc2et("2018-07-01T01:00:00")
     step     = 76.3262  # Rotation of 1 deg
@@ -44,14 +46,6 @@
     @show et_range
     @show length(et_range)
 
-    # Indices of et_range to be saved.
-    # Save only the last rotation.
-    save_range = findall(et_range .> et_range[end] - 7.63262 * 3600)
-    @show save_range[begin]
-    @show save_range[end]
-    @show length(save_range)
-
-    ##= Ephemerides =##
     """
     - `time` : Ephemeris times
     - `sun`  : Sun's position in the RYUGU_FIXED frame
@@ -64,8 +58,10 @@
     SPICE.kclear()
 
     ##= Load obj file =##
-    path_obj = joinpath("shape", "SHAPE_SFM_49k_v20180804.obj")
-    path_jld = joinpath("shape", "SHAPE_SFM_49k_v20180804.jld2")
+    path_obj = joinpath("shape", "ryugu_test.obj")   # Small model for test
+    path_jld = joinpath("shape", "ryugu_test.jld2")  # Small model for test
+    # path_obj = joinpath("shape", "SHAPE_SFM_49k_v20180804.obj")
+    # path_jld = joinpath("shape", "SHAPE_SFM_49k_v20180804.jld2")
     if isfile(path_jld) && ENABLE_JLD
         shape = AsteroidThermoPhysicalModels.load_shape_jld(path_jld)
     else
@@ -101,5 +97,5 @@
     # Run TPM and save the result
     AsteroidThermoPhysicalModels.init_temperature!(shape, thermo_params, 200.)
     savepath = joinpath("TPM_Ryugu.jld2")
-    AsteroidThermoPhysicalModels.run_TPM!(shape, thermo_params, ephem, savepath, save_range)
+    AsteroidThermoPhysicalModels.run_TPM!(shape, thermo_params, ephem, savepath)
 end

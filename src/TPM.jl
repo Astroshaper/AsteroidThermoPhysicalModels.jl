@@ -109,33 +109,27 @@ end
 - `save_range`    : Indices in `et_range` to be saved
 
 """
-function run_TPM!(shape::ShapeModel, thermo_params::AbstractThermoParams, ephem, savepath, save_range)
+function run_TPM!(shape::ShapeModel, thermo_params::AbstractThermoParams, ephem, savepath)
     
-    surf_temps = zeros(length(shape.faces), length(save_range))
-    forces  = [zeros(3) for _ in eachindex(save_range)]
-    torques = [zeros(3) for _ in eachindex(save_range)]
+    surf_temps = zeros(length(shape.faces), length(ephem.time))
+    forces  = [zeros(3) for _ in eachindex(ephem.time)]
+    torques = [zeros(3) for _ in eachindex(ephem.time)]
 
     ## ProgressMeter setting
     p = Progress(length(ephem.time); dt=1, desc="Running TPM...", showspeed=true)
     ProgressMeter.ijulia_behavior(:clear)
     
-    idx = 1  # Index to save data
-
     for nₜ in eachindex(ephem.time)
         et = ephem.time[nₜ]
         r☉ = ephem.sun[nₜ]
 
         update_flux!(shape, r☉, thermo_params, nₜ)
+        update_thermal_force!(shape, thermo_params, nₜ)
 
-        if ephem.time[save_range[begin]] ≤ et ≤ ephem.time[save_range[end]]
-            update_thermal_force!(shape, thermo_params, nₜ)
-
-            surf_temps[:, idx] .= surface_temperature(shape, nₜ)
-            forces[idx]  .= shape.force   # Body-fixed frame
-            torques[idx] .= shape.torque  # Body-fixed frame
-    
-            idx += 1
-        end
+        ## Save data
+        surf_temps[:, nₜ] .= surface_temperature(shape, nₜ)
+        forces[nₜ]  .= shape.force   # Body-fixed frame
+        torques[nₜ] .= shape.torque  # Body-fixed frame
 
         E_in, E_out, E_cons = energy_io(shape, thermo_params, nₜ)
 
@@ -146,8 +140,8 @@ function run_TPM!(shape::ShapeModel, thermo_params::AbstractThermoParams, ephem,
         nₜ == length(ephem.time) && break  # Stop to update the temperature at the final step
         update_temperature!(shape, thermo_params, nₜ)
     end
-    
-    jldsave(savepath; shape, thermo_params, time=ephem.time[save_range], sun=ephem.sun[save_range], surf_temps, forces, torques)
+        
+    jldsave(savepath; shape, thermo_params, ephem, surf_temps, forces, torques)
 end
 
 """
