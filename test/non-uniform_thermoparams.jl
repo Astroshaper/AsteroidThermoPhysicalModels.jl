@@ -1,11 +1,10 @@
 # The following tests are almost the same as `TPM_Ryugu.jl`.
 # The only difference is that the thermophysical properties vary depending on the location of the asteroid.
 @testset "non-uniform_thermoparams" begin
-    msg = """
-    
-    ⋅----------------------------------------------⋅
-    |        Test: non-uniform_thermoparams        |
-    ⋅----------------------------------------------⋅
+    msg = """\n
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    |             Test: non-uniform_thermoparams             |
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     """
     println(msg)
 
@@ -53,10 +52,16 @@
     @show save_range[end]
     @show length(save_range)
 
-    # Sun's position in the RYUGU_FIXED frame
-    sun_ryugu = [SPICE.spkpos("SUN", et, "RYUGU_FIXED", "None", "RYUGU")[1]*1000 for et in et_range]
-    # Transformation matrix from RYUGU_FIXED to J2000
-    RYUGU_TO_J2000 = [SPICE.pxform("RYUGU_FIXED", "J2000", et) for et in et_range]
+    ##= Ephemerides =##
+    """
+    - `time` : Ephemeris times
+    - `sun`  : Sun's position in the RYUGU_FIXED frame
+    """
+    ephem = (
+        time = collect(et_range),
+        sun  = [SVector{3}(SPICE.spkpos("SUN", et, "RYUGU_FIXED", "None", "RYUGU")[1]) * 1000 for et in et_range],
+    )
+
     SPICE.kclear()
 
     ##= Load obj file =##
@@ -108,5 +113,5 @@
     ##= Run TPM and save the result =##
     AsteroidThermoPhysicalModels.init_temperature!(shape, thermo_params, 200.)
     savepath = joinpath("non-uniform_thermoparams.jld2")
-    AsteroidThermoPhysicalModels.run_TPM!(shape, et_range, sun_ryugu, thermo_params, savepath, save_range)
+    AsteroidThermoPhysicalModels.run_TPM!(shape, thermo_params, ephem, savepath, save_range)
 end

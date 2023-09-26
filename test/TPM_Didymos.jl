@@ -1,10 +1,9 @@
 # See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos for more information.
 @testset "TPM_Didymos" begin
-    msg = """
-
-    ⋅---------------------------------⋅
-    |        Test: TPM_Didymos        |
-    ⋅---------------------------------⋅
+    msg = """\n
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    |                   Test: TPM_Didymos                    |
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     """
     println(msg)
 
@@ -40,6 +39,7 @@
         filepath = joinpath("kernel", path_kernel)
         SPICE.furnsh(filepath)
     end
+
     et_begin = SPICE.utc2et("2027-02-18T00:00:00")
     et_end   = SPICE.utc2et("2027-02-19T00:00:00")
     step     = 300
@@ -47,17 +47,24 @@
     @show et_range
     @show length(et_range)
 
-    # Position 
-    sun_d1 = [SVector{3}(SPICE.spkpos("SUN", et, "DIDYMOS_FIXED", "None", "DIDYMOS")[1])*1000 for et in et_range]
-    sun_d2 = [SVector{3}(SPICE.spkpos("SUN", et, "DIMORPHOS_FIXED", "None", "DIMORPHOS")[1])*1000 for et in et_range]
-    d1_d2 = [SVector{3}(SPICE.spkpos("DIDYMOS", et, "DIMORPHOS_FIXED", "None", "DIMORPHOS")[1])*1000 for et in et_range]
-    d2_d1 = [SVector{3}(SPICE.spkpos("DIMORPHOS", et, "DIDYMOS_FIXED", "None", "DIDYMOS")[1])*1000 for et in et_range]
-    
-    # Transformation matrix
-    D1_TO_D2 = [RotMatrix{3}(SPICE.pxform("DIDYMOS_FIXED", "DIMORPHOS_FIXED", et)) for et in et_range]
-    D2_TO_D1 = [RotMatrix{3}(SPICE.pxform("DIMORPHOS_FIXED", "DIDYMOS_FIXED", et)) for et in et_range]
-    D1_TO_J2000 = [RotMatrix{3}(SPICE.pxform("DIDYMOS_FIXED", "J2000", et)) for et in et_range]
-    D2_TO_J2000 = [RotMatrix{3}(SPICE.pxform("DIMORPHOS_FIXED", "J2000", et)) for et in et_range]
+    ##= Ephemerides =##
+    """
+    - `time` : Ephemeris times
+    - `sun1` : Sun's position in the primary's frame (DIDYMOS_FIXED)
+    - `sun2` : Sun's position in the secondary's frame (DIMORPHOS_FIXED)
+    - `sec`  : Secondary's position in the primary's frame (DIDYMOS_FIXED)
+    - `P2S`  : Rotation matrix from primary to secondary frames
+    - `S2P`  : Rotation matrix from secondary to primary frames
+    """
+    ephem = (
+        time = collect(et_range),
+        sun1 = [SVector{3}(SPICE.spkpos("SUN"      , et, "DIDYMOS_FIXED"  , "None", "DIDYMOS"  )[1]) * 1000 for et in et_range],
+        sun2 = [SVector{3}(SPICE.spkpos("SUN"      , et, "DIMORPHOS_FIXED", "None", "DIMORPHOS")[1]) * 1000 for et in et_range],
+        sec  = [SVector{3}(SPICE.spkpos("DIMORPHOS", et, "DIDYMOS_FIXED"  , "None", "DIDYMOS"  )[1]) * 1000 for et in et_range],
+        P2S  = [RotMatrix{3}(SPICE.pxform("DIDYMOS_FIXED"  , "DIMORPHOS_FIXED", et)) for et in et_range],
+        S2P  = [RotMatrix{3}(SPICE.pxform("DIMORPHOS_FIXED", "DIDYMOS_FIXED"  , et)) for et in et_range],
+    )
+
     SPICE.kclear()
 
     ##= Load obj file =##
@@ -109,7 +116,5 @@
     AsteroidThermoPhysicalModels.init_temperature!(shape2, thermo_params, 200.)
 
     savepath = joinpath("TPM_Didymos.jld2")
-    shapes = (shape1, shape2)
-    suns = (sun_d1, sun_d2)
-    AsteroidThermoPhysicalModels.run_TPM!(shapes, et_range, suns, D2_TO_D1, d2_d1, thermo_params, savepath, [:surf_temps, :forces, :torques])
+    AsteroidThermoPhysicalModels.run_TPM!((shape1, shape2), thermo_params, ephem, savepath)
 end

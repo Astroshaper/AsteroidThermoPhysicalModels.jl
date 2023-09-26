@@ -1,10 +1,9 @@
 # See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for more information.
 @testset "TPM_Ryugu" begin
-    msg = """
-
-    ⋅-------------------------------⋅
-    |        Test: TPM_Ryugu        |
-    ⋅-------------------------------⋅
+    msg = """\n
+    ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    |                    Test: TPM_Ryugu                     |
+    ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     """
     println(msg)
 
@@ -37,6 +36,7 @@
         filepath = joinpath("kernel", path_kernel)
         SPICE.furnsh(filepath)
     end
+
     et_begin = SPICE.utc2et("2018-07-01T00:00:00")
     et_end   = SPICE.utc2et("2018-07-01T01:00:00")
     step     = 76.3262  # Rotation of 1 deg
@@ -51,10 +51,16 @@
     @show save_range[end]
     @show length(save_range)
 
-    # Sun's position in the RYUGU_FIXED frame
-    sun_ryugu = [SPICE.spkpos("SUN", et, "RYUGU_FIXED", "None", "RYUGU")[1]*1000 for et in et_range]
-    # Transformation matrix from RYUGU_FIXED to J2000
-    RYUGU_TO_J2000 = [SPICE.pxform("RYUGU_FIXED", "J2000", et) for et in et_range]
+    ##= Ephemerides =##
+    """
+    - `time` : Ephemeris times
+    - `sun`  : Sun's position in the RYUGU_FIXED frame
+    """
+    ephem = (
+        time = collect(et_range),
+        sun  = [SVector{3}(SPICE.spkpos("SUN", et, "RYUGU_FIXED", "None", "RYUGU")[1]) * 1000 for et in et_range],
+    )
+
     SPICE.kclear()
 
     ##= Load obj file =##
@@ -95,9 +101,5 @@
     # Run TPM and save the result
     AsteroidThermoPhysicalModels.init_temperature!(shape, thermo_params, 200.)
     savepath = joinpath("TPM_Ryugu.jld2")
-    AsteroidThermoPhysicalModels.run_TPM!(shape, et_range, sun_ryugu, thermo_params, savepath, save_range)
-
-    JLD2.jldopen(savepath, "r+") do file
-        file["RYUGU_TO_J2000"] = RYUGU_TO_J2000[save_range]
-    end
+    AsteroidThermoPhysicalModels.run_TPM!(shape, thermo_params, ephem, savepath, save_range)
 end
