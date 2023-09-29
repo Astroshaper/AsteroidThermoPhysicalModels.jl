@@ -46,7 +46,6 @@
     et_end   = et_begin + 2P                        # End time of TPM
     step     = P / 360                              # Time step of TPM, corresponding to 1 deg rotation
     et_range = et_begin : step : et_end
-    @show length(et_range)
 
     """
     - `time` : Ephemeris times
@@ -85,7 +84,6 @@
         - Emissivity           : ε   = 0.9  [-]
     """
 
-    P  = SPICE.convrt(7.63262, "hours", "seconds")
     k  = [r[3] > 0 ? 0.1 : 0.3  for r in shape.face_centers]
     ρ  = 1270.0
     Cₚ = 600.0
@@ -114,7 +112,10 @@
     )
     AsteroidThermoPhysicalModels.init_temperature!(stpm, 200)
 
-    ##= Run TPM and save the result =##
-    savepath = "non-uniform_thermoparams.jld2"
-    AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, savepath)
+    ##= Run TPM =##
+    time_begin = ephem.time[end] - P  # Time to start storing temperature 
+    time_end   = ephem.time[end]      # Time to end storing temperature
+    face_id = [1, 2, 3, 4, 5]         # Vector of face indices to save temperature in depth direction
+
+    result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, time_begin, time_end, face_id)
 end
