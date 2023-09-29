@@ -102,7 +102,7 @@
     ##= Run TPM =##
     time_begin = ephem.time[end] - P  # Time to start storing temperature 
     time_end   = ephem.time[end]      # Time to end storing temperature
-    face_id = [1, 2, 3, 4, 10]        # Vector of face indices to save temperature in depth direction
+    face_ID = [1, 2, 3, 4, 10]        # Vector of face indices to save temperature in depth direction
 
-    result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, time_begin, time_end, face_id)
+    result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, time_begin, time_end, face_ID)
 end

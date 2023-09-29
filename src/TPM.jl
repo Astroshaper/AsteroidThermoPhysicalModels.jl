@@ -236,13 +236,11 @@ Output data format for `SingleTPM`
 ## Saved only at the time steps desired by the user
 - `time_begin` : Time to start storing temperature
 - `time_end`   : Time to finish storing temperature
-- `face_id`    : Indices of faces at which you want to save temperature distribution in depth direction
 - `surf_temp`  : Surface temperature, a matrix in size of `(Ns, Nt)`.
     - `Ns` : Number of faces
     - `Nt` : Number of time steps to save surface temperature
-- `face_temp`  : Temperature as a function of depth and time, an array in size of `(Nz, Ns, Nt)`.
+- `face_temp`  : Temperature as a function of depth and time, `Dict` with face ID as key and a matrix `(Nz, Nt)` as an entry.
     - `Nz` : The number of the depth nodes
-    - `Ns` : The number of faces to save temperature
     - `Nt` : The number of time steps to save temperature
 """
 struct SingleTPMResult
@@ -253,9 +251,8 @@ struct SingleTPMResult
 
     time_begin ::Float64
     time_end   ::Float64
-    face_id    ::Vector{Int}
     surf_temp  ::Matrix{Float64}
-    face_temp  ::Array{Float64, 3}
+    face_temp  ::Dict{Int, Matrix{Float64}}
 end
 
 
@@ -266,9 +263,9 @@ Outer constructor of `SingleTPMResult`
 - `stpm`    : Thermophysical model for a single asteroid
 - `ephem`   : Ephemerides
 - `time_id` : Indices of time steps at which you want to save temperature
-- `face_id` : Indices of faces at which you want to save temperature distribution in depth direction
+- `face_ID` : Indices of faces at which you want to save temperature distribution in depth direction
 """
-function SingleTPMResult(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face_id::Vector{Int})
+function SingleTPMResult(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face_ID::Vector{Int})
     E_in   = zeros(length(ephem.time))
     E_out  = zeros(length(ephem.time))
     force  = zeros(SVector{3, Float64}, length(ephem.time))
@@ -277,9 +274,11 @@ function SingleTPMResult(stpm::SingleTPM, ephem, time_begin::Real, time_end::Rea
     Nt_save = count(@. time_begin ≤ ephem.time < time_end)  # Number of time steps to save temperature
 
     surf_temp = zeros(length(stpm.shape.faces), Nt_save)
-    face_temp = zeros(stpm.thermo_params.Nz, length(face_id), Nt_save)    
+    face_temp = Dict{Int, Matrix{Float64}}(
+        nₛ => zeros(stpm.thermo_params.Nz, Nt_save) for nₛ in face_ID
+    )
 
-    return SingleTPMResult(E_in, E_out, force, torque, time_begin, time_end, face_id, surf_temp, face_temp)
+    return SingleTPMResult(E_in, E_out, force, torque, time_begin, time_end, surf_temp, face_temp)
 end
 
 
@@ -322,10 +321,11 @@ function save_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, ephem, nₜ:
     if result.time_begin ≤ ephem.time[nₜ] < result.time_end   # if you want to save temperature at this time step
         nₜ_offset = count(@. ephem.time < result.time_begin)  # Index-offset before storing temperature
         nₜ_save = nₜ - nₜ_offset
+
         result.surf_temp[:, nₜ_save] .= surface_temperature(stpm)
 
-        for (nₛ_save, nₛ) in enumerate(result.face_id)
-            result.face_temp[:, nₛ_save, nₜ_save] .= stpm.temperature[:, nₛ]
+        for (nₛ, temp) in result.face_temp
+            temp[:, nₜ_save] .= stpm.temperature[:, nₛ]
         end
     end
 end
@@ -441,9 +441,9 @@ Run TPM for a single asteroid.
     - `ephem.sun`  : Sun's position in the asteroid-fixed frame (Not normalized)
 - `savepath` : Path to save data file
 """
-function run_TPM!(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face_id::Vector{Int})
+function run_TPM!(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face_ID::Vector{Int})
 
-    result = SingleTPMResult(stpm, ephem, time_begin, time_end, face_id)
+    result = SingleTPMResult(stpm, ephem, time_begin, time_end, face_ID)
 
     ## ProgressMeter setting
     p = Progress(length(ephem.time); dt=1, desc="Running TPM...", showspeed=true)
