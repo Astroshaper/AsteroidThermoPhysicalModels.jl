@@ -260,10 +260,11 @@ end
 Outer constructor of `SingleTPMResult`
 
 # Arguments
-- `stpm`    : Thermophysical model for a single asteroid
-- `ephem`   : Ephemerides
-- `time_id` : Indices of time steps at which you want to save temperature
-- `face_ID` : Indices of faces at which you want to save temperature distribution in depth direction
+- `stpm`       : Thermophysical model for a single asteroid
+- `ephem`      : Ephemerides
+- `time_begin` : Time to start storing temperature
+- `time_end`   : Time to finish storing temperature
+- `face_ID`    : Indices of faces at which you want to save temperature distribution in depth direction
 """
 function SingleTPMResult(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face_ID::Vector{Int})
     E_in   = zeros(length(ephem.time))
@@ -301,17 +302,32 @@ end
 Outer constructor of `BinaryTPMResult`
 
 # Arguments
-- `btpm`    : Thermophysical model for a binary asteroid
+- `btpm`        : Thermophysical model for a binary asteroid
+- `ephem`       : Ephemerides
+- `time_begin`  : Time to start storing temperature (Common to both the primary and the secondary)
+- `time_end`    : Time to finish storing temperature (Common to both the primary and the secondary)
+- `face_ID_pri` : Face indices at which you want to save temperature as a function of depth for the primary
+- `face_ID_sec` : Face indices at which you want to save temperature as a function of depth for the secondary
 """
-function BinaryTPMResult(btpm::BinaryTPM)
-    # pri = SingleTPMResult(btpm.pri, btpm.pri.ephem, btpm.pri.time_begin, btpm.pri.time_end, btpm.pri.face_id)
-    # sec = SingleTPMResult(btpm.sec, btpm.sec.ephem, btpm.sec.time_begin, btpm.sec.time_end, btpm.sec.face_id)
+function BinaryTPMResult(btpm::BinaryTPM, ephem, time_begin::Real, time_end::Real, face_ID_pri::Vector{Int}, face_ID_sec::Vector{Int})
+    result_pri = SingleTPMResult(btpm.pri, ephem, time_begin, time_end, face_ID_pri)
+    result_sec = SingleTPMResult(btpm.sec, ephem, time_begin, time_end, face_ID_sec)
 
-    # return BinaryTPMResult(pri, sec)
+    return BinaryTPMResult(result_pri, result_sec)
 end
 
 
+"""
+    save_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, ephem, nₜ::Integer)
 
+Save the results of TPM at the time step `nₜ` to `result`.
+
+# Arguments
+- `result` : Output data format for `SingleTPM`
+- `stpm`   : Thermophysical model for a single asteroid
+- `ephem`  : Ephemerides
+- `nₜ`     : Time step
+"""
 function save_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, ephem, nₜ::Integer)
     result.E_in[nₜ]   = energy_in(stpm)
     result.E_out[nₜ]  = energy_out(stpm)
@@ -328,6 +344,23 @@ function save_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, ephem, nₜ:
             temp[:, nₜ_save] .= stpm.temperature[:, nₛ]
         end
     end
+end
+
+
+"""
+    save_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, nₜ::Integer)
+
+Save the results of TPM at the time step `nₜ` to `result`.
+
+# Arguments
+- `result` : Output data format for `BinaryTPM`
+- `btpm`   : Thermophysical model for a binary asteroid
+- `ephem`  : Ephemerides
+- `nₜ`     : Time step
+"""
+function save_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, nₜ::Integer)
+    save_TPM_result!(result.pri, btpm.pri, ephem, nₜ)
+    save_TPM_result!(result.sec, btpm.sec, ephem, nₜ)
 end
 
 
@@ -461,7 +494,10 @@ function run_TPM!(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face
         save_TPM_result!(result, stpm, ephem, nₜ)  # Save data
         
         ## Update the progress meter
-        showvalues = [("Timestep", nₜ), ("E_out / E_in", result.E_out[nₜ] / result.E_in[nₜ])]
+        showvalues = [
+            ("Timestep     ", nₜ),
+            ("E_out / E_in ", result.E_out[nₜ] / result.E_in[nₜ])
+        ]
         ProgressMeter.next!(p; showvalues)
 
         nₜ == length(ephem.time) && break  # Stop to update the temperature at the final step
@@ -488,12 +524,10 @@ Run TPM for a binary asteroid.
     - `S2P`  : Rotation matrix from secondary to primary frames
 - `savepath` : Path to save data file
 """
-function run_TPM!(btpm::BinaryTPM, ephem, savepath)
+function run_TPM!(btpm::BinaryTPM, ephem, time_begin::Real, time_end::Real, face_ID_pri::Vector{Int}, face_ID_sec::Vector{Int})
 
-    surf_temps = zeros(length(btpm.pri.shape.faces), length(ephem.time)), zeros(length(btpm.sec.shape.faces), length(ephem.time))
-    forces  = [zeros(3) for _ in eachindex(ephem.time)], [zeros(3) for _ in eachindex(ephem.time)]
-    torques = [zeros(3) for _ in eachindex(ephem.time)], [zeros(3) for _ in eachindex(ephem.time)]
-    
+    result = BinaryTPMResult(btpm, ephem, time_begin, time_end, face_ID_pri, face_ID_sec)
+
     ## ProgressMeter setting
     p = Progress(length(ephem.time); dt=1, desc="Running TPM...", showspeed=true)
     ProgressMeter.ijulia_behavior(:clear)
@@ -514,22 +548,14 @@ function run_TPM!(btpm::BinaryTPM, ephem, savepath)
 
         update_thermal_force!(btpm)
 
-        ## Save data for primary
-        surf_temps[1][:, nₜ] .= surface_temperature(btpm.pri)
-        forces[1][nₜ]  .= btpm.pri.force   # Body-fixed frame
-        torques[1][nₜ] .= btpm.pri.torque  # Body-fixed frame
-
-        ## Save data for secondary
-        surf_temps[2][:, nₜ] .= surface_temperature(btpm.sec)
-        forces[2][nₜ]  .= btpm.sec.force   # Body-fixed frame
-        torques[2][nₜ] .= btpm.sec.torque  # Body-fixed frame
-    
-        ## Energy input/output
-        E_cons_pri = energy_out(btpm.pri) / energy_in(btpm.pri)
-        E_cons_sec = energy_out(btpm.sec) / energy_in(btpm.sec)
+        save_TPM_result!(result, btpm, ephem, nₜ)  # Save data
 
         ## Update the progress meter
-        showvalues = [("Timestep", nₜ), ("E_cons for primary", E_cons_pri), ("E_cons for secondary", E_cons_sec)]
+        showvalues = [
+            ("Timestep                   ", nₜ),
+            ("E_out / E_in for primary   ", result.pri.E_out[nₜ] / result.pri.E_in[nₜ]),
+            ("E_out / E_in for secondary ", result.sec.E_out[nₜ] / result.sec.E_in[nₜ])
+        ]
         ProgressMeter.next!(p; showvalues)
         
         ## Update temperature distribution
@@ -538,6 +564,6 @@ function run_TPM!(btpm::BinaryTPM, ephem, savepath)
         update_temperature!(btpm, Δt)
     end
     
-    jldsave(savepath; btpm, ephem, surf_temps, forces, torques)
+    return result
 end
 

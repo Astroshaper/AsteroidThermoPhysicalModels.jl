@@ -131,8 +131,12 @@
     btpm  = AsteroidThermoPhysicalModels.BinaryTPM(stpm1, stpm2; MUTUAL_SHADOWING=true, MUTUAL_HEATING=true)
 
     AsteroidThermoPhysicalModels.init_temperature!(btpm, 200.)
+    
+    ##= Run TPM =##
+    time_begin = ephem.time[end] - P  # Time to start storing temperature 
+    time_end   = ephem.time[end]      # Time to end storing temperature
+    face_ID_pri = [1, 2, 3, 4, 10]    # Face indices at which you want to save underground temperature for the primary
+    face_ID_sec = [1, 2, 3, 4, 20]    # Face indices at which you want to save underground temperature for the secondary
 
-    ##= Run TPM and save the result =##
-    savepath = "TPM_Didymos.jld2"
-    AsteroidThermoPhysicalModels.run_TPM!(btpm, ephem, savepath)
+    result = AsteroidThermoPhysicalModels.run_TPM!(btpm, ephem, time_begin, time_end, face_ID_pri, face_ID_sec)
 end
