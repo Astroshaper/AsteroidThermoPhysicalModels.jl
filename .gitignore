@@ -12,6 +12,8 @@
 /test/*.jld2
 
 /test/TPM_Ryugu
+/test/non-uniform_thermoparams
+/test/TPM_Didymos
 
 # Keep these shape models
 !/test/shape/icosahedron.obj
