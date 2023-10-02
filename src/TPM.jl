@@ -380,6 +380,91 @@ function save_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, nₜ:
 end
 
 
+"""
+    save_TPM_csv(filepath, result::SingleTPMResult, stpm::SingleTPM, ephem)
+
+Save the result of `SingleTPM` to CSV files.
+
+# Arguments
+- `dirpath` :  Path to the directory to save CSV files
+- `result`  : Output data format for `SingleTPM`
+- `stpm`    : Thermophysical model for a single asteroid
+- `ephem`   : Ephemerides
+
+# TO DO
+- Save the depths of the calculation nodes
+- Save README for the data file
+"""
+function save_TPM_csv(dirpath, result::SingleTPMResult, stpm::SingleTPM, ephem)
+    
+    df = DataFrame()
+    df.time     = ephem.time
+    df.E_in     = result.E_in
+    df.E_out    = result.E_out
+    df.E_cons   = result.E_cons
+    df.force_x  = [f[1] for f in result.force]
+    df.force_y  = [f[2] for f in result.force]
+    df.force_z  = [f[3] for f in result.force]
+    df.torque_x = [τ[1] for τ in result.torque]
+    df.torque_y = [τ[2] for τ in result.torque]
+    df.torque_z = [τ[3] for τ in result.torque]
+    
+    CSV.write(joinpath(dirpath, "data.csv"), df)
+
+    header = string.(ephem.time[@. result.time_begin ≤ ephem.time < result.time_end])  # Time to save temperature in String
+    
+    CSV.write(
+        joinpath(dirpath, "surf_temp.csv"),
+        DataFrame(result.surf_temp, header)
+    )
+
+    for (nₛ, temp) in result.face_temp
+        CSV.write(
+            joinpath(dirpath, "face_temp_$(lpad(nₛ, 7, '0')).csv"),
+            DataFrame(temp, header)
+        )
+    end
+end
+
+
+"""
+    save_TPM_csv(filepath, result::BinaryTPMResult, stpm::BinaryTPM, ephem)
+
+Save the result of `BinaryTPM` to CSV files.
+
+# Arguments
+- `dirpath` :  Path to the directory to save CSV files
+- `result`  : Output data format for `BinaryTPM`
+- `btpm`    : Thermophysical model for a binary asteroid
+- `ephem`   : Ephemerides
+"""
+function save_TPM_csv(dirpath, result::BinaryTPMResult, btpm::BinaryTPM, ephem)
+    save_TPM_csv(dirpath, result.pri, btpm.pri, ephem)
+
+    mv(joinpath(dirpath, "data.csv")     , joinpath(dirpath, "pri_data.csv")     , force=true)
+    mv(joinpath(dirpath, "surf_temp.csv"), joinpath(dirpath, "pri_surf_temp.csv"), force=true)
+    for nₛ in keys(result.pri.face_temp)
+        mv(
+            joinpath(dirpath, "face_temp_$(lpad(nₛ, 7, '0')).csv"),
+            joinpath(dirpath, "pri_face_temp_$(lpad(nₛ, 7, '0')).csv"),
+            force=true
+        )
+    end
+
+    save_TPM_csv(dirpath, result.sec, btpm.sec, ephem)
+
+    mv(joinpath(dirpath, "data.csv")     , joinpath(dirpath, "sec_data.csv")     , force=true)
+    mv(joinpath(dirpath, "surf_temp.csv"), joinpath(dirpath, "sec_surf_temp.csv"), force=true)
+    for nₛ in keys(result.sec.face_temp)
+        mv(
+            joinpath(dirpath, "face_temp_$(lpad(nₛ, 7, '0')).csv"),
+            joinpath(dirpath, "sec_face_temp_$(lpad(nₛ, 7, '0')).csv"),
+            force=true
+        )
+    end
+end
+
+
 # ****************************************************************
 #                   Initialize temperatures
 # ****************************************************************
