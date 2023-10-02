@@ -118,4 +118,9 @@
     face_ID = [1, 2, 3, 4, 10]        # Face indices at which you want to save underground temperature
 
     result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, time_begin, time_end, face_ID)
+
+    ##= Save TPM result =##'
+    savedir = "non-uniform_thermoparams"
+    mkpath(savedir)
+    AsteroidThermoPhysicalModels.save_TPM_csv(savedir, result, stpm, ephem)
 end

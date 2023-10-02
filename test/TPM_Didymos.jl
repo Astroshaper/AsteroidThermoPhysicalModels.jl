@@ -155,4 +155,9 @@
     face_ID_sec = [1, 2, 3, 4, 20]     # Face indices at which you want to save underground temperature for the secondary
 
     result = AsteroidThermoPhysicalModels.run_TPM!(btpm, ephem, time_begin, time_end, face_ID_pri, face_ID_sec)
+
+    ##= Save TPM result =##
+    savedir = "TPM_Didymos"
+    mkpath(savedir)
+    AsteroidThermoPhysicalModels.save_TPM_csv(savedir, result, btpm, ephem)
 end
