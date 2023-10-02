@@ -364,6 +364,38 @@ function save_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, nₜ:
 end
 
 
+"""
+    energy_cons(result::SingleTPMResult, stpm::SingleTPM, ephem) -> E_cons
+
+Calculate the energy conservation ratio `E_cons`,
+ratio of total energy going out to total energy coming in in one rotation cycle.
+
+# Arguments
+- `result` : Output data format for `SingleTPM`
+- `stpm`   : Thermophysical model for a single asteroid
+- `ephem`  : Ephemerides
+"""
+function energy_cons(result::SingleTPMResult, stpm::SingleTPM, ephem)
+
+    P = stpm.thermo_params.P  # Rotation period
+    E_cons = Vector{Union{Missing, Float64}}(missing, length(ephem.time))  # `E_cons` at each time step
+
+    for (nₜ, t) in enumerate(ephem.time)
+        if t < ephem.time[begin] + P  # `E_cons` cannot be calculated during the first rotation
+            continue
+        else
+            Nt_period = count(@. t - P ≤ ephem.time < t)  # Number of time steps within the last rotation
+
+            ΣE_in  = sum(result.E_in[n-1]  * (ephem.time[n] - ephem.time[n-1]) for n in (nₜ - Nt_period + 1):nₜ)
+            ΣE_out = sum(result.E_out[n-1] * (ephem.time[n] - ephem.time[n-1]) for n in (nₜ - Nt_period + 1):nₜ)
+            E_cons[nₜ] = ΣE_out / ΣE_in
+        end
+    end
+    
+    return E_cons
+end
+
+
 # ****************************************************************
 #                   Initialize temperatures
 # ****************************************************************
@@ -496,7 +528,7 @@ function run_TPM!(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face
         ## Update the progress meter
         showvalues = [
             ("Timestep     ", nₜ),
-            ("E_out / E_in ", result.E_out[nₜ] / result.E_in[nₜ])
+            ("E_out / E_in ", result.E_out[nₜ] / result.E_in[nₜ]),
         ]
         ProgressMeter.next!(p; showvalues)
 
@@ -504,6 +536,10 @@ function run_TPM!(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face
         Δt = ephem.time[nₜ+1] - ephem.time[nₜ]
         update_temperature!(stpm, Δt)
     end
+
+    ## Energy conservation check
+    E_cons = energy_cons(result, stpm, ephem)
+    println("Energy conservation ratio at the last rotation: ", E_cons[end])
 
     return result
 end
@@ -554,7 +590,7 @@ function run_TPM!(btpm::BinaryTPM, ephem, time_begin::Real, time_end::Real, face
         showvalues = [
             ("Timestep                   ", nₜ),
             ("E_out / E_in for primary   ", result.pri.E_out[nₜ] / result.pri.E_in[nₜ]),
-            ("E_out / E_in for secondary ", result.sec.E_out[nₜ] / result.sec.E_in[nₜ])
+            ("E_out / E_in for secondary ", result.sec.E_out[nₜ] / result.sec.E_in[nₜ]),
         ]
         ProgressMeter.next!(p; showvalues)
         
@@ -563,7 +599,7 @@ function run_TPM!(btpm::BinaryTPM, ephem, time_begin::Real, time_end::Real, face
         Δt = ephem.time[nₜ+1] - ephem.time[nₜ]
         update_temperature!(btpm, Δt)
     end
-    
+
     return result
 end
 
