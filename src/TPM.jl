@@ -512,7 +512,7 @@ function run_TPM!(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face
         ## Update the progress meter
         showvalues = [
             ("Timestep ", nₜ),
-            ("E_cons   ", result.E_cons[nₜ])
+            ("E_cons   ", result.E_cons[nₜ]),
         ]
         ProgressMeter.next!(p; showvalues)
 
@@ -568,9 +568,9 @@ function run_TPM!(btpm::BinaryTPM, ephem, time_begin::Real, time_end::Real, face
 
         ## Update the progress meter
         showvalues = [
-            ("Timestep                   ", nₜ),
-            ("E_out / E_in for primary   ", result.pri.E_out[nₜ] / result.pri.E_in[nₜ]),
-            ("E_out / E_in for secondary ", result.sec.E_out[nₜ] / result.sec.E_in[nₜ]),
+            ("Timestep             ", nₜ),
+            ("E_cons for primary   ", result.pri.E_cons[nₜ]),
+            ("E_cons for secondary ", result.sec.E_cons[nₜ]),
         ]
         ProgressMeter.next!(p; showvalues)
         
