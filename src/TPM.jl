@@ -230,6 +230,7 @@ Output data format for `SingleTPM`
 ## Saved at all time steps
 - `E_in`   : Input energy per second on the whole surface [W]
 - `E_out`  : Output enegey per second from the whole surface [W]
+- `E_cons` : Energy conservation ratio [-], ratio of total energy going out to total energy coming in in the last rotation cycle
 - `force`  : Thermal force on the asteroid [N]
 - `torque` : Thermal torque on the asteroid [N ⋅ m]
 
@@ -246,6 +247,7 @@ Output data format for `SingleTPM`
 struct SingleTPMResult
     E_in       ::Vector{Float64}
     E_out      ::Vector{Float64}
+    E_cons     ::Vector{Union{Float64, Missing}}
     force      ::Vector{SVector{3, Float64}}
     torque     ::Vector{SVector{3, Float64}}
 
@@ -269,6 +271,7 @@ Outer constructor of `SingleTPMResult`
 function SingleTPMResult(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face_ID::Vector{Int})
     E_in   = zeros(length(ephem.time))
     E_out  = zeros(length(ephem.time))
+    E_cons = Vector{Union{Float64, Missing}}(missing, length(ephem.time))
     force  = zeros(SVector{3, Float64}, length(ephem.time))
     torque = zeros(SVector{3, Float64}, length(ephem.time))
 
@@ -279,7 +282,7 @@ function SingleTPMResult(stpm::SingleTPM, ephem, time_begin::Real, time_end::Rea
         nₛ => zeros(stpm.thermo_params.Nz, Nt_save) for nₛ in face_ID
     )
 
-    return SingleTPMResult(E_in, E_out, force, torque, time_begin, time_end, surf_temp, face_temp)
+    return SingleTPMResult(E_in, E_out, E_cons, force, torque, time_begin, time_end, surf_temp, face_temp)
 end
 
 
@@ -326,13 +329,26 @@ Save the results of TPM at the time step `nₜ` to `result`.
 - `result` : Output data format for `SingleTPM`
 - `stpm`   : Thermophysical model for a single asteroid
 - `ephem`  : Ephemerides
-- `nₜ`     : Time step
+- `nₜ`     : Time step to save data
 """
 function save_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, ephem, nₜ::Integer)
     result.E_in[nₜ]   = energy_in(stpm)
     result.E_out[nₜ]  = energy_out(stpm)
     result.force[nₜ]  = stpm.force
     result.torque[nₜ] = stpm.torque
+
+    P  = stpm.thermo_params.P  # Rotation period
+    t  = ephem.time[nₜ]        # Current time
+    t₀ = ephem.time[begin]     # Time at the beginning of the simulation
+
+    if t > t₀ + P  # Note that `E_cons` cannot be calculated during the first rotation
+        Nt_period = count(@. t - P ≤ ephem.time < t)  # Number of time steps within the last rotation
+
+        ΣE_in  = sum(result.E_in[n-1]  * (ephem.time[n] - ephem.time[n-1]) for n in (nₜ - Nt_period + 1):nₜ)
+        ΣE_out = sum(result.E_out[n-1] * (ephem.time[n] - ephem.time[n-1]) for n in (nₜ - Nt_period + 1):nₜ)
+
+        result.E_cons[nₜ] = ΣE_out / ΣE_in
+    end
 
     if result.time_begin ≤ ephem.time[nₜ] < result.time_end   # if you want to save temperature at this time step
         nₜ_offset = count(@. ephem.time < result.time_begin)  # Index-offset before storing temperature
@@ -361,38 +377,6 @@ Save the results of TPM at the time step `nₜ` to `result`.
 function save_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, nₜ::Integer)
     save_TPM_result!(result.pri, btpm.pri, ephem, nₜ)
     save_TPM_result!(result.sec, btpm.sec, ephem, nₜ)
-end
-
-
-"""
-    energy_cons(result::SingleTPMResult, stpm::SingleTPM, ephem) -> E_cons
-
-Calculate the energy conservation ratio `E_cons`,
-ratio of total energy going out to total energy coming in in one rotation cycle.
-
-# Arguments
-- `result` : Output data format for `SingleTPM`
-- `stpm`   : Thermophysical model for a single asteroid
-- `ephem`  : Ephemerides
-"""
-function energy_cons(result::SingleTPMResult, stpm::SingleTPM, ephem)
-
-    P = stpm.thermo_params.P  # Rotation period
-    E_cons = Vector{Union{Missing, Float64}}(missing, length(ephem.time))  # `E_cons` at each time step
-
-    for (nₜ, t) in enumerate(ephem.time)
-        if t < ephem.time[begin] + P  # `E_cons` cannot be calculated during the first rotation
-            continue
-        else
-            Nt_period = count(@. t - P ≤ ephem.time < t)  # Number of time steps within the last rotation
-
-            ΣE_in  = sum(result.E_in[n-1]  * (ephem.time[n] - ephem.time[n-1]) for n in (nₜ - Nt_period + 1):nₜ)
-            ΣE_out = sum(result.E_out[n-1] * (ephem.time[n] - ephem.time[n-1]) for n in (nₜ - Nt_period + 1):nₜ)
-            E_cons[nₜ] = ΣE_out / ΣE_in
-        end
-    end
-    
-    return E_cons
 end
 
 
@@ -527,8 +511,8 @@ function run_TPM!(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face
         
         ## Update the progress meter
         showvalues = [
-            ("Timestep     ", nₜ),
-            ("E_out / E_in ", result.E_out[nₜ] / result.E_in[nₜ]),
+            ("Timestep ", nₜ),
+            ("E_cons   ", result.E_cons[nₜ])
         ]
         ProgressMeter.next!(p; showvalues)
 
@@ -536,10 +520,6 @@ function run_TPM!(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face
         Δt = ephem.time[nₜ+1] - ephem.time[nₜ]
         update_temperature!(stpm, Δt)
     end
-
-    ## Energy conservation check
-    E_cons = energy_cons(result, stpm, ephem)
-    println("Energy conservation ratio at the last rotation: ", E_cons[end])
 
     return result
 end
