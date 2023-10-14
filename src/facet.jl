@@ -146,7 +146,7 @@ end
 
 
 """
-    isilluminated(shape::ShapeModel, r☉::AbstractVector, i::Integer) -> Bool
+    isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer) -> Bool
 
 Return if the `i`-th face of the `shape` model is illuminated by the direct sunlight or not
 
@@ -155,7 +155,7 @@ Return if the `i`-th face of the `shape` model is illuminated by the direct sunl
 - `r☉`    : Sun's position in the asteroid-fixed frame, which doesn't have to be normalized.
 - `i`     : Index of the face to be checked
 """
-function isilluminated(shape::ShapeModel, r☉::StaticVector, i::Integer)
+function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)
     cᵢ = shape.face_centers[i]
     n̂ᵢ = shape.face_normals[i]
     r̂☉ = normalize(r☉)
