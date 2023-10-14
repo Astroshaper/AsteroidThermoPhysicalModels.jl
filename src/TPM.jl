@@ -267,8 +267,8 @@ function run_TPM!(btpm::BinaryTPM, ephem, savepath)
         update_flux_scat_single!(btpm)
         update_flux_rad_single!(btpm, nₜ)
 
-        ## Mutual-shadowing
-        find_eclipse!(btpm, r☉₁, sec_from_pri, R₂₁)
+        ## Mutual-shadowing (eclipse)
+        mutual_shadowing!(btpm, r☉₁, sec_from_pri, R₂₁)
 
         ## Mutual-heating
         #
