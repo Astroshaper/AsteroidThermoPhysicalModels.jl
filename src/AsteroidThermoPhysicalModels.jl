@@ -27,7 +27,7 @@ export ShapeModel, load_shape_obj
 
 include("thermo_params.jl")
 include("TPM.jl")
-include("thermophysics.jl")
+include("heat_conduction.jl")
 include("energy_flux.jl")
 include("non_grav.jl")
 export thermal_skin_depth, thermal_inertia, init_temperature!, run_TPM!

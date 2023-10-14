@@ -7,7 +7,7 @@
     """
     println(msg)
 
-    ##= Download Files =##
+    ##= SPICE kernels =##
     paths_kernel = [
         "fk/hera_v10.tf",
         "lsk/naif0012.tls",
@@ -16,17 +16,22 @@
         "spk/didymos_hor_000101_500101_v01.bsp",
         "spk/didymos_gmv_260901_311001_v01.bsp",
     ]
+
+    ##= Shape models =##
     paths_shape = [
         "g_50677mm_rad_obj_didy_0000n00000_v001.obj",
         "g_08438mm_lgt_obj_dimo_0000n00000_v002.obj",
     ]
 
+    ##= Download SPICE kernels =##
     for path_kernel in paths_kernel
         url_kernel = "https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/$(path_kernel)"
         filepath = joinpath("kernel", path_kernel)
         mkpath(dirname(filepath))
         isfile(filepath) || Downloads.download(url_kernel, filepath)
     end
+
+    ##= Download shape models =##
     for path_shape in paths_shape
         url_kernel = "https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/dsk/$(path_shape)"
         filepath = joinpath("shape", path_shape)
@@ -34,7 +39,7 @@
         isfile(filepath) || Downloads.download(url_kernel, filepath)
     end
 
-    ##= Load data with SPICE =##
+    ##= Load the SPICE kernels =##
     for path_kernel in paths_kernel
         filepath = joinpath("kernel", path_kernel)
         SPICE.furnsh(filepath)
@@ -43,7 +48,7 @@
     ##= Ephemerides =##
     P        = SPICE.convrt(AsteroidThermoPhysicalModels.DIDYMOS[:P], "hours", "seconds")  # Rotation period of Didymos
     et_begin = SPICE.utc2et("2027-02-18T00:00:00")                                         # Start time of TPM
-    et_end   = et_begin + 7P                                                               # End time of TPM
+    et_end   = et_begin + 1P                                                               # End time of TPM
     step     = P / 72                                                                      # Time step of TPM
     et_range = et_begin : step : et_end
     @show length(et_range)
@@ -67,7 +72,7 @@
 
     SPICE.kclear()
 
-    ##= Load obj file =##
+    ##= Load the shape models =##
     path_shape1_obj = joinpath("shape", "g_50677mm_rad_obj_didy_0000n00000_v001.obj")
     path_shape2_obj = joinpath("shape", "g_08438mm_lgt_obj_dimo_0000n00000_v002.obj")
     path_shape1_jld = joinpath("shape", "g_50677mm_rad_obj_didy_0000n00000_v001.jld2")
@@ -112,8 +117,8 @@
     println(thermo_params)
 
     ##= Setting of TPM =##
-    stpm1 = AsteroidThermoPhysicalModels.SingleTPM(shape1, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true)
-    stpm2 = AsteroidThermoPhysicalModels.SingleTPM(shape2, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true)
+    stpm1 = AsteroidThermoPhysicalModels.SingleTPM(shape1, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true, SOLVER=AsteroidThermoPhysicalModels.ForwardEulerSolver())
+    stpm2 = AsteroidThermoPhysicalModels.SingleTPM(shape2, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true, SOLVER=AsteroidThermoPhysicalModels.ForwardEulerSolver())
     btpm  = AsteroidThermoPhysicalModels.BinaryTPM(stpm1, stpm2; MUTUAL_SHADOWING=true, MUTUAL_HEATING=true)
 
     AsteroidThermoPhysicalModels.init_temperature!(btpm, 200.)

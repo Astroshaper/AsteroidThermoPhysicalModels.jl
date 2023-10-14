@@ -1,6 +1,99 @@
 
+# ****************************************************************
+#         Types of solvers for heat conduction equations
+# ****************************************************************
+
+"""
+Abstract type of a solver for a heat conduction equation 
+"""
+abstract type HeatConductionSolver end
 
 
+"""
+Singleton type of the forward Euler method:
+- Explicit in time
+- First order in time
+"""
+struct ForwardEulerSolver <: HeatConductionSolver end
+
+
+"""
+Type of the backward Euler method:
+- Implicit in time (Unconditionally stable in the heat conduction equation)
+- First order in time
+
+The `BackwardEulerSolver` type has vectors for the tridiagonal matrix algorithm.
+"""
+struct BackwardEulerSolver <: HeatConductionSolver
+    a::Vector{Float64}
+    b::Vector{Float64}
+    c::Vector{Float64}
+    d::Vector{Float64}
+    x::Vector{Float64}
+end
+
+BackwardEulerSolver(thermo_params::AbstractThermoParams) = BackwardEulerSolver(thermo_params.Nz)
+BackwardEulerSolver(N::Integer) = BackwardEulerSolver(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
+
+
+"""
+Type of the Crank-Nicolson method:
+- Implicit in time (Unconditionally stable in the heat conduction equation)
+- Second order in time
+
+The `CrankNicolsonSolver` type has vectors for the tridiagonal matrix algorithm.
+
+# References
+- https://en.wikipedia.org/wiki/Crank–Nicolson_method
+"""
+struct CrankNicolsonSolver <: HeatConductionSolver
+    a::Vector{Float64}
+    b::Vector{Float64}
+    c::Vector{Float64}
+    d::Vector{Float64}
+    x::Vector{Float64}
+end
+
+CrankNicolsonSolver(thermo_params::AbstractThermoParams) = CrankNicolsonSolver(thermo_params.Nz)
+CrankNicolsonSolver(N::Integer) = CrankNicolsonSolver(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
+
+
+# ****************************************************************
+#    Types of boundary conditions for heat conduction equations
+# ****************************************************************
+
+"""
+Abstract type of a boundary condition for a heat conduction equation
+"""
+abstract type BoundaryCondition end
+
+"""
+Singleton type of radiation boundary condition
+"""
+struct RadiationBoundaryCondition <: BoundaryCondition end
+const Radiation = RadiationBoundaryCondition()
+
+"""
+Singleton type of insulation boundary condition
+"""
+struct InsulationBoundaryCondition <: BoundaryCondition end
+const Insulation = InsulationBoundaryCondition()
+
+"""
+Singleton type of isothermal boundary condition
+"""
+struct IsothermalBoundaryCondition <: BoundaryCondition end
+const Isothermal = IsothermalBoundaryCondition()
+
+
+# ****************************************************************
+#                Types of thermophsycal models
+# ****************************************************************
+
+
+"""
+Abstract type of a thermophysical model
+"""
 abstract type ThermoPhysicalModel end
 
 
@@ -30,6 +123,7 @@ abstract type ThermoPhysicalModel end
 
 - `SELF_SHADOWING` : Flag to consider self-shadowing
 - `SELF_HEATING`   : Flag to consider self-heating
+- `SOLVER`         : Solver of heat conduction equation
 
 # TO DO:
 - 同時に time step と depth step に関するベクトルをもつのが良いかもしれない
@@ -48,6 +142,7 @@ struct SingleTPM <: ThermoPhysicalModel
 
     SELF_SHADOWING ::Bool
     SELF_HEATING   ::Bool
+    SOLVER         ::Union{ForwardEulerSolver, BackwardEulerSolver, CrankNicolsonSolver}
 end
 
 
@@ -56,7 +151,7 @@ end
 
 Construct a thermophysical model for a single asteroid (`SingleTPM`).
 """
-function SingleTPM(shape, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true)
+function SingleTPM(shape, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true, SOLVER=ForwardEuler)
 
     Nz = thermo_params.Nz
     Ns = length(shape.faces)
@@ -69,7 +164,7 @@ function SingleTPM(shape, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true)
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
 
-    SingleTPM(shape, thermo_params, flux, temperature, face_forces, force, torque, SELF_SHADOWING, SELF_HEATING)
+    SingleTPM(shape, thermo_params, flux, temperature, face_forces, force, torque, SELF_SHADOWING, SELF_HEATING, SOLVER)
 end
 
 
@@ -217,7 +312,7 @@ function run_TPM!(stpm::SingleTPM, ephem, savepath)
     p = Progress(length(ephem.time); dt=1, desc="Running TPM...", showspeed=true)
     ProgressMeter.ijulia_behavior(:clear)
     
-    for nₜ in eachindex(ephem.time)
+    @time for nₜ in eachindex(ephem.time)
         r☉ = ephem.sun[nₜ]
 
         update_flux_sun!(stpm, r☉)
@@ -271,7 +366,7 @@ function run_TPM!(btpm::BinaryTPM, ephem, savepath)
     p = Progress(length(ephem.time); dt=1, desc="Running TPM...", showspeed=true)
     ProgressMeter.ijulia_behavior(:clear)
 
-    for nₜ in eachindex(ephem.time)
+    @time for nₜ in eachindex(ephem.time)
         r☉₁ = ephem.sun1[nₜ]  # Sun's position in the primary's frame
         r☉₂ = ephem.sun2[nₜ]  # Sun's position in the secondary's frame
         rₛ  = ephem.sec[nₜ]   # Secondary's position in the primary's frame

@@ -9,6 +9,7 @@ using Statistics
 using LinearAlgebra
 using StaticArrays
 using Rotations
+using DataFrames
 
 ENABLE_JLD = false
 Aqua.test_all(AsteroidThermoPhysicalModels, ambiguities=false)
