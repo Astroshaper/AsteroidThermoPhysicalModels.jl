@@ -109,7 +109,7 @@ abstract type ThermoPhysicalModel end
 """
     struct SingleTPM <: ThermoPhysicalModel
 
-#Fields
+# Fields
 - `shape`          : Shape model
 - `thermo_params`  : Thermophysical parameters
 
@@ -130,7 +130,6 @@ abstract type ThermoPhysicalModel end
 - `BC_LOWER`       : Boundary condition at the lower boundary
 
 # TO DO:
-- 同時に time step と depth step に関するベクトルをもつのが良いかもしれない
 - roughness_maps   ::ShapeModel[]
 """
 struct SingleTPM <: ThermoPhysicalModel
@@ -187,7 +186,7 @@ end
 """
     struct BinaryTPM <: ThermoPhysicalModel
 
-#Fields
+# Fields
 - `pri`              : TPM for the primary
 - `sec`              : TPM for the secondary
 - `MUTUAL_SHADOWING` : Flag to consider mutual shadowing
@@ -212,7 +211,258 @@ function BinaryTPM(pri, sec; MUTUAL_SHADOWING, MUTUAL_HEATING)
 end
 
 
-surface_temperature(stpm::SingleTPM) = stpm.temperature[begin, :] 
+"""
+Return surface temperature of a single asteroid corrsponding to each face.
+"""
+surface_temperature(stpm::SingleTPM) = stpm.temperature[begin, :]
+
+
+# ****************************************************************
+#                     Output data format
+# ****************************************************************
+
+"""
+    struct SingleTPMResult
+
+Output data format for `SingleTPM` 
+
+# Fields
+## Saved at all time steps
+- `E_in`   : Input energy per second on the whole surface [W]
+- `E_out`  : Output enegey per second from the whole surface [W]
+- `E_cons` : Energy conservation ratio [-], ratio of total energy going out to total energy coming in in the last rotation cycle
+- `force`  : Thermal force on the asteroid [N]
+- `torque` : Thermal torque on the asteroid [N ⋅ m]
+
+## Saved only at the time steps desired by the user
+- `time_begin` : Time to start storing temperature
+- `time_end`   : Time to finish storing temperature
+- `surf_temp`  : Surface temperature, a matrix in size of `(Ns, Nt)`.
+    - `Ns` : Number of faces
+    - `Nt` : Number of time steps to save surface temperature
+- `face_temp`  : Temperature as a function of depth and time, `Dict` with face ID as key and a matrix `(Nz, Nt)` as an entry.
+    - `Nz` : The number of the depth nodes
+    - `Nt` : The number of time steps to save temperature
+"""
+struct SingleTPMResult
+    E_in       ::Vector{Float64}
+    E_out      ::Vector{Float64}
+    E_cons     ::Vector{Union{Float64, Missing}}
+    force      ::Vector{SVector{3, Float64}}
+    torque     ::Vector{SVector{3, Float64}}
+
+    time_begin ::Float64
+    time_end   ::Float64
+    surf_temp  ::Matrix{Float64}
+    face_temp  ::Dict{Int, Matrix{Float64}}
+end
+
+
+"""
+Outer constructor of `SingleTPMResult`
+
+# Arguments
+- `stpm`       : Thermophysical model for a single asteroid
+- `ephem`      : Ephemerides
+- `time_begin` : Time to start storing temperature
+- `time_end`   : Time to finish storing temperature
+- `face_ID`    : Indices of faces at which you want to save temperature distribution in depth direction
+"""
+function SingleTPMResult(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face_ID::Vector{Int})
+    E_in   = zeros(length(ephem.time))
+    E_out  = zeros(length(ephem.time))
+    E_cons = Vector{Union{Float64, Missing}}(missing, length(ephem.time))
+    force  = zeros(SVector{3, Float64}, length(ephem.time))
+    torque = zeros(SVector{3, Float64}, length(ephem.time))
+
+    Nt_save = count(@. time_begin ≤ ephem.time < time_end)  # Number of time steps to save temperature
+
+    surf_temp = zeros(length(stpm.shape.faces), Nt_save)
+    face_temp = Dict{Int, Matrix{Float64}}(
+        nₛ => zeros(stpm.thermo_params.Nz, Nt_save) for nₛ in face_ID
+    )
+
+    return SingleTPMResult(E_in, E_out, E_cons, force, torque, time_begin, time_end, surf_temp, face_temp)
+end
+
+
+"""
+    struct BinaryTPMResult
+
+Output data format for `BinaryTPM`
+
+# Fields
+- `pri` : TPM result for the primary
+- `sec` : TPM result for the secondary
+"""
+struct BinaryTPMResult
+    pri::SingleTPMResult
+    sec::SingleTPMResult
+end
+
+
+"""
+Outer constructor of `BinaryTPMResult`
+
+# Arguments
+- `btpm`        : Thermophysical model for a binary asteroid
+- `ephem`       : Ephemerides
+- `time_begin`  : Time to start storing temperature (Common to both the primary and the secondary)
+- `time_end`    : Time to finish storing temperature (Common to both the primary and the secondary)
+- `face_ID_pri` : Face indices at which you want to save temperature as a function of depth for the primary
+- `face_ID_sec` : Face indices at which you want to save temperature as a function of depth for the secondary
+"""
+function BinaryTPMResult(btpm::BinaryTPM, ephem, time_begin::Real, time_end::Real, face_ID_pri::Vector{Int}, face_ID_sec::Vector{Int})
+    result_pri = SingleTPMResult(btpm.pri, ephem, time_begin, time_end, face_ID_pri)
+    result_sec = SingleTPMResult(btpm.sec, ephem, time_begin, time_end, face_ID_sec)
+
+    return BinaryTPMResult(result_pri, result_sec)
+end
+
+
+"""
+    save_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, ephem, nₜ::Integer)
+
+Save the results of TPM at the time step `nₜ` to `result`.
+
+# Arguments
+- `result` : Output data format for `SingleTPM`
+- `stpm`   : Thermophysical model for a single asteroid
+- `ephem`  : Ephemerides
+- `nₜ`     : Time step to save data
+"""
+function save_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, ephem, nₜ::Integer)
+    result.E_in[nₜ]   = energy_in(stpm)
+    result.E_out[nₜ]  = energy_out(stpm)
+    result.force[nₜ]  = stpm.force
+    result.torque[nₜ] = stpm.torque
+
+    P  = stpm.thermo_params.P  # Rotation period
+    t  = ephem.time[nₜ]        # Current time
+    t₀ = ephem.time[begin]     # Time at the beginning of the simulation
+
+    if t > t₀ + P  # Note that `E_cons` cannot be calculated during the first rotation
+        Nt_period = count(@. t - P ≤ ephem.time < t)  # Number of time steps within the last rotation
+
+        ΣE_in  = sum(result.E_in[n-1]  * (ephem.time[n] - ephem.time[n-1]) for n in (nₜ - Nt_period + 1):nₜ)
+        ΣE_out = sum(result.E_out[n-1] * (ephem.time[n] - ephem.time[n-1]) for n in (nₜ - Nt_period + 1):nₜ)
+
+        result.E_cons[nₜ] = ΣE_out / ΣE_in
+    end
+
+    if result.time_begin ≤ ephem.time[nₜ] < result.time_end   # if you want to save temperature at this time step
+        nₜ_offset = count(@. ephem.time < result.time_begin)  # Index-offset before storing temperature
+        nₜ_save = nₜ - nₜ_offset
+
+        result.surf_temp[:, nₜ_save] .= surface_temperature(stpm)
+
+        for (nₛ, temp) in result.face_temp
+            temp[:, nₜ_save] .= stpm.temperature[:, nₛ]
+        end
+    end
+end
+
+
+"""
+    save_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, nₜ::Integer)
+
+Save the results of TPM at the time step `nₜ` to `result`.
+
+# Arguments
+- `result` : Output data format for `BinaryTPM`
+- `btpm`   : Thermophysical model for a binary asteroid
+- `ephem`  : Ephemerides
+- `nₜ`     : Time step
+"""
+function save_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, nₜ::Integer)
+    save_TPM_result!(result.pri, btpm.pri, ephem, nₜ)
+    save_TPM_result!(result.sec, btpm.sec, ephem, nₜ)
+end
+
+
+"""
+    save_TPM_csv(filepath, result::SingleTPMResult, stpm::SingleTPM, ephem)
+
+Save the result of `SingleTPM` to CSV files.
+
+# Arguments
+- `dirpath` :  Path to the directory to save CSV files
+- `result`  : Output data format for `SingleTPM`
+- `stpm`    : Thermophysical model for a single asteroid
+- `ephem`   : Ephemerides
+
+# TO DO
+- Save the depths of the calculation nodes
+- Save README for the data file
+"""
+function save_TPM_csv(dirpath, result::SingleTPMResult, stpm::SingleTPM, ephem)
+    
+    df = DataFrame()
+    df.time     = ephem.time
+    df.E_in     = result.E_in
+    df.E_out    = result.E_out
+    df.E_cons   = result.E_cons
+    df.force_x  = [f[1] for f in result.force]
+    df.force_y  = [f[2] for f in result.force]
+    df.force_z  = [f[3] for f in result.force]
+    df.torque_x = [τ[1] for τ in result.torque]
+    df.torque_y = [τ[2] for τ in result.torque]
+    df.torque_z = [τ[3] for τ in result.torque]
+    
+    CSV.write(joinpath(dirpath, "data.csv"), df)
+
+    header = string.(ephem.time[@. result.time_begin ≤ ephem.time < result.time_end])  # Time to save temperature in String
+    
+    CSV.write(
+        joinpath(dirpath, "surf_temp.csv"),
+        DataFrame(result.surf_temp, header)
+    )
+
+    for (nₛ, temp) in result.face_temp
+        CSV.write(
+            joinpath(dirpath, "face_temp_$(lpad(nₛ, 7, '0')).csv"),
+            DataFrame(temp, header)
+        )
+    end
+end
+
+
+"""
+    save_TPM_csv(filepath, result::BinaryTPMResult, stpm::BinaryTPM, ephem)
+
+Save the result of `BinaryTPM` to CSV files.
+
+# Arguments
+- `dirpath` :  Path to the directory to save CSV files
+- `result`  : Output data format for `BinaryTPM`
+- `btpm`    : Thermophysical model for a binary asteroid
+- `ephem`   : Ephemerides
+"""
+function save_TPM_csv(dirpath, result::BinaryTPMResult, btpm::BinaryTPM, ephem)
+    save_TPM_csv(dirpath, result.pri, btpm.pri, ephem)
+
+    mv(joinpath(dirpath, "data.csv")     , joinpath(dirpath, "pri_data.csv")     , force=true)
+    mv(joinpath(dirpath, "surf_temp.csv"), joinpath(dirpath, "pri_surf_temp.csv"), force=true)
+    for nₛ in keys(result.pri.face_temp)
+        mv(
+            joinpath(dirpath, "face_temp_$(lpad(nₛ, 7, '0')).csv"),
+            joinpath(dirpath, "pri_face_temp_$(lpad(nₛ, 7, '0')).csv"),
+            force=true
+        )
+    end
+
+    save_TPM_csv(dirpath, result.sec, btpm.sec, ephem)
+
+    mv(joinpath(dirpath, "data.csv")     , joinpath(dirpath, "sec_data.csv")     , force=true)
+    mv(joinpath(dirpath, "surf_temp.csv"), joinpath(dirpath, "sec_surf_temp.csv"), force=true)
+    for nₛ in keys(result.sec.face_temp)
+        mv(
+            joinpath(dirpath, "face_temp_$(lpad(nₛ, 7, '0')).csv"),
+            joinpath(dirpath, "sec_face_temp_$(lpad(nₛ, 7, '0')).csv"),
+            force=true
+        )
+    end
+end
 
 
 # ****************************************************************
@@ -325,11 +575,9 @@ Run TPM for a single asteroid.
     - `ephem.sun`  : Sun's position in the asteroid-fixed frame (Not normalized)
 - `savepath` : Path to save data file
 """
-function run_TPM!(stpm::SingleTPM, ephem, savepath)
-    
-    surf_temps = zeros(length(stpm.shape.faces), length(ephem.time))
-    forces  = [zeros(3) for _ in eachindex(ephem.time)]
-    torques = [zeros(3) for _ in eachindex(ephem.time)]
+function run_TPM!(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face_ID::Vector{Int})
+
+    result = SingleTPMResult(stpm, ephem, time_begin, time_end, face_ID)
 
     ## ProgressMeter setting
     p = Progress(length(ephem.time); dt=1, desc="Running TPM...", showspeed=true)
@@ -344,18 +592,13 @@ function run_TPM!(stpm::SingleTPM, ephem, savepath)
         
         update_thermal_force!(stpm)
 
-        ## Save data
-        surf_temps[:, nₜ] .= surface_temperature(stpm)
-        forces[nₜ]  .= stpm.force   # Body-fixed frame
-        torques[nₜ] .= stpm.torque  # Body-fixed frame
-
-        ## Energy input/output
-        E_in   = energy_in(stpm)
-        E_out  = energy_out(stpm)
-        E_cons = E_out / E_in
+        save_TPM_result!(result, stpm, ephem, nₜ)  # Save data
         
         ## Update the progress meter
-        showvalues = [("Timestep", nₜ), ("E_cons = E_out / E_in", E_cons)]
+        showvalues = [
+            ("Timestep ", nₜ),
+            ("E_cons   ", result.E_cons[nₜ]),
+        ]
         ProgressMeter.next!(p; showvalues)
 
         nₜ == length(ephem.time) && break  # Stop to update the temperature at the final step
@@ -363,7 +606,7 @@ function run_TPM!(stpm::SingleTPM, ephem, savepath)
         update_temperature!(stpm, Δt)
     end
 
-    jldsave(savepath; stpm, ephem, surf_temps, forces, torques)
+    return result
 end
 
 """
@@ -382,12 +625,10 @@ Run TPM for a binary asteroid.
     - `S2P`  : Rotation matrix from secondary to primary frames
 - `savepath` : Path to save data file
 """
-function run_TPM!(btpm::BinaryTPM, ephem, savepath)
+function run_TPM!(btpm::BinaryTPM, ephem, time_begin::Real, time_end::Real, face_ID_pri::Vector{Int}, face_ID_sec::Vector{Int})
 
-    surf_temps = zeros(length(btpm.pri.shape.faces), length(ephem.time)), zeros(length(btpm.sec.shape.faces), length(ephem.time))
-    forces  = [zeros(3) for _ in eachindex(ephem.time)], [zeros(3) for _ in eachindex(ephem.time)]
-    torques = [zeros(3) for _ in eachindex(ephem.time)], [zeros(3) for _ in eachindex(ephem.time)]
-    
+    result = BinaryTPMResult(btpm, ephem, time_begin, time_end, face_ID_pri, face_ID_sec)
+
     ## ProgressMeter setting
     p = Progress(length(ephem.time); dt=1, desc="Running TPM...", showspeed=true)
     ProgressMeter.ijulia_behavior(:clear)
@@ -408,22 +649,14 @@ function run_TPM!(btpm::BinaryTPM, ephem, savepath)
 
         update_thermal_force!(btpm)
 
-        ## Save data for primary
-        surf_temps[1][:, nₜ] .= surface_temperature(btpm.pri)
-        forces[1][nₜ]  .= btpm.pri.force   # Body-fixed frame
-        torques[1][nₜ] .= btpm.pri.torque  # Body-fixed frame
-
-        ## Save data for secondary
-        surf_temps[2][:, nₜ] .= surface_temperature(btpm.sec)
-        forces[2][nₜ]  .= btpm.sec.force   # Body-fixed frame
-        torques[2][nₜ] .= btpm.sec.torque  # Body-fixed frame
-    
-        ## Energy input/output
-        E_cons_pri = energy_out(btpm.pri) / energy_in(btpm.pri)
-        E_cons_sec = energy_out(btpm.sec) / energy_in(btpm.sec)
+        save_TPM_result!(result, btpm, ephem, nₜ)  # Save data
 
         ## Update the progress meter
-        showvalues = [("Timestep", nₜ), ("E_cons for primary", E_cons_pri), ("E_cons for secondary", E_cons_sec)]
+        showvalues = [
+            ("Timestep             ", nₜ),
+            ("E_cons for primary   ", result.pri.E_cons[nₜ]),
+            ("E_cons for secondary ", result.sec.E_cons[nₜ]),
+        ]
         ProgressMeter.next!(p; showvalues)
         
         ## Update temperature distribution
@@ -431,7 +664,7 @@ function run_TPM!(btpm::BinaryTPM, ephem, savepath)
         Δt = ephem.time[nₜ+1] - ephem.time[nₜ]
         update_temperature!(btpm, Δt)
     end
-    
-    jldsave(savepath; btpm, ephem, surf_temps, forces, torques)
+
+    return result
 end
 

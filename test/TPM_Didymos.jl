@@ -46,12 +46,13 @@
     end
 
     ##= Ephemerides =##
-    P        = SPICE.convrt(AsteroidThermoPhysicalModels.DIDYMOS[:P], "hours", "seconds")  # Rotation period of Didymos
-    et_begin = SPICE.utc2et("2027-02-18T00:00:00")                                         # Start time of TPM
-    et_end   = et_begin + 1P                                                               # End time of TPM
-    step     = P / 72                                                                      # Time step of TPM
+    P₁ = SPICE.convrt(2.2593, "hours", "seconds")  # Rotation period of Didymos
+    P₂ = SPICE.convrt(11.93 , "hours", "seconds")  # Rotation period of Dimorphos
+
+    et_begin = SPICE.utc2et("2027-02-18T00:00:00")  # Start time of TPM
+    et_end   = et_begin + 2P₂                       # End time of TPM
+    step     = P₂ / 72                              # Time step of TPM
     et_range = et_begin : step : et_end
-    @show length(et_range)
 
     """
     - `time` : Ephemeris times
@@ -92,17 +93,17 @@
     end
     
     ##= Thermal properties =##
-    P  = SPICE.convrt(AsteroidThermoPhysicalModels.DIDYMOS[:P], "hours", "seconds")
     k  = 0.125
     ρ  = 2170.
     Cₚ = 600.
 
-    l = AsteroidThermoPhysicalModels.thermal_skin_depth(P, k, ρ, Cₚ)
+    l₁ = AsteroidThermoPhysicalModels.thermal_skin_depth(P₁, k, ρ, Cₚ)  # Thermal skin depth for Didymos
+    l₂ = AsteroidThermoPhysicalModels.thermal_skin_depth(P₂, k, ρ, Cₚ)  # Thermal skin depth for Dimorphos
     Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)
 
-    thermo_params = AsteroidThermoPhysicalModels.thermoparams(  # [Michel+2016; Naidu+2020]
-        P       = P,
-        l       = l,
+    thermo_params1 = AsteroidThermoPhysicalModels.thermoparams(  # [Michel+2016; Naidu+2020]
+        P       = P₁,
+        l       = l₁,
         Γ       = Γ,
         A_B     = 0.059,  # Bolometric Bond albedo
         A_TH    = 0.0,
@@ -111,28 +112,52 @@
         Nz      = 41,
     )
 
-    println(thermo_params)
+    thermo_params2 = AsteroidThermoPhysicalModels.thermoparams(  # [Michel+2016; Naidu+2020]
+        P       = P₂,
+        l       = l₂,
+        Γ       = Γ,
+        A_B     = 0.059,  # Bolometric Bond albedo
+        A_TH    = 0.0,
+        ε       = 0.9,
+        z_max   = 0.6,
+        Nz      = 41,
+    )
+
+    println("Thermophysical parameters for Didymos")
+    println(thermo_params1)
+    println("Thermophysical parameters for Dimorphos")
+    println(thermo_params2)
 
     ##= Setting of TPM =##
-    stpm1 = AsteroidThermoPhysicalModels.SingleTPM(shape1, thermo_params;
+    stpm1 = AsteroidThermoPhysicalModels.SingleTPM(shape1, thermo_params1;
         SELF_SHADOWING = true,
         SELF_HEATING   = true,
-        SOLVER         = AsteroidThermoPhysicalModels.ForwardEulerSolver(thermo_params),
+        SOLVER         = AsteroidThermoPhysicalModels.ForwardEulerSolver(thermo_params1),
         BC_UPPER       = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
         BC_LOWER       = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
     )
-    stpm2 = AsteroidThermoPhysicalModels.SingleTPM(shape2, thermo_params;
+
+    stpm2 = AsteroidThermoPhysicalModels.SingleTPM(shape2, thermo_params2;
         SELF_SHADOWING = true,
         SELF_HEATING   = true,
-        SOLVER         = AsteroidThermoPhysicalModels.ForwardEulerSolver(thermo_params),
+        SOLVER         = AsteroidThermoPhysicalModels.ForwardEulerSolver(thermo_params2),
         BC_UPPER       = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
         BC_LOWER       = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
     )
+
     btpm  = AsteroidThermoPhysicalModels.BinaryTPM(stpm1, stpm2; MUTUAL_SHADOWING=true, MUTUAL_HEATING=true)
-
     AsteroidThermoPhysicalModels.init_temperature!(btpm, 200.)
+    
+    ##= Run TPM =##
+    time_begin = ephem.time[end] - P₂  # Time to start storing temperature 
+    time_end   = ephem.time[end]       # Time to end storing temperature
+    face_ID_pri = [1, 2, 3, 4, 10]     # Face indices at which you want to save underground temperature for the primary
+    face_ID_sec = [1, 2, 3, 4, 20]     # Face indices at which you want to save underground temperature for the secondary
 
-    ##= Run TPM and save the result =##
-    savepath = "TPM_Didymos.jld2"
-    AsteroidThermoPhysicalModels.run_TPM!(btpm, ephem, savepath)
+    result = AsteroidThermoPhysicalModels.run_TPM!(btpm, ephem, time_begin, time_end, face_ID_pri, face_ID_sec)
+
+    ##= Save TPM result =##
+    savedir = "TPM_Didymos"
+    mkpath(savedir)
+    AsteroidThermoPhysicalModels.save_TPM_csv(savedir, result, btpm, ephem)
 end
