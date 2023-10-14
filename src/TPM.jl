@@ -641,10 +641,9 @@ function run_TPM!(btpm::BinaryTPM, ephem, time_begin::Real, time_end::Real, face
 
         ## Update enegey flux
         update_flux_sun!(btpm, r☉₁, r☉₂)
+        mutual_shadowing!(btpm, r☉₁, rₛ, R₂₁)  # Mutual-shadowing (eclipse)
         update_flux_scat_single!(btpm)
         update_flux_rad_single!(btpm)
-
-        mutual_shadowing!(btpm, r☉₁, rₛ, R₂₁)  # Mutual-shadowing (eclipse)
         mutual_heating!(btpm, rₛ, R₂₁)         # Mutual-heating
 
         update_thermal_force!(btpm)
