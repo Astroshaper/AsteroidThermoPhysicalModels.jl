@@ -47,7 +47,7 @@
     println(thermo_params)
 
     ##= Setting of TPM =##
-    stpm = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params, false, false)
+    stpm = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params; SELF_SHADOWING=false, SELF_HEATING=false)
 
     ##= Initial temperature =##
     for n in 1:size(stpm.temperature, 1)

@@ -146,13 +146,16 @@ end
 
 
 """
-    isilluminated(shape::ShapeModel, r☉::AbstractVector, i::Integer) -> Bool
+    isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer) -> Bool
 
-Return if the `i`-th face of the shape model is illuminated by the direct sunlight or not
+Return if the `i`-th face of the `shape` model is illuminated by the direct sunlight or not
+
+# Arguments
+- `shape` : Shape model of an asteroid
+- `r☉`    : Sun's position in the asteroid-fixed frame, which doesn't have to be normalized.
+- `i`     : Index of the face to be checked
 """
-function isilluminated(shape::ShapeModel, r☉::AbstractVector, i::Integer)
-    nodes = shape.nodes
-    faces = shape.faces
+function isilluminated(shape::ShapeModel, r☉::StaticVector{3}, i::Integer)
     cᵢ = shape.face_centers[i]
     n̂ᵢ = shape.face_normals[i]
     r̂☉ = normalize(r☉)
@@ -160,7 +163,7 @@ function isilluminated(shape::ShapeModel, r☉::AbstractVector, i::Integer)
     n̂ᵢ ⋅ r̂☉ < 0 && return false
 
     for visiblefacet in shape.visiblefacets[i]
-        A, B, C = nodes[faces[visiblefacet.id]]
+        A, B, C = shape.nodes[shape.faces[visiblefacet.id]]
         raycast(A, B, C, r̂☉, cᵢ) && return false
     end
     return true

@@ -108,7 +108,7 @@
     )
 
     ##= Setting of TPM =##
-    stpm = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params, true, true)
+    stpm = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true)
     AsteroidThermoPhysicalModels.init_temperature!(stpm, 200.)
 
     ##= Run TPM and save the result =##
