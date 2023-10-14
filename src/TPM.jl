@@ -257,22 +257,18 @@ function run_TPM!(btpm::BinaryTPM, ephem, savepath)
     ProgressMeter.ijulia_behavior(:clear)
 
     for nₜ in eachindex(ephem.time)
-        r☉₁ = ephem.sun1[nₜ]
-        r☉₂ = ephem.sun2[nₜ]
-        sec_from_pri = ephem.sec[nₜ]
-        R₂₁ = ephem.S2P[nₜ]
+        r☉₁ = ephem.sun1[nₜ]  # Sun's position in the primary's frame
+        r☉₂ = ephem.sun2[nₜ]  # Sun's position in the secondary's frame
+        rₛ  = ephem.sec[nₜ]   # Secondary's position in the primary's frame
+        R₂₁ = ephem.S2P[nₜ]   # Rotation matrix from secondary to primary frames
 
         ## Update enegey flux
         update_flux_sun!(btpm, r☉₁, r☉₂)
         update_flux_scat_single!(btpm)
         update_flux_rad_single!(btpm, nₜ)
 
-        ## Mutual-shadowing (eclipse)
-        mutual_shadowing!(btpm, r☉₁, sec_from_pri, R₂₁)
-
-        ## Mutual-heating
-        #
-        #
+        mutual_shadowing!(btpm, r☉₁, rₛ, R₂₁)  # Mutual-shadowing (eclipse)
+        mutual_heating!(btpm, nₜ, rₛ, R₂₁)         # Mutual-heating
 
         update_thermal_force!(btpm, nₜ)
 

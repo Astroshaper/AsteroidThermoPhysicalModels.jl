@@ -267,7 +267,7 @@ end
 
 
 # ****************************************************************
-#                  Eclipse of binary asteroid
+#                Mutual shadowing of binary asteroid
 # ****************************************************************
 
 
@@ -408,3 +408,70 @@ function mutual_shadowing!(btpm::BinaryTPM, r☉, rₛ, R₂₁)
     end
 end
 
+
+# ****************************************************************
+#                Mutual heating of binary asteroid
+# ****************************************************************
+
+
+"""
+    mutual_heating!(btpm::BinaryTPM, nₜ::Integer, rₛ, R₂₁)
+
+Calculate the mutual heating between the primary and secondary asteroids.
+
+# Arguments
+- `btpm` : Thermophysical model for a binary asteroid
+- `nₜ`   : Index of time step
+- `rₛ`   : Position of the secondary relative to the primary (NOT normalized)
+- `R₂₁`  : Rotation matrix from secondary to primary
+
+# TO DO
+- Need to consider local horizon?
+"""
+function mutual_heating!(btpm::BinaryTPM, nₜ::Integer, rₛ, R₂₁)
+
+    shape1 = btpm.pri.shape
+    shape2 = btpm.sec.shape
+    thermo_params1 = btpm.pri.thermo_params
+    thermo_params2 = btpm.sec.thermo_params
+
+    for i in eachindex(shape1.faces)  # △A₁B₁C₁ in primary
+        c₁ = shape1.face_centers[i]   # Center of △A₁B₁C₁
+        n̂₁ = shape1.face_normals[i]   # Normal vector of △A₁B₁C₁
+        a₁ = shape1.face_areas[i]     # Area of △A₁B₁C₁
+
+        for j in eachindex(shape2.faces)  # △A₂B₂C₂ in secondary
+            c₂ = shape2.face_centers[j]   # Center of △A₂B₂C₂
+            n̂₂ = shape2.face_normals[j]   # Normal vector of △A₂B₂C₂
+            a₂ = shape2.face_areas[j]     # Area of △A₂B₂C₂
+        
+            ## Transformation from secondary to primary frame
+            c₂ = R₂₁ * c₂ + rₛ
+            n̂₂ = R₂₁ * n̂₂
+
+            f₁₂, d₁₂, d̂₁₂ = view_factor(c₁, c₂, n̂₁, n̂₂, a₂)  # View factor from △A₁B₁C₁ to △A₂B₂C₂
+            f₂₁, d₂₁, d̂₂₁ = view_factor(c₂, c₁, n̂₂, n̂₁, a₁)  # View factor from △A₂B₂C₂ to △A₁B₁C₁
+
+            ## if △A₁B₁C₁ and △A₂B₂C₂ are facing each other
+            if d̂₁₂ ⋅ n̂₁ > 0 && d̂₁₂ ⋅ n̂₂ < 0
+                T₁ = btpm.pri.temperature[begin, i, nₜ]
+                T₂ = btpm.sec.temperature[begin, j, nₜ]
+
+                ε₁    = (thermo_params1.ε    isa Real ? thermo_params1.ε    : thermo_params1.ε[i])
+                ε₂    = (thermo_params2.ε    isa Real ? thermo_params2.ε    : thermo_params2.ε[j])
+                A_B₁  = (thermo_params1.A_B  isa Real ? thermo_params1.A_B  : thermo_params1.A_B[i])
+                A_B₂  = (thermo_params2.A_B  isa Real ? thermo_params2.A_B  : thermo_params2.A_B[j])
+                A_TH₁ = (thermo_params1.A_TH isa Real ? thermo_params1.A_TH : thermo_params1.A_TH[i])
+                A_TH₂ = (thermo_params2.A_TH isa Real ? thermo_params2.A_TH : thermo_params2.A_TH[j])
+
+                ## Mutual heating by scattered light
+                btpm.pri.flux[i, 2] += f₁₂ * A_B₂ * btpm.sec.flux[j, 1]
+                btpm.sec.flux[j, 2] += f₂₁ * A_B₁ * btpm.pri.flux[i, 1]
+
+                ## Mutual heating by thermal radiation
+                btpm.pri.flux[i, 3] += ε₂ * σ_SB * (1 - A_TH₂) * f₁₂ * T₂^4
+                btpm.sec.flux[j, 3] += ε₁ * σ_SB * (1 - A_TH₁) * f₂₁ * T₁^4
+            end
+        end
+    end
+end

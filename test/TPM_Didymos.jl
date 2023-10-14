@@ -9,7 +9,7 @@
 
     ##= Download Files =##
     paths_kernel = [
-        "fk/hera_v09.tf",
+        "fk/hera_v10.tf",
         "lsk/naif0012.tls",
         "pck/hera_didymos_v06.tpc",
         "spk/de432s.bsp",
