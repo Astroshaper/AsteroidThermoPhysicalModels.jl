@@ -118,7 +118,7 @@ energy_out(ε, T, A_TH, F_rad, area) = (ε * σ_SB * T^4 - (1 - A_TH) * F_rad) *
 
 
 """
-    update_flux_sun!(stpm::SingleTPM, r̂☉::AbstractVector, F☉::Real)
+    update_flux_sun!(stpm::SingleTPM, r̂☉::StaticVector{3}, F☉::Real)
 
 Update solar irradiation flux on every face of a shape model.
 
@@ -126,7 +126,7 @@ Update solar irradiation flux on every face of a shape model.
 - `r̂☉`    : Normalized vector indicating the direction of the sun in the body-fixed frame
 - `F☉`    : Solar radiation flux [W/m²]
 """
-function update_flux_sun!(stpm::SingleTPM, r̂☉::StaticVector, F☉::Real)
+function update_flux_sun!(stpm::SingleTPM, r̂☉::StaticVector{3}, F☉::Real)
     r̂☉ = normalize(r̂☉)
 
     if stpm.SELF_SHADOWING
@@ -152,7 +152,7 @@ end
 
 
 """
-    update_flux_sun!(stpm::SingleTPM, r☉::AbstractVector)
+    update_flux_sun!(stpm::SingleTPM, r☉::StaticVector{3})
 
 Update solar irradiation flux on every face of a shape model.
 
@@ -160,7 +160,7 @@ Update solar irradiation flux on every face of a shape model.
 - `stpm` : Thermophysical model for a single asteroid
 - `r☉`   : Position of the sun in the body-fixed frame (NOT normalized)
 """
-function update_flux_sun!(stpm::SingleTPM, r☉::StaticVector)
+function update_flux_sun!(stpm::SingleTPM, r☉::StaticVector{3})
     r̂☉ = SVector{3}(normalize(r☉))
     F☉ = SOLAR_CONST / SPICE.convrt(norm(r☉), "m", "au")^2
 
@@ -169,14 +169,14 @@ end
 
 
 """
-    update_flux_sun!(btpm::BinaryTPM, r☉₁::AbstractVector, r☉₂::AbstractVector)
+    update_flux_sun!(btpm::BinaryTPM, r☉₁::StaticVector{3}, r☉₂::StaticVector{3})
 
 # Arguments
 - `btpm` : Thermophysical model for a binary asteroid
 - `r☉₁`  : Sun's position in the body-fixed frame of the primary, which is not normalized.
 - `r☉₂`  : Sun's position in the body-fixed frame of the secondary, which is not normalized.
 """
-function update_flux_sun!(btpm::BinaryTPM, r☉₁::StaticVector, r☉₂::StaticVector)
+function update_flux_sun!(btpm::BinaryTPM, r☉₁::StaticVector{3}, r☉₂::StaticVector{3})
     update_flux_sun!(btpm.pri, r☉₁)
     update_flux_sun!(btpm.sec, r☉₂)
 end
