@@ -7,7 +7,7 @@
     """
     println(msg)
 
-    ##= Download Files =##
+    ##= SPICE kernels =##
     paths_kernel = [
         "fk/hera_v10.tf",
         "lsk/naif0012.tls",
@@ -16,17 +16,22 @@
         "spk/didymos_hor_000101_500101_v01.bsp",
         "spk/didymos_gmv_260901_311001_v01.bsp",
     ]
+
+    ##= Shape models =##
     paths_shape = [
         "g_50677mm_rad_obj_didy_0000n00000_v001.obj",
         "g_08438mm_lgt_obj_dimo_0000n00000_v002.obj",
     ]
 
+    ##= Download SPICE kernels =##
     for path_kernel in paths_kernel
         url_kernel = "https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/$(path_kernel)"
         filepath = joinpath("kernel", path_kernel)
         mkpath(dirname(filepath))
         isfile(filepath) || Downloads.download(url_kernel, filepath)
     end
+
+    ##= Download shape models =##
     for path_shape in paths_shape
         url_kernel = "https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/dsk/$(path_shape)"
         filepath = joinpath("shape", path_shape)
@@ -34,7 +39,7 @@
         isfile(filepath) || Downloads.download(url_kernel, filepath)
     end
 
-    ##= Load data with SPICE =##
+    ##= Load the SPICE kernels =##
     for path_kernel in paths_kernel
         filepath = joinpath("kernel", path_kernel)
         SPICE.furnsh(filepath)
@@ -67,7 +72,7 @@
 
     SPICE.kclear()
 
-    ##= Load obj file =##
+    ##= Load the shape models =##
     path_shape1_obj = joinpath("shape", "g_50677mm_rad_obj_didy_0000n00000_v001.obj")
     path_shape2_obj = joinpath("shape", "g_08438mm_lgt_obj_dimo_0000n00000_v002.obj")
     path_shape1_jld = joinpath("shape", "g_50677mm_rad_obj_didy_0000n00000_v001.jld2")
@@ -85,6 +90,10 @@
         shape2 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape2_obj; scale=1000, find_visible_facets=true)
         AsteroidThermoPhysicalModels.save_shape_jld(path_shape2_jld, shape2)
     end
+
+    println(shape1)
+    println(shape2)
+
     
     ##= Thermal properties =##
     P  = SPICE.convrt(AsteroidThermoPhysicalModels.DIDYMOS[:P], "hours", "seconds")
