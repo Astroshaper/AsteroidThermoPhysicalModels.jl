@@ -5,44 +5,38 @@
 # ****************************************************************
 
 """
-    update_temperature!(stpm::SingleTPM, nₜ::Integer)
+    update_temperature!(stpm::SingleTPM)
 
-Calculate the temperature for the next time step (`nₜ + 1`) based on 1D heat conduction equation.
+Calculate the temperature for the next time step based on 1D heat conduction equation.
 
 # Arguments
 - `stpm` : Thermophysical model for a single asteroid
-- `nₜ`   : Index of the current time step
 """
-function update_temperature!(stpm::SingleTPM, nₜ::Integer)
-
+function update_temperature!(stpm::SingleTPM)
     if stpm.SOLVER isa ForwardEulerSolver
-        forward_euler!(stpm, nₜ)
+        forward_euler!(stpm)
     elseif stpm.SOLVER isa BackwardEulerSolver
-        backward_euler!(stpm, nₜ)
+        backward_euler!(stpm)
     elseif stpm.SOLVER isa CrankNicolsonSolver
-        crank_nicolson!(stpm, nₜ)
+        crank_nicolson!(stpm)
     else
         error("The solver is not implemented.")
     end
-    
-    ## Apply boundary conditions
-    update_upper_temperature!(stpm, nₜ+1)
-    update_lower_temperature!(stpm, nₜ+1)
 end
 
 
 """
-    update_temperature!(btpm::BinaryTPM, nₜ::Integer)
+    update_temperature!(btpm::BinaryTPM)
 
-Calculate the temperature for the next time step (`nₜ + 1`) based on 1D heat conductivity equation.
+Calculate the temperature for the next time step based on 1D heat conductivity equation.
 
 # Arguments
 - `btpm` : Thermophysical model for a binary asteroid
 - `nₜ`   : Index of the current time step
 """
-function update_temperature!(btpm::BinaryTPM, nₜ::Integer)
-    update_temperature!(btpm.pri, nₜ)
-    update_temperature!(btpm.sec, nₜ)
+function update_temperature!(btpm::BinaryTPM)
+    update_temperature!(btpm.pri)
+    update_temperature!(btpm.sec)
 end
 
 # ****************************************************************
@@ -53,12 +47,12 @@ end
 """
     forward_euler!(stpm::SingleTPM, nₜ::Integer)
 
-Predict the temperature at the next time step (`nₜ + 1`) by the forward Euler method.
+Predict the temperature at the next time step by the forward Euler method.
 - Explicit in time
 - First order in time
 In this function, the heat conduction equation is non-dimensionalized in time and length.
 """
-function forward_euler!(stpm::SingleTPM, nₜ::Integer)
+function forward_euler!(stpm::SingleTPM)
     T = stpm.temperature
     Nz = size(T, 1)
     Ns = size(T, 2)
@@ -66,90 +60,104 @@ function forward_euler!(stpm::SingleTPM, nₜ::Integer)
     for nₛ in 1:Ns
         λ = (stpm.thermo_params.λ isa Real ? stpm.thermo_params.λ : stpm.thermo_params.λ[nₛ])
         for nz in 2:(Nz-1)
-            T[nz, nₛ, nₜ+1] = (1-2λ)*T[nz, nₛ, nₜ] + λ*(T[nz+1, nₛ, nₜ] + T[nz-1, nₛ, nₜ])
+            stpm.SOLVER.T[nz] = (1-2λ)*T[nz, nₛ] + λ*(T[nz+1, nₛ] + T[nz-1, nₛ])  # Predict temperature at next time step
         end
+
+        ## Apply boundary conditions
+        update_upper_temperature!(stpm, nₛ)
+        update_lower_temperature!(stpm)
+
+        T[:, nₛ] .= stpm.SOLVER.T  # Copy temperature at next time step
     end
 end
 
 
 """
-    backward_euler!(stpm::SingleTPM, nₜ::Integer)
+    backward_euler!(stpm::SingleTPM)
 
-Predict the temperature at the next time step (`nₜ + 1`) by the backward Euler method.
+Predict the temperature at the next time step by the backward Euler method.
 - Implicit in time (Unconditionally stable in the heat conduction equation)
 - First order in time
 - Second order in space
 In this function, the heat conduction equation is non-dimensionalized in time and length.
 """
-function backward_euler!(stpm::SingleTPM, nₜ::Integer)
-    T = stpm.temperature
-    Nz = size(T, 1)
-    Ns = size(T, 2)
+function backward_euler!(stpm::SingleTPM)
+    # T = stpm.temperature
+    # Nz = size(T, 1)
+    # Ns = size(T, 2)
 
-    for nₛ in 1:Ns
-        λ = (stpm.thermo_params.λ isa Real ? stpm.thermo_params.λ : stpm.thermo_params.λ[nₛ])
+    # for nₛ in 1:Ns
+    #     λ = (stpm.thermo_params.λ isa Real ? stpm.thermo_params.λ : stpm.thermo_params.λ[nₛ])
 
-        stpm.SOLVER.a .= -λ
-        stpm.SOLVER.a[begin] = 0
-        stpm.SOLVER.a[end]   = 0
+    #     stpm.SOLVER.a .= -λ
+    #     stpm.SOLVER.a[begin] = 0
+    #     stpm.SOLVER.a[end]   = 0
 
-        stpm.SOLVER.b .= 1 + 2λ
-        stpm.SOLVER.b[begin] = 1
-        stpm.SOLVER.b[end]   = 1
+    #     stpm.SOLVER.b .= 1 + 2λ
+    #     stpm.SOLVER.b[begin] = 1
+    #     stpm.SOLVER.b[end]   = 1
 
-        stpm.SOLVER.c .= -λ
-        stpm.SOLVER.c[begin] = 0
-        stpm.SOLVER.c[end]   = 0
+    #     stpm.SOLVER.c .= -λ
+    #     stpm.SOLVER.c[begin] = 0
+    #     stpm.SOLVER.c[end]   = 0
 
-        stpm.SOLVER.d .= T[:, nₛ, nₜ]
+    #     stpm.SOLVER.d .= T[:, nₛ, nₜ]
 
-        tridiagonal_matrix_algorithm!(stpm)
-        T[:, nₛ, nₜ+1] .= stpm.SOLVER.x
-    end
+    #     tridiagonal_matrix_algorithm!(stpm)
+    #     T[:, nₛ, nₜ+1] .= stpm.SOLVER.x
+    # end
+
+    ## Apply boundary conditions
+    # update_upper_temperature!(stpm)
+    # update_lower_temperature!(stpm)
 end
 
 
 """
-    crank_nicolson!(stpm::SingleTPM, nₜ::Integer)
+    crank_nicolson!(stpm::SingleTPM)
 
-Predict the temperature at the next time step (`nₜ + 1`) by the Crank-Nicolson method.
+Predict the temperature at the next time step by the Crank-Nicolson method.
 - Implicit in time (Unconditionally stable in the heat conduction equation)
 - Second order in time
 - Second order in space
 In this function, the heat conduction equation is non-dimensionalized in time and length.
 """
-function crank_nicolson!(stpm::SingleTPM, nₜ::Integer)
-    T = stpm.temperature
-    Nz = size(T, 1)
-    Ns = size(T, 2)
+function crank_nicolson!(stpm::SingleTPM)
+    # T = stpm.temperature
+    # Nz = size(T, 1)
+    # Ns = size(T, 2)
 
-    Δt̄ = stpm.thermo_params.Δt / stpm.thermo_params.P  # Non-dimensional timestep, normalized by period
-    Δz̄ = stpm.thermo_params.Δz / stpm.thermo_params.l  # Non-dimensional step in depth, normalized by thermal skin depth
-    r = (1/4π) * (Δt̄ / 2Δz̄^2)
+    # Δt̄ = stpm.thermo_params.Δt / stpm.thermo_params.P  # Non-dimensional timestep, normalized by period
+    # Δz̄ = stpm.thermo_params.Δz / stpm.thermo_params.l  # Non-dimensional step in depth, normalized by thermal skin depth
+    # r = (1/4π) * (Δt̄ / 2Δz̄^2)
 
-    for nₛ in 1:Ns
-        stpm.SOLVER.a .= -r
-        stpm.SOLVER.a[begin] = 0
-        stpm.SOLVER.a[end]   = 0
+    # for nₛ in 1:Ns
+    #     stpm.SOLVER.a .= -r
+    #     stpm.SOLVER.a[begin] = 0
+    #     stpm.SOLVER.a[end]   = 0
 
-        stpm.SOLVER.b .= 1 + 2r
-        stpm.SOLVER.b[begin] = 1
-        stpm.SOLVER.b[end]   = 1
+    #     stpm.SOLVER.b .= 1 + 2r
+    #     stpm.SOLVER.b[begin] = 1
+    #     stpm.SOLVER.b[end]   = 1
 
-        stpm.SOLVER.c .= -r
-        stpm.SOLVER.c[begin] = 0
-        stpm.SOLVER.c[end]   = 0
+    #     stpm.SOLVER.c .= -r
+    #     stpm.SOLVER.c[begin] = 0
+    #     stpm.SOLVER.c[end]   = 0
 
-        for nz in 2:Nz-1
-            stpm.SOLVER.d[nz] = r*T[nz+1, nₛ, nₜ] + (1-2r)*T[nz, nₛ, nₜ] + r*T[nz-1, nₛ, nₜ]
-        end
+    #     for nz in 2:Nz-1
+    #         stpm.SOLVER.d[nz] = r*T[nz+1, nₛ, nₜ] + (1-2r)*T[nz, nₛ, nₜ] + r*T[nz-1, nₛ, nₜ]
+    #     end
 
-        # stpm.SOLVER.d[1]  = 0  # Upper boundary condition
-        # stpm.SOLVER.d[Nz] = 0 # Lower boundary condition
+    #     # stpm.SOLVER.d[1]  = 0  # Upper boundary condition
+    #     # stpm.SOLVER.d[Nz] = 0 # Lower boundary condition
 
-        tridiagonal_matrix_algorithm!(stpm)
-        T[:, nₛ, nₜ+1] .= stpm.SOLVER.x
-    end
+    #     tridiagonal_matrix_algorithm!(stpm)
+    #     T[:, nₛ, nₜ+1] .= stpm.SOLVER.x
+    # end
+
+    # ## Apply boundary conditions
+    # update_upper_temperature!(stpm)
+    # update_lower_temperature!(stpm)
 end
 
 
@@ -193,37 +201,35 @@ tridiagonal_matrix_algorithm!(stpm::SingleTPM) = tridiagonal_matrix_algorithm!(s
 # ****************************************************************
 
 """
-    update_upper_temperature!(stpm::SingleTPM, nₜ::Integer)
+    update_upper_temperature!(stpm::SingleTPM, nₛ::Integer)
 
-Update the temperature of the upper surface based on a boundary condition.
+Update the temperature of the upper surface based on the boundary condition `stpm.BC_UPPER`.
 
 # Arguments
 - `stpm`      : Thermophysical model for a single asteroid
-- `nₜ`        : Index of the current time step
+- `nₛ`        : Index of the face of the shape model
 """
-function update_upper_temperature!(stpm::SingleTPM, nₜ::Integer)
+function update_upper_temperature!(stpm::SingleTPM, nₛ::Integer)
 
     #### Radiation boundary condition ####
     if stpm.BC_UPPER isa RadiationBoundaryCondition
-        for nₛ in eachindex(stpm.shape.faces)
-            P    = stpm.thermo_params.P
-            l    = (stpm.thermo_params.l    isa Real ? stpm.thermo_params.l    : stpm.thermo_params.l[nₛ]   )
-            Γ    = (stpm.thermo_params.Γ    isa Real ? stpm.thermo_params.Γ    : stpm.thermo_params.Γ[nₛ]   )
-            A_B  = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[nₛ] )
-            A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[nₛ])
-            ε    = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[nₛ]   )
-            Δz   = stpm.thermo_params.Δz
+        P    = stpm.thermo_params.P
+        l    = (stpm.thermo_params.l    isa Real ? stpm.thermo_params.l    : stpm.thermo_params.l[nₛ]   )
+        Γ    = (stpm.thermo_params.Γ    isa Real ? stpm.thermo_params.Γ    : stpm.thermo_params.Γ[nₛ]   )
+        A_B  = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[nₛ] )
+        A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[nₛ])
+        ε    = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[nₛ]   )
+        Δz   = stpm.thermo_params.Δz
     
-            F_sun, F_scat, F_rad = stpm.flux[nₛ, :]
-            F_total = flux_total(A_B, A_TH, F_sun, F_scat, F_rad)
-            update_surface_temperature!((@views stpm.temperature[:, nₛ, nₜ]), F_total, P, l, Γ, ε, Δz)
-        end
+        F_sun, F_scat, F_rad = stpm.flux[nₛ, :]
+        F_total = flux_total(A_B, A_TH, F_sun, F_scat, F_rad)
+        update_surface_temperature!(stpm.SOLVER.T, F_total, P, l, Γ, ε, Δz)
     #### Insulation boundary condition ####
     elseif stpm.BC_UPPER isa InsulationBoundaryCondition
-        stpm.temperature[begin, :, nₜ] .= stpm.temperature[begin+1, :, nₜ]
+        stpm.SOLVER.T[begin] = stpm.SOLVER.T[begin+1]
     #### Isothermal boundary condition ####
     elseif stpm.BC_UPPER isa IsothermalBoundaryCondition
-        stpm.temperature[begin, :, nₜ] .= stpm.BC_UPPER.T_iso
+        stpm.SOLVER.T[begin] = stpm.BC_UPPER.T_iso
     else
         error("The upper boundary condition is not implemented.")
     end
@@ -265,22 +271,21 @@ end
 # ****************************************************************
 
 """
-    update_bottom_temperature!(shape::ShapeModel, nₜ::Integer, ::InsulationBoundaryCondition)
+    update_bottom_temperature!(shape::ShapeModel)
 
-Update bottom temperature based on insulation boundary condition
+Update the temperature of the bottom surface based on the boundary condition `stpm.BC_LOWER`.
 
 # Arguments
 - `stpm`       : Thermophysical model for a single asteroid
-- `nₜ`         : Index of the current time step
 """
-function update_lower_temperature!(stpm::SingleTPM, nₜ::Integer)
+function update_lower_temperature!(stpm::SingleTPM)
 
     #### Insulation boundary condition ####
     if stpm.BC_LOWER isa InsulationBoundaryCondition
-        stpm.temperature[end, :, nₜ] .= stpm.temperature[end-1, :, nₜ]
+        stpm.SOLVER.T[end] = stpm.SOLVER.T[end-1]
     #### Isothermal boundary condition ####
     elseif stpm.BC_LOWER isa IsothermalBoundaryCondition
-        stpm.temperature[end, :, nₜ] .= stpm.BC_LOWER.T_iso
+        stpm.SOLVER.T[end] = stpm.BC_LOWER.T_iso
     else
         error("The lower boundary condition is not implemented.")
     end

@@ -52,7 +52,7 @@
     BC_UPPER       = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(0)
     BC_LOWER       = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(0)
 
-    stpm_FE = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.ForwardEulerSolver())
+    stpm_FE = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.ForwardEulerSolver(thermo_params))
     stpm_BE = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.BackwardEulerSolver(thermo_params))
     stpm_CN = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.CrankNicolsonSolver(thermo_params))
 
@@ -66,37 +66,29 @@
     stpm_CN.temperature .= Ts
 
     ##= Run TPM =##
-    @time for nₜ in eachindex(ephem.time)
+    for nₜ in eachindex(ephem.time)
         nₜ == length(et_range) && break  # Stop to update the temperature at the final step
         
-        AsteroidThermoPhysicalModels.forward_euler!(stpm_FE, nₜ)
-        AsteroidThermoPhysicalModels.update_upper_temperature!(stpm_FE, nₜ+1)
-        AsteroidThermoPhysicalModels.update_lower_temperature!(stpm_FE, nₜ+1)
-
-        AsteroidThermoPhysicalModels.backward_euler!(stpm_BE, nₜ)
-        AsteroidThermoPhysicalModels.update_upper_temperature!(stpm_BE, nₜ+1)
-        AsteroidThermoPhysicalModels.update_lower_temperature!(stpm_BE, nₜ+1)
-
-        AsteroidThermoPhysicalModels.crank_nicolson!(stpm_CN, nₜ)
-        AsteroidThermoPhysicalModels.update_upper_temperature!(stpm_CN, nₜ+1)
-        AsteroidThermoPhysicalModels.update_lower_temperature!(stpm_CN, nₜ+1)
+        AsteroidThermoPhysicalModels.forward_euler!(stpm_FE)
+        AsteroidThermoPhysicalModels.backward_euler!(stpm_BE)
+        AsteroidThermoPhysicalModels.crank_nicolson!(stpm_CN)
     end
 
     ##= Save data =##
-    df = DataFrames.DataFrame(
-        x = xs,
-        T_FE_100Δt = stpm_FE.temperature[:, 1, 101],  # t =  4 ms <- 0.4e-4 * 100
-        T_BE_100Δt = stpm_BE.temperature[:, 1, 101],  # t =  4 ms
-        T_CN_100Δt = stpm_CN.temperature[:, 1, 101],  # t =  4 ms
-        T_FE_200Δt = stpm_FE.temperature[:, 1, 201],  # t =  8 ms
-        T_BE_200Δt = stpm_BE.temperature[:, 1, 201],  # t =  8 ms
-        T_CN_200Δt = stpm_CN.temperature[:, 1, 201],  # t =  8 ms
-        T_FE_400Δt = stpm_FE.temperature[:, 1, 401],  # t = 16 ms
-        T_BE_400Δt = stpm_BE.temperature[:, 1, 401],  # t = 16 ms
-        T_CN_400Δt = stpm_CN.temperature[:, 1, 401],  # t = 16 ms
-        T_FE_800Δt = stpm_FE.temperature[:, 1, 801],  # t = 32 ms
-        T_BE_800Δt = stpm_BE.temperature[:, 1, 801],  # t = 32 ms
-        T_CN_800Δt = stpm_CN.temperature[:, 1, 801],  # t = 32 ms
-    )
-    jldsave("heat_conduction_1D.jld2"; df)
+    # df = DataFrames.DataFrame(
+    #     x = xs,
+        # T_FE_100Δt = stpm_FE.temperature[:, 1, 101],  # t =  4 ms <- 0.4e-4 * 100
+        # T_BE_100Δt = stpm_BE.temperature[:, 1, 101],  # t =  4 ms
+        # T_CN_100Δt = stpm_CN.temperature[:, 1, 101],  # t =  4 ms
+        # T_FE_200Δt = stpm_FE.temperature[:, 1, 201],  # t =  8 ms
+        # T_BE_200Δt = stpm_BE.temperature[:, 1, 201],  # t =  8 ms
+        # T_CN_200Δt = stpm_CN.temperature[:, 1, 201],  # t =  8 ms
+        # T_FE_400Δt = stpm_FE.temperature[:, 1, 401],  # t = 16 ms
+        # T_BE_400Δt = stpm_BE.temperature[:, 1, 401],  # t = 16 ms
+        # T_CN_400Δt = stpm_CN.temperature[:, 1, 401],  # t = 16 ms
+        # T_FE_800Δt = stpm_FE.temperature[:, 1, 801],  # t = 32 ms
+        # T_BE_800Δt = stpm_BE.temperature[:, 1, 801],  # t = 32 ms
+        # T_CN_800Δt = stpm_CN.temperature[:, 1, 801],  # t = 32 ms
+    # )
+    # jldsave("heat_conduction_1D.jld2"; df)
 end

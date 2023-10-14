@@ -10,11 +10,18 @@ abstract type HeatConductionSolver end
 
 
 """
-Singleton type of the forward Euler method:
+Type of the forward Euler method:
 - Explicit in time
 - First order in time
+
+The `ForwardEulerSolver` type includes a vector for the temperature at the next time step.
 """
-struct ForwardEulerSolver <: HeatConductionSolver end
+struct ForwardEulerSolver <: HeatConductionSolver
+    T::Vector{Float64}
+end
+
+ForwardEulerSolver(thermo_params::AbstractThermoParams) = ForwardEulerSolver(thermo_params.Nz)
+ForwardEulerSolver(N::Integer) = ForwardEulerSolver(zeros(N))
 
 
 """
@@ -110,14 +117,7 @@ abstract type ThermoPhysicalModel end
     - `flux[:, 1]`     : F_sun,  flux of direct sunlight
     - `flux[:, 2]`     : F_scat, flux of scattered light
     - `flux[:, 3]`     : F_rad,  flux of thermal emission from surrounding surface
-- `temperature`    : 3D array in size of (Nz, Ns, Nt). Temperature according to depth cells (Nz), faces (Ns), and time steps in one periodic cycle (Nt).
-    -         ⋅----------⋅
-    -     Nt /          /|
-    -       ⋅--- Ns ---⋅ |
-    -       |          | |
-    -    Nz |          | ⋅
-    -       |          |/
-    -       ⋅----------⋅
+- `temperature`    : Temperature matrix `(Nz, Ns)` according to the number of depth cells `Nz` and the number of faces `Ns`.
 
 - `face_forces`    : Thermal force on each face
 - `force`          : Thermal recoil force at body-fixed frame (Yarkovsky effect)
@@ -137,8 +137,8 @@ struct SingleTPM <: ThermoPhysicalModel
     shape          ::ShapeModel
     thermo_params  ::Union{UniformThermoParams, NonUniformThermoParams}
 
-    flux           ::Matrix{Float64}    # (Ns, 3)
-    temperature    ::Array{Float64, 3}  # (Nz, Ns, Nt)
+    flux           ::Matrix{Float64}  # (Ns, 3)
+    temperature    ::Matrix{Float64}  # (Nz, Ns)
 
     face_forces    ::Vector{SVector{3, Float64}}
     force          ::MVector{3, Float64}
@@ -172,10 +172,9 @@ function SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, SOLVER, B
 
     Nz = thermo_params.Nz
     Ns = length(shape.faces)
-    Nt = thermo_params.Nt
 
     flux = zeros(Ns, 3)
-    temperature = zeros(Nz, Ns, Nt)
+    temperature = zeros(Nz, Ns)
 
     face_forces = [zero(SVector{3, Float64}) for _ in shape.faces]
     force  = zero(MVector{3, Float64})
@@ -213,8 +212,7 @@ function BinaryTPM(pri, sec; MUTUAL_SHADOWING, MUTUAL_HEATING)
 end
 
 
-surface_temperature(stpm::SingleTPM, nₜ::Integer) = stpm.temperature[begin, :, nₜ]
-surface_temperature(stpm::SingleTPM) = stpm.temperature[begin, :, end] 
+surface_temperature(stpm::SingleTPM) = stpm.temperature[begin, :] 
 
 
 # ****************************************************************
@@ -248,7 +246,7 @@ Initialize all temperature cells at the given temperature `T₀`
 - `T₀`   : Initial temperature of all cells [K]
 """
 function init_temperature!(stpm::SingleTPM, T₀::Real)
-    stpm.temperature[:, :, :] .= T₀
+    stpm.temperature .= T₀
 end
 
 
@@ -342,24 +340,24 @@ function run_TPM!(stpm::SingleTPM, ephem, savepath)
 
         update_flux_sun!(stpm, r☉)
         update_flux_scat_single!(stpm)
-        update_flux_rad_single!(stpm, nₜ)
+        update_flux_rad_single!(stpm)
         
-        update_thermal_force!(stpm, nₜ)
+        update_thermal_force!(stpm)
 
         ## Save data
-        surf_temps[:, nₜ] .= surface_temperature(stpm, nₜ)
+        surf_temps[:, nₜ] .= surface_temperature(stpm)
         forces[nₜ]  .= stpm.force   # Body-fixed frame
         torques[nₜ] .= stpm.torque  # Body-fixed frame
 
         ## Energy input/output
-        E_in, E_out, E_cons = energy_io(stpm, nₜ)
+        E_in, E_out, E_cons = energy_io(stpm)
         
         ## Update the progress meter
         showvalues = [("Timestep", nₜ), ("E_cons = E_out / E_in", E_cons)]
         ProgressMeter.next!(p; showvalues)
 
         nₜ == length(ephem.time) && break  # Stop to update the temperature at the final step
-        update_temperature!(stpm, nₜ)
+        update_temperature!(stpm)
     end
 
     jldsave(savepath; stpm, ephem, surf_temps, forces, torques)
@@ -400,26 +398,26 @@ function run_TPM!(btpm::BinaryTPM, ephem, savepath)
         ## Update enegey flux
         update_flux_sun!(btpm, r☉₁, r☉₂)
         update_flux_scat_single!(btpm)
-        update_flux_rad_single!(btpm, nₜ)
+        update_flux_rad_single!(btpm)
 
         mutual_shadowing!(btpm, r☉₁, rₛ, R₂₁)  # Mutual-shadowing (eclipse)
-        mutual_heating!(btpm, nₜ, rₛ, R₂₁)         # Mutual-heating
+        mutual_heating!(btpm, rₛ, R₂₁)         # Mutual-heating
 
-        update_thermal_force!(btpm, nₜ)
+        update_thermal_force!(btpm)
 
         ## Save data for primary
-        surf_temps[1][:, nₜ] .= surface_temperature(btpm.pri, nₜ)
+        surf_temps[1][:, nₜ] .= surface_temperature(btpm.pri)
         forces[1][nₜ]  .= btpm.pri.force   # Body-fixed frame
         torques[1][nₜ] .= btpm.pri.torque  # Body-fixed frame
 
         ## Save data for secondary
-        surf_temps[2][:, nₜ] .= surface_temperature(btpm.sec, nₜ)
+        surf_temps[2][:, nₜ] .= surface_temperature(btpm.sec)
         forces[2][nₜ]  .= btpm.sec.force   # Body-fixed frame
         torques[2][nₜ] .= btpm.sec.torque  # Body-fixed frame
     
         ## Energy input/output
-        E_cons_pri = energy_io(btpm.pri, nₜ)[3]
-        E_cons_sec = energy_io(btpm.sec, nₜ)[3]
+        E_cons_pri = energy_io(btpm.pri)[3]
+        E_cons_sec = energy_io(btpm.sec)[3]
 
         ## Update the progress meter
         showvalues = [("Timestep", nₜ), ("E_cons for primary", E_cons_pri), ("E_cons for secondary", E_cons_sec)]
@@ -427,7 +425,7 @@ function run_TPM!(btpm::BinaryTPM, ephem, savepath)
         
         ## Update temperature distribution
         nₜ == length(ephem.time) && break  # Stop to update the temperature at the final step
-        update_temperature!(btpm, nₜ)
+        update_temperature!(btpm)
     end
     
     jldsave(savepath; btpm, ephem, surf_temps, forces, torques)
