@@ -37,9 +37,6 @@
         A_B     = 0.0,
         A_TH    = 0.0,
         ε       = 1.0,
-        t_begin = et_range[begin],
-        t_end   = et_range[end],
-        Nt      = length(et_range),
         z_max   = 1.0,
         Nz      = 101,
     )
@@ -68,10 +65,11 @@
     ##= Run TPM =##
     for nₜ in eachindex(ephem.time)
         nₜ == length(et_range) && break  # Stop to update the temperature at the final step
+        Δt = ephem.time[nₜ+1] - ephem.time[nₜ]
         
-        AsteroidThermoPhysicalModels.forward_euler!(stpm_FE)
-        AsteroidThermoPhysicalModels.backward_euler!(stpm_BE)
-        AsteroidThermoPhysicalModels.crank_nicolson!(stpm_CN)
+        AsteroidThermoPhysicalModels.forward_euler!(stpm_FE, Δt)
+        AsteroidThermoPhysicalModels.backward_euler!(stpm_BE, Δt)
+        AsteroidThermoPhysicalModels.crank_nicolson!(stpm_CN, Δt)
     end
 
     ##= Save data =##

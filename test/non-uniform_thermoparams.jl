@@ -100,9 +100,6 @@
         A_B     = [r[3] > 0 ? 0.04 : 0.1 for r in shape.face_centers],
         A_TH    = 0.0,
         ε       = [r[3] > 0 ? 1.0 : 0.9  for r in shape.face_centers],
-        t_begin = et_range[begin],
-        t_end   = et_range[end],
-        Nt      = length(et_range),
         z_max   = 0.6,
         Nz      = 41,
     )
