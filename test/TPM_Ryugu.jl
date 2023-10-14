@@ -95,8 +95,14 @@
     println(thermo_params)
 
     ##= Setting of TPM =##
-    stpm = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true, SOLVER=AsteroidThermoPhysicalModels.ForwardEulerSolver())
-    AsteroidThermoPhysicalModels.init_temperature!(stpm, 200.)
+    stpm = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params;
+        SELF_SHADOWING = true,
+        SELF_HEATING   = true,
+        SOLVER         = AsteroidThermoPhysicalModels.ForwardEulerSolver(),
+        BC_UPPER       = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
+        BC_LOWER       = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
+    )
+    AsteroidThermoPhysicalModels.init_temperature!(stpm, 200)
 
     # Run TPM and save the result
     savepath = "TPM_Ryugu.jld2"

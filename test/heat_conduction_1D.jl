@@ -47,9 +47,14 @@
     println(thermo_params)
 
     ##= TPMs with different solvers =##
-    stpm_FE = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params; SELF_SHADOWING=false, SELF_HEATING=false, SOLVER=AsteroidThermoPhysicalModels.ForwardEulerSolver())
-    stpm_BE = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params; SELF_SHADOWING=false, SELF_HEATING=false, SOLVER=AsteroidThermoPhysicalModels.BackwardEulerSolver(thermo_params))
-    stpm_CN = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params; SELF_SHADOWING=false, SELF_HEATING=false, SOLVER=AsteroidThermoPhysicalModels.CrankNicolsonSolver(thermo_params))
+    SELF_SHADOWING = false
+    SELF_HEATING   = false
+    BC_UPPER       = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(0)
+    BC_LOWER       = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(0)
+
+    stpm_FE = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.ForwardEulerSolver())
+    stpm_BE = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.BackwardEulerSolver(thermo_params))
+    stpm_CN = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.CrankNicolsonSolver(thermo_params))
 
     ##= Initial temperature =##
     T₀(x) = x < 0.5 ? 2x : 2(1 - x)
@@ -65,19 +70,16 @@
         nₜ == length(et_range) && break  # Stop to update the temperature at the final step
         
         AsteroidThermoPhysicalModels.forward_euler!(stpm_FE, nₜ)
-        AsteroidThermoPhysicalModels.backward_euler!(stpm_BE, nₜ)
-        AsteroidThermoPhysicalModels.crank_nicolson!(stpm_CN, nₜ)
-        
-        ## Isothermal boundary condition
-        # AsteroidThermoPhysicalModels.update_surface_temperature!(stpm, nₜ+1, AsteroidThermoPhysicalModels.Isothermal)
-        # AsteroidThermoPhysicalModels.update_bottom_temperature!(stpm, nₜ+1, AsteroidThermoPhysicalModels.Isothermal)
+        AsteroidThermoPhysicalModels.update_upper_temperature!(stpm_FE, nₜ+1)
+        AsteroidThermoPhysicalModels.update_lower_temperature!(stpm_FE, nₜ+1)
 
-        stpm_FE.temperature[begin, :, nₜ+1] .= 0
-        stpm_FE.temperature[end  , :, nₜ+1] .= 0
-        stpm_BE.temperature[begin, :, nₜ+1] .= 0
-        stpm_BE.temperature[end  , :, nₜ+1] .= 0
-        stpm_CN.temperature[begin, :, nₜ+1] .= 0
-        stpm_CN.temperature[end  , :, nₜ+1] .= 0
+        AsteroidThermoPhysicalModels.backward_euler!(stpm_BE, nₜ)
+        AsteroidThermoPhysicalModels.update_upper_temperature!(stpm_BE, nₜ+1)
+        AsteroidThermoPhysicalModels.update_lower_temperature!(stpm_BE, nₜ+1)
+
+        AsteroidThermoPhysicalModels.crank_nicolson!(stpm_CN, nₜ)
+        AsteroidThermoPhysicalModels.update_upper_temperature!(stpm_CN, nₜ+1)
+        AsteroidThermoPhysicalModels.update_lower_temperature!(stpm_CN, nₜ+1)
     end
 
     ##= Save data =##
