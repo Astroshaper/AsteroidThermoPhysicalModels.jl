@@ -1,219 +1,46 @@
 
 
 # ****************************************************************
-#              Thermal skin depth & Thermal inertia
-# ****************************************************************
-
-"""
-    thermal_skin_depth(P, k, ρ, Cp) -> l_2π
-
-# Arguments
-- `P`  : Cycle of thermal cycle [sec]
-- `k`  : Thermal conductivity [W/m/K]
-- `ρ`  : Material density [kg/m³]
-- `Cₚ` : Heat capacity [J/kg/K]
-
-# Return
-- `l_2π` : Thermal skin depth [m], as defined in Rozitis & Green (2011).
-"""
-thermal_skin_depth(P, k, ρ, Cₚ) = @. √(4π * P * k / (ρ * Cₚ))
-
-
-"""
-    thermal_inertia(k, ρ, Cp) -> Γ
-
-# Arguments
-- `k`  : Thermal conductivity [W/m/K]
-- `ρ`  : Material density [kg/m³]
-- `Cₚ` : Heat capacity [J/kg/K]
-
-# Return
-- `Γ` : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
-"""
-thermal_inertia(k, ρ, Cₚ) = @. √(k * ρ * Cₚ)
-
-
-# ****************************************************************
-#               Struct for thermophysical properties
-# ****************************************************************
-
-abstract type AbstractThermoParams end
-
-"""
-    struct NonUniformThermoParams
-
-# Fields
-- `P`     : Cycle of thermal cycle (rotation period) [sec]
-- `l`     : Thermal skin depth [m]
-- `Γ`     : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
-- `λ`     : Non-dimensional coefficient for heat diffusion equation
-- `A_B`   : Bond albedo
-- `A_TH`  : Albedo at thermal radiation wavelength
-- `ε`     : Emissivity
-
-- `t_begin` : Start time of the thermophysical simulation [sec]
-- `t_end`   : End time of the thermophysical simulation [sec]
-- `Δt`      : Timestep [sec]
-- `Nt`      : Number of timesteps
-
-- `z_max` : Depth of the bottom of a heat conduction equation [m]
-- `Δz`    : Depth step width [m]
-- `Nz`    : Number of depth steps
-"""
-struct NonUniformThermoParams <: AbstractThermoParams
-    P       ::Float64          # Common for all faces
-    l       ::Vector{Float64}
-    Γ       ::Vector{Float64}
-    λ       ::Vector{Float64}
-    A_B     ::Vector{Float64}
-    A_TH    ::Vector{Float64}
-    ε       ::Vector{Float64}
-
-    t_begin ::Float64          # Common for all faces
-    t_end   ::Float64          # Common for all faces
-    Δt      ::Float64          # Common for all faces
-    Nt      ::Int              # Common for all faces
-
-    z_max   ::Float64          # Common for all faces
-    Δz      ::Float64          # Common for all faces
-    Nz      ::Int              # Common for all faces
-end
-
-"""
-    struct UniformThermoParams
-
-# Fields
-- `P`     : Thermal cycle (rotation period) [sec]
-- `l`     : Thermal skin depth [m]
-- `Γ`     : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
-- `λ`     : Non-dimensional coefficient for heat diffusion equation
-- `A_B`   : Bond albedo
-- `A_TH`  : Albedo at thermal radiation wavelength
-- `ε`     : Emissivity
-
-- `t_begin` : Start time of the thermophysical simulation [sec]
-- `t_end`   : End time of the thermophysical simulation [sec]
-- `Δt`      : Timestep [sec]
-- `Nt`      : Number of timesteps
-
-- `z_max` : Depth of the bottom of a heat conduction equation [m]
-- `Δz`    : Depth step width [m]
-- `Nz`    : Number of depth steps
-"""
-struct UniformThermoParams <: AbstractThermoParams
-    P       ::Float64
-    l       ::Float64
-    Γ       ::Float64
-    λ       ::Float64
-    A_B     ::Float64
-    A_TH    ::Float64
-    ε       ::Float64
-
-    t_begin ::Float64
-    t_end   ::Float64
-    Δt      ::Float64
-    Nt      ::Int
-
-    z_max   ::Float64
-    Δz      ::Float64
-    Nz      ::Int
-end
-
-
-"""
-    thermoparams(; A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Nt, z_max, Nz, P)
-"""
-function thermoparams(; P, l, Γ, A_B, A_TH, ε, t_begin, t_end, Nt, z_max, Nz)
-
-    Δt = (t_end - t_begin) / (Nt - 1)
-    Δz = z_max / (Nz - 1)
-
-    λ = @. (Δt/P) / (Δz/l)^2 / 4π
-    maximum(λ) > 0.5 && error("λ should be smaller than 0.5 for convergence of the forward Euler method.")
-
-    LENGTH = maximum(length, [A_B, A_TH, ε, l, Γ, λ])
-
-    if LENGTH > 1
-        A_B   isa Real && (A_B  = fill(A_B,  LENGTH))
-        A_TH  isa Real && (A_TH = fill(A_TH, LENGTH))
-        ε     isa Real && (ε    = fill(ε,    LENGTH))
-        l     isa Real && (l    = fill(l,    LENGTH))
-        Γ     isa Real && (Γ    = fill(Γ,    LENGTH))
-        λ     isa Real && (λ    = fill(λ,    LENGTH))
-        
-        NonUniformThermoParams(P, l, Γ, λ, A_B, A_TH, ε, t_begin, t_end, Δt, Nt, z_max, Δz, Nz)
-    else
-        UniformThermoParams(P, l, Γ, λ, A_B, A_TH, ε, t_begin, t_end, Δt, Nt, z_max, Δz, Nz)
-    end
-end
-
-
-function Base.show(io::IO, params::UniformThermoParams)
-
-    msg =  "⋅-----------------------------------⋅\n"
-    msg *= "|     Thermophysical parameters     |\n"
-    msg *= "⋅-----------------------------------⋅\n"
-
-    msg *= "  P       = $(params.P) [sec]\n"
-    msg *= "          = $(SPICE.convrt(params.P, "seconds", "hours")) [h]\n"
-    msg *= "  l       = $(params.l) [m]\n"
-    msg *= "  Γ       = $(params.Γ) [tiu]\n"
-    msg *= "  λ       = $(params.λ)\n"
-    msg *= "  A_B     = $(params.A_B)\n"
-    msg *= "  A_TH    = $(params.A_TH)\n"
-    msg *= "  ε       = $(params.ε)\n"
-    
-    msg *= "-----------------------------------\n"
-
-    msg *= "  t_begin = $(params.t_begin) [sec]\n"
-    msg *= "          = $(params.t_begin / params.P) [P]\n"
-    msg *= "  t_end   = $(params.t_end) [sec]\n"
-    msg *= "          = $(params.t_end / params.P) [P]\n"
-    msg *= "  Δt      = $(params.Δt) [sec]\n"
-    msg *= "          = $(params.Δt / params.P) [P]\n"
-    msg *= "  Nt      = $(params.Nt)\n"
-
-    msg *= "-----------------------------------\n"
-
-    msg *= "  z_max   = $(params.z_max) [m]\n"
-    msg *= "          = $(params.z_max / params.l) [l]\n"
-    msg *= "  Δz      = $(params.Δz) [m]\n"
-    msg *= "          = $(params.Δz / params.l) [l]\n"
-    msg *= "  Nz      = $(params.Nz)\n"
-    
-    msg *= "-----------------------------------\n"
-    
-    print(io, msg)
-end
-
-
-# ****************************************************************
 #                      1D heat conduction
 # ****************************************************************
 
 """
-    forward_temperature(shape::ShapeModel, λ, nₜ::Integer)
+    forward_temperature(stpm::SingleTPM, nₜ::Integer)
 
 Calculate the temperature for the next time step (`nₜ + 1`) based on 1D heat conductivity equation.
 
 TO DO: Allow selection of boundary conditions and solvers
 
 # Arguments
-- `shape`  : Shape model
-- `params` : Thermophysical parameters
-- `nₜ`     : Index of the current time step
+- `stpm` : Thermophysical model for a single asteroid
+- `nₜ`   : Index of the current time step
 """
-function update_temperature!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer)
-    λ = params.λ
-    Tⱼ   = @views shape.temperature[:, :, nₜ  ]
-    Tⱼ₊₁ = @views shape.temperature[:, :, nₜ+1]
+function update_temperature!(stpm::SingleTPM, nₜ::Integer)
+    λ = stpm.thermo_params.λ
+    Tⱼ   = @views stpm.temperature[:, :, nₜ  ]
+    Tⱼ₊₁ = @views stpm.temperature[:, :, nₜ+1]
 
     ## Forward Euler method
     @. Tⱼ₊₁[begin+1:end-1, :] = @views (1-2λ')*Tⱼ[begin+1:end-1, :] + λ'*(Tⱼ[begin+2:end, :] + Tⱼ[begin:end-2, :])
 
     ## Boundary conditions
-    update_surface_temperature!(shape, params, nₜ+1, Radiation)  # Upper boundary condition of radiation
-    update_bottom_temperature!(shape, nₜ+1, Insulation)          # Lower boundary condition of insulation
+    update_surface_temperature!(stpm, nₜ+1, Radiation)  # Upper boundary condition of radiation
+    update_bottom_temperature!(stpm, nₜ+1, Insulation)  # Lower boundary condition of insulation
+end
+
+
+"""
+    forward_temperature(btpm::BinaryTPM, nₜ::Integer)
+
+Calculate the temperature for the next time step (`nₜ + 1`) based on 1D heat conductivity equation.
+
+# Arguments
+- `btpm` : Thermophysical model for a binary asteroid
+- `nₜ`   : Index of the current time step
+"""
+function update_temperature!(btpm::BinaryTPM, nₜ::Integer)
+    update_temperature!(btpm.pri, nₜ)
+    update_temperature!(btpm.sec, nₜ)
 end
 
 
@@ -247,29 +74,28 @@ const Isothermal = IsothermalBoundaryCondition()
 # ****************************************************************
 
 """
-    update_surface_temperature!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer, ::RadiationBoundaryCondition)
+    update_surface_temperature!(stpm::SingleTPM, nₜ::Integer, ::RadiationBoundaryCondition)
 
 Update surface temperature under radiation boundary condition using Newton's method
 
 # Arguments
-- `shape`     : Shape model (`ShapeModel`)
-- `params`    : Thermophysical prameters
+- `stpm`      : Thermophysical model for a single asteroid
 - `nₜ`        : Index of the current time step
 - `Radiation` : Singleton of `RadiationBoundaryCondition` to select boundary condition
 """
-function update_surface_temperature!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer, ::RadiationBoundaryCondition)
-    for nₛ in eachindex(shape.faces)
-        P    = params.P
-        l    = (params.l    isa Real ? params.l    : params.l[nₛ]   )
-        Γ    = (params.Γ    isa Real ? params.Γ    : params.Γ[nₛ]   )
-        A_B  = (params.A_B  isa Real ? params.A_B  : params.A_B[nₛ] )
-        A_TH = (params.A_TH isa Real ? params.A_TH : params.A_TH[nₛ])
-        ε    = (params.ε    isa Real ? params.ε    : params.ε[nₛ]   )
-        Δz   = params.Δz
+function update_surface_temperature!(stpm::SingleTPM, nₜ::Integer, ::RadiationBoundaryCondition)
+    for nₛ in eachindex(stpm.shape.faces)
+        P    = stpm.thermo_params.P
+        l    = (stpm.thermo_params.l    isa Real ? stpm.thermo_params.l    : stpm.thermo_params.l[nₛ]   )
+        Γ    = (stpm.thermo_params.Γ    isa Real ? stpm.thermo_params.Γ    : stpm.thermo_params.Γ[nₛ]   )
+        A_B  = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[nₛ] )
+        A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[nₛ])
+        ε    = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[nₛ]   )
+        Δz   = stpm.thermo_params.Δz
 
-        F_sun, F_scat, F_rad = shape.flux[nₛ, :]
-        F_total = total_flux(A_B, A_TH, F_sun, F_scat, F_rad)
-        update_surface_temperature!((@views shape.temperature[:, nₛ, nₜ]), F_total, P, l, Γ, ε, Δz)  # Δz should be normalized by l
+        F_sun, F_scat, F_rad = stpm.flux[nₛ, :]
+        F_total = flux_total(A_B, A_TH, F_sun, F_scat, F_rad)
+        update_surface_temperature!((@views stpm.temperature[:, nₛ, nₜ]), F_total, P, l, Γ, ε, Δz)
     end
 end
 
@@ -305,36 +131,35 @@ end
 
 
 """
-    update_surface_temperature!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer, ::InsulationBoundaryCondition)
+    update_surface_temperature!(stpm::SingleTPM, nₜ::Integer, ::InsulationBoundaryCondition)
 
 Update surface temperature based on insulation boundary condition
 
 # Arguments
-- `shape`      : Shape model (`ShapeModel`)
-- `params`     : Thermophysical prameters
+- `stpm`       : Thermophysical model for a single asteroid
 - `nₜ`         : Index of the current time step
 - `Insulation` : Singleton of `InsulationBoundaryCondition` to select boundary condition
 """
-function update_surface_temperature!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer, ::InsulationBoundaryCondition)
-    for nₛ in eachindex(shape.faces)
-        shape.temperature[begin, nₛ, nₜ] = shape.temperature[begin+1, nₛ, nₜ]
+function update_surface_temperature!(stpm::SingleTPM, nₜ::Integer, ::InsulationBoundaryCondition)
+    for nₛ in eachindex(stpm.shape.faces)
+        stpm.temperature[begin, nₛ, nₜ] = stpm.temperature[begin+1, nₛ, nₜ]
     end
 end
 
 
 """
-    update_surface_temperature!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer, ::IsothermalBoundaryCondition)
+    update_surface_temperature!(stpm::SingleTPM, nₜ::Integer, ::IsothermalBoundaryCondition)
 
 Update bottom temperature based on isothermal boundary condition
 
 # Arguments
-- `shape`       : Shape model (`ShapeModel`)
-- `nₜ`          : Index of the current time step
-- `Isothermal`  : Singleton of `IsothermalBoundaryCondition` to select boundary condition
+- `stpm`       : Thermophysical model for a single asteroid
+- `nₜ`         : Index of the current time step
+- `Isothermal` : Singleton of `IsothermalBoundaryCondition` to select boundary condition
 """
-function update_surface_temperature!(shape::ShapeModel, params::AbstractThermoParams, nₜ::Integer, ::IsothermalBoundaryCondition)
-    # for nₛ in eachindex(shape.faces)
-    #     shape.temperature[begin, nₛ, nₜ] = T_upper
+function update_surface_temperature!(stpm::SingleTPM, nₜ::Integer, ::IsothermalBoundaryCondition)
+    # for nₛ in eachindex(stpm.shape.faces)
+    #     stpm.temperature[begin, nₛ, nₜ] = T_upper
     # end
 end
 
@@ -349,13 +174,13 @@ end
 Update bottom temperature based on insulation boundary condition
 
 # Arguments
-- `shape`       : Shape model (`ShapeModel`)
-- `nₜ`          : Index of the current time step
-- `Insulation`  : Singleton of `InsulationBoundaryCondition` to select boundary condition
+- `stpm`       : Thermophysical model for a single asteroid
+- `nₜ`         : Index of the current time step
+- `Insulation` : Singleton of `InsulationBoundaryCondition` to select boundary condition
 """
-function update_bottom_temperature!(shape::ShapeModel, nₜ::Integer, ::InsulationBoundaryCondition)
-    for nₛ in eachindex(shape.faces)
-        shape.temperature[end, nₛ, nₜ] = shape.temperature[end-1, nₛ, nₜ]
+function update_bottom_temperature!(stpm::SingleTPM, nₜ::Integer, ::InsulationBoundaryCondition)
+    for nₛ in eachindex(stpm.shape.faces)
+        stpm.temperature[end, nₛ, nₜ] = stpm.temperature[end-1, nₛ, nₜ]
     end
 end
 
@@ -366,12 +191,12 @@ end
 Update bottom temperature based on isothermal boundary condition
 
 # Arguments
-- `shape`       : Shape model (`ShapeModel`)
-- `nₜ`          : Index of the current time step
-- `Isothermal`  : Singleton of `IsothermalBoundaryCondition` to select boundary condition
+- `stpm`       : Thermophysical model for a single asteroid
+- `nₜ`         : Index of the current time step
+- `Isothermal` : Singleton of `IsothermalBoundaryCondition` to select boundary condition
 """
-function update_bottom_temperature!(shape::ShapeModel, nₜ::Integer, ::IsothermalBoundaryCondition)
-    # for nₛ in eachindex(shape.faces)
-    #     shape.temperature[end, nₛ, nₜ] = T_lower
+function update_bottom_temperature!(stpm::SingleTPM, nₜ::Integer, ::IsothermalBoundaryCondition)
+    # for nₛ in eachindex(stpm.shape.faces)
+    #     stpm.temperature[end, nₛ, nₜ] = T_lower
     # end
 end

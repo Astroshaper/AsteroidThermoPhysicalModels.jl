@@ -40,14 +40,13 @@
         SPICE.furnsh(filepath)
     end
 
+    ##= Ephemerides =##
     et_begin = SPICE.utc2et("2027-02-18T00:00:00")
     et_end   = SPICE.utc2et("2027-02-19T00:00:00")
     step     = 300
     et_range = et_begin : step : et_end
-    @show et_range
     @show length(et_range)
 
-    ##= Ephemerides =##
     """
     - `time` : Ephemeris times
     - `sun1` : Sun's position in the primary's frame (DIDYMOS_FIXED)
@@ -111,10 +110,14 @@
 
     println(thermo_params)
 
-    ##= Run TPM and save the result =##
-    AsteroidThermoPhysicalModels.init_temperature!(shape1, thermo_params, 200.)
-    AsteroidThermoPhysicalModels.init_temperature!(shape2, thermo_params, 200.)
+    ##= Setting of TPM =##
+    tpm1 = AsteroidThermoPhysicalModels.SingleTPM(shape1, thermo_params, true, true)
+    tpm2 = AsteroidThermoPhysicalModels.SingleTPM(shape2, thermo_params, true, true)
+    btpm = AsteroidThermoPhysicalModels.BinaryTPM(tpm1, tpm2, true, true)
 
-    savepath = joinpath("TPM_Didymos.jld2")
-    AsteroidThermoPhysicalModels.run_TPM!((shape1, shape2), thermo_params, ephem, savepath)
+    AsteroidThermoPhysicalModels.init_temperature!(btpm, 200.)
+
+    ##= Run TPM and save the result =##
+    savepath = "TPM_Didymos.jld2"
+    AsteroidThermoPhysicalModels.run_TPM!(btpm, ephem, savepath)
 end

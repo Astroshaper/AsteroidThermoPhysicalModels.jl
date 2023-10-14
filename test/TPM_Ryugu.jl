@@ -24,7 +24,7 @@
         mkpath(dirname(filepath))
         isfile(filepath) || Downloads.download(url_kernel, filepath)
     end
-    
+
     for path_shape in paths_shape
         url_shape = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/paper/Watanabe_2019/$(path_shape)"
         filepath = joinpath("shape", path_shape)
@@ -39,11 +39,11 @@
     end
 
     ##= Ephemerides =##
-    et_begin = SPICE.utc2et("2018-07-01T00:00:00")
-    et_end   = SPICE.utc2et("2018-07-01T01:00:00")
-    step     = 76.3262  # Rotation of 1 deg
+    P = SPICE.convrt(7.63262, "hours", "seconds")   # Rotation period of Ryugu
+    et_begin = SPICE.utc2et("2018-07-01T00:00:00")  # Start time of TPM
+    et_end   = et_begin + 2P                        # End time of TPM
+    step     = P / 360                              # Time step of TPM, corresponding to 1 deg rotation
     et_range = et_begin : step : et_end
-    @show et_range
     @show length(et_range)
 
     """
@@ -94,8 +94,11 @@
 
     println(thermo_params)
 
+    ##= Setting of TPM =##
+    stpm = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params, true, true)
+    AsteroidThermoPhysicalModels.init_temperature!(stpm, 200.)
+
     # Run TPM and save the result
-    AsteroidThermoPhysicalModels.init_temperature!(shape, thermo_params, 200.)
-    savepath = joinpath("TPM_Ryugu.jld2")
-    AsteroidThermoPhysicalModels.run_TPM!(shape, thermo_params, ephem, savepath)
+    savepath = "TPM_Ryugu.jld2"
+    AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, savepath)
 end
