@@ -381,7 +381,7 @@ end
 
 
 """
-    save_TPM_csv(filepath, result::SingleTPMResult, stpm::SingleTPM, ephem)
+    export_TPM_results(filepath, result::SingleTPMResult, stpm::SingleTPM, ephem)
 
 Save the result of `SingleTPM` to CSV files.
 
@@ -395,7 +395,7 @@ Save the result of `SingleTPM` to CSV files.
 - Save the depths of the calculation nodes
 - Save README for the data file
 """
-function save_TPM_csv(dirpath, result::SingleTPMResult, stpm::SingleTPM, ephem)
+function export_TPM_results(dirpath, result::SingleTPMResult, stpm::SingleTPM, ephem)
     
     df = DataFrame()
     df.time     = ephem.time
@@ -428,7 +428,7 @@ end
 
 
 """
-    save_TPM_csv(filepath, result::BinaryTPMResult, stpm::BinaryTPM, ephem)
+    export_TPM_results(filepath, result::BinaryTPMResult, stpm::BinaryTPM, ephem)
 
 Save the result of `BinaryTPM` to CSV files.
 
@@ -438,8 +438,8 @@ Save the result of `BinaryTPM` to CSV files.
 - `btpm`    : Thermophysical model for a binary asteroid
 - `ephem`   : Ephemerides
 """
-function save_TPM_csv(dirpath, result::BinaryTPMResult, btpm::BinaryTPM, ephem)
-    save_TPM_csv(dirpath, result.pri, btpm.pri, ephem)
+function export_TPM_results(dirpath, result::BinaryTPMResult, btpm::BinaryTPM, ephem)
+    export_TPM_results(dirpath, result.pri, btpm.pri, ephem)
 
     mv(joinpath(dirpath, "data.csv")     , joinpath(dirpath, "pri_data.csv")     , force=true)
     mv(joinpath(dirpath, "surf_temp.csv"), joinpath(dirpath, "pri_surf_temp.csv"), force=true)
@@ -451,7 +451,7 @@ function save_TPM_csv(dirpath, result::BinaryTPMResult, btpm::BinaryTPM, ephem)
         )
     end
 
-    save_TPM_csv(dirpath, result.sec, btpm.sec, ephem)
+    export_TPM_results(dirpath, result.sec, btpm.sec, ephem)
 
     mv(joinpath(dirpath, "data.csv")     , joinpath(dirpath, "sec_data.csv")     , force=true)
     mv(joinpath(dirpath, "surf_temp.csv"), joinpath(dirpath, "sec_surf_temp.csv"), force=true)
