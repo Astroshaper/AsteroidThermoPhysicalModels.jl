@@ -321,7 +321,7 @@ end
 
 
 """
-    save_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, ephem, nₜ::Integer)
+    update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, ephem, nₜ::Integer)
 
 Save the results of TPM at the time step `nₜ` to `result`.
 
@@ -331,7 +331,7 @@ Save the results of TPM at the time step `nₜ` to `result`.
 - `ephem`  : Ephemerides
 - `nₜ`     : Time step to save data
 """
-function save_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, ephem, nₜ::Integer)
+function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, ephem, nₜ::Integer)
     result.E_in[nₜ]   = energy_in(stpm)
     result.E_out[nₜ]  = energy_out(stpm)
     result.force[nₜ]  = stpm.force
@@ -364,7 +364,7 @@ end
 
 
 """
-    save_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, nₜ::Integer)
+    update_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, nₜ::Integer)
 
 Save the results of TPM at the time step `nₜ` to `result`.
 
@@ -374,9 +374,9 @@ Save the results of TPM at the time step `nₜ` to `result`.
 - `ephem`  : Ephemerides
 - `nₜ`     : Time step
 """
-function save_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, nₜ::Integer)
-    save_TPM_result!(result.pri, btpm.pri, ephem, nₜ)
-    save_TPM_result!(result.sec, btpm.sec, ephem, nₜ)
+function update_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, nₜ::Integer)
+    update_TPM_result!(result.pri, btpm.pri, ephem, nₜ)
+    update_TPM_result!(result.sec, btpm.sec, ephem, nₜ)
 end
 
 
@@ -592,7 +592,7 @@ function run_TPM!(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face
         
         update_thermal_force!(stpm)
 
-        save_TPM_result!(result, stpm, ephem, nₜ)  # Save data
+        update_TPM_result!(result, stpm, ephem, nₜ)  # Save data
         
         ## Update the progress meter
         showvalues = [
@@ -648,7 +648,7 @@ function run_TPM!(btpm::BinaryTPM, ephem, time_begin::Real, time_end::Real, face
 
         update_thermal_force!(btpm)
 
-        save_TPM_result!(result, btpm, ephem, nₜ)  # Save data
+        update_TPM_result!(result, btpm, ephem, nₜ)  # Save data
 
         ## Update the progress meter
         showvalues = [
