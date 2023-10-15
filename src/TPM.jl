@@ -383,7 +383,7 @@ end
 """
     export_TPM_results(filepath, result::SingleTPMResult, stpm::SingleTPM, ephem)
 
-Save the result of `SingleTPM` to CSV files.
+Export the result of `SingleTPM` to CSV files.
 
 # Arguments
 - `dirpath` :  Path to the directory to save CSV files
@@ -430,38 +430,23 @@ end
 """
     export_TPM_results(filepath, result::BinaryTPMResult, stpm::BinaryTPM, ephem)
 
-Save the result of `BinaryTPM` to CSV files.
+Export the result of `BinaryTPM` to CSV files.
 
 # Arguments
-- `dirpath` :  Path to the directory to save CSV files
+- `dirpath` : Path to the directory to save CSV files
 - `result`  : Output data format for `BinaryTPM`
 - `btpm`    : Thermophysical model for a binary asteroid
 - `ephem`   : Ephemerides
 """
 function export_TPM_results(dirpath, result::BinaryTPMResult, btpm::BinaryTPM, ephem)
-    export_TPM_results(dirpath, result.pri, btpm.pri, ephem)
+    dirpath_pri = joinpath(dirpath, "pri")
+    dirpath_sec = joinpath(dirpath, "sec")
 
-    mv(joinpath(dirpath, "data.csv")     , joinpath(dirpath, "pri_data.csv")     , force=true)
-    mv(joinpath(dirpath, "surf_temp.csv"), joinpath(dirpath, "pri_surf_temp.csv"), force=true)
-    for nₛ in keys(result.pri.face_temp)
-        mv(
-            joinpath(dirpath, "face_temp_$(lpad(nₛ, 7, '0')).csv"),
-            joinpath(dirpath, "pri_face_temp_$(lpad(nₛ, 7, '0')).csv"),
-            force=true
-        )
-    end
+    mkpath(dirpath_pri)
+    mkpath(dirpath_sec)
 
-    export_TPM_results(dirpath, result.sec, btpm.sec, ephem)
-
-    mv(joinpath(dirpath, "data.csv")     , joinpath(dirpath, "sec_data.csv")     , force=true)
-    mv(joinpath(dirpath, "surf_temp.csv"), joinpath(dirpath, "sec_surf_temp.csv"), force=true)
-    for nₛ in keys(result.sec.face_temp)
-        mv(
-            joinpath(dirpath, "face_temp_$(lpad(nₛ, 7, '0')).csv"),
-            joinpath(dirpath, "sec_face_temp_$(lpad(nₛ, 7, '0')).csv"),
-            force=true
-        )
-    end
+    export_TPM_results(dirpath_pri, result.pri, btpm.pri, ephem)
+    export_TPM_results(dirpath_sec, result.sec, btpm.sec, ephem)
 end
 
 
