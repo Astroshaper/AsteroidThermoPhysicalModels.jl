@@ -23,7 +23,7 @@ Pkg.update("AsteroidThermoPhysicalModels")
 Pkg.test("AsteroidThermoPhysicalModels")
 ```
 
-## Themophysical modeling
+## Thermophysical modeling
 Based on orbit, spin, and 3-D shape, you can calculate the distribution of the surface temperature on an asteroid. The temperature distribution can be used to calculate the non-gravitational perturbations on its orbital and rotational motion (Yarkovsky and YORP effects, respectively).
 
 ### Available format for shape model
@@ -32,9 +32,9 @@ Based on orbit, spin, and 3-D shape, you can calculate the distribution of the s
 ### Thermophysics included
 - 1-dimensional heat diffusion in depth direction
 - Self-shadowing: Local shadows casted by topography
-- Self-heating: Re-absorption of scatterd and radiated photons by surrounding facets. Only sigle scattering is implemented.
+- Self-heating: Re-absorption of scattered and radiated photons by surrounding facets. Only single scattering is implemented.
 
-### Thermophysics to be implemted
+### Thermophysics to be implemented
 - Surface roughness (smaller than facets of the shape model)
 
 ### Example
@@ -44,7 +44,7 @@ Distribution of surface temperature on asteroid Ryugu. The color map ranges from
 
 ## Start to play
 Let's visualize a shape model of asteroid Ryugu.
-Please downlad a Ryugu model from AsteroidThermoPhysicalModels/test/ryugu_test.obj.
+Please download a Ryugu model from AsteroidThermoPhysicalModels/test/ryugu_test.obj.
 
 ```julia
 using AsteroidThermoPhysicalModels
