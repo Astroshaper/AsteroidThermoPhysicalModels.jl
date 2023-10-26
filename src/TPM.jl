@@ -590,7 +590,7 @@ function run_TPM!(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face
         ProgressMeter.ijulia_behavior(:clear)
     end
     
-    @time for nₜ in eachindex(ephem.time)
+    for nₜ in eachindex(ephem.time)
         r☉ = ephem.sun[nₜ]
 
         update_flux_sun!(stpm, r☉)
@@ -650,7 +650,7 @@ function run_TPM!(btpm::BinaryTPM, ephem, time_begin::Real, time_end::Real, face
         ProgressMeter.ijulia_behavior(:clear)
     end
     
-    @time for nₜ in eachindex(ephem.time)
+    for nₜ in eachindex(ephem.time)
         r☉₁ = ephem.sun1[nₜ]  # Sun's position in the primary's frame
         r☉₂ = ephem.sun2[nₜ]  # Sun's position in the secondary's frame
         rₛ  = ephem.sec[nₜ]   # Secondary's position in the primary's frame
