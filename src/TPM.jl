@@ -569,19 +569,26 @@ end
 Run TPM for a single asteroid.
 
 # Arguments
-- `stpm`     : Thermophysical model for a single asteroid
-- `ephem`    : Ephemerides
+- `stpm`       : Thermophysical model for a single asteroid
+- `ephem`      : Ephemerides
     - `ephem.time` : Ephemeris times
     - `ephem.sun`  : Sun's position in the asteroid-fixed frame (Not normalized)
-- `savepath` : Path to save data file
+- `time_begin` : Time to start saving temperature
+- `time_end`   : Time to finish saving temperature
+- `face_ID`    : Face indices where to save subsurface termperature
+
+# Keyword arguments
+- `show_progress` : Flag to show the progress meter
 """
-function run_TPM!(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face_ID::Vector{Int})
+function run_TPM!(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face_ID::Vector{Int}; show_progress=true)
 
     result = SingleTPMResult(stpm, ephem, time_begin, time_end, face_ID)
 
     ## ProgressMeter setting
-    p = Progress(length(ephem.time); dt=1, desc="Running TPM...", showspeed=true)
-    ProgressMeter.ijulia_behavior(:clear)
+    if show_progress
+        p = Progress(length(ephem.time); dt=1, desc="Running TPM...", showspeed=true)
+        ProgressMeter.ijulia_behavior(:clear)
+    end
     
     @time for nₜ in eachindex(ephem.time)
         r☉ = ephem.sun[nₜ]
@@ -595,11 +602,13 @@ function run_TPM!(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face
         save_TPM_result!(result, stpm, ephem, nₜ)  # Save data
         
         ## Update the progress meter
-        showvalues = [
-            ("Timestep ", nₜ),
-            ("E_cons   ", result.E_cons[nₜ]),
-        ]
-        ProgressMeter.next!(p; showvalues)
+        if show_progress
+            showvalues = [
+                ("Timestep ", nₜ),
+                ("E_cons   ", result.E_cons[nₜ]),
+            ]
+            ProgressMeter.next!(p; showvalues)
+        end
 
         nₜ == length(ephem.time) && break  # Stop to update the temperature at the final step
         Δt = ephem.time[nₜ+1] - ephem.time[nₜ]
@@ -615,24 +624,32 @@ end
 Run TPM for a binary asteroid.
 
 # Arguments
-- `stpm`     : Thermophysical model for a binary asteroid
-- `ephem`    : Ephemerides
+- `btpm`        : Thermophysical model for a binary asteroid
+- `ephem`       : Ephemerides
     - `time` : Ephemeris times
     - `sun1` : Sun's position in the primary's frame
     - `sun2` : Sun's position in the secondary's frame
     - `sec`  : Secondary's position in the primary's frame
     - `P2S`  : Rotation matrix from primary to secondary frames
     - `S2P`  : Rotation matrix from secondary to primary frames
-- `savepath` : Path to save data file
+- `time_begin`  : Time to start saving temperature
+- `time_end`    : Time to finish saving temperature
+- `face_ID_pri` : Face indices where to save subsurface termperature for the primary
+- `face_ID_sec` : Face indices where to save subsurface termperature for the secondary
+
+# Keyword arguments
+- `show_progress` : Flag to show the progress meter
 """
-function run_TPM!(btpm::BinaryTPM, ephem, time_begin::Real, time_end::Real, face_ID_pri::Vector{Int}, face_ID_sec::Vector{Int})
+function run_TPM!(btpm::BinaryTPM, ephem, time_begin::Real, time_end::Real, face_ID_pri::Vector{Int}, face_ID_sec::Vector{Int}; show_progress=true)
 
     result = BinaryTPMResult(btpm, ephem, time_begin, time_end, face_ID_pri, face_ID_sec)
 
     ## ProgressMeter setting
-    p = Progress(length(ephem.time); dt=1, desc="Running TPM...", showspeed=true)
-    ProgressMeter.ijulia_behavior(:clear)
-
+    if show_progress
+        p = Progress(length(ephem.time); dt=1, desc="Running TPM...", showspeed=true)
+        ProgressMeter.ijulia_behavior(:clear)
+    end
+    
     @time for nₜ in eachindex(ephem.time)
         r☉₁ = ephem.sun1[nₜ]  # Sun's position in the primary's frame
         r☉₂ = ephem.sun2[nₜ]  # Sun's position in the secondary's frame
@@ -651,12 +668,14 @@ function run_TPM!(btpm::BinaryTPM, ephem, time_begin::Real, time_end::Real, face
         save_TPM_result!(result, btpm, ephem, nₜ)  # Save data
 
         ## Update the progress meter
-        showvalues = [
-            ("Timestep             ", nₜ),
-            ("E_cons for primary   ", result.pri.E_cons[nₜ]),
-            ("E_cons for secondary ", result.sec.E_cons[nₜ]),
-        ]
-        ProgressMeter.next!(p; showvalues)
+        if show_progress
+            showvalues = [
+                ("Timestep             ", nₜ),
+                ("E_cons for primary   ", result.pri.E_cons[nₜ]),
+                ("E_cons for secondary ", result.sec.E_cons[nₜ]),
+            ]
+            ProgressMeter.next!(p; showvalues)
+        end
         
         ## Update temperature distribution
         nₜ == length(ephem.time) && break  # Stop to update the temperature at the final step
