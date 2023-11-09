@@ -381,7 +381,7 @@ end
 
 
 """
-    export_TPM_results(filepath, result::SingleTPMResult, stpm::SingleTPM, ephem)
+    export_TPM_results(dirpath, result::SingleTPMResult, stpm::SingleTPM, ephem)
 
 Export the result of `SingleTPM` to CSV files.
 
