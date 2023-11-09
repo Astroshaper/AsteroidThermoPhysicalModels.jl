@@ -321,7 +321,7 @@ end
 
 
 """
-    save_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, ephem, nₜ::Integer)
+    update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, ephem, nₜ::Integer)
 
 Save the results of TPM at the time step `nₜ` to `result`.
 
@@ -331,7 +331,7 @@ Save the results of TPM at the time step `nₜ` to `result`.
 - `ephem`  : Ephemerides
 - `nₜ`     : Time step to save data
 """
-function save_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, ephem, nₜ::Integer)
+function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, ephem, nₜ::Integer)
     result.E_in[nₜ]   = energy_in(stpm)
     result.E_out[nₜ]  = energy_out(stpm)
     result.force[nₜ]  = stpm.force
@@ -364,7 +364,7 @@ end
 
 
 """
-    save_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, nₜ::Integer)
+    update_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, nₜ::Integer)
 
 Save the results of TPM at the time step `nₜ` to `result`.
 
@@ -374,16 +374,16 @@ Save the results of TPM at the time step `nₜ` to `result`.
 - `ephem`  : Ephemerides
 - `nₜ`     : Time step
 """
-function save_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, nₜ::Integer)
-    save_TPM_result!(result.pri, btpm.pri, ephem, nₜ)
-    save_TPM_result!(result.sec, btpm.sec, ephem, nₜ)
+function update_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, nₜ::Integer)
+    update_TPM_result!(result.pri, btpm.pri, ephem, nₜ)
+    update_TPM_result!(result.sec, btpm.sec, ephem, nₜ)
 end
 
 
 """
-    save_TPM_csv(filepath, result::SingleTPMResult, stpm::SingleTPM, ephem)
+    export_TPM_results(dirpath, result::SingleTPMResult, stpm::SingleTPM, ephem)
 
-Save the result of `SingleTPM` to CSV files.
+Export the result of `SingleTPM` to CSV files.
 
 # Arguments
 - `dirpath` :  Path to the directory to save CSV files
@@ -395,7 +395,7 @@ Save the result of `SingleTPM` to CSV files.
 - Save the depths of the calculation nodes
 - Save README for the data file
 """
-function save_TPM_csv(dirpath, result::SingleTPMResult, stpm::SingleTPM, ephem)
+function export_TPM_results(dirpath, result::SingleTPMResult, stpm::SingleTPM, ephem)
     
     df = DataFrame()
     df.time     = ephem.time
@@ -428,40 +428,25 @@ end
 
 
 """
-    save_TPM_csv(filepath, result::BinaryTPMResult, stpm::BinaryTPM, ephem)
+    export_TPM_results(filepath, result::BinaryTPMResult, stpm::BinaryTPM, ephem)
 
-Save the result of `BinaryTPM` to CSV files.
+Export the result of `BinaryTPM` to CSV files.
 
 # Arguments
-- `dirpath` :  Path to the directory to save CSV files
+- `dirpath` : Path to the directory to save CSV files
 - `result`  : Output data format for `BinaryTPM`
 - `btpm`    : Thermophysical model for a binary asteroid
 - `ephem`   : Ephemerides
 """
-function save_TPM_csv(dirpath, result::BinaryTPMResult, btpm::BinaryTPM, ephem)
-    save_TPM_csv(dirpath, result.pri, btpm.pri, ephem)
+function export_TPM_results(dirpath, result::BinaryTPMResult, btpm::BinaryTPM, ephem)
+    dirpath_pri = joinpath(dirpath, "pri")
+    dirpath_sec = joinpath(dirpath, "sec")
 
-    mv(joinpath(dirpath, "data.csv")     , joinpath(dirpath, "pri_data.csv")     , force=true)
-    mv(joinpath(dirpath, "surf_temp.csv"), joinpath(dirpath, "pri_surf_temp.csv"), force=true)
-    for nₛ in keys(result.pri.face_temp)
-        mv(
-            joinpath(dirpath, "face_temp_$(lpad(nₛ, 7, '0')).csv"),
-            joinpath(dirpath, "pri_face_temp_$(lpad(nₛ, 7, '0')).csv"),
-            force=true
-        )
-    end
+    mkpath(dirpath_pri)
+    mkpath(dirpath_sec)
 
-    save_TPM_csv(dirpath, result.sec, btpm.sec, ephem)
-
-    mv(joinpath(dirpath, "data.csv")     , joinpath(dirpath, "sec_data.csv")     , force=true)
-    mv(joinpath(dirpath, "surf_temp.csv"), joinpath(dirpath, "sec_surf_temp.csv"), force=true)
-    for nₛ in keys(result.sec.face_temp)
-        mv(
-            joinpath(dirpath, "face_temp_$(lpad(nₛ, 7, '0')).csv"),
-            joinpath(dirpath, "sec_face_temp_$(lpad(nₛ, 7, '0')).csv"),
-            force=true
-        )
-    end
+    export_TPM_results(dirpath_pri, result.pri, btpm.pri, ephem)
+    export_TPM_results(dirpath_sec, result.sec, btpm.sec, ephem)
 end
 
 
@@ -599,7 +584,7 @@ function run_TPM!(stpm::SingleTPM, ephem, time_begin::Real, time_end::Real, face
         
         update_thermal_force!(stpm)
 
-        save_TPM_result!(result, stpm, ephem, nₜ)  # Save data
+        update_TPM_result!(result, stpm, ephem, nₜ)  # Save data
         
         ## Update the progress meter
         if show_progress
@@ -665,7 +650,7 @@ function run_TPM!(btpm::BinaryTPM, ephem, time_begin::Real, time_end::Real, face
 
         update_thermal_force!(btpm)
 
-        save_TPM_result!(result, btpm, ephem, nₜ)  # Save data
+        update_TPM_result!(result, btpm, ephem, nₜ)  # Save data
 
         ## Update the progress meter
         if show_progress
