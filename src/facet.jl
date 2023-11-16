@@ -4,14 +4,14 @@
 # #                      Face properties
 # ################################################################
 
-face_center(vs) = face_center(vs...)
-face_center(v1, v2, v3) = (v1 + v2 + v3) / 3
+face_center(vs::StaticVector{3, <:StaticVector{3}}) = face_center(vs...)
+face_center(v1::StaticVector{3}, v2::StaticVector{3}, v3::StaticVector{3}) = (v1 + v2 + v3) / 3
 
-face_normal(vs) = face_normal(vs...)
-face_normal(v1, v2, v3) = normalize((v2 - v1) × (v3 - v2)) 
+face_normal(vs::StaticVector{3, <:StaticVector{3}}) = face_normal(vs...)
+face_normal(v1::StaticVector{3}, v2::StaticVector{3}, v3::StaticVector{3}) = normalize((v2 - v1) × (v3 - v2))
 
-face_area(vs) = face_area(vs...)
-face_area(v1, v2, v3) = norm((v2 - v1) × (v3 - v2)) / 2
+face_area(vs::StaticVector{3, <:StaticVector{3}}) = face_area(vs...)
+face_area(v1::StaticVector{3}, v2::StaticVector{3}, v3::StaticVector{3}) = norm((v2 - v1) × (v3 - v2)) / 2
 
 
 ################################################################
@@ -54,7 +54,7 @@ end
 Intersection detection between ray R and triangle ABC.
 Note that the starting point of the ray is the origin (0, 0, 0).
 """
-function raycast(A, B, C, R)
+function raycast(A::StaticVector{3}, B::StaticVector{3}, C::StaticVector{3}, R::StaticVector{3})
     E1 = B - A
     E2 = C - A
     T  = - A
@@ -77,7 +77,7 @@ end
 Intersection detection between ray R and triangle ABC.
 Use when the starting point of the ray is an arbitrary point `O`.
 """
-raycast(A, B, C, R, O) = raycast(A - O, B - O, C - O, R)
+raycast(A::StaticVector{3}, B::StaticVector{3}, C::StaticVector{3}, R::StaticVector{3}, O::StaticVector{3}) = raycast(A - O, B - O, C - O, R)
 
 
 """
