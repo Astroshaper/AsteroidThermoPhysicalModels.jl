@@ -76,21 +76,9 @@
     ##= Load the shape models =##
     path_shape1_obj = joinpath("shape", "g_50677mm_rad_obj_didy_0000n00000_v001.obj")
     path_shape2_obj = joinpath("shape", "g_08438mm_lgt_obj_dimo_0000n00000_v002.obj")
-    path_shape1_jld = joinpath("shape", "g_50677mm_rad_obj_didy_0000n00000_v001.jld2")
-    path_shape2_jld = joinpath("shape", "g_08438mm_lgt_obj_dimo_0000n00000_v002.jld2")
-
-    if isfile(path_shape1_jld) && ENABLE_JLD
-        shape1 = AsteroidThermoPhysicalModels.load_shape_jld(path_shape1_jld)
-    else
-        shape1 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape1_obj; scale=1000, find_visible_facets=true)
-        AsteroidThermoPhysicalModels.save_shape_jld(path_shape1_jld, shape1)
-    end
-    if isfile(path_shape2_jld) && ENABLE_JLD
-        shape2 = AsteroidThermoPhysicalModels.load_shape_jld(path_shape2_jld)
-    else
-        shape2 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape2_obj; scale=1000, find_visible_facets=true)
-        AsteroidThermoPhysicalModels.save_shape_jld(path_shape2_jld, shape2)
-    end
+    
+    shape1 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape1_obj; scale=1000, find_visible_facets=true)
+    shape2 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape2_obj; scale=1000, find_visible_facets=true)
     
     ##= Thermal properties =##
     k  = 0.125
