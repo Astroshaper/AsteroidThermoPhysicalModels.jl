@@ -51,7 +51,9 @@
 
     et_begin = SPICE.utc2et("2027-02-18T00:00:00")  # Start time of TPM
     et_end   = et_begin + 2P₂                       # End time of TPM
-    step     = P₂ / 72                              # Time step of TPM
+
+    nsteps_in_rotation = 72  # Number of steps in one rotation period
+    step = P₂ / nsteps_in_rotation  # Time step of TPM
     et_range = et_begin : step : et_end
 
     """
@@ -137,15 +139,14 @@
     AsteroidThermoPhysicalModels.init_temperature!(btpm, 200.)
     
     ##= Run TPM =##
-    time_begin = ephem.time[end] - P₂  # Time to start storing temperature 
-    time_end   = ephem.time[end]       # Time to end storing temperature
-    face_ID_pri = [1, 2, 3, 4, 10]     # Face indices at which you want to save underground temperature for the primary
-    face_ID_sec = [1, 2, 3, 4, 20]     # Face indices at which you want to save underground temperature for the secondary
+    times_to_save = ephem.time[end-nsteps_in_rotation:end]  # Save temperature during the final rotation
+    face_ID_pri = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature of the primary
+    face_ID_sec = [1, 2, 3, 4, 20]  # Face indices to save subsurface temperature of the secondary
 
-    result = AsteroidThermoPhysicalModels.run_TPM!(btpm, ephem, time_begin, time_end, face_ID_pri, face_ID_sec)
+    result = AsteroidThermoPhysicalModels.run_TPM!(btpm, ephem, times_to_save, face_ID_pri, face_ID_sec)
 
     ##= Save TPM result =##
     savedir = "TPM_Didymos"
     mkpath(savedir)
-    AsteroidThermoPhysicalModels.export_TPM_results(savedir, result, btpm, ephem)
+    AsteroidThermoPhysicalModels.export_TPM_results(savedir, result, btpm, ephem, times_to_save)
 end
