@@ -228,6 +228,7 @@ Output data format for `SingleTPM`
 
 # Fields
 ## Saved at all time steps
+- `times`  : Timesteps, given the same vector as `ephem.time` [s]
 - `E_in`   : Input energy per second on the whole surface [W]
 - `E_out`  : Output enegey per second from the whole surface [W]
 - `E_cons` : Energy conservation ratio [-], ratio of total energy going out to total energy coming in in the last rotation cycle
@@ -235,15 +236,16 @@ Output data format for `SingleTPM`
 - `torque` : Thermal torque on the asteroid [N ⋅ m]
 
 ## Saved only at the time steps desired by the user
-- `times_to_save` : Timesteps to save temperature
-- `surf_temp`     : Surface temperature, a matrix in size of `(Ns, Nt)`.
+- `times_to_save` : Timesteps to save temperature [s]
+- `surf_temp`     : Surface temperature [K], a matrix in size of `(Ns, Nt)`.
     - `Ns` : Number of faces
     - `Nt` : Number of time steps to save surface temperature
-- `face_temp`     : Temperature as a function of depth and time, `Dict` with face ID as key and a matrix `(Nz, Nt)` as an entry.
+- `face_temp`     : Temperature [K] as a function of depth [m] and time [s], `Dict` with face ID as key and a matrix `(Nz, Nt)` as an entry.
     - `Nz` : The number of the depth nodes
     - `Nt` : The number of time steps to save temperature
 """
 struct SingleTPMResult
+    times  ::Vector{Float64}
     E_in   ::Vector{Float64}
     E_out  ::Vector{Float64}
     E_cons ::Vector{Union{Float64, Missing}}
@@ -277,7 +279,7 @@ function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64},
         nₛ => zeros(stpm.thermo_params.Nz, length(times_to_save)) for nₛ in face_ID
     )
 
-    return SingleTPMResult(E_in, E_out, E_cons, force, torque, times_to_save, surf_temp, face_temp)
+    return SingleTPMResult(ephem.time, E_in, E_out, E_cons, force, torque, times_to_save, surf_temp, face_temp)
 end
 
 
