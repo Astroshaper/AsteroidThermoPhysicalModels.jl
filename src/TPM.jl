@@ -327,7 +327,7 @@ Save the results of TPM at the time step `nₜ` to `result`.
 - `ephem`  : Ephemerides
 - `nₜ`     : Time step to save data
 """
-function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, nₜ::Integer, times_to_save::Vector{Float64})
+function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, nₜ::Integer)
     result.E_in[nₜ]   = energy_in(stpm)
     result.E_out[nₜ]  = energy_out(stpm)
     result.force[nₜ]  = stpm.force
@@ -347,7 +347,7 @@ function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, nₜ::Inte
     end
 
     if t in result.times_to_save  # In the step of saving temperature
-        nₜ_save = findfirst(isequal(t), times_to_save)
+        nₜ_save = findfirst(isequal(t), result.times_to_save)
 
         result.surf_temp[:, nₜ_save] .= surface_temperature(stpm)
 
@@ -369,9 +369,9 @@ Save the results of TPM at the time step `nₜ` to `result`.
 - `ephem`  : Ephemerides
 - `nₜ`     : Time step
 """
-function update_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, nₜ::Integer, times_to_save::Vector{Float64})
-    update_TPM_result!(result.pri, btpm.pri, nₜ, times_to_save)
-    update_TPM_result!(result.sec, btpm.sec, nₜ, times_to_save)
+function update_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, nₜ::Integer)
+    update_TPM_result!(result.pri, btpm.pri, nₜ)
+    update_TPM_result!(result.sec, btpm.sec, nₜ)
 end
 
 
@@ -579,7 +579,7 @@ function run_TPM!(stpm::SingleTPM, ephem, times_to_save::Vector{Float64}, face_I
         
         update_thermal_force!(stpm)
 
-        update_TPM_result!(result, stpm, nₜ, times_to_save)  # Save data
+        update_TPM_result!(result, stpm, nₜ)  # Save data
         
         ## Update the progress meter
         if show_progress
@@ -644,7 +644,7 @@ function run_TPM!(btpm::BinaryTPM, ephem, times_to_save::Vector{Float64}, face_I
 
         update_thermal_force!(btpm)
 
-        update_TPM_result!(result, btpm, nₜ, times_to_save)  # Save data
+        update_TPM_result!(result, btpm, nₜ)  # Save data
 
         ## Update the progress meter
         if show_progress
