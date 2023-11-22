@@ -71,15 +71,6 @@ function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
     return shape
 end
 
-function load_shape_jld(shapepath)
-    shape = load(shapepath, "shape")
-    return shape
-end
-
-function save_shape_jld(shapepath, shape)
-    save(splitext(shapepath)[1] * ".jld2", Dict("shape" => shape))
-end
-
 
 ################################################################
 #               Create a shape model from grid

@@ -1,7 +1,6 @@
 using AsteroidThermoPhysicalModels
 using Test
 using Aqua
-using JLD2
 using SPICE
 using Git
 using Downloads
@@ -11,7 +10,6 @@ using StaticArrays
 using Rotations
 using DataFrames
 
-ENABLE_JLD = false
 Aqua.test_all(AsteroidThermoPhysicalModels, ambiguities=false)
 
 include("find_visiblefacets.jl")
