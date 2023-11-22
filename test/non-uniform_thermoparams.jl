@@ -117,5 +117,5 @@
     ##= Save TPM result =##'
     savedir = "non-uniform_thermoparams"
     mkpath(savedir)
-    AsteroidThermoPhysicalModels.export_TPM_results(savedir, result, stpm, ephem, times_to_save)
+    AsteroidThermoPhysicalModels.export_TPM_results(savedir, result, stpm, ephem)
 end
