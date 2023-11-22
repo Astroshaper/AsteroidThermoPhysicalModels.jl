@@ -18,5 +18,5 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/Astroshaper/ThermoPhysicalModeling.jl",
+    repo="github.com/Astroshaper/ThermoPhysicalModels.jl",
 )
