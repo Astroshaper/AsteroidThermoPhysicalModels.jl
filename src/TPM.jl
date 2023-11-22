@@ -327,26 +327,26 @@ Save the results of TPM at the time step `nₜ` to `result`.
 - `ephem`  : Ephemerides
 - `nₜ`     : Time step to save data
 """
-function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, ephem, nₜ::Integer, times_to_save::Vector{Float64})
+function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, nₜ::Integer, times_to_save::Vector{Float64})
     result.E_in[nₜ]   = energy_in(stpm)
     result.E_out[nₜ]  = energy_out(stpm)
     result.force[nₜ]  = stpm.force
     result.torque[nₜ] = stpm.torque
 
     P  = stpm.thermo_params.P  # Rotation period
-    t  = ephem.time[nₜ]        # Current time
-    t₀ = ephem.time[begin]     # Time at the beginning of the simulation
+    t  = result.times[nₜ]        # Current time
+    t₀ = result.times[begin]     # Time at the beginning of the simulation
 
     if t > t₀ + P  # Note that `E_cons` cannot be calculated during the first rotation
-        Nt_period = count(@. t - P ≤ ephem.time < t)  # Number of time steps within the last rotation
+        nsteps_in_period = count(@. t - P ≤ result.times < t)  # Number of time steps within the last rotation
 
-        ΣE_in  = sum(result.E_in[n-1]  * (ephem.time[n] - ephem.time[n-1]) for n in (nₜ - Nt_period + 1):nₜ)
-        ΣE_out = sum(result.E_out[n-1] * (ephem.time[n] - ephem.time[n-1]) for n in (nₜ - Nt_period + 1):nₜ)
+        ΣE_in  = sum(result.E_in[n-1]  * (result.times[n] - result.times[n-1]) for n in (nₜ - nsteps_in_period + 1):nₜ)
+        ΣE_out = sum(result.E_out[n-1] * (result.times[n] - result.times[n-1]) for n in (nₜ - nsteps_in_period + 1):nₜ)
 
         result.E_cons[nₜ] = ΣE_out / ΣE_in
     end
 
-    if t in times_to_save  # In the step of saving temperature
+    if t in result.times_to_save  # In the step of saving temperature
         nₜ_save = findfirst(isequal(t), times_to_save)
 
         result.surf_temp[:, nₜ_save] .= surface_temperature(stpm)
@@ -369,9 +369,9 @@ Save the results of TPM at the time step `nₜ` to `result`.
 - `ephem`  : Ephemerides
 - `nₜ`     : Time step
 """
-function update_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, nₜ::Integer, times_to_save::Vector{Float64})
-    update_TPM_result!(result.pri, btpm.pri, ephem, nₜ, times_to_save)
-    update_TPM_result!(result.sec, btpm.sec, ephem, nₜ, times_to_save)
+function update_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, nₜ::Integer, times_to_save::Vector{Float64})
+    update_TPM_result!(result.pri, btpm.pri, nₜ, times_to_save)
+    update_TPM_result!(result.sec, btpm.sec, nₜ, times_to_save)
 end
 
 
@@ -579,7 +579,7 @@ function run_TPM!(stpm::SingleTPM, ephem, times_to_save::Vector{Float64}, face_I
         
         update_thermal_force!(stpm)
 
-        update_TPM_result!(result, stpm, ephem, nₜ, times_to_save)  # Save data
+        update_TPM_result!(result, stpm, nₜ, times_to_save)  # Save data
         
         ## Update the progress meter
         if show_progress
@@ -644,7 +644,7 @@ function run_TPM!(btpm::BinaryTPM, ephem, times_to_save::Vector{Float64}, face_I
 
         update_thermal_force!(btpm)
 
-        update_TPM_result!(result, btpm, ephem, nₜ, times_to_save)  # Save data
+        update_TPM_result!(result, btpm, nₜ, times_to_save)  # Save data
 
         ## Update the progress meter
         if show_progress
