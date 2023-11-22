@@ -237,6 +237,7 @@ Output data format for `SingleTPM`
 
 ## Saved only at the time steps desired by the user
 - `times_to_save` : Timesteps to save temperature [s]
+- `depth_nodes`   : Depths of the calculation nodes for 1-D heat conduction [m], a vector of size `Nz`
 - `surf_temp`     : Surface temperature [K], a matrix in size of `(Ns, Nt)`.
     - `Ns` : Number of faces
     - `Nt` : Number of time steps to save surface temperature
@@ -253,6 +254,7 @@ struct SingleTPMResult
     torque ::Vector{SVector{3, Float64}}
 
     times_to_save ::Vector{Float64}
+    depth_nodes   ::Vector{Float64}
     surf_temp     ::Matrix{Float64}
     face_temp     ::Dict{Int, Matrix{Float64}}
 end
@@ -274,12 +276,13 @@ function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64},
     force  = zeros(SVector{3, Float64}, length(ephem.time))
     torque = zeros(SVector{3, Float64}, length(ephem.time))
 
+    depth_nodes = stpm.thermo_params.Δz * (0:stpm.thermo_params.Nz-1)
     surf_temp = zeros(length(stpm.shape.faces), length(times_to_save))
     face_temp = Dict{Int, Matrix{Float64}}(
         nₛ => zeros(stpm.thermo_params.Nz, length(times_to_save)) for nₛ in face_ID
     )
 
-    return SingleTPMResult(ephem.time, E_in, E_out, E_cons, force, torque, times_to_save, surf_temp, face_temp)
+    return SingleTPMResult(ephem.time, E_in, E_out, E_cons, force, torque, times_to_save, depth_nodes, surf_temp, face_temp)
 end
 
 
@@ -405,18 +408,19 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
     CSV.write(joinpath(dirpath, "data.csv"), df)
 
     ##= Surface temperature =##
+    filepath = joinpath(dirpath, "surf_temp.csv")
     header = string.(result.times_to_save)
-    CSV.write(
-        joinpath(dirpath, "surf_temp.csv"),
-        DataFrame(result.surf_temp, header)
-    )
+    df = DataFrame(result.surf_temp, header)
+
+    CSV.write(filepath, df)
 
     ##= Subsurface temperature =##
     for (nₛ, temp) in result.face_temp
-        CSV.write(
-            joinpath(dirpath, "face_temp_$(lpad(nₛ, 7, '0')).csv"),
-            DataFrame(temp, header)
-        )
+        filepath = joinpath(dirpath, "face_temp_$(lpad(nₛ, 7, '0')).csv")
+        header = string.(result.times_to_save)
+        df = hcat(DataFrame(depth_nodes=result.depth_nodes), DataFrame(temp, header))
+
+        CSV.write(filepath, df)
     end
 end
 
@@ -590,7 +594,7 @@ function run_TPM!(stpm::SingleTPM, ephem, times_to_save::Vector{Float64}, face_I
         Δt = ephem.time[nₜ+1] - ephem.time[nₜ]
         update_temperature!(stpm, Δt)
     end
-
+    
     return result
 end
 
