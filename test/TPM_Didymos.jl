@@ -148,5 +148,5 @@
     ##= Save TPM result =##
     savedir = "TPM_Didymos"
     mkpath(savedir)
-    AsteroidThermoPhysicalModels.export_TPM_results(savedir, result, btpm)
+    AsteroidThermoPhysicalModels.export_TPM_results(savedir, result)
 end

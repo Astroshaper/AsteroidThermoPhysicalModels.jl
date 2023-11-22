@@ -376,21 +376,19 @@ end
 
 
 """
-    export_TPM_results(dirpath, result::SingleTPMResult, stpm::SingleTPM, ephem)
+    export_TPM_results(dirpath, result::SingleTPMResult)
 
 Export the result of `SingleTPM` to CSV files.
 
 # Arguments
 - `dirpath` :  Path to the directory to save CSV files
 - `result`  : Output data format for `SingleTPM`
-- `stpm`    : Thermophysical model for a single asteroid
-- `ephem`   : Ephemerides
 
 # TO DO
 - Save the depths of the calculation nodes
 - Save README for the data file
 """
-function export_TPM_results(dirpath, result::SingleTPMResult, stpm::SingleTPM)
+function export_TPM_results(dirpath, result::SingleTPMResult)
     
     df = DataFrame()
     df.time     = result.times
@@ -424,25 +422,23 @@ end
 
 
 """
-    export_TPM_results(filepath, result::BinaryTPMResult, stpm::BinaryTPM, ephem)
+    export_TPM_results(filepath, result::BinaryTPMResult)
 
 Export the result of `BinaryTPM` to CSV files.
 
 # Arguments
 - `dirpath` : Path to the directory to save CSV files
 - `result`  : Output data format for `BinaryTPM`
-- `btpm`    : Thermophysical model for a binary asteroid
-- `ephem`   : Ephemerides
 """
-function export_TPM_results(dirpath, result::BinaryTPMResult, btpm::BinaryTPM)
+function export_TPM_results(dirpath, result::BinaryTPMResult)
     dirpath_pri = joinpath(dirpath, "pri")
     dirpath_sec = joinpath(dirpath, "sec")
 
     mkpath(dirpath_pri)
     mkpath(dirpath_sec)
 
-    export_TPM_results(dirpath_pri, result.pri, btpm.pri)
-    export_TPM_results(dirpath_sec, result.sec, btpm.sec)
+    export_TPM_results(dirpath_pri, result.pri)
+    export_TPM_results(dirpath_sec, result.sec)
 end
 
 

@@ -104,5 +104,5 @@
     ##= Save TPM result =##
     savedir = "TPM_Ryugu"
     mkpath(savedir)
-    AsteroidThermoPhysicalModels.export_TPM_results(savedir, result, stpm)
+    AsteroidThermoPhysicalModels.export_TPM_results(savedir, result)
 end
