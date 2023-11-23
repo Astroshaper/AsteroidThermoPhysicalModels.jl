@@ -267,19 +267,22 @@ Outer constructor of `SingleTPMResult`
 - `stpm`          : Thermophysical model for a single asteroid
 - `ephem`         : Ephemerides
 - `times_to_save` : Timesteps to save temperature
-- `face_ID`       : Face indices where to save subsurface temperature
+- `face_ID`       : Face indices to save subsurface temperature
 """
 function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64}, face_ID::Vector{Int})
-    E_in   = zeros(length(ephem.time))
-    E_out  = zeros(length(ephem.time))
-    E_cons = Vector{Union{Float64, Missing}}(missing, length(ephem.time))
-    force  = zeros(SVector{3, Float64}, length(ephem.time))
-    torque = zeros(SVector{3, Float64}, length(ephem.time))
+    nsteps = length(ephem.time)
+    nsteps_to_save = length(times_to_save)
+
+    E_in   = zeros(nsteps)
+    E_out  = zeros(nsteps)
+    E_cons = Vector{Union{Float64, Missing}}(missing, nsteps)
+    force  = zeros(SVector{3, Float64}, nsteps)
+    torque = zeros(SVector{3, Float64}, nsteps)
 
     depth_nodes = stpm.thermo_params.Δz * (0:stpm.thermo_params.Nz-1)
-    surf_temp = zeros(length(stpm.shape.faces), length(times_to_save))
+    surf_temp = zeros(length(stpm.shape.faces), nsteps_to_save)
     face_temp = Dict{Int, Matrix{Float64}}(
-        nₛ => zeros(stpm.thermo_params.Nz, length(times_to_save)) for nₛ in face_ID
+        nₛ => zeros(stpm.thermo_params.Nz, nsteps_to_save) for nₛ in face_ID
     )
 
     return SingleTPMResult(ephem.time, E_in, E_out, E_cons, force, torque, times_to_save, depth_nodes, surf_temp, face_temp)
@@ -308,8 +311,8 @@ Outer constructor of `BinaryTPMResult`
 - `btpm`          : Thermophysical model for a binary asteroid
 - `ephem`         : Ephemerides
 - `times_to_save` : Timesteps to save temperature (Common to both the primary and the secondary)
-- `face_ID_pri`   : Face indices at which you want to save temperature as a function of depth for the primary
-- `face_ID_sec`   : Face indices at which you want to save temperature as a function of depth for the secondary
+- `face_ID_pri`   : Face indices to save subsurface temperature of the primary
+- `face_ID_sec`   : Face indices to save subsurface temperature of the secondary
 """
 function BinaryTPMResult(btpm::BinaryTPM, ephem, times_to_save::Vector{Float64}, face_ID_pri::Vector{Int}, face_ID_sec::Vector{Int})
     result_pri = SingleTPMResult(btpm.pri, ephem, times_to_save, face_ID_pri)
@@ -320,14 +323,13 @@ end
 
 
 """
-    update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, ephem, nₜ::Integer)
+    update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, nₜ::Integer)
 
 Save the results of TPM at the time step `nₜ` to `result`.
 
 # Arguments
 - `result` : Output data format for `SingleTPM`
 - `stpm`   : Thermophysical model for a single asteroid
-- `ephem`  : Ephemerides
 - `nₜ`     : Time step to save data
 """
 function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, nₜ::Integer)
@@ -337,8 +339,8 @@ function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, nₜ::Inte
     result.torque[nₜ] = stpm.torque
 
     P  = stpm.thermo_params.P  # Rotation period
-    t  = result.times[nₜ]        # Current time
-    t₀ = result.times[begin]     # Time at the beginning of the simulation
+    t  = result.times[nₜ]      # Current time
+    t₀ = result.times[begin]   # Time at the beginning of the simulation
 
     if t > t₀ + P  # Note that `E_cons` cannot be calculated during the first rotation
         nsteps_in_period = count(@. t - P ≤ result.times < t)  # Number of time steps within the last rotation
