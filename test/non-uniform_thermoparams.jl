@@ -45,9 +45,9 @@
     et_begin = SPICE.utc2et("2018-07-01T00:00:00")        # Start time of TPM
     et_end   = et_begin + 2P                              # End time of TPM
 
-    nsteps_in_rotation = 120  # Number of steps in one rotation period
-    step = P / nsteps_in_rotation  # Time step of TPM
-    et_range = et_begin : step : et_end
+    nsteps_in_period = 120  # Number of steps in one rotation period
+    Δt = P / nsteps_in_period  # Time step of TPM
+    et_range = et_begin : Δt : et_end
 
     """
     - `time` : Ephemeris times
@@ -109,7 +109,7 @@
     AsteroidThermoPhysicalModels.init_temperature!(stpm, 200)
 
     ##= Run TPM =##
-    times_to_save = ephem.time[end-nsteps_in_rotation:end]  # Save temperature during the final rotation
+    times_to_save = ephem.time[end-nsteps_in_period:end]  # Save temperature during the final rotation
     face_ID = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature
 
     result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, times_to_save, face_ID)
