@@ -53,8 +53,7 @@
     et_end   = et_begin + 2P₂                       # End time of TPM
 
     nsteps_in_period = 72  # Number of steps in one rotation period
-    Δt = P₂ / nsteps_in_period  # Time step of TPM
-    et_range = et_begin : Δt : et_end
+    et_range = range(et_begin, et_end, length=nsteps_in_period+1)
 
     """
     - `time` : Ephemeris times
