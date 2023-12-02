@@ -41,11 +41,14 @@
     end
 
     ##= Ephemerides =##
-    P = SPICE.convrt(7.63262, "hours", "seconds")   # Rotation period of Ryugu
+    P = SPICE.convrt(7.63262, "hours", "seconds")  # Rotation period of Ryugu
+
+    ncycles = 2  # Number of cycles to perform TPM
+    nsteps_in_cycle = 120  # Number of time steps in one rotation period
+
     et_begin = SPICE.utc2et("2018-07-01T00:00:00")  # Start time of TPM
-    et_end   = et_begin + 2P                        # End time of TPM
-    step     = P / 360                              # Time step of TPM, corresponding to 1 deg rotation
-    et_range = et_begin : step : et_end
+    et_end   = et_begin + P * ncycles  # End time of TPM
+    et_range = range(et_begin, et_end; length=nsteps_in_cycle*ncycles+1)
 
     """
     - `time` : Ephemeris times
@@ -107,14 +110,13 @@
     AsteroidThermoPhysicalModels.init_temperature!(stpm, 200)
 
     ##= Run TPM =##
-    time_begin = ephem.time[end] - P  # Time to start storing temperature 
-    time_end   = ephem.time[end]      # Time to end storing temperature
-    face_ID = [1, 2, 3, 4, 10]        # Face indices at which you want to save underground temperature
+    times_to_save = ephem.time[end-nsteps_in_cycle:end]  # Save temperature during the final rotation
+    face_ID = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature
 
-    result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, time_begin, time_end, face_ID)
+    result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, times_to_save, face_ID)
 
     ##= Save TPM result =##'
     savedir = "non-uniform_thermoparams"
     mkpath(savedir)
-    AsteroidThermoPhysicalModels.export_TPM_results(savedir, result, stpm, ephem)
+    AsteroidThermoPhysicalModels.export_TPM_results(savedir, result)
 end
