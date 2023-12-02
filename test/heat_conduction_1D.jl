@@ -12,10 +12,7 @@
     shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj)
 
     ##= Seeting of time step =##
-    et_begin = 0.0
-    et_end   = 1.0
-    step     = 0.4e-4
-    et_range = et_begin : step : et_end
+    et_range = range(0.0, 1.0; step=0.4e-4)
 
     ephem = (
         time = collect(et_range),

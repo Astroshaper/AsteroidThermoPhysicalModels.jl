@@ -41,12 +41,14 @@
     end
 
     ##= Ephemerides =##
-    P        = SPICE.convrt(7.63262, "hours", "seconds")  # Rotation period of Ryugu
-    et_begin = SPICE.utc2et("2018-07-01T00:00:00")        # Start time of TPM
-    et_end   = et_begin + 2P                              # End time of TPM
+    P = SPICE.convrt(7.63262, "hours", "seconds")  # Rotation period of Ryugu
 
-    nsteps_in_period = 120  # Number of steps in one rotation period
-    et_range = range(et_begin, et_end, length=nsteps_in_period+1)
+    ncycles = 2  # Number of cycles to perform TPM
+    nsteps_in_cycle = 120  # Number of time steps in one rotation period
+
+    et_begin = SPICE.utc2et("2018-07-01T00:00:00")  # Start time of TPM
+    et_end   = et_begin + P * ncycles  # End time of TPM
+    et_range = range(et_begin, et_end; length=nsteps_in_cycle*ncycles+1)
 
     """
     - `time` : Ephemeris times
@@ -108,7 +110,7 @@
     AsteroidThermoPhysicalModels.init_temperature!(stpm, 200)
 
     ##= Run TPM =##
-    times_to_save = ephem.time[end-nsteps_in_period:end]  # Save temperature during the final rotation
+    times_to_save = ephem.time[end-nsteps_in_cycle:end]  # Save temperature during the final rotation
     face_ID = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature
 
     result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, times_to_save, face_ID)
