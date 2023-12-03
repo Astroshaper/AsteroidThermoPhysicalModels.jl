@@ -407,7 +407,7 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
     df.torque_y = [τ[2] for τ in result.torque]
     df.torque_z = [τ[3] for τ in result.torque]
     
-    CSV.write(joinpath(dirpath, "data.csv"), df)
+    CSV.write(joinpath(dirpath, "physical_quantities.csv"), df)
 
     ##= Surface temperature =##
     filepath = joinpath(dirpath, "surf_temp.csv")
