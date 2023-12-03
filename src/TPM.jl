@@ -388,10 +388,6 @@ Export the result of `SingleTPM` to CSV files.
 # Arguments
 - `dirpath` :  Path to the directory to save CSV files
 - `result`  : Output data format for `SingleTPM`
-
-# TO DO
-- Save the depths of the calculation nodes
-- Save README for the data file
 """
 function export_TPM_results(dirpath, result::SingleTPMResult)
     
