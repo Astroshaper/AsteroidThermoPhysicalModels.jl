@@ -410,7 +410,7 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
     CSV.write(joinpath(dirpath, "physical_quantities.csv"), df)
 
     ##= Surface temperature =##
-    filepath = joinpath(dirpath, "surf_temp.csv")
+    filepath = joinpath(dirpath, "surface_temperature.csv")
     df = hcat(
         DataFrame(time=result.times_to_save),
         DataFrame(result.surf_temp', ["face_$(i)" for i in 1:size(result.surf_temp, 1)]),
