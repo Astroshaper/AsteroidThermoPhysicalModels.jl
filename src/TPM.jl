@@ -419,13 +419,24 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
     CSV.write(filepath, df)
 
     ##= Subsurface temperature =##
-    for (nₛ, temp) in result.face_temp
-        filepath = joinpath(dirpath, "face_temp_$(lpad(nₛ, 7, '0')).csv")
-        header = string.(result.times_to_save)
-        df = hcat(DataFrame(depth_nodes=result.depth_nodes), DataFrame(temp, header))
+    filepath = joinpath(dirpath, "subsurface_temperature.csv")
+    
+    nrows = length(result.depth_nodes) * length(result.times_to_save)
+    df = DataFrame(
+        time  = reshape([t for _ in result.depth_nodes, t in result.times_to_save], nrows),
+        depth = reshape([d for d in result.depth_nodes, _ in result.times_to_save], nrows),
+    )
 
-        CSV.write(filepath, df)
+    # Add a column for each face
+    for (nₛ, face_temp) in collect(result.face_temp)
+        df[:, "face_$(nₛ)"] = reshape(face_temp, length(face_temp))
     end
+
+    # Sort the columns by the face ID
+    keys_sorted = sort(names(df[:, 3:end]), by=x->parse(Int, replace(x, r"[^0-9]" => "")))
+    df = df[:, ["time", "depth", keys_sorted...]]
+
+    CSV.write(filepath, df)
 end
 
 
