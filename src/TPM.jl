@@ -388,10 +388,6 @@ Export the result of `SingleTPM` to CSV files.
 # Arguments
 - `dirpath` :  Path to the directory to save CSV files
 - `result`  : Output data format for `SingleTPM`
-
-# TO DO
-- Save the depths of the calculation nodes
-- Save README for the data file
 """
 function export_TPM_results(dirpath, result::SingleTPMResult)
     
@@ -407,23 +403,36 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
     df.torque_y = [τ[2] for τ in result.torque]
     df.torque_z = [τ[3] for τ in result.torque]
     
-    CSV.write(joinpath(dirpath, "data.csv"), df)
+    CSV.write(joinpath(dirpath, "physical_quantities.csv"), df)
 
     ##= Surface temperature =##
-    filepath = joinpath(dirpath, "surf_temp.csv")
-    header = string.(result.times_to_save)
-    df = DataFrame(result.surf_temp, header)
+    filepath = joinpath(dirpath, "surface_temperature.csv")
+    df = hcat(
+        DataFrame(time=result.times_to_save),
+        DataFrame(result.surf_temp', ["face_$(i)" for i in 1:size(result.surf_temp, 1)]),
+    )
 
     CSV.write(filepath, df)
 
     ##= Subsurface temperature =##
-    for (nₛ, temp) in result.face_temp
-        filepath = joinpath(dirpath, "face_temp_$(lpad(nₛ, 7, '0')).csv")
-        header = string.(result.times_to_save)
-        df = hcat(DataFrame(depth_nodes=result.depth_nodes), DataFrame(temp, header))
+    filepath = joinpath(dirpath, "subsurface_temperature.csv")
+    
+    nrows = length(result.depth_nodes) * length(result.times_to_save)
+    df = DataFrame(
+        time  = reshape([t for _ in result.depth_nodes, t in result.times_to_save], nrows),
+        depth = reshape([d for d in result.depth_nodes, _ in result.times_to_save], nrows),
+    )
 
-        CSV.write(filepath, df)
+    # Add a column for each face
+    for (nₛ, face_temp) in collect(result.face_temp)
+        df[:, "face_$(nₛ)"] = reshape(face_temp, length(face_temp))
     end
+
+    # Sort the columns by the face ID
+    keys_sorted = sort(names(df[:, 3:end]), by=x->parse(Int, replace(x, r"[^0-9]" => "")))
+    df = df[:, ["time", "depth", keys_sorted...]]
+
+    CSV.write(filepath, df)
 end
 
 
