@@ -17,7 +17,7 @@
 | ``F_\text{rad}`` | [W/m²] | Flux of thermal radiation from surrounding surface |
 | ``\rho`` | [kg/m³] | Density |
 | ``C_p`` | [J/K] | Heat capacity at constant pressure |
-| ``P`` | [?] | ? |
+| ``P`` | [s] | Rotation period |
 | ``l`` | [?] | ? |
 | ``k`` | [W/m/K] | ? |
 | ``z`` | [m] | depth |
