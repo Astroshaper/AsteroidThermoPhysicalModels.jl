@@ -21,7 +21,7 @@
 | ``l`` | [m] | Thermal skin depth |
 | ``k`` | [W/m/K] | ? |
 | ``z`` | [m] | Depth |
-| ``E`` | [J] | Energy |
+| ``E`` | [J] | Emittance energy |
 | ``\Gamma`` | [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)] | Thermal inertia |
 | ``\varepsilon`` | [-] | Emissivity |
 | ``\Phi`` | [W/m²] | Solar energy flux |
