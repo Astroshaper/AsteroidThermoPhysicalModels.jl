@@ -295,7 +295,7 @@ function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64},
         times_to_save,
         depth_nodes,
         surface_temperature,
-        subsurface_temperature
+        subsurface_temperature,
     )
 end
 
@@ -439,7 +439,8 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
 
     # Add a column for each face
     for (nₛ, subsurface_temperature) in collect(result.subsurface_temperature)
-        df[:, "face_$(nₛ)"] = reshape(subsurface_temperature, length(subsurface_temperature))
+        df[:, "face_$(nₛ)"] =
+            reshape(subsurface_temperature, length(subsurface_temperature))
     end
 
     # Sort the columns by the face ID
