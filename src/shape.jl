@@ -55,9 +55,9 @@ function Base.show(io::IO, shape::ShapeModel)
     print(io, msg)
 end
 
-function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false)
+function load_shape_obj(shapepath; scale = 1.0, find_visible_facets = false)
     # TODO: use MeshIO.jl
-    nodes, faces = loadobj(shapepath; scale=scale, static=true, message=false)
+    nodes, faces = loadobj(shapepath; scale = scale, message = false)
 
     face_centers = [face_center(nodes[face]) for face in faces]
     face_normals = [face_normal(nodes[face]) for face in faces]
