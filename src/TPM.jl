@@ -281,11 +281,22 @@ function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64},
 
     depth_nodes = stpm.thermo_params.Δz * (0:stpm.thermo_params.Nz-1)
     surface_temperature = zeros(length(stpm.shape.faces), nsteps_to_save)
-    subsurface_temperature = Dict{Int, Matrix{Float64}}(
+    subsurface_temperature = Dict{Int,Matrix{Float64}}(
         nₛ => zeros(stpm.thermo_params.Nz, nsteps_to_save) for nₛ in face_ID
     )
 
-    return SingleTPMResult(ephem.time, E_in, E_out, E_cons, force, torque, times_to_save, depth_nodes, surface_temperature, subsurface_temperature)
+    return SingleTPMResult(
+        ephem.time,
+        E_in,
+        E_out,
+        E_cons,
+        force,
+        torque,
+        times_to_save,
+        depth_nodes,
+        surface_temperature,
+        subsurface_temperature
+    )
 end
 
 
@@ -408,8 +419,11 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
     ##= Surface temperature =##
     filepath = joinpath(dirpath, "surface_temperature.csv")
     df = hcat(
-        DataFrame(time=result.times_to_save),
-        DataFrame(result.surface_temperature', ["face_$(i)" for i in 1:size(result.surface_temperature, 1)]),
+        DataFrame(time = result.times_to_save),
+        DataFrame(
+            result.surface_temperature',
+            ["face_$(i)" for i in 1:size(result.surface_temperature, 1)]
+        ),
     )
 
     CSV.write(filepath, df)
