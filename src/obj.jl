@@ -9,7 +9,7 @@ end
 """
     loadobj(shapepath::String; scale=1, message=true) -> nodes, faces
 """
-function loadobj(shapepath::String; scale=1, message=true)
+function loadobj(shapepath::String; scale = 1, message = true)
 
     nodes = SVector{3,Float64}[]
     faces = SVector{3,Int64}[]
