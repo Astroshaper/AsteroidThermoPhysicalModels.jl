@@ -18,7 +18,7 @@
 | ``\rho`` | [kg/m³] | Density |
 | ``C_p`` | [J/K] | Heat capacity at constant pressure |
 | ``P`` | [s] | Rotation period |
-| ``l`` | [?] | ? |
+| ``l`` | [m] | Thermal skin depth |
 | ``k`` | [W/m/K] | ? |
 | ``z`` | [m] | Depth |
 | ``E`` | [J] | Energy |
