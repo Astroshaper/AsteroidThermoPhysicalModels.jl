@@ -9,7 +9,7 @@ end
 """
     loadobj(shapepath::String; scale=1, message=true) -> nodes, faces
 """
-function loadobj(shapepath::String; scale=1, static=true, message=true)
+function loadobj(shapepath::String; scale=1, message=true)
 
     nodes = SVector{3,Float64}[]
     faces = SVector{3,Int64}[]
@@ -30,12 +30,7 @@ function loadobj(shapepath::String; scale=1, static=true, message=true)
     end
 
     nodes *= scale  # if scale is 1000, converted [km] to [m]
-    
-    if static == true
-        nodes = [SVector{3,Float64}(node) for node in nodes]
-        faces = [SVector{3,Int64}(face) for face in faces]
-    end
-    
+
     if message == true
         println("+-----------------------------+")
         println("|        Load OBJ file        |")
