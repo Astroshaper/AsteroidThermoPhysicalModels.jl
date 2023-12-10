@@ -16,7 +16,7 @@
 | ``F_\text{scat}`` | [W/m²] | Flux of scattered light |
 | ``F_\text{rad}`` | [W/m²] | Flux of thermal radiation from surrounding surface |
 | ``\rho`` | [kg/m³] | Density |
-| ``C_p`` | [?] | ? |
+| ``C_p`` | [J/K] | Heat capacity at constant pressure |
 | ``P`` | [?] | ? |
 | ``l`` | [?] | ? |
 | ``k`` | [W/m/K] | ? |
