@@ -23,5 +23,5 @@
 | ``z`` | [m] | Depth |
 | ``E`` | [J] | Energy |
 | ``\Gamma`` | [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)] | Thermal inertia |
-| ``\varepsilon`` | [?] | ? |
+| ``\varepsilon`` | [-] | Emissivity |
 | ``\Phi`` | [?] | ? |
