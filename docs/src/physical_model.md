@@ -22,6 +22,6 @@
 | ``k`` | [W/m/K] | ? |
 | ``z`` | [m] | Depth |
 | ``E`` | [J] | Energy |
-| ``\Gamma`` | [?] | ? |
+| ``\Gamma`` | [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)] | Thermal inertia |
 | ``\varepsilon`` | [?] | ? |
 | ``\Phi`` | [?] | ? |
