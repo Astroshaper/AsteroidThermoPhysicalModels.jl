@@ -24,4 +24,4 @@
 | ``E`` | [J] | Energy |
 | ``\Gamma`` | [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)] | Thermal inertia |
 | ``\varepsilon`` | [-] | Emissivity |
-| ``\Phi`` | [?] | ? |
+| ``\Phi`` | [W/m²] | Solar energy flux |
