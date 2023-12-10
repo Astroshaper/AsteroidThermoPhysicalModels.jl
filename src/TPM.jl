@@ -238,10 +238,10 @@ Output data format for `SingleTPM`
 ## Saved only at the time steps desired by the user
 - `times_to_save` : Timesteps to save temperature [s]
 - `depth_nodes`   : Depths of the calculation nodes for 1-D heat conduction [m], a vector of size `Nz`
-- `surf_temperature`     : Surface temperature [K], a matrix in size of `(Ns, Nt)`.
+- `surface_temperature`     : Surface temperature [K], a matrix in size of `(Ns, Nt)`.
     - `Ns` : Number of faces
     - `Nt` : Number of time steps to save surface temperature
-- `face_temperature`     : Temperature [K] as a function of depth [m] and time [s], `Dict` with face ID as key and a matrix `(Nz, Nt)` as an entry.
+- `subsurface_temperature`     : Temperature [K] as a function of depth [m] and time [s], `Dict` with face ID as key and a matrix `(Nz, Nt)` as an entry.
     - `Nz` : The number of the depth nodes
     - `Nt` : The number of time steps to save temperature
 """
@@ -255,8 +255,8 @@ struct SingleTPMResult
 
     times_to_save ::Vector{Float64}
     depth_nodes   ::Vector{Float64}
-    surf_temperature     ::Matrix{Float64}
-    face_temperature     ::Dict{Int, Matrix{Float64}}
+    surface_temperature     ::Matrix{Float64}
+    subsurface_temperature     ::Dict{Int, Matrix{Float64}}
 end
 
 
@@ -280,12 +280,12 @@ function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64},
     torque = zeros(SVector{3, Float64}, nsteps)
 
     depth_nodes = stpm.thermo_params.Δz * (0:stpm.thermo_params.Nz-1)
-    surf_temperature = zeros(length(stpm.shape.faces), nsteps_to_save)
-    face_temperature = Dict{Int, Matrix{Float64}}(
+    surface_temperature = zeros(length(stpm.shape.faces), nsteps_to_save)
+    subsurface_temperature = Dict{Int, Matrix{Float64}}(
         nₛ => zeros(stpm.thermo_params.Nz, nsteps_to_save) for nₛ in face_ID
     )
 
-    return SingleTPMResult(ephem.time, E_in, E_out, E_cons, force, torque, times_to_save, depth_nodes, surf_temperature, face_temperature)
+    return SingleTPMResult(ephem.time, E_in, E_out, E_cons, force, torque, times_to_save, depth_nodes, surface_temperature, subsurface_temperature)
 end
 
 
@@ -354,9 +354,9 @@ function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, nₜ::Inte
     if t in result.times_to_save  # In the step of saving temperature
         nₜ_save = findfirst(isequal(t), result.times_to_save)
 
-        result.surf_temperature[:, nₜ_save] .= surface_temperature(stpm)
+        result.surface_temperature[:, nₜ_save] .= surface_temperature(stpm)
 
-        for (nₛ, temperature) in result.face_temperature
+        for (nₛ, temperature) in result.subsurface_temperature
             temperature[:, nₜ_save] .= stpm.temperature[:, nₛ]
         end
     end
@@ -409,7 +409,7 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
     filepath = joinpath(dirpath, "surface_temperature.csv")
     df = hcat(
         DataFrame(time=result.times_to_save),
-        DataFrame(result.surf_temperature', ["face_$(i)" for i in 1:size(result.surf_temperature, 1)]),
+        DataFrame(result.surface_temperature', ["face_$(i)" for i in 1:size(result.surface_temperature, 1)]),
     )
 
     CSV.write(filepath, df)
@@ -424,8 +424,8 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
     )
 
     # Add a column for each face
-    for (nₛ, face_temperature) in collect(result.face_temperature)
-        df[:, "face_$(nₛ)"] = reshape(face_temperature, length(face_temperature))
+    for (nₛ, subsurface_temperature) in collect(result.subsurface_temperature)
+        df[:, "face_$(nₛ)"] = reshape(subsurface_temperature, length(subsurface_temperature))
     end
 
     # Sort the columns by the face ID
@@ -521,7 +521,7 @@ end
 
 #     ts = (t_begin:Δt:t_end) * P
 #     timestamp = prep_timestamp(ts)
-#     # surf_temperature_table = zeros(length(shape.faces), Int(1/thermo_params.Δt)-1)
+#     # surface_temperature_table = zeros(length(shape.faces), Int(1/thermo_params.Δt)-1)
 
 #     for (i, t) in enumerate(ts)
 #         update_orbit!(orbit, t)
