@@ -20,7 +20,7 @@
 | ``P`` | [s] | Rotation period |
 | ``l`` | [?] | ? |
 | ``k`` | [W/m/K] | ? |
-| ``z`` | [m] | depth |
+| ``z`` | [m] | Depth |
 | ``E`` | [J] | Energy |
 | ``\Gamma`` | [?] | ? |
 | ``\varepsilon`` | [?] | ? |
