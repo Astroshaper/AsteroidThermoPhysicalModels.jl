@@ -19,7 +19,7 @@
 | ``C_p`` | [J/K] | Heat capacity at constant pressure |
 | ``P`` | [s] | Rotation period |
 | ``l`` | [m] | Thermal skin depth |
-| ``k`` | [W/m/K] | ? |
+| ``k`` | [W/m/K] | Thermal conductivity |
 | ``z`` | [m] | Depth |
 | ``E`` | [J] | Emittance energy |
 | ``\Gamma`` | [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)] | Thermal inertia |
