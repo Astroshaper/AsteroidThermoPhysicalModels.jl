@@ -12,8 +12,10 @@ makedocs(;
         canonical="https://Astroshaper.github.io/AsteroidThermoPhysicalModels.jl",
         assets=["assets/favicon.ico"],
     ),
-    pages=[
+    pages = [
         "Home" => "index.md",
+        "Physical model" => "physical_model.md",
+        "API" => "api.md",
     ],
 )
 
