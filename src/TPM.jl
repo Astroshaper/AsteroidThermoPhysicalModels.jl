@@ -238,10 +238,10 @@ Output data format for `SingleTPM`
 ## Saved only at the time steps desired by the user
 - `times_to_save` : Timesteps to save temperature [s]
 - `depth_nodes`   : Depths of the calculation nodes for 1-D heat conduction [m], a vector of size `Nz`
-- `surf_temp`     : Surface temperature [K], a matrix in size of `(Ns, Nt)`.
+- `surf_temperature`     : Surface temperature [K], a matrix in size of `(Ns, Nt)`.
     - `Ns` : Number of faces
     - `Nt` : Number of time steps to save surface temperature
-- `face_temp`     : Temperature [K] as a function of depth [m] and time [s], `Dict` with face ID as key and a matrix `(Nz, Nt)` as an entry.
+- `face_temperature`     : Temperature [K] as a function of depth [m] and time [s], `Dict` with face ID as key and a matrix `(Nz, Nt)` as an entry.
     - `Nz` : The number of the depth nodes
     - `Nt` : The number of time steps to save temperature
 """
@@ -255,8 +255,8 @@ struct SingleTPMResult
 
     times_to_save ::Vector{Float64}
     depth_nodes   ::Vector{Float64}
-    surf_temp     ::Matrix{Float64}
-    face_temp     ::Dict{Int, Matrix{Float64}}
+    surf_temperature     ::Matrix{Float64}
+    face_temperature     ::Dict{Int, Matrix{Float64}}
 end
 
 
@@ -280,12 +280,12 @@ function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64},
     torque = zeros(SVector{3, Float64}, nsteps)
 
     depth_nodes = stpm.thermo_params.Δz * (0:stpm.thermo_params.Nz-1)
-    surf_temp = zeros(length(stpm.shape.faces), nsteps_to_save)
-    face_temp = Dict{Int, Matrix{Float64}}(
+    surf_temperature = zeros(length(stpm.shape.faces), nsteps_to_save)
+    face_temperature = Dict{Int, Matrix{Float64}}(
         nₛ => zeros(stpm.thermo_params.Nz, nsteps_to_save) for nₛ in face_ID
     )
 
-    return SingleTPMResult(ephem.time, E_in, E_out, E_cons, force, torque, times_to_save, depth_nodes, surf_temp, face_temp)
+    return SingleTPMResult(ephem.time, E_in, E_out, E_cons, force, torque, times_to_save, depth_nodes, surf_temperature, face_temperature)
 end
 
 
@@ -354,10 +354,10 @@ function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, nₜ::Inte
     if t in result.times_to_save  # In the step of saving temperature
         nₜ_save = findfirst(isequal(t), result.times_to_save)
 
-        result.surf_temp[:, nₜ_save] .= surface_temperature(stpm)
+        result.surf_temperature[:, nₜ_save] .= surface_temperature(stpm)
 
-        for (nₛ, temp) in result.face_temp
-            temp[:, nₜ_save] .= stpm.temperature[:, nₛ]
+        for (nₛ, temperature) in result.face_temperature
+            temperature[:, nₜ_save] .= stpm.temperature[:, nₛ]
         end
     end
 end
@@ -409,7 +409,7 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
     filepath = joinpath(dirpath, "surface_temperature.csv")
     df = hcat(
         DataFrame(time=result.times_to_save),
-        DataFrame(result.surf_temp', ["face_$(i)" for i in 1:size(result.surf_temp, 1)]),
+        DataFrame(result.surf_temperature', ["face_$(i)" for i in 1:size(result.surf_temperature, 1)]),
     )
 
     CSV.write(filepath, df)
@@ -424,8 +424,8 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
     )
 
     # Add a column for each face
-    for (nₛ, face_temp) in collect(result.face_temp)
-        df[:, "face_$(nₛ)"] = reshape(face_temp, length(face_temp))
+    for (nₛ, face_temperature) in collect(result.face_temperature)
+        df[:, "face_$(nₛ)"] = reshape(face_temperature, length(face_temperature))
     end
 
     # Sort the columns by the face ID
@@ -517,11 +517,11 @@ end
 # function run_TPM!(shape::ShapeModel, orbit::OrbitalElements, spin::SpinParams, thermo_params::AbstractThermoParams, savepath="tmp.jld2")
 #     @unpack P, Δt, t_begin, t_end = thermo_params
     
-#     init_temps_zero!(shape, thermo_params)
+#     init_temperatures_zero!(shape, thermo_params)
 
 #     ts = (t_begin:Δt:t_end) * P
 #     timestamp = prep_timestamp(ts)
-#     # surf_temp_table = zeros(length(shape.faces), Int(1/thermo_params.Δt)-1)
+#     # surf_temperature_table = zeros(length(shape.faces), Int(1/thermo_params.Δt)-1)
 
 #     for (i, t) in enumerate(ts)
 #         update_orbit!(orbit, t)
@@ -547,7 +547,7 @@ end
 
 #         save_timestamp!(timestamp, i, orbit.u, orbit.ν, spin.ϕ, f..., τ..., E_in, E_out, E_cons)
         
-#         update_temps!(shape, thermo_params)
+#         update_temperatures!(shape, thermo_params)
 #     end
 #     mean_energy_cons_frac!(timestamp, spin)
 #     jldsave(savepath; shape, orbit, spin, thermo_params, timestamp)
