@@ -13,7 +13,7 @@ using DataFrames
 Aqua.test_all(AsteroidThermoPhysicalModels, ambiguities=false)
 
 include("find_visiblefacets.jl")
-include("TPM_Ryugu.jl")
-include("non-uniform_thermoparams.jl")
-include("TPM_Didymos.jl")
+include("TPM_Ryugu/TPM_Ryugu.jl")
+include("non-uniform_thermoparams/non-uniform_thermoparams.jl")
+include("TPM_Didymos/TPM_Didymos.jl")
 include("heat_conduction_1D.jl")

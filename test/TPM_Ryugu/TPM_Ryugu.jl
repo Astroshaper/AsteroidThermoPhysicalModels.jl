@@ -103,7 +103,5 @@
     result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, times_to_save, face_ID)
     
     ##= Save TPM result =##
-    savedir = "TPM_Ryugu"
-    mkpath(savedir)
-    AsteroidThermoPhysicalModels.export_TPM_results(savedir, result)
+    AsteroidThermoPhysicalModels.export_TPM_results(result; dirpath="./TPM_Ryugu")
 end
