@@ -15,10 +15,10 @@
 !ryugu_test.obj
 
 /test/TPM_Ryugu/*
-/test/non-uniform_thermoparams/*
+/test/TPM_non-uniform_thermoparams/*
 /test/TPM_Didymos/*
 
 # Keep these test files
 !TPM_Ryugu.jl
-!non-uniform_thermoparams.jl
+!TPM_non-uniform_thermoparams.jl
 !TPM_Didymos.jl

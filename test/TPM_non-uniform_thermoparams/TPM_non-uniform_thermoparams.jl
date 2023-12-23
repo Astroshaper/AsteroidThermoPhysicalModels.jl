@@ -116,5 +116,5 @@
     result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, times_to_save, face_ID)
 
     ##= Save TPM result =##
-    AsteroidThermoPhysicalModels.export_TPM_results(result; dirpath="./non-uniform_thermoparams")
+    AsteroidThermoPhysicalModels.export_TPM_results(result; dirpath="./TPM_non-uniform_thermoparams")
 end
