@@ -392,15 +392,23 @@ end
 
 
 """
-    export_TPM_results(dirpath, result::SingleTPMResult)
+    export_TPM_results(result::SingleTPMResult; dirpath=".")
 
-Export the result of `SingleTPM` to CSV files.
+Export the result of `SingleTPM` to CSV files. 
+The output files are saved in the following directory structure:
+
+    dirpath
+    ├── physical_quantities.csv
+    ├── subsurface_temperature.csv
+    └── surface_temperature.csv
 
 # Arguments
-- `dirpath` :  Path to the directory to save CSV files
-- `result`  : Output data format for `SingleTPM`
+- `result` : Output data format for `SingleTPM`
+
+# Keyword arguments
+- `dirpath` : Path to the directory to save CSV files. Default is the current directory.
 """
-function export_TPM_results(dirpath, result::SingleTPMResult)
+function export_TPM_results(result::SingleTPMResult; dirpath=".")
     
     df = DataFrame()
     df.time     = result.times
@@ -452,23 +460,36 @@ end
 
 
 """
-    export_TPM_results(filepath, result::BinaryTPMResult)
+    export_TPM_results(result::BinaryTPMResult; dirpath=".")
 
-Export the result of `BinaryTPM` to CSV files.
+Export the result of `BinaryTPM` to CSV files. 
+The output files are saved in the following directory structure:
+
+    dirpath
+    ├── pri
+    │   ├── physical_quantities.csv
+    │   ├── subsurface_temperature.csv
+    │   └── surface_temperature.csv
+    └── sec
+        ├── physical_quantities.csv
+        ├── subsurface_temperature.csv
+        └── surface_temperature.csv
 
 # Arguments
-- `dirpath` : Path to the directory to save CSV files
-- `result`  : Output data format for `BinaryTPM`
+- `result` : Output data format for `BinaryTPM`
+
+# Keyword arguments
+- `dirpath` : Path to the directory to save CSV files. Default is the current directory.
 """
-function export_TPM_results(dirpath, result::BinaryTPMResult)
+function export_TPM_results(result::BinaryTPMResult; dirpath=".")
     dirpath_pri = joinpath(dirpath, "pri")
     dirpath_sec = joinpath(dirpath, "sec")
 
     mkpath(dirpath_pri)
     mkpath(dirpath_sec)
 
-    export_TPM_results(dirpath_pri, result.pri)
-    export_TPM_results(dirpath_sec, result.sec)
+    export_TPM_results(result.pri; dirpath=dirpath_pri)
+    export_TPM_results(result.sec; dirpath=dirpath_sec)
 end
 
 
