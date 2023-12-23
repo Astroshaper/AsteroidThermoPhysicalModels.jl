@@ -7,13 +7,18 @@
 .ipynb_checkpoints
 
 /test/kernel
-/test/shape/*.obj
-
-/test/TPM_Ryugu
-/test/non-uniform_thermoparams
-/test/TPM_Didymos
+/test/shape/*
 
 # Keep these shape models
-!/test/shape/icosahedron.obj
-!/test/shape/single_face.obj
-!/test/shape/ryugu_test.obj
+!icosahedron.obj
+!single_face.obj
+!ryugu_test.obj
+
+/test/TPM_Ryugu/*
+/test/non-uniform_thermoparams/*
+/test/TPM_Didymos/*
+
+# Keep these test files
+!TPM_Ryugu.jl
+!non-uniform_thermoparams.jl
+!TPM_Didymos.jl
