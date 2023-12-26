@@ -12,13 +12,9 @@ using ProgressMeter
 using FileIO
 using CSV
 
-
-include("constants.jl")
-export AU, G, GM☉, M☉, SOLAR_CONST, c₀, σ_SB
-export MERCURY, VENUS, EARTH, MARS, JUPITER, SATURN, URANUS, NEPTUNE
-export CERES, PLUTO, ERIS
-export MOON
-export RYUGU, DIDYMOS, DIMORPHOS
+const SOLAR_CONST = 1366.0   # Solar constant, Φ☉ [W/m^2]
+const c₀ = 299792458.0       # Speed of light [m/s]
+const σ_SB = 5.670374419e-8  # Stefan–Boltzmann constant [W/m^2/K^4]
 
 include("obj.jl")
 include("shape.jl")
