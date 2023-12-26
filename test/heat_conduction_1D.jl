@@ -52,7 +52,7 @@
 
     ##= Initial temperature =##
     T₀(x) = x < 0.5 ? 2x : 2(1 - x)
-    xs = [thermo_params.Δz * (nz-1) for nz in 1:thermo_params.n_depth]
+    xs = [thermo_params.Δz * (i-1) for i in 1:thermo_params.n_depth]
     Ts = [T₀(x) for x in xs]
 
     stpm_FE.temperature .= Ts

@@ -70,8 +70,8 @@ function forward_euler!(stpm::SingleTPM, Δt)
         λ = (Δt/P) / (Δz/l)^2 / 4π
         λ ≥ 0.5 && error("The forward Euler method is unstable because λ = $λ. This should be less than 0.5.")
 
-        for nz in 2:(n_depth-1)
-            stpm.SOLVER.T[nz] = (1-2λ)*T[nz, nₛ] + λ*(T[nz+1, nₛ] + T[nz-1, nₛ])  # Predict temperature at next time step
+        for i in 2:(n_depth-1)
+            stpm.SOLVER.T[i] = (1-2λ)*T[i, nₛ] + λ*(T[i+1, nₛ] + T[i-1, nₛ])  # Predict temperature at next time step
         end
 
         ## Apply boundary conditions
@@ -155,8 +155,8 @@ function crank_nicolson!(stpm::SingleTPM, Δt)
     #     stpm.SOLVER.c[begin] = 0
     #     stpm.SOLVER.c[end]   = 0
 
-    #     for nz in 2:n_depth-1
-    #         stpm.SOLVER.d[nz] = r*T[nz+1, nₛ, nₜ] + (1-2r)*T[nz, nₛ, nₜ] + r*T[nz-1, nₛ, nₜ]
+    #     for i in 2:n_depth-1
+    #         stpm.SOLVER.d[i] = r*T[i+1, nₛ, nₜ] + (1-2r)*T[i, nₛ, nₜ] + r*T[i-1, nₛ, nₜ]
     #     end
 
     #     # stpm.SOLVER.d[1]  = 0  # Upper boundary condition
