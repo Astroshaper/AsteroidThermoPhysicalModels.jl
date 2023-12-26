@@ -287,7 +287,7 @@ function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64},
     depth_nodes = stpm.thermo_params.Δz * (0:stpm.thermo_params.n_depth-1)
     surface_temperature = zeros(nfaces, nsteps_to_save)
     subsurface_temperature = Dict{Int,Matrix{Float64}}(
-        nₛ => zeros(stpm.thermo_params.n_depth, nsteps_to_save) for nₛ in face_ID
+        i => zeros(stpm.thermo_params.n_depth, nsteps_to_save) for i in face_ID
     )
     face_forces = zeros(SVector{3, Float64}, nfaces, nsteps_to_save)
 
@@ -374,8 +374,8 @@ function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, nₜ::Inte
 
         result.surface_temperature[:, nₜ_save] .= surface_temperature(stpm)
 
-        for (nₛ, temperature) in result.subsurface_temperature
-            temperature[:, nₜ_save] .= stpm.temperature[:, nₛ]
+        for (i, temperature) in result.subsurface_temperature
+            temperature[:, nₜ_save] .= stpm.temperature[:, i]
         end
 
         result.face_forces[:, nₜ_save] .= stpm.face_forces
@@ -454,8 +454,8 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
     )
 
     # Add a column for each face
-    for (nₛ, subsurface_temperature) in collect(result.subsurface_temperature)
-        df[:, "face_$(nₛ)"] =
+    for (i, subsurface_temperature) in collect(result.subsurface_temperature)
+        df[:, "face_$(i)"] =
             reshape(subsurface_temperature, length(subsurface_temperature))
     end
 

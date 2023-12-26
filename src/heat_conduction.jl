@@ -62,23 +62,23 @@ function forward_euler!(stpm::SingleTPM, Δt)
     n_depth = size(T, 1)
     n_faces = size(T, 2)
 
-    for nₛ in 1:n_faces
+    for i in 1:n_faces
         P  = stpm.thermo_params.P
         Δz = stpm.thermo_params.Δz
-        l  = (stpm.thermo_params.l isa Real ? stpm.thermo_params.l : stpm.thermo_params.l[nₛ])
+        l  = (stpm.thermo_params.l isa Real ? stpm.thermo_params.l : stpm.thermo_params.l[i])
 
         λ = (Δt/P) / (Δz/l)^2 / 4π
         λ ≥ 0.5 && error("The forward Euler method is unstable because λ = $λ. This should be less than 0.5.")
 
         for i in 2:(n_depth-1)
-            stpm.SOLVER.T[i] = (1-2λ)*T[i, nₛ] + λ*(T[i+1, nₛ] + T[i-1, nₛ])  # Predict temperature at next time step
+            stpm.SOLVER.T[i] = (1-2λ)*T[i, i] + λ*(T[i+1, i] + T[i-1, i])  # Predict temperature at next time step
         end
 
         ## Apply boundary conditions
-        update_upper_temperature!(stpm, nₛ)
+        update_upper_temperature!(stpm, i)
         update_lower_temperature!(stpm)
 
-        T[:, nₛ] .= stpm.SOLVER.T  # Copy temperature at next time step
+        T[:, i] .= stpm.SOLVER.T  # Copy temperature at next time step
     end
 end
 
@@ -97,8 +97,8 @@ function backward_euler!(stpm::SingleTPM, Δt)
     # n_depth = size(T, 1)
     # n_faces = size(T, 2)
 
-    # for nₛ in 1:n_faces
-    #     λ = (stpm.thermo_params.λ isa Real ? stpm.thermo_params.λ : stpm.thermo_params.λ[nₛ])
+    # for i in 1:n_faces
+    #     λ = (stpm.thermo_params.λ isa Real ? stpm.thermo_params.λ : stpm.thermo_params.λ[i])
 
     #     stpm.SOLVER.a .= -λ
     #     stpm.SOLVER.a[begin] = 0
@@ -112,10 +112,10 @@ function backward_euler!(stpm::SingleTPM, Δt)
     #     stpm.SOLVER.c[begin] = 0
     #     stpm.SOLVER.c[end]   = 0
 
-    #     stpm.SOLVER.d .= T[:, nₛ, nₜ]
+    #     stpm.SOLVER.d .= T[:, i, nₜ]
 
     #     tridiagonal_matrix_algorithm!(stpm)
-    #     T[:, nₛ, nₜ+1] .= stpm.SOLVER.x
+    #     T[:, i, nₜ+1] .= stpm.SOLVER.x
     # end
 
     ## Apply boundary conditions
@@ -142,7 +142,7 @@ function crank_nicolson!(stpm::SingleTPM, Δt)
     # Δz̄ = stpm.thermo_params.Δz / stpm.thermo_params.l  # Non-dimensional step in depth, normalized by thermal skin depth
     # r = (1/4π) * (Δt̄ / 2Δz̄^2)
 
-    # for nₛ in 1:n_faces
+    # for i in 1:n_faces
     #     stpm.SOLVER.a .= -r
     #     stpm.SOLVER.a[begin] = 0
     #     stpm.SOLVER.a[end]   = 0
@@ -156,14 +156,14 @@ function crank_nicolson!(stpm::SingleTPM, Δt)
     #     stpm.SOLVER.c[end]   = 0
 
     #     for i in 2:n_depth-1
-    #         stpm.SOLVER.d[i] = r*T[i+1, nₛ, nₜ] + (1-2r)*T[i, nₛ, nₜ] + r*T[i-1, nₛ, nₜ]
+    #         stpm.SOLVER.d[i] = r*T[i+1, i, nₜ] + (1-2r)*T[i, i, nₜ] + r*T[i-1, i, nₜ]
     #     end
 
     #     # stpm.SOLVER.d[1]  = 0  # Upper boundary condition
     #     # stpm.SOLVER.d[n_depth] = 0 # Lower boundary condition
 
     #     tridiagonal_matrix_algorithm!(stpm)
-    #     T[:, nₛ, nₜ+1] .= stpm.SOLVER.x
+    #     T[:, i, nₜ+1] .= stpm.SOLVER.x
     # end
 
     # ## Apply boundary conditions
@@ -212,27 +212,27 @@ tridiagonal_matrix_algorithm!(stpm::SingleTPM) = tridiagonal_matrix_algorithm!(s
 # ****************************************************************
 
 """
-    update_upper_temperature!(stpm::SingleTPM, nₛ::Integer)
+    update_upper_temperature!(stpm::SingleTPM, i::Integer)
 
 Update the temperature of the upper surface based on the boundary condition `stpm.BC_UPPER`.
 
 # Arguments
 - `stpm`      : Thermophysical model for a single asteroid
-- `nₛ`        : Index of the face of the shape model
+- `i`        : Index of the face of the shape model
 """
-function update_upper_temperature!(stpm::SingleTPM, nₛ::Integer)
+function update_upper_temperature!(stpm::SingleTPM, i::Integer)
 
     #### Radiation boundary condition ####
     if stpm.BC_UPPER isa RadiationBoundaryCondition
         P    = stpm.thermo_params.P
-        l    = (stpm.thermo_params.l    isa Real ? stpm.thermo_params.l    : stpm.thermo_params.l[nₛ]   )
-        Γ    = (stpm.thermo_params.Γ    isa Real ? stpm.thermo_params.Γ    : stpm.thermo_params.Γ[nₛ]   )
-        A_B  = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[nₛ] )
-        A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[nₛ])
-        ε    = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[nₛ]   )
+        l    = (stpm.thermo_params.l    isa Real ? stpm.thermo_params.l    : stpm.thermo_params.l[i]   )
+        Γ    = (stpm.thermo_params.Γ    isa Real ? stpm.thermo_params.Γ    : stpm.thermo_params.Γ[i]   )
+        A_B  = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[i] )
+        A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[i])
+        ε    = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[i]   )
         Δz   = stpm.thermo_params.Δz
     
-        F_sun, F_scat, F_rad = stpm.flux[nₛ, :]
+        F_sun, F_scat, F_rad = stpm.flux[i, :]
         F_total = flux_total(A_B, A_TH, F_sun, F_scat, F_rad)
         update_surface_temperature!(stpm.SOLVER.T, F_total, P, l, Γ, ε, Δz)
     #### Insulation boundary condition ####
