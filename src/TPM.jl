@@ -392,7 +392,7 @@ end
 
 
 """
-    export_TPM_results(result::SingleTPMResult; dirpath=".")
+    export_TPM_results(dirpath, result::SingleTPMResult)
 
 Export the result of `SingleTPM` to CSV files. 
 The output files are saved in the following directory structure:
@@ -403,12 +403,10 @@ The output files are saved in the following directory structure:
     └── surface_temperature.csv
 
 # Arguments
-- `result` : Output data format for `SingleTPM`
-
-# Keyword arguments
-- `dirpath` : Path to the directory to save CSV files. Default is the current directory.
+- `dirpath` : Path to the directory to save CSV files.
+- `result`  : Output data format for `SingleTPM`
 """
-function export_TPM_results(result::SingleTPMResult; dirpath=".")
+function export_TPM_results(dirpath, result::SingleTPMResult)
     
     df = DataFrame()
     df.time     = result.times
@@ -460,7 +458,7 @@ end
 
 
 """
-    export_TPM_results(result::BinaryTPMResult; dirpath=".")
+    export_TPM_results(dirpath, result::BinaryTPMResult)
 
 Export the result of `BinaryTPM` to CSV files. 
 The output files are saved in the following directory structure:
@@ -476,20 +474,18 @@ The output files are saved in the following directory structure:
         └── surface_temperature.csv
 
 # Arguments
-- `result` : Output data format for `BinaryTPM`
-
-# Keyword arguments
-- `dirpath` : Path to the directory to save CSV files. Default is the current directory.
+- `dirpath` : Path to the directory to save CSV files.
+- `result`  : Output data format for `BinaryTPM`
 """
-function export_TPM_results(result::BinaryTPMResult; dirpath=".")
+function export_TPM_results(dirpath, result::BinaryTPMResult)
     dirpath_pri = joinpath(dirpath, "pri")
     dirpath_sec = joinpath(dirpath, "sec")
 
     mkpath(dirpath_pri)
     mkpath(dirpath_sec)
 
-    export_TPM_results(result.pri; dirpath=dirpath_pri)
-    export_TPM_results(result.sec; dirpath=dirpath_sec)
+    export_TPM_results(dirpath_pri, result.pri)
+    export_TPM_results(dirpath_sec, result.sec)
 end
 
 

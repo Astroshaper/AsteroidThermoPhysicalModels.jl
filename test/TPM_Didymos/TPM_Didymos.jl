@@ -146,5 +146,6 @@
     result = AsteroidThermoPhysicalModels.run_TPM!(btpm, ephem, times_to_save, face_ID_pri, face_ID_sec)
 
     ##= Save TPM result =##
-    AsteroidThermoPhysicalModels.export_TPM_results(result; dirpath="./TPM_Didymos")
+    dirpath = "./TPM_Didymos"
+    AsteroidThermoPhysicalModels.export_TPM_results(dirpath, result)
 end
