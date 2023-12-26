@@ -394,10 +394,16 @@ end
 """
     export_TPM_results(dirpath, result::SingleTPMResult)
 
-Export the result of `SingleTPM` to CSV files.
+Export the result of `SingleTPM` to CSV files. 
+The output files are saved in the following directory structure:
+
+    dirpath
+    ├── physical_quantities.csv
+    ├── subsurface_temperature.csv
+    └── surface_temperature.csv
 
 # Arguments
-- `dirpath` :  Path to the directory to save CSV files
+- `dirpath` : Path to the directory to save CSV files.
 - `result`  : Output data format for `SingleTPM`
 """
 function export_TPM_results(dirpath, result::SingleTPMResult)
@@ -452,12 +458,23 @@ end
 
 
 """
-    export_TPM_results(filepath, result::BinaryTPMResult)
+    export_TPM_results(dirpath, result::BinaryTPMResult)
 
-Export the result of `BinaryTPM` to CSV files.
+Export the result of `BinaryTPM` to CSV files. 
+The output files are saved in the following directory structure:
+
+    dirpath
+    ├── pri
+    │   ├── physical_quantities.csv
+    │   ├── subsurface_temperature.csv
+    │   └── surface_temperature.csv
+    └── sec
+        ├── physical_quantities.csv
+        ├── subsurface_temperature.csv
+        └── surface_temperature.csv
 
 # Arguments
-- `dirpath` : Path to the directory to save CSV files
+- `dirpath` : Path to the directory to save CSV files.
 - `result`  : Output data format for `BinaryTPM`
 """
 function export_TPM_results(dirpath, result::BinaryTPMResult)

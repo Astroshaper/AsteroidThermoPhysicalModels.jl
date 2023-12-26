@@ -1,13 +1,11 @@
-# The following tests are almost the same as `TPM_Ryugu.jl`.
-# The only difference is that the thermophysical properties vary depending on the location of the asteroid.
-@testset "non-uniform_thermoparams" begin
+# See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for more information.
+@testset "TPM_Ryugu" begin
     msg = """\n
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-    |             Test: non-uniform_thermoparams             |
+    |                    Test: TPM_Ryugu                     |
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     """
     println(msg)
-
 
     ##= Download Files =##
     paths_kernel = [
@@ -44,7 +42,7 @@
     P = SPICE.convrt(7.63262, "hours", "seconds")  # Rotation period of Ryugu
 
     ncycles = 2  # Number of cycles to perform TPM
-    nsteps_in_cycle = 120  # Number of time steps in one rotation period
+    nsteps_in_cycle = 72  # Number of time steps in one rotation period
 
     et_begin = SPICE.utc2et("2018-07-01T00:00:00")  # Start time of TPM
     et_end   = et_begin + P * ncycles  # End time of TPM
@@ -68,20 +66,7 @@
     shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj; scale=1000, find_visible_facets=true)
 
     ##= Thermal properties =##
-    """
-    When thermophysical properties vary from face to face
-
-    - "Northern" hemisphere:
-        - Bond albedo          : A_B = 0.04 [-]
-        - Thermal conductivity : k   = 0.1  [W/m/K]
-        - Emissivity           : ε   = 1.0  [-]
-    - "Southern" hemisphere:
-        - Bond albedo          : A_B = 0.1  [-]
-        - Thermal conductivity : k   = 0.3  [W/m/K]
-        - Emissivity           : ε   = 0.9  [-]
-    """
-
-    k  = [r[3] > 0 ? 0.1 : 0.3  for r in shape.face_centers]
+    k  = 0.1
     ρ  = 1270.0
     Cₚ = 600.0
     
@@ -92,12 +77,14 @@
         P       = P,
         l       = l,
         Γ       = Γ,
-        A_B     = [r[3] > 0 ? 0.04 : 0.1 for r in shape.face_centers],
+        A_B     = 0.04,  # Bolometric Bond albedo
         A_TH    = 0.0,
-        ε       = [r[3] > 0 ? 1.0 : 0.9  for r in shape.face_centers],
+        ε       = 1.0,
         z_max   = 0.6,
         Nz      = 41,
     )
+
+    println(thermo_params)
 
     ##= Setting of TPM =##
     stpm = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params;
@@ -114,9 +101,8 @@
     face_ID = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature
 
     result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, times_to_save, face_ID)
-
-    ##= Save TPM result =##'
-    savedir = "non-uniform_thermoparams"
-    mkpath(savedir)
-    AsteroidThermoPhysicalModels.export_TPM_results(savedir, result)
+    
+    ##= Save TPM result =##
+    dirpath = "./TPM_Ryugu"
+    AsteroidThermoPhysicalModels.export_TPM_results(dirpath, result)
 end
