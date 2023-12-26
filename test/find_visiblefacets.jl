@@ -22,7 +22,7 @@
     println("Number of total visible facets: ", sum(length.(shape.visiblefacets)))  # This should be zero for an icosahedron.
     println()
 
-    ##= Concave spherical segment =##]
+    ##= Concave spherical segment =##
     println("========  Concave spherical segment  ========")
     xs, ys, zs = AsteroidThermoPhysicalModels.concave_spherical_segment(0.4, 0.2; Nx=2^5, Ny=2^5, xc=0.5, yc=0.5)
     shape = AsteroidThermoPhysicalModels.load_shape_grid(xs, ys, zs; scale=1.0, find_visible_facets=true)
