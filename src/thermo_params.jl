@@ -97,7 +97,7 @@ end
 
 
 """
-    thermoparams(; A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Nt, z_max, n_depth, P)
+    thermoparams(; P, l, Γ, A_B, A_TH, ε, z_max, n_depth)
 """
 function thermoparams(; P, l, Γ, A_B, A_TH, ε, z_max, n_depth)
 
