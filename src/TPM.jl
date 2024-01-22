@@ -236,15 +236,15 @@ Output data format for `SingleTPM`
 - `torque` : Thermal torque on the asteroid [N ⋅ m]
 
 ## Saved only at the time steps desired by the user
-- `times_to_save` : Timesteps to save temperature and thermal force on every face [s]
-- `depth_nodes`   : Depths of the calculation nodes for 1-D heat conduction [m], a vector of size `Nz`
-- `surface_temperature`     : Surface temperature [K], a matrix in size of `(Ns, Nt)`.
+- `times_to_save`          : Timesteps to save temperature and thermal force on every face [s]
+- `depth_nodes`            : Depths of the calculation nodes for 1-D heat conduction [m], a vector of size `Nz`
+- `surface_temperature`    : Surface temperature [K], a matrix in size of `(Ns, Nt)`.
     - `Ns` : Number of faces
     - `Nt` : Number of time steps to save surface temperature
-- `subsurface_temperature`     : Temperature [K] as a function of depth [m] and time [s], `Dict` with face ID as key and a matrix `(Nz, Nt)` as an entry.
+- `subsurface_temperature` : Temperature [K] as a function of depth [m] and time [s], `Dict` with face ID as key and a matrix `(Nz, Nt)` as an entry.
     - `Nz` : The number of the depth nodes
     - `Nt` : The number of time steps to save temperature
-- `face_forces`   : Thermal force on every face of the shape model [N], a matrix in size of `(Ns, Nt)`.
+- `face_forces`            : Thermal force on every face of the shape model [N], a matrix in size of `(Ns, Nt)`.
     - `Ns` : Number of faces
     - `Nt` : Number of time steps to save surface temperature
 """
