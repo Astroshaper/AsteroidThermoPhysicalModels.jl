@@ -236,7 +236,7 @@ Output data format for `SingleTPM`
 - `torque` : Thermal torque on the asteroid [N ⋅ m]
 
 ## Saved only at the time steps desired by the user
-- `times_to_save` : Timesteps to save temperature [s]
+- `times_to_save` : Timesteps to save temperature and thermal force on every face [s]
 - `depth_nodes`   : Depths of the calculation nodes for 1-D heat conduction [m], a vector of size `Nz`
 - `surface_temperature`     : Surface temperature [K], a matrix in size of `(Ns, Nt)`.
     - `Ns` : Number of faces
@@ -244,6 +244,9 @@ Output data format for `SingleTPM`
 - `subsurface_temperature`     : Temperature [K] as a function of depth [m] and time [s], `Dict` with face ID as key and a matrix `(Nz, Nt)` as an entry.
     - `Nz` : The number of the depth nodes
     - `Nt` : The number of time steps to save temperature
+- `face_forces`   : Thermal force on every face of the shape model [N], a matrix in size of `(Ns, Nt)`.
+    - `Ns` : Number of faces
+    - `Nt` : Number of time steps to save surface temperature
 """
 struct SingleTPMResult
     times  ::Vector{Float64}
@@ -253,10 +256,11 @@ struct SingleTPMResult
     force  ::Vector{SVector{3, Float64}}
     torque ::Vector{SVector{3, Float64}}
 
-    times_to_save ::Vector{Float64}
-    depth_nodes   ::Vector{Float64}
-    surface_temperature     ::Matrix{Float64}
-    subsurface_temperature     ::Dict{Int, Matrix{Float64}}
+    times_to_save          ::Vector{Float64}
+    depth_nodes            ::Vector{Float64}
+    surface_temperature    ::Matrix{Float64}
+    subsurface_temperature ::Dict{Int, Matrix{Float64}}
+    face_forces            ::Matrix{SVector{3, Float64}}
 end
 
 
@@ -270,8 +274,9 @@ Outer constructor of `SingleTPMResult`
 - `face_ID`       : Face indices to save subsurface temperature
 """
 function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64}, face_ID::Vector{Int})
-    nsteps = length(ephem.time)
-    nsteps_to_save = length(times_to_save)
+    nsteps = length(ephem.time)             # Number of time steps
+    nsteps_to_save = length(times_to_save)  # Number of time steps to save temperature
+    nfaces = length(stpm.shape.faces)       # Number of faces of the shape model
 
     E_in   = zeros(nsteps)
     E_out  = zeros(nsteps)
@@ -280,10 +285,11 @@ function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64},
     torque = zeros(SVector{3, Float64}, nsteps)
 
     depth_nodes = stpm.thermo_params.Δz * (0:stpm.thermo_params.Nz-1)
-    surface_temperature = zeros(length(stpm.shape.faces), nsteps_to_save)
+    surface_temperature = zeros(nfaces, nsteps_to_save)
     subsurface_temperature = Dict{Int,Matrix{Float64}}(
         nₛ => zeros(stpm.thermo_params.Nz, nsteps_to_save) for nₛ in face_ID
     )
+    face_forces = zeros(SVector{3, Float64}, nfaces, nsteps_to_save)
 
     return SingleTPMResult(
         ephem.time,
@@ -296,6 +302,7 @@ function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64},
         depth_nodes,
         surface_temperature,
         subsurface_temperature,
+        face_forces,
     )
 end
 
@@ -370,6 +377,8 @@ function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, nₜ::Inte
         for (nₛ, temperature) in result.subsurface_temperature
             temperature[:, nₜ_save] .= stpm.temperature[:, nₛ]
         end
+
+        result.face_forces[:, nₜ_save] .= stpm.face_forces
     end
 end
 
@@ -400,7 +409,8 @@ The output files are saved in the following directory structure:
     dirpath
     ├── physical_quantities.csv
     ├── subsurface_temperature.csv
-    └── surface_temperature.csv
+    ├── surface_temperature.csv
+    └── thermal_force.csv
 
 # Arguments
 - `dirpath` : Path to the directory to save CSV files.
@@ -454,6 +464,23 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
     df = df[:, ["time", "depth", keys_sorted...]]
 
     CSV.write(filepath, df)
+
+    ##= Thermal force on every face of the shape model =##
+    filepath = joinpath(dirpath, "thermal_force.csv")
+
+    nfaces = size(result.face_forces, 1)  # Number of faces of the shape model
+    nsteps = size(result.face_forces, 2)  # Number of time steps to save temperature
+    nrows = nfaces * nsteps
+
+    df = DataFrame(
+        time = reshape([t for _ in 1:nfaces, t in result.times_to_save], nrows),
+        face = reshape([i for i in 1:nfaces, _ in result.times_to_save], nrows),
+    )
+    df.x = reshape([f[1] for f in result.face_forces], nrows)  # x-component of the thermal force
+    df.y = reshape([f[2] for f in result.face_forces], nrows)  # y-component of the thermal force
+    df.z = reshape([f[3] for f in result.face_forces], nrows)  # z-component of the thermal force
+
+    CSV.write(filepath, df)
 end
 
 
@@ -465,13 +492,15 @@ The output files are saved in the following directory structure:
 
     dirpath
     ├── pri
-    │   ├── physical_quantities.csv
-    │   ├── subsurface_temperature.csv
-    │   └── surface_temperature.csv
+    │   ├── physical_quantities.csv
+    │   ├── subsurface_temperature.csv
+    │   ├── surface_temperature.csv
+    │   └── thermal_force.csv
     └── sec
         ├── physical_quantities.csv
         ├── subsurface_temperature.csv
-        └── surface_temperature.csv
+        ├── surface_temperature.csv
+        └── thermal_force.csv
 
 # Arguments
 - `dirpath` : Path to the directory to save CSV files.
