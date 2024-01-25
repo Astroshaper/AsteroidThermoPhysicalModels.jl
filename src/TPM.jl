@@ -175,7 +175,7 @@ function SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, SOLVER, B
     flux = zeros(Ns, 3)
     temperature = zeros(Nz, Ns)
 
-    face_forces = [zero(SVector{3, Float64}) for _ in shape.faces]
+    face_forces = zeros(SVector{3, Float64}, Ns)
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
 
