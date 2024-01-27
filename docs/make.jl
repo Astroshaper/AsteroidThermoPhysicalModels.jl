@@ -11,6 +11,7 @@ makedocs(;
         prettyurls=get(ENV, "CI", "false") == "true",
         canonical="https://Astroshaper.github.io/AsteroidThermoPhysicalModels.jl",
         assets=["assets/favicon.ico"],
+        repolink="https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl"
     ),
     pages = [
         "Home" => "index.md",
