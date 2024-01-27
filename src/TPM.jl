@@ -468,7 +468,7 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
     ##= Thermal force on every face of the shape model =##
     filepath = joinpath(dirpath, "thermal_force.csv")
 
-    nfaces = size(result.face_forces, 1)  # Number of faces of the shape model
+    n_faces = size(result.face_forces, 1)  # Number of faces of the shape model
     nsteps = size(result.face_forces, 2)  # Number of time steps to save temperature
     nrows = nfaces * nsteps
 
