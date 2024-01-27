@@ -81,15 +81,17 @@ raycast(A::StaticVector{3}, B::StaticVector{3}, C::StaticVector{3}, R::StaticVec
 
 
 """
-    find_visiblefacets!(obs::Facet, facets)
+    find_visiblefacets!(shape::ShapeModel; show_progress=true)
 
 Find facets that is visible from the facet where the observer is located.
 
-# Parameters
-- `obs`    : Facet where the observer stands
-- `facets` : Array of `Facet`
+# Arguments
+- `shape` : Shape model of an asteroid
+
+# Keyword arguments
+- `show_progress` : Switch to show a progress meter
 """
-function find_visiblefacets!(shape::ShapeModel)
+function find_visiblefacets!(shape::ShapeModel; show_progress=true)
     nodes = shape.nodes
     faces = shape.faces
     face_centers = shape.face_centers
@@ -97,7 +99,13 @@ function find_visiblefacets!(shape::ShapeModel)
     face_areas = shape.face_areas
     visiblefacets = shape.visiblefacets
 
-    @showprogress 1 "Searching for visible faces..." for i in eachindex(faces)
+    ## `ProgressMeter` setting
+    if show_progress
+        p = Progress(length(faces); dt=1, desc="Searching for visible faces...", showspeed=true)
+        ProgressMeter.ijulia_behavior(:clear)
+    end
+
+    for i in eachindex(faces)
         cᵢ = face_centers[i]
         n̂ᵢ = face_normals[i]
         aᵢ = face_areas[i]
@@ -140,6 +148,15 @@ function find_visiblefacets!(shape::ShapeModel)
             blocked && continue
             push!(visiblefacets[i], VisibleFacet(j, view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)...))  # i -> j
             push!(visiblefacets[j], VisibleFacet(i, view_factor(cⱼ, cᵢ, n̂ⱼ, n̂ᵢ, aᵢ)...))  # j -> i
+        end
+
+        ## Update the progress meter
+        if show_progress
+            showvalues = [
+                ("Face ID       ", i),
+                ("Visible faces ", length(visiblefacets[i])),
+            ]
+            ProgressMeter.next!(p; showvalues)
         end
     end
 end

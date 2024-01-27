@@ -55,7 +55,20 @@ function Base.show(io::IO, shape::ShapeModel)
     print(io, msg)
 end
 
-function load_shape_obj(shapepath; scale = 1.0, find_visible_facets = false)
+"""
+    load_shape_obj(shapepath; scale=1.0, find_visible_facets=false; show_progress=true)
+
+Load a shape model from a Wavefront OBJ file.
+
+# Arguments
+- `shapepath` : Path to a Wavefront OBJ file
+
+# Keyword arguments
+- `scale`               : Scale factor of the shape model
+- `find_visible_facets` : Switch to find visible facets
+- `show_progress`       : Switch to show a progress meter
+"""
+function load_shape_obj(shapepath; scale=1.0, find_visible_facets=false, show_progress=true)
     # TODO: use MeshIO.jl
     nodes, faces = loadobj(shapepath; scale = scale, message = false)
 
@@ -66,7 +79,7 @@ function load_shape_obj(shapepath; scale = 1.0, find_visible_facets = false)
     visiblefacets = [VisibleFacet[] for _ in faces]
 
     shape = ShapeModel(nodes, faces, face_centers, face_normals, face_areas, visiblefacets)
-    find_visible_facets && find_visiblefacets!(shape)
+    find_visible_facets && find_visiblefacets!(shape; show_progress)
     
     return shape
 end
