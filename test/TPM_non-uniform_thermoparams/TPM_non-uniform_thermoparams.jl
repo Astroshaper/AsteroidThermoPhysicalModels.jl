@@ -1,6 +1,10 @@
 # The following tests are almost the same as `TPM_Ryugu.jl`.
 # The only difference is that the thermophysical properties vary depending on the location of the asteroid.
 @testset "non-uniform_thermoparams" begin
+    DIR_OUTPUT = joinpath(@__DIR__, "output")
+    rm(DIR_OUTPUT; recursive=true, force=true)
+    mkpath(DIR_OUTPUT)
+
     msg = """\n
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     |             Test: non-uniform_thermoparams             |
@@ -116,6 +120,12 @@
     result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, times_to_save, face_ID)
 
     ##= Save TPM result =##
-    dirpath = "./TPM_non-uniform_thermoparams"
-    AsteroidThermoPhysicalModels.export_TPM_results(dirpath, result)
+    @testset "Save TPM result" begin
+        AsteroidThermoPhysicalModels.export_TPM_results(DIR_OUTPUT, result)
+    
+        @test isfile(joinpath(DIR_OUTPUT, "physical_quantities.csv"))
+        @test isfile(joinpath(DIR_OUTPUT, "subsurface_temperature.csv"))
+        @test isfile(joinpath(DIR_OUTPUT, "surface_temperature.csv"))
+        @test isfile(joinpath(DIR_OUTPUT, "thermal_force.csv"))
+    end
 end
