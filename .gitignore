@@ -9,16 +9,13 @@
 /test/kernel
 /test/shape/*
 
+/test/TPM_Ryugu/output
+/test/TPM_non-uniform_thermoparams/output
+/test/TPM_Didymos/output
+
 # Keep these shape models
 !icosahedron.obj
 !single_face.obj
 !ryugu_test.obj
 
-/test/TPM_Ryugu/*
-/test/TPM_non-uniform_thermoparams/*
-/test/TPM_Didymos/*
 
-# Keep these test files
-!TPM_Ryugu.jl
-!TPM_non-uniform_thermoparams.jl
-!TPM_Didymos.jl

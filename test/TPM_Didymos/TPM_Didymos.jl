@@ -1,5 +1,9 @@
 # See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos for more information.
 @testset "TPM_Didymos" begin
+    DIR_OUTPUT = joinpath(@__DIR__, "output")
+    rm(DIR_OUTPUT; recursive=true, force=true)
+    mkpath(DIR_OUTPUT)
+
     msg = """\n
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
     |                   Test: TPM_Didymos                    |
@@ -146,6 +150,17 @@
     result = AsteroidThermoPhysicalModels.run_TPM!(btpm, ephem, times_to_save, face_ID_pri, face_ID_sec)
 
     ##= Save TPM result =##
-    dirpath = "./TPM_Didymos"
-    AsteroidThermoPhysicalModels.export_TPM_results(dirpath, result)
+    @testset "Save TPM result" begin
+        AsteroidThermoPhysicalModels.export_TPM_results(DIR_OUTPUT, result)
+
+        @test isfile(joinpath(DIR_OUTPUT, "pri", "physical_quantities.csv"))
+        @test isfile(joinpath(DIR_OUTPUT, "pri", "subsurface_temperature.csv"))
+        @test isfile(joinpath(DIR_OUTPUT, "pri", "surface_temperature.csv"))
+        @test isfile(joinpath(DIR_OUTPUT, "pri", "thermal_force.csv"))
+
+        @test isfile(joinpath(DIR_OUTPUT, "sec", "physical_quantities.csv"))
+        @test isfile(joinpath(DIR_OUTPUT, "sec", "subsurface_temperature.csv"))
+        @test isfile(joinpath(DIR_OUTPUT, "sec", "surface_temperature.csv"))
+        @test isfile(joinpath(DIR_OUTPUT, "sec", "thermal_force.csv"))
+    end
 end
