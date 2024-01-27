@@ -469,12 +469,12 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
     filepath = joinpath(dirpath, "thermal_force.csv")
 
     n_faces = size(result.face_forces, 1)  # Number of faces of the shape model
-    nsteps = size(result.face_forces, 2)  # Number of time steps to save temperature
-    nrows = nfaces * nsteps
+    n_steps = size(result.face_forces, 2)  # Number of time steps to save temperature
+    nrows = n_faces * n_steps
 
     df = DataFrame(
-        time = reshape([t for _ in 1:nfaces, t in result.times_to_save], nrows),
-        face = reshape([i for i in 1:nfaces, _ in result.times_to_save], nrows),
+        time = reshape([t for _ in 1:n_faces, t in result.times_to_save], nrows),
+        face = reshape([i for i in 1:n_faces, _ in result.times_to_save], nrows),
     )
     df.x = reshape([f[1] for f in result.face_forces], nrows)  # x-component of the thermal force
     df.y = reshape([f[2] for f in result.face_forces], nrows)  # y-component of the thermal force
