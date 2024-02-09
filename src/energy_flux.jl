@@ -282,10 +282,10 @@ function mutual_shadowing!(btpm::BinaryTPM, r☉, rₛ, R₂₁)
                 continue
             end
 
-            d₁ₛ = rₛ - G₁                   # Vector from △A₁B₁C₁ to secondary center
-            θ₁ = acos(r̂☉ ⋅ normalize(d₁ₛ))  # Angle of Sun-△A₁B₁C₁-Secondary
-            θ_R₂ = asin(R₂ / norm(d₁ₛ))     # Critical angle related to the maximum radius of the secondary
-            θ_r₂ = asin(r₂ / norm(d₁ₛ))     # Critical angle related to the minimum radius of the secondary
+            d₁ₛ = rₛ - G₁                                        # Vector from △A₁B₁C₁ to secondary center
+            θ₁ = acos(min(1.0, max(-1.0, r̂☉ ⋅ normalize(d₁ₛ))))  # Angle of Sun-△A₁B₁C₁-Secondary
+            θ_R₂ = asin(min(1.0, max(-1.0, R₂ / norm(d₁ₛ))))     # Critical angle related to the maximum radius of the secondary
+            θ_r₂ = asin(min(1.0, max(-1.0, r₂ / norm(d₁ₛ))))     # Critical angle related to the minimum radius of the secondary
 
             ## In the secondary shadow
             if θ₁ < θ_r₂
@@ -342,10 +342,10 @@ function mutual_shadowing!(btpm::BinaryTPM, r☉, rₛ, R₂₁)
                 continue
             end
 
-            d₂ₚ = - G₂                      # Vector from △A₂B₂C₂ to primary center (origin)
-            θ₂ = acos(r̂☉ ⋅ normalize(d₂ₚ))  # Angle of Sun-△A₂B₂C₂-Primary
-            θ_R₁ = asin(R₁ / norm(d₂ₚ))     # Critical angle related to the maximum radius of the primary
-            θ_r₁ = asin(r₁ / norm(d₂ₚ))     # Critical angle related to the minimum radius of the primary
+            d₂ₚ = - G₂                                           # Vector from △A₂B₂C₂ to primary center (origin)
+            θ₂ = acos(min(1.0, max(-1.0, r̂☉ ⋅ normalize(d₂ₚ))))  # Angle of Sun-△A₂B₂C₂-Primary
+            θ_R₁ = asin(min(1.0, max(-1.0, R₁ / norm(d₂ₚ))))     # Critical angle related to the maximum radius of the primary
+            θ_r₁ = asin(min(1.0, max(-1.0, r₁ / norm(d₂ₚ))))     # Critical angle related to the minimum radius of the primary
 
             ## In the primary shadow
             if θ₂ < θ_r₁
