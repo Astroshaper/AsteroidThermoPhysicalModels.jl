@@ -252,14 +252,21 @@ function mutual_shadowing!(btpm::BinaryTPM, r☉, rₛ, R₂₁)
     shape2 = btpm.sec.shape
     r̂☉ = normalize(r☉)
 
-    θ = acos((r☉ ⋅ rₛ) / (norm(r☉) * norm(rₛ)))  # Angle of Sun-Primary-Secondary
+    cosθ = normalize(r☉) ⋅ normalize(rₛ)  # Cosine of the angle of Sun-Primary-Secondary
+    cosθ = min(1.0, max(-1.0, cosθ))      # Clip the value to [-1.0, 1.0]
+    θ = acos(cosθ)
 
     R₁ = maximum_radius(shape1)
     R₂ = maximum_radius(shape2)
     R₁ < R₂ && error("Error: The primary radius is smaller than the secondary.")
     
-    θ₊ = asin((R₁ + R₂) / norm(rₛ))  # Critical angle at which partial ecripse can occur
-    θ₋ = asin((R₁ - R₂) / norm(rₛ))  # Critical angle at which total ecripse can occur
+    sinθ₊ = (R₁ + R₂) / norm(rₛ)        # Sine of the critical angle at which partial ecripse can occur
+    sinθ₋ = (R₁ - R₂) / norm(rₛ)        # Sine of the critical angle at which total ecripse can occur
+    sinθ₊ = min(1.0, max(-1.0, sinθ₊))  # Clip the value to [-1.0, 1.0]
+    sinθ₋ = min(1.0, max(-1.0, sinθ₋))  # Clip the value to [-1.0, 1.0]
+
+    θ₊ = asin(sinθ₊)  # Critical angle at which partial ecripse can occur
+    θ₋ = asin(sinθ₋)  # Critical angle at which total ecripse can occur
 
     #### Partital eclipse of the primary ####
     if 0 ≤ θ < θ₊
