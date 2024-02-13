@@ -8,13 +8,27 @@
     update_temperature!(stpm::SingleTPM, Δt)
 
 Calculate the temperature for the next time step based on 1D heat conduction equation.
+If the thermal inertia (conductivity) is zero, omit to solve the heat conduction equation.
+The surface termperature is determined only by radiative equilibrium.
 
 # Arguments
 - `stpm` : Thermophysical model for a single asteroid
 - `Δt`   : Time step [sec]
 """
 function update_temperature!(stpm::SingleTPM, Δt)
-    if stpm.SOLVER isa ForwardEulerSolver
+    if iszero(stpm.thermo_params.Γ)
+        for i in eachindex(stpm.shape.faces)
+            A_B  = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[i] )
+            A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[i])
+            ε    = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[i]   )
+            εσ = ε * σ_SB
+
+            F_sun, F_scat, F_rad = stpm.flux[i, :]
+            F_total = flux_total(A_B, A_TH, F_sun, F_scat, F_rad)
+
+            stpm.temperature[begin, i] = (F_total / εσ)^(1/4)
+        end
+    elseif stpm.SOLVER isa ForwardEulerSolver
         forward_euler!(stpm, Δt)
     elseif stpm.SOLVER isa BackwardEulerSolver
         backward_euler!(stpm, Δt)
