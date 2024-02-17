@@ -252,14 +252,14 @@ function mutual_shadowing!(btpm::BinaryTPM, r☉, rₛ, R₂₁)
     shape2 = btpm.sec.shape
     r̂☉ = normalize(r☉)
 
-    θ = acos((r☉ ⋅ rₛ) / (norm(r☉) * norm(rₛ)))  # Angle of Sun-Primary-Secondary
+    θ = acos(clamp(normalize(r☉) ⋅ normalize(rₛ), -1.0, 1.0))  # Angle of Sun-Primary-Secondary
 
     R₁ = maximum_radius(shape1)
     R₂ = maximum_radius(shape2)
     R₁ < R₂ && error("Error: The primary radius is smaller than the secondary.")
-    
-    θ₊ = asin((R₁ + R₂) / norm(rₛ))  # Critical angle at which partial ecripse can occur
-    θ₋ = asin((R₁ - R₂) / norm(rₛ))  # Critical angle at which total ecripse can occur
+
+    θ₊ = asin(clamp((R₁ + R₂) / norm(rₛ), -1.0, 1.0))  # Critical angle at which partial ecripse can occur
+    θ₋ = asin(clamp((R₁ - R₂) / norm(rₛ), -1.0, 1.0))  # Critical angle at which total ecripse can occur
 
     #### Partital eclipse of the primary ####
     if 0 ≤ θ < θ₊
@@ -275,10 +275,10 @@ function mutual_shadowing!(btpm::BinaryTPM, r☉, rₛ, R₂₁)
                 continue
             end
 
-            d₁ₛ = rₛ - G₁                   # Vector from △A₁B₁C₁ to secondary center
-            θ₁ = acos(r̂☉ ⋅ normalize(d₁ₛ))  # Angle of Sun-△A₁B₁C₁-Secondary
-            θ_R₂ = asin(R₂ / norm(d₁ₛ))     # Critical angle related to the maximum radius of the secondary
-            θ_r₂ = asin(r₂ / norm(d₁ₛ))     # Critical angle related to the minimum radius of the secondary
+            d₁ₛ = rₛ - G₁                                     # Vector from △A₁B₁C₁ to secondary center
+            θ₁ = acos(clamp(r̂☉ ⋅ normalize(d₁ₛ), -1.0, 1.0))  # Angle of Sun-△A₁B₁C₁-Secondary
+            θ_R₂ = asin(clamp(R₂ / norm(d₁ₛ), -1.0, 1.0))     # Critical angle related to the maximum radius of the secondary
+            θ_r₂ = asin(clamp(r₂ / norm(d₁ₛ), -1.0, 1.0))     # Critical angle related to the minimum radius of the secondary
 
             ## In the secondary shadow
             if θ₁ < θ_r₂
@@ -335,10 +335,10 @@ function mutual_shadowing!(btpm::BinaryTPM, r☉, rₛ, R₂₁)
                 continue
             end
 
-            d₂ₚ = - G₂                      # Vector from △A₂B₂C₂ to primary center (origin)
-            θ₂ = acos(r̂☉ ⋅ normalize(d₂ₚ))  # Angle of Sun-△A₂B₂C₂-Primary
-            θ_R₁ = asin(R₁ / norm(d₂ₚ))     # Critical angle related to the maximum radius of the primary
-            θ_r₁ = asin(r₁ / norm(d₂ₚ))     # Critical angle related to the minimum radius of the primary
+            d₂ₚ = - G₂                                        # Vector from △A₂B₂C₂ to primary center (origin)
+            θ₂ = acos(clamp(r̂☉ ⋅ normalize(d₂ₚ), -1.0, 1.0))  # Angle of Sun-△A₂B₂C₂-Primary
+            θ_R₁ = asin(clamp(R₁ / norm(d₂ₚ), -1.0, 1.0))     # Critical angle related to the maximum radius of the primary
+            θ_r₁ = asin(clamp(r₁ / norm(d₂ₚ), -1.0, 1.0))     # Critical angle related to the minimum radius of the primary
 
             ## In the primary shadow
             if θ₂ < θ_r₁
