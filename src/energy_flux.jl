@@ -26,13 +26,13 @@ Input energy per second on the whole surface [W]
 """
 function energy_in(stpm::SingleTPM)
     E_in = 0.
-    for nₛ in eachindex(stpm.shape.faces)
-        A_B    = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[nₛ])
-        A_TH   = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[nₛ])
-        F_sun  = stpm.flux[nₛ, 1]
-        F_scat = stpm.flux[nₛ, 2]
-        F_rad  = stpm.flux[nₛ, 3]
-        a      = stpm.shape.face_areas[nₛ]
+    for i in eachindex(stpm.shape.faces)
+        A_B    = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[i])
+        A_TH   = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[i])
+        F_sun  = stpm.flux[i, 1]
+        F_scat = stpm.flux[i, 2]
+        F_rad  = stpm.flux[i, 3]
+        a      = stpm.shape.face_areas[i]
         
         E_in += flux_total(A_B, A_TH, F_sun, F_scat, F_rad) * a
     end
@@ -50,10 +50,10 @@ Output enegey per second from the whole surface [W]
 """
 function energy_out(stpm::SingleTPM)
     E_out = 0.
-    for nₛ in eachindex(stpm.shape.faces)
-        ε = (stpm.thermo_params.ε isa Real ? stpm.thermo_params.ε : stpm.thermo_params.ε[nₛ])
-        T = stpm.temperature[begin, nₛ]  # Surface temperature
-        a = stpm.shape.face_areas[nₛ]
+    for i in eachindex(stpm.shape.faces)
+        ε = (stpm.thermo_params.ε isa Real ? stpm.thermo_params.ε : stpm.thermo_params.ε[i])
+        T = stpm.temperature[begin, i]  # Surface temperature
+        a = stpm.shape.face_areas[i]
 
         E_out += ε * σ_SB * T^4 * a
     end
@@ -79,21 +79,21 @@ function update_flux_sun!(stpm::SingleTPM, r̂☉::StaticVector{3}, F☉::Real)
     r̂☉ = normalize(r̂☉)
 
     if stpm.SELF_SHADOWING
-        for nₛ in eachindex(stpm.shape.faces)
-            if isilluminated(stpm.shape, r̂☉, nₛ)
-                n̂ = stpm.shape.face_normals[nₛ]
-                stpm.flux[nₛ, 1] = F☉ * (n̂ ⋅ r̂☉)
+        for i in eachindex(stpm.shape.faces)
+            if isilluminated(stpm.shape, r̂☉, i)
+                n̂ = stpm.shape.face_normals[i]
+                stpm.flux[i, 1] = F☉ * (n̂ ⋅ r̂☉)
             else
-                stpm.flux[nₛ, 1] = 0
+                stpm.flux[i, 1] = 0
             end
         end
     else
-        for nₛ in eachindex(stpm.shape.faces)
-            n̂ = stpm.shape.face_normals[nₛ]
+        for i in eachindex(stpm.shape.faces)
+            n̂ = stpm.shape.face_normals[i]
             if n̂ ⋅ r̂☉ > 0
-                stpm.flux[nₛ, 1] = F☉ * (n̂ ⋅ r̂☉)
+                stpm.flux[i, 1] = F☉ * (n̂ ⋅ r̂☉)
             else
-                stpm.flux[nₛ, 1] = 0
+                stpm.flux[i, 1] = 0
             end
         end
     end
@@ -146,14 +146,14 @@ Update flux of scattered sunlight, only considering single scattering.
 function update_flux_scat_single!(stpm::SingleTPM)
     stpm.SELF_HEATING == false && return
 
-    for nₛ in eachindex(stpm.shape.faces)
-        stpm.flux[nₛ, 2] = 0.
-        for visiblefacet in stpm.shape.visiblefacets[nₛ]
+    for i_face in eachindex(stpm.shape.faces)
+        stpm.flux[i_face, 2] = 0.
+        for visiblefacet in stpm.shape.visiblefacets[i_face]
             j   = visiblefacet.id
             fᵢⱼ = visiblefacet.f
             A_B = (stpm.thermo_params.A_B isa Real ? stpm.thermo_params.A_B : stpm.thermo_params.A_B[j])
 
-            stpm.flux[nₛ, 2] += fᵢⱼ * A_B * stpm.flux[j, 1]
+            stpm.flux[i_face, 2] += fᵢⱼ * A_B * stpm.flux[j, 1]
         end
     end
 end
@@ -199,16 +199,16 @@ Single radiation-absorption is only considered, assuming albedo is close to zero
 function update_flux_rad_single!(stpm::SingleTPM)
     stpm.SELF_HEATING == false && return
 
-    for nₛ in eachindex(stpm.shape.faces)
-        stpm.flux[nₛ, 3] = 0.
-        for visiblefacet in stpm.shape.visiblefacets[nₛ]
+    for i in eachindex(stpm.shape.faces)
+        stpm.flux[i, 3] = 0.
+        for visiblefacet in stpm.shape.visiblefacets[i]
             j    = visiblefacet.id
             fᵢⱼ  = visiblefacet.f
             ε    = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[j])
             A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[j])
             Tⱼ   = stpm.temperature[begin, j]
             
-            stpm.flux[nₛ, 3] += ε * σ_SB * (1 - A_TH) * fᵢⱼ * Tⱼ^4
+            stpm.flux[i, 3] += ε * σ_SB * (1 - A_TH) * fᵢⱼ * Tⱼ^4
         end
     end
 end

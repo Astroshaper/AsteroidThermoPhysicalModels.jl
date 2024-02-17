@@ -52,7 +52,7 @@ abstract type AbstractThermoParams end
 
 - `z_max` : Depth of the bottom of a heat conduction equation [m]
 - `Δz`    : Depth step width [m]
-- `Nz`    : Number of depth steps
+- `n_depth` : Number of depth steps
 """
 struct NonUniformThermoParams <: AbstractThermoParams
     P       ::Float64          # Common for all faces
@@ -64,7 +64,7 @@ struct NonUniformThermoParams <: AbstractThermoParams
 
     z_max   ::Float64          # Common for all faces
     Δz      ::Float64          # Common for all faces
-    Nz      ::Int              # Common for all faces
+    n_depth ::Int              # Common for all faces
 end
 
 """
@@ -80,7 +80,7 @@ end
 
 - `z_max` : Depth of the bottom of a heat conduction equation [m]
 - `Δz`    : Depth step width [m]
-- `Nz`    : Number of depth steps
+- `n_depth`: Number of depth steps
 """
 struct UniformThermoParams <: AbstractThermoParams
     P       ::Float64
@@ -92,16 +92,16 @@ struct UniformThermoParams <: AbstractThermoParams
 
     z_max   ::Float64
     Δz      ::Float64
-    Nz      ::Int
+    n_depth ::Int
 end
 
 
 """
-    thermoparams(; A_B, A_TH, k, ρ, Cp, ε, t_begin, t_end, Nt, z_max, Nz, P)
+    thermoparams(; P, l, Γ, A_B, A_TH, ε, z_max, n_depth)
 """
-function thermoparams(; P, l, Γ, A_B, A_TH, ε, z_max, Nz)
+function thermoparams(; P, l, Γ, A_B, A_TH, ε, z_max, n_depth)
 
-    Δz = z_max / (Nz - 1)
+    Δz = z_max / (n_depth - 1)
     LENGTH = maximum(length, [A_B, A_TH, ε, l, Γ])
 
     if LENGTH > 1
@@ -111,9 +111,9 @@ function thermoparams(; P, l, Γ, A_B, A_TH, ε, z_max, Nz)
         l     isa Real && (l    = fill(l,    LENGTH))
         Γ     isa Real && (Γ    = fill(Γ,    LENGTH))
         
-        NonUniformThermoParams(P, l, Γ, A_B, A_TH, ε, z_max, Δz, Nz)
+        NonUniformThermoParams(P, l, Γ, A_B, A_TH, ε, z_max, Δz, n_depth)
     else
-        UniformThermoParams(P, l, Γ, A_B, A_TH, ε, z_max, Δz, Nz)
+        UniformThermoParams(P, l, Γ, A_B, A_TH, ε, z_max, Δz, n_depth)
     end
 end
 
@@ -138,7 +138,7 @@ function Base.show(io::IO, params::UniformThermoParams)
     msg *= "          = $(params.z_max / params.l) [l]\n"
     msg *= "  Δz      = $(params.Δz) [m]\n"
     msg *= "          = $(params.Δz / params.l) [l]\n"
-    msg *= "  Nz      = $(params.Nz)\n"
+    msg *= "  n_depth = $(params.n_depth)\n"
     
     msg *= "-----------------------------------\n"
     

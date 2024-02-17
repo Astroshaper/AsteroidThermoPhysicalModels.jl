@@ -20,7 +20,7 @@ struct ForwardEulerSolver <: HeatConductionSolver
     T::Vector{Float64}
 end
 
-ForwardEulerSolver(thermo_params::AbstractThermoParams) = ForwardEulerSolver(thermo_params.Nz)
+ForwardEulerSolver(thermo_params::AbstractThermoParams) = ForwardEulerSolver(thermo_params.n_depth)
 ForwardEulerSolver(N::Integer) = ForwardEulerSolver(zeros(N))
 
 
@@ -39,7 +39,7 @@ struct BackwardEulerSolver <: HeatConductionSolver
     x::Vector{Float64}
 end
 
-BackwardEulerSolver(thermo_params::AbstractThermoParams) = BackwardEulerSolver(thermo_params.Nz)
+BackwardEulerSolver(thermo_params::AbstractThermoParams) = BackwardEulerSolver(thermo_params.n_depth)
 BackwardEulerSolver(N::Integer) = BackwardEulerSolver(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
 
 
@@ -61,7 +61,7 @@ struct CrankNicolsonSolver <: HeatConductionSolver
     x::Vector{Float64}
 end
 
-CrankNicolsonSolver(thermo_params::AbstractThermoParams) = CrankNicolsonSolver(thermo_params.Nz)
+CrankNicolsonSolver(thermo_params::AbstractThermoParams) = CrankNicolsonSolver(thermo_params.n_depth)
 CrankNicolsonSolver(N::Integer) = CrankNicolsonSolver(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
 
 
@@ -117,7 +117,7 @@ abstract type ThermoPhysicalModel end
     - `flux[:, 1]`     : F_sun,  flux of direct sunlight
     - `flux[:, 2]`     : F_scat, flux of scattered light
     - `flux[:, 3]`     : F_rad,  flux of thermal emission from surrounding surface
-- `temperature`    : Temperature matrix `(Nz, Ns)` according to the number of depth cells `Nz` and the number of faces `Ns`.
+- `temperature`    : Temperature matrix `(n_depth, n_face)` according to the number of depth cells `n_depth` and the number of faces `n_face`.
 
 - `face_forces`    : Thermal force on each face
 - `force`          : Thermal recoil force at body-fixed frame (Yarkovsky effect)
@@ -136,8 +136,8 @@ struct SingleTPM <: ThermoPhysicalModel
     shape          ::ShapeModel
     thermo_params  ::Union{UniformThermoParams, NonUniformThermoParams}
 
-    flux           ::Matrix{Float64}  # (Ns, 3)
-    temperature    ::Matrix{Float64}  # (Nz, Ns)
+    flux           ::Matrix{Float64}  # (n_face, 3)
+    temperature    ::Matrix{Float64}  # (n_depth, n_face)
 
     face_forces    ::Vector{SVector{3, Float64}}
     force          ::MVector{3, Float64}
@@ -169,13 +169,13 @@ Construct a thermophysical model for a single asteroid (`SingleTPM`).
 """
 function SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
 
-    Nz = thermo_params.Nz
-    Ns = length(shape.faces)
+    n_depth = thermo_params.n_depth
+    n_face = length(shape.faces)
 
-    flux = zeros(Ns, 3)
-    temperature = zeros(Nz, Ns)
+    flux = zeros(n_face, 3)
+    temperature = zeros(n_depth, n_face)
 
-    face_forces = zeros(SVector{3, Float64}, Ns)
+    face_forces = zeros(SVector{3, Float64}, n_face)
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
 
@@ -237,16 +237,16 @@ Output data format for `SingleTPM`
 
 ## Saved only at the time steps desired by the user
 - `times_to_save`          : Timesteps to save temperature and thermal force on every face [s]
-- `depth_nodes`            : Depths of the calculation nodes for 1-D heat conduction [m], a vector of size `Nz`
-- `surface_temperature`    : Surface temperature [K], a matrix in size of `(Ns, Nt)`.
-    - `Ns` : Number of faces
-    - `Nt` : Number of time steps to save surface temperature
-- `subsurface_temperature` : Temperature [K] as a function of depth [m] and time [s], `Dict` with face ID as key and a matrix `(Nz, Nt)` as an entry.
-    - `Nz` : The number of the depth nodes
-    - `Nt` : The number of time steps to save temperature
-- `face_forces`            : Thermal force on every face of the shape model [N], a matrix in size of `(Ns, Nt)`.
-    - `Ns` : Number of faces
-    - `Nt` : Number of time steps to save surface temperature
+- `depth_nodes`            : Depths of the calculation nodes for 1-D heat conduction [m], a vector of size `n_depth`
+- `surface_temperature`    : Surface temperature [K], a matrix in size of `(n_face, n_time)`.
+    - `n_face` : Number of faces
+    - `n_time` : Number of time steps to save surface temperature
+- `subsurface_temperature` : Temperature [K] as a function of depth [m] and time [s], `Dict` with face ID as key and a matrix `(n_depth, n_time)` as an entry.
+    - `n_depth` : The number of the depth nodes
+    - `n_time` : The number of time steps to save temperature
+- `face_forces`            : Thermal force on every face of the shape model [N], a matrix in size of `(n_face, n_time)`.
+    - `n_face` : Number of faces
+    - `n_time` : Number of time steps to save surface temperature
 """
 struct SingleTPMResult
     times  ::Vector{Float64}
@@ -284,10 +284,10 @@ function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64},
     force  = zeros(SVector{3, Float64}, nsteps)
     torque = zeros(SVector{3, Float64}, nsteps)
 
-    depth_nodes = stpm.thermo_params.Δz * (0:stpm.thermo_params.Nz-1)
+    depth_nodes = stpm.thermo_params.Δz * (0:stpm.thermo_params.n_depth-1)
     surface_temperature = zeros(nfaces, nsteps_to_save)
     subsurface_temperature = Dict{Int,Matrix{Float64}}(
-        nₛ => zeros(stpm.thermo_params.Nz, nsteps_to_save) for nₛ in face_ID
+        i => zeros(stpm.thermo_params.n_depth, nsteps_to_save) for i in face_ID
     )
     face_forces = zeros(SVector{3, Float64}, nfaces, nsteps_to_save)
 
@@ -341,62 +341,62 @@ end
 
 
 """
-    update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, nₜ::Integer)
+    update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, i_time::Integer)
 
-Save the results of TPM at the time step `nₜ` to `result`.
+Save the results of TPM at the time step `i_time` to `result`.
 
 # Arguments
 - `result` : Output data format for `SingleTPM`
 - `stpm`   : Thermophysical model for a single asteroid
-- `nₜ`     : Time step to save data
+- `i_time` : Time step to save data
 """
-function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, nₜ::Integer)
-    result.E_in[nₜ]   = energy_in(stpm)
-    result.E_out[nₜ]  = energy_out(stpm)
-    result.force[nₜ]  = stpm.force
-    result.torque[nₜ] = stpm.torque
+function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, i_time::Integer)
+    result.E_in[i_time]   = energy_in(stpm)
+    result.E_out[i_time]  = energy_out(stpm)
+    result.force[i_time]  = stpm.force
+    result.torque[i_time] = stpm.torque
 
     P  = stpm.thermo_params.P  # Rotation period
-    t  = result.times[nₜ]      # Current time
+    t  = result.times[i_time]      # Current time
     t₀ = result.times[begin]   # Time at the beginning of the simulation
 
     if t > t₀ + P  # Note that `E_cons` cannot be calculated during the first rotation
         nsteps_in_period = count(@. t - P ≤ result.times < t)  # Number of time steps within the last rotation
 
-        ΣE_in  = sum(result.E_in[n-1]  * (result.times[n] - result.times[n-1]) for n in (nₜ - nsteps_in_period + 1):nₜ)
-        ΣE_out = sum(result.E_out[n-1] * (result.times[n] - result.times[n-1]) for n in (nₜ - nsteps_in_period + 1):nₜ)
+        ΣE_in  = sum(result.E_in[n-1]  * (result.times[n] - result.times[n-1]) for n in (i_time - nsteps_in_period + 1):i_time)
+        ΣE_out = sum(result.E_out[n-1] * (result.times[n] - result.times[n-1]) for n in (i_time - nsteps_in_period + 1):i_time)
 
-        result.E_cons[nₜ] = ΣE_out / ΣE_in
+        result.E_cons[i_time] = ΣE_out / ΣE_in
     end
 
     if t in result.times_to_save  # In the step of saving temperature
-        nₜ_save = findfirst(isequal(t), result.times_to_save)
+        i_time_save = findfirst(isequal(t), result.times_to_save)
 
-        result.surface_temperature[:, nₜ_save] .= surface_temperature(stpm)
+        result.surface_temperature[:, i_time_save] .= surface_temperature(stpm)
 
-        for (nₛ, temperature) in result.subsurface_temperature
-            temperature[:, nₜ_save] .= stpm.temperature[:, nₛ]
+        for (i, temperature) in result.subsurface_temperature
+            temperature[:, i_time_save] .= stpm.temperature[:, i]
         end
 
-        result.face_forces[:, nₜ_save] .= stpm.face_forces
+        result.face_forces[:, i_time_save] .= stpm.face_forces
     end
 end
 
 
 """
-    update_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, nₜ::Integer)
+    update_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, i_time::Integer)
 
-Save the results of TPM at the time step `nₜ` to `result`.
+Save the results of TPM at the time step `i_time` to `result`.
 
 # Arguments
 - `result` : Output data format for `BinaryTPM`
 - `btpm`   : Thermophysical model for a binary asteroid
 - `ephem`  : Ephemerides
-- `nₜ`     : Time step
+- `i_time`     : Time step
 """
-function update_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, nₜ::Integer)
-    update_TPM_result!(result.pri, btpm.pri, nₜ)
-    update_TPM_result!(result.sec, btpm.sec, nₜ)
+function update_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, i_time::Integer)
+    update_TPM_result!(result.pri, btpm.pri, i_time)
+    update_TPM_result!(result.sec, btpm.sec, i_time)
 end
 
 
@@ -454,8 +454,8 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
     )
 
     # Add a column for each face
-    for (nₛ, subsurface_temperature) in collect(result.subsurface_temperature)
-        df[:, "face_$(nₛ)"] =
+    for (i, subsurface_temperature) in collect(result.subsurface_temperature)
+        df[:, "face_$(i)"] =
             reshape(subsurface_temperature, length(subsurface_temperature))
     end
 
@@ -468,13 +468,13 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
     ##= Thermal force on every face of the shape model =##
     filepath = joinpath(dirpath, "thermal_force.csv")
 
-    n_faces = size(result.face_forces, 1)  # Number of faces of the shape model
+    n_face = size(result.face_forces, 1)  # Number of faces of the shape model
     n_steps = size(result.face_forces, 2)  # Number of time steps to save temperature
-    nrows = n_faces * n_steps
+    nrows = n_face * n_steps
 
     df = DataFrame(
-        time = reshape([t for _ in 1:n_faces, t in result.times_to_save], nrows),
-        face = reshape([i for i in 1:n_faces, _ in result.times_to_save], nrows),
+        time = reshape([t for _ in 1:n_face, t in result.times_to_save], nrows),
+        face = reshape([i for i in 1:n_face, _ in result.times_to_save], nrows),
     )
     df.x = reshape([f[1] for f in result.face_forces], nrows)  # x-component of the thermal force
     df.y = reshape([f[2] for f in result.face_forces], nrows)  # y-component of the thermal force
@@ -642,8 +642,8 @@ function run_TPM!(stpm::SingleTPM, ephem, times_to_save::Vector{Float64}, face_I
         ProgressMeter.ijulia_behavior(:clear)
     end
     
-    for nₜ in eachindex(ephem.time)
-        r☉ = ephem.sun[nₜ]
+    for i_time in eachindex(ephem.time)
+        r☉ = ephem.sun[i_time]
 
         update_flux_sun!(stpm, r☉)
         update_flux_scat_single!(stpm)
@@ -651,19 +651,19 @@ function run_TPM!(stpm::SingleTPM, ephem, times_to_save::Vector{Float64}, face_I
         
         update_thermal_force!(stpm)
 
-        update_TPM_result!(result, stpm, nₜ)  # Save data
+        update_TPM_result!(result, stpm, i_time)  # Save data
         
         ## Update the progress meter
         if show_progress
             showvalues = [
-                ("Timestep ", nₜ),
-                ("E_cons   ", result.E_cons[nₜ]),
+                ("Timestep ", i_time),
+                ("E_cons   ", result.E_cons[i_time]),
             ]
             ProgressMeter.next!(p; showvalues)
         end
 
-        nₜ == length(ephem.time) && break  # Stop to update the temperature at the final step
-        Δt = ephem.time[nₜ+1] - ephem.time[nₜ]
+        i_time == length(ephem.time) && break  # Stop to update the temperature at the final step
+        Δt = ephem.time[i_time+1] - ephem.time[i_time]
         update_temperature!(stpm, Δt)
     end
     
@@ -701,11 +701,11 @@ function run_TPM!(btpm::BinaryTPM, ephem, times_to_save::Vector{Float64}, face_I
         ProgressMeter.ijulia_behavior(:clear)
     end
     
-    for nₜ in eachindex(ephem.time)
-        r☉₁ = ephem.sun1[nₜ]  # Sun's position in the primary's frame
-        r☉₂ = ephem.sun2[nₜ]  # Sun's position in the secondary's frame
-        rₛ  = ephem.sec[nₜ]   # Secondary's position in the primary's frame
-        R₂₁ = ephem.S2P[nₜ]   # Rotation matrix from secondary to primary frames
+    for i_time in eachindex(ephem.time)
+        r☉₁ = ephem.sun1[i_time]  # Sun's position in the primary's frame
+        r☉₂ = ephem.sun2[i_time]  # Sun's position in the secondary's frame
+        rₛ  = ephem.sec[i_time]   # Secondary's position in the primary's frame
+        R₂₁ = ephem.S2P[i_time]   # Rotation matrix from secondary to primary frames
 
         ## Update enegey flux
         update_flux_sun!(btpm, r☉₁, r☉₂)
@@ -716,21 +716,21 @@ function run_TPM!(btpm::BinaryTPM, ephem, times_to_save::Vector{Float64}, face_I
 
         update_thermal_force!(btpm)
 
-        update_TPM_result!(result, btpm, nₜ)  # Save data
+        update_TPM_result!(result, btpm, i_time)  # Save data
 
         ## Update the progress meter
         if show_progress
             showvalues = [
-                ("Timestep             ", nₜ),
-                ("E_cons for primary   ", result.pri.E_cons[nₜ]),
-                ("E_cons for secondary ", result.sec.E_cons[nₜ]),
+                ("Timestep             ", i_time),
+                ("E_cons for primary   ", result.pri.E_cons[i_time]),
+                ("E_cons for secondary ", result.sec.E_cons[i_time]),
             ]
             ProgressMeter.next!(p; showvalues)
         end
         
         ## Update temperature distribution
-        nₜ == length(ephem.time) && break  # Stop to update the temperature at the final step
-        Δt = ephem.time[nₜ+1] - ephem.time[nₜ]
+        i_time == length(ephem.time) && break  # Stop to update the temperature at the final step
+        Δt = ephem.time[i_time+1] - ephem.time[i_time]
         update_temperature!(btpm, Δt)
     end
 
