@@ -146,14 +146,14 @@ Update flux of scattered sunlight, only considering single scattering.
 function update_flux_scat_single!(stpm::SingleTPM)
     stpm.SELF_HEATING == false && return
 
-    for i in eachindex(stpm.shape.faces)
-        stpm.flux[i, 2] = 0.
-        for visiblefacet in stpm.shape.visiblefacets[i]
+    for i_face in eachindex(stpm.shape.faces)
+        stpm.flux[i_face, 2] = 0.
+        for visiblefacet in stpm.shape.visiblefacets[i_face]
             j   = visiblefacet.id
             fᵢⱼ = visiblefacet.f
             A_B = (stpm.thermo_params.A_B isa Real ? stpm.thermo_params.A_B : stpm.thermo_params.A_B[j])
 
-            stpm.flux[i, 2] += fᵢⱼ * A_B * stpm.flux[j, 1]
+            stpm.flux[i_face, 2] += fᵢⱼ * A_B * stpm.flux[j, 1]
         end
     end
 end
