@@ -62,23 +62,23 @@ function forward_euler!(stpm::SingleTPM, Δt)
     n_depth = size(T, 1)
     n_faces = size(T, 2)
 
-    for i in 1:n_faces
+    for i_face in 1:n_faces
         P  = stpm.thermo_params.P
         Δz = stpm.thermo_params.Δz
-        l  = (stpm.thermo_params.l isa Real ? stpm.thermo_params.l : stpm.thermo_params.l[i])
+        l  = (stpm.thermo_params.l isa Real ? stpm.thermo_params.l : stpm.thermo_params.l[i_face])
 
         λ = (Δt/P) / (Δz/l)^2 / 4π
         λ ≥ 0.5 && error("The forward Euler method is unstable because λ = $λ. This should be less than 0.5.")
 
-        for i in 2:(n_depth-1)
-            stpm.SOLVER.T[i] = (1-2λ)*T[i, i] + λ*(T[i+1, i] + T[i-1, i])  # Predict temperature at next time step
+        for i_depth in 2:(n_depth-1)
+            stpm.SOLVER.T[i_depth] = (1-2λ)*T[i_depth, i_face] + λ*(T[i_depth+1, i_face] + T[i_depth-1, i_face])  # Predict temperature at next time step
         end
 
         ## Apply boundary conditions
-        update_upper_temperature!(stpm, i)
+        update_upper_temperature!(stpm, i_face)
         update_lower_temperature!(stpm)
 
-        T[:, i] .= stpm.SOLVER.T  # Copy temperature at next time step
+        T[:, i_face] .= stpm.SOLVER.T  # Copy temperature at next time step
     end
 end
 
@@ -97,8 +97,8 @@ function backward_euler!(stpm::SingleTPM, Δt)
     # n_depth = size(T, 1)
     # n_faces = size(T, 2)
 
-    # for i in 1:n_faces
-    #     λ = (stpm.thermo_params.λ isa Real ? stpm.thermo_params.λ : stpm.thermo_params.λ[i])
+    # for i_face in 1:n_faces
+    #     λ = (stpm.thermo_params.λ isa Real ? stpm.thermo_params.λ : stpm.thermo_params.λ[i_face])
 
     #     stpm.SOLVER.a .= -λ
     #     stpm.SOLVER.a[begin] = 0
@@ -112,10 +112,10 @@ function backward_euler!(stpm::SingleTPM, Δt)
     #     stpm.SOLVER.c[begin] = 0
     #     stpm.SOLVER.c[end]   = 0
 
-    #     stpm.SOLVER.d .= T[:, i, nₜ]
+    #     stpm.SOLVER.d .= T[:, i_face, i_time]
 
     #     tridiagonal_matrix_algorithm!(stpm)
-    #     T[:, i, nₜ+1] .= stpm.SOLVER.x
+    #     T[:, i_face, i_time+1] .= stpm.SOLVER.x
     # end
 
     ## Apply boundary conditions
@@ -142,7 +142,7 @@ function crank_nicolson!(stpm::SingleTPM, Δt)
     # Δz̄ = stpm.thermo_params.Δz / stpm.thermo_params.l  # Non-dimensional step in depth, normalized by thermal skin depth
     # r = (1/4π) * (Δt̄ / 2Δz̄^2)
 
-    # for i in 1:n_faces
+    # for i_face in 1:n_faces
     #     stpm.SOLVER.a .= -r
     #     stpm.SOLVER.a[begin] = 0
     #     stpm.SOLVER.a[end]   = 0
@@ -155,15 +155,15 @@ function crank_nicolson!(stpm::SingleTPM, Δt)
     #     stpm.SOLVER.c[begin] = 0
     #     stpm.SOLVER.c[end]   = 0
 
-    #     for i in 2:n_depth-1
-    #         stpm.SOLVER.d[i] = r*T[i+1, i, nₜ] + (1-2r)*T[i, i, nₜ] + r*T[i-1, i, nₜ]
+    #     for i_depth in 2:n_depth-1
+    #         stpm.SOLVER.d[i_depth] = r*T[i_depth+1, i_face, i_time] + (1-2r)*T[i_depth, i_face, i_time] + r*T[i_depth-1, i_face, i_time]
     #     end
 
     #     # stpm.SOLVER.d[1]  = 0  # Upper boundary condition
     #     # stpm.SOLVER.d[n_depth] = 0 # Lower boundary condition
 
     #     tridiagonal_matrix_algorithm!(stpm)
-    #     T[:, i, nₜ+1] .= stpm.SOLVER.x
+    #     T[:, i_face, i_time+1] .= stpm.SOLVER.x
     # end
 
     # ## Apply boundary conditions
