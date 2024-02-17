@@ -341,62 +341,62 @@ end
 
 
 """
-    update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, nₜ::Integer)
+    update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, i_time::Integer)
 
-Save the results of TPM at the time step `nₜ` to `result`.
+Save the results of TPM at the time step `i_time` to `result`.
 
 # Arguments
 - `result` : Output data format for `SingleTPM`
 - `stpm`   : Thermophysical model for a single asteroid
-- `nₜ`     : Time step to save data
+- `i_time` : Time step to save data
 """
-function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, nₜ::Integer)
-    result.E_in[nₜ]   = energy_in(stpm)
-    result.E_out[nₜ]  = energy_out(stpm)
-    result.force[nₜ]  = stpm.force
-    result.torque[nₜ] = stpm.torque
+function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, i_time::Integer)
+    result.E_in[i_time]   = energy_in(stpm)
+    result.E_out[i_time]  = energy_out(stpm)
+    result.force[i_time]  = stpm.force
+    result.torque[i_time] = stpm.torque
 
     P  = stpm.thermo_params.P  # Rotation period
-    t  = result.times[nₜ]      # Current time
+    t  = result.times[i_time]      # Current time
     t₀ = result.times[begin]   # Time at the beginning of the simulation
 
     if t > t₀ + P  # Note that `E_cons` cannot be calculated during the first rotation
         nsteps_in_period = count(@. t - P ≤ result.times < t)  # Number of time steps within the last rotation
 
-        ΣE_in  = sum(result.E_in[n-1]  * (result.times[n] - result.times[n-1]) for n in (nₜ - nsteps_in_period + 1):nₜ)
-        ΣE_out = sum(result.E_out[n-1] * (result.times[n] - result.times[n-1]) for n in (nₜ - nsteps_in_period + 1):nₜ)
+        ΣE_in  = sum(result.E_in[n-1]  * (result.times[n] - result.times[n-1]) for n in (i_time - nsteps_in_period + 1):i_time)
+        ΣE_out = sum(result.E_out[n-1] * (result.times[n] - result.times[n-1]) for n in (i_time - nsteps_in_period + 1):i_time)
 
-        result.E_cons[nₜ] = ΣE_out / ΣE_in
+        result.E_cons[i_time] = ΣE_out / ΣE_in
     end
 
     if t in result.times_to_save  # In the step of saving temperature
-        nₜ_save = findfirst(isequal(t), result.times_to_save)
+        i_time_save = findfirst(isequal(t), result.times_to_save)
 
-        result.surface_temperature[:, nₜ_save] .= surface_temperature(stpm)
+        result.surface_temperature[:, i_time_save] .= surface_temperature(stpm)
 
         for (i, temperature) in result.subsurface_temperature
-            temperature[:, nₜ_save] .= stpm.temperature[:, i]
+            temperature[:, i_time_save] .= stpm.temperature[:, i]
         end
 
-        result.face_forces[:, nₜ_save] .= stpm.face_forces
+        result.face_forces[:, i_time_save] .= stpm.face_forces
     end
 end
 
 
 """
-    update_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, nₜ::Integer)
+    update_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, i_time::Integer)
 
-Save the results of TPM at the time step `nₜ` to `result`.
+Save the results of TPM at the time step `i_time` to `result`.
 
 # Arguments
 - `result` : Output data format for `BinaryTPM`
 - `btpm`   : Thermophysical model for a binary asteroid
 - `ephem`  : Ephemerides
-- `nₜ`     : Time step
+- `i_time`     : Time step
 """
-function update_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, nₜ::Integer)
-    update_TPM_result!(result.pri, btpm.pri, nₜ)
-    update_TPM_result!(result.sec, btpm.sec, nₜ)
+function update_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, i_time::Integer)
+    update_TPM_result!(result.pri, btpm.pri, i_time)
+    update_TPM_result!(result.sec, btpm.sec, i_time)
 end
 
 
@@ -642,8 +642,8 @@ function run_TPM!(stpm::SingleTPM, ephem, times_to_save::Vector{Float64}, face_I
         ProgressMeter.ijulia_behavior(:clear)
     end
     
-    for nₜ in eachindex(ephem.time)
-        r☉ = ephem.sun[nₜ]
+    for i_time in eachindex(ephem.time)
+        r☉ = ephem.sun[i_time]
 
         update_flux_sun!(stpm, r☉)
         update_flux_scat_single!(stpm)
@@ -651,19 +651,19 @@ function run_TPM!(stpm::SingleTPM, ephem, times_to_save::Vector{Float64}, face_I
         
         update_thermal_force!(stpm)
 
-        update_TPM_result!(result, stpm, nₜ)  # Save data
+        update_TPM_result!(result, stpm, i_time)  # Save data
         
         ## Update the progress meter
         if show_progress
             showvalues = [
-                ("Timestep ", nₜ),
-                ("E_cons   ", result.E_cons[nₜ]),
+                ("Timestep ", i_time),
+                ("E_cons   ", result.E_cons[i_time]),
             ]
             ProgressMeter.next!(p; showvalues)
         end
 
-        nₜ == length(ephem.time) && break  # Stop to update the temperature at the final step
-        Δt = ephem.time[nₜ+1] - ephem.time[nₜ]
+        i_time == length(ephem.time) && break  # Stop to update the temperature at the final step
+        Δt = ephem.time[i_time+1] - ephem.time[i_time]
         update_temperature!(stpm, Δt)
     end
     

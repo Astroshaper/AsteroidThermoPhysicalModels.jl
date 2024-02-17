@@ -60,9 +60,9 @@
     stpm_CN.temperature .= Ts
 
     ##= Run TPM =##
-    for nₜ in eachindex(ephem.time)
-        nₜ == length(et_range) && break  # Stop to update the temperature at the final step
-        Δt = ephem.time[nₜ+1] - ephem.time[nₜ]
+    for i_time in eachindex(ephem.time)
+        i_time == length(et_range) && break  # Stop to update the temperature at the final step
+        Δt = ephem.time[i_time+1] - ephem.time[i_time]
         
         AsteroidThermoPhysicalModels.forward_euler!(stpm_FE, Δt)
         AsteroidThermoPhysicalModels.backward_euler!(stpm_BE, Δt)
