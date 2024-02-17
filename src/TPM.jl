@@ -117,7 +117,7 @@ abstract type ThermoPhysicalModel end
     - `flux[:, 1]`     : F_sun,  flux of direct sunlight
     - `flux[:, 2]`     : F_scat, flux of scattered light
     - `flux[:, 3]`     : F_rad,  flux of thermal emission from surrounding surface
-- `temperature`    : Temperature matrix `(n_depth, n_faces)` according to the number of depth cells `n_depth` and the number of faces `n_faces`.
+- `temperature`    : Temperature matrix `(n_depth, n_face)` according to the number of depth cells `n_depth` and the number of faces `n_face`.
 
 - `face_forces`    : Thermal force on each face
 - `force`          : Thermal recoil force at body-fixed frame (Yarkovsky effect)
@@ -136,8 +136,8 @@ struct SingleTPM <: ThermoPhysicalModel
     shape          ::ShapeModel
     thermo_params  ::Union{UniformThermoParams, NonUniformThermoParams}
 
-    flux           ::Matrix{Float64}  # (n_faces, 3)
-    temperature    ::Matrix{Float64}  # (n_depth, n_faces)
+    flux           ::Matrix{Float64}  # (n_face, 3)
+    temperature    ::Matrix{Float64}  # (n_depth, n_face)
 
     face_forces    ::Vector{SVector{3, Float64}}
     force          ::MVector{3, Float64}
@@ -170,12 +170,12 @@ Construct a thermophysical model for a single asteroid (`SingleTPM`).
 function SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
 
     n_depth = thermo_params.n_depth
-    n_faces = length(shape.faces)
+    n_face = length(shape.faces)
 
-    flux = zeros(n_faces, 3)
-    temperature = zeros(n_depth, n_faces)
+    flux = zeros(n_face, 3)
+    temperature = zeros(n_depth, n_face)
 
-    face_forces = zeros(SVector{3, Float64}, n_faces)
+    face_forces = zeros(SVector{3, Float64}, n_face)
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
 
@@ -238,15 +238,15 @@ Output data format for `SingleTPM`
 ## Saved only at the time steps desired by the user
 - `times_to_save`          : Timesteps to save temperature and thermal force on every face [s]
 - `depth_nodes`            : Depths of the calculation nodes for 1-D heat conduction [m], a vector of size `n_depth`
-- `surface_temperature`    : Surface temperature [K], a matrix in size of `(n_faces, n_times)`.
-    - `n_faces` : Number of faces
-    - `n_times` : Number of time steps to save surface temperature
-- `subsurface_temperature` : Temperature [K] as a function of depth [m] and time [s], `Dict` with face ID as key and a matrix `(n_depth, n_times)` as an entry.
+- `surface_temperature`    : Surface temperature [K], a matrix in size of `(n_face, n_time)`.
+    - `n_face` : Number of faces
+    - `n_time` : Number of time steps to save surface temperature
+- `subsurface_temperature` : Temperature [K] as a function of depth [m] and time [s], `Dict` with face ID as key and a matrix `(n_depth, n_time)` as an entry.
     - `n_depth` : The number of the depth nodes
-    - `n_times` : The number of time steps to save temperature
-- `face_forces`            : Thermal force on every face of the shape model [N], a matrix in size of `(n_faces, n_times)`.
-    - `n_faces` : Number of faces
-    - `n_times` : Number of time steps to save surface temperature
+    - `n_time` : The number of time steps to save temperature
+- `face_forces`            : Thermal force on every face of the shape model [N], a matrix in size of `(n_face, n_time)`.
+    - `n_face` : Number of faces
+    - `n_time` : Number of time steps to save surface temperature
 """
 struct SingleTPMResult
     times  ::Vector{Float64}
@@ -468,13 +468,13 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
     ##= Thermal force on every face of the shape model =##
     filepath = joinpath(dirpath, "thermal_force.csv")
 
-    n_faces = size(result.face_forces, 1)  # Number of faces of the shape model
+    n_face = size(result.face_forces, 1)  # Number of faces of the shape model
     n_steps = size(result.face_forces, 2)  # Number of time steps to save temperature
-    nrows = n_faces * n_steps
+    nrows = n_face * n_steps
 
     df = DataFrame(
-        time = reshape([t for _ in 1:n_faces, t in result.times_to_save], nrows),
-        face = reshape([i for i in 1:n_faces, _ in result.times_to_save], nrows),
+        time = reshape([t for _ in 1:n_face, t in result.times_to_save], nrows),
+        face = reshape([i for i in 1:n_face, _ in result.times_to_save], nrows),
     )
     df.x = reshape([f[1] for f in result.face_forces], nrows)  # x-component of the thermal force
     df.y = reshape([f[2] for f in result.face_forces], nrows)  # y-component of the thermal force

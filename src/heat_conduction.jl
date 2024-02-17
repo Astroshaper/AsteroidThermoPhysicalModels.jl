@@ -60,9 +60,9 @@ In this function, the heat conduction equation is non-dimensionalized in time an
 function forward_euler!(stpm::SingleTPM, Δt)
     T = stpm.temperature
     n_depth = size(T, 1)
-    n_faces = size(T, 2)
+    n_face = size(T, 2)
 
-    for i_face in 1:n_faces
+    for i_face in 1:n_face
         P  = stpm.thermo_params.P
         Δz = stpm.thermo_params.Δz
         l  = (stpm.thermo_params.l isa Real ? stpm.thermo_params.l : stpm.thermo_params.l[i_face])
@@ -95,9 +95,9 @@ In this function, the heat conduction equation is non-dimensionalized in time an
 function backward_euler!(stpm::SingleTPM, Δt)
     # T = stpm.temperature
     # n_depth = size(T, 1)
-    # n_faces = size(T, 2)
+    # n_face = size(T, 2)
 
-    # for i_face in 1:n_faces
+    # for i_face in 1:n_face
     #     λ = (stpm.thermo_params.λ isa Real ? stpm.thermo_params.λ : stpm.thermo_params.λ[i_face])
 
     #     stpm.SOLVER.a .= -λ
@@ -136,13 +136,13 @@ In this function, the heat conduction equation is non-dimensionalized in time an
 function crank_nicolson!(stpm::SingleTPM, Δt)
     # T = stpm.temperature
     # n_depth = size(T, 1)
-    # n_faces = size(T, 2)
+    # n_face = size(T, 2)
 
     # Δt̄ = stpm.thermo_params.Δt / stpm.thermo_params.P  # Non-dimensional timestep, normalized by period
     # Δz̄ = stpm.thermo_params.Δz / stpm.thermo_params.l  # Non-dimensional step in depth, normalized by thermal skin depth
     # r = (1/4π) * (Δt̄ / 2Δz̄^2)
 
-    # for i_face in 1:n_faces
+    # for i_face in 1:n_face
     #     stpm.SOLVER.a .= -r
     #     stpm.SOLVER.a[begin] = 0
     #     stpm.SOLVER.a[end]   = 0
