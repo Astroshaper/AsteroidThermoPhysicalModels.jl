@@ -35,7 +35,7 @@
         A_TH    = 0.0,
         ε       = 1.0,
         z_max   = 1.0,
-        Nz      = 101,
+        n_depth = 101,
     )
 
     println(thermo_params)
@@ -52,7 +52,7 @@
 
     ##= Initial temperature =##
     T₀(x) = x < 0.5 ? 2x : 2(1 - x)
-    xs = [thermo_params.Δz * (nz-1) for nz in 1:thermo_params.Nz]
+    xs = [thermo_params.Δz * (nz-1) for nz in 1:thermo_params.n_depth]
     Ts = [T₀(x) for x in xs]
 
     stpm_FE.temperature .= Ts

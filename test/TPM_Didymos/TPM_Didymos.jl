@@ -103,7 +103,7 @@
         A_TH    = 0.0,
         ε       = 0.9,
         z_max   = 0.6,
-        Nz      = 41,
+        n_depth = 41,
     )
 
     thermo_params2 = AsteroidThermoPhysicalModels.thermoparams(  # [Michel+2016; Naidu+2020]
@@ -114,7 +114,7 @@
         A_TH    = 0.0,
         ε       = 0.9,
         z_max   = 0.6,
-        Nz      = 41,
+        n_depth = 41,
     )
 
     println("Thermophysical parameters for Didymos")

@@ -100,7 +100,7 @@
         A_TH    = 0.0,
         ε       = [r[3] > 0 ? 1.0 : 0.9  for r in shape.face_centers],
         z_max   = 0.6,
-        Nz      = 41,
+        n_depth = 41,
     )
 
     ##= Setting of TPM =##

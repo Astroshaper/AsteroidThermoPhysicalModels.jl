@@ -59,10 +59,10 @@ In this function, the heat conduction equation is non-dimensionalized in time an
 """
 function forward_euler!(stpm::SingleTPM, Δt)
     T = stpm.temperature
-    Nz = size(T, 1)
-    Ns = size(T, 2)
+    n_depth = size(T, 1)
+    n_faces = size(T, 2)
 
-    for nₛ in 1:Ns
+    for nₛ in 1:n_faces
         P  = stpm.thermo_params.P
         Δz = stpm.thermo_params.Δz
         l  = (stpm.thermo_params.l isa Real ? stpm.thermo_params.l : stpm.thermo_params.l[nₛ])
@@ -70,7 +70,7 @@ function forward_euler!(stpm::SingleTPM, Δt)
         λ = (Δt/P) / (Δz/l)^2 / 4π
         λ ≥ 0.5 && error("The forward Euler method is unstable because λ = $λ. This should be less than 0.5.")
 
-        for nz in 2:(Nz-1)
+        for nz in 2:(n_depth-1)
             stpm.SOLVER.T[nz] = (1-2λ)*T[nz, nₛ] + λ*(T[nz+1, nₛ] + T[nz-1, nₛ])  # Predict temperature at next time step
         end
 
@@ -94,10 +94,10 @@ In this function, the heat conduction equation is non-dimensionalized in time an
 """
 function backward_euler!(stpm::SingleTPM, Δt)
     # T = stpm.temperature
-    # Nz = size(T, 1)
-    # Ns = size(T, 2)
+    # n_depth = size(T, 1)
+    # n_faces = size(T, 2)
 
-    # for nₛ in 1:Ns
+    # for nₛ in 1:n_faces
     #     λ = (stpm.thermo_params.λ isa Real ? stpm.thermo_params.λ : stpm.thermo_params.λ[nₛ])
 
     #     stpm.SOLVER.a .= -λ
@@ -135,14 +135,14 @@ In this function, the heat conduction equation is non-dimensionalized in time an
 """
 function crank_nicolson!(stpm::SingleTPM, Δt)
     # T = stpm.temperature
-    # Nz = size(T, 1)
-    # Ns = size(T, 2)
+    # n_depth = size(T, 1)
+    # n_faces = size(T, 2)
 
     # Δt̄ = stpm.thermo_params.Δt / stpm.thermo_params.P  # Non-dimensional timestep, normalized by period
     # Δz̄ = stpm.thermo_params.Δz / stpm.thermo_params.l  # Non-dimensional step in depth, normalized by thermal skin depth
     # r = (1/4π) * (Δt̄ / 2Δz̄^2)
 
-    # for nₛ in 1:Ns
+    # for nₛ in 1:n_faces
     #     stpm.SOLVER.a .= -r
     #     stpm.SOLVER.a[begin] = 0
     #     stpm.SOLVER.a[end]   = 0
@@ -155,12 +155,12 @@ function crank_nicolson!(stpm::SingleTPM, Δt)
     #     stpm.SOLVER.c[begin] = 0
     #     stpm.SOLVER.c[end]   = 0
 
-    #     for nz in 2:Nz-1
+    #     for nz in 2:n_depth-1
     #         stpm.SOLVER.d[nz] = r*T[nz+1, nₛ, nₜ] + (1-2r)*T[nz, nₛ, nₜ] + r*T[nz-1, nₛ, nₜ]
     #     end
 
     #     # stpm.SOLVER.d[1]  = 0  # Upper boundary condition
-    #     # stpm.SOLVER.d[Nz] = 0 # Lower boundary condition
+    #     # stpm.SOLVER.d[n_depth] = 0 # Lower boundary condition
 
     #     tridiagonal_matrix_algorithm!(stpm)
     #     T[:, nₛ, nₜ+1] .= stpm.SOLVER.x

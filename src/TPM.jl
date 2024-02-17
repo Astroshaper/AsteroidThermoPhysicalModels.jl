@@ -20,7 +20,7 @@ struct ForwardEulerSolver <: HeatConductionSolver
     T::Vector{Float64}
 end
 
-ForwardEulerSolver(thermo_params::AbstractThermoParams) = ForwardEulerSolver(thermo_params.Nz)
+ForwardEulerSolver(thermo_params::AbstractThermoParams) = ForwardEulerSolver(thermo_params.n_depth)
 ForwardEulerSolver(N::Integer) = ForwardEulerSolver(zeros(N))
 
 
@@ -39,7 +39,7 @@ struct BackwardEulerSolver <: HeatConductionSolver
     x::Vector{Float64}
 end
 
-BackwardEulerSolver(thermo_params::AbstractThermoParams) = BackwardEulerSolver(thermo_params.Nz)
+BackwardEulerSolver(thermo_params::AbstractThermoParams) = BackwardEulerSolver(thermo_params.n_depth)
 BackwardEulerSolver(N::Integer) = BackwardEulerSolver(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
 
 
@@ -61,7 +61,7 @@ struct CrankNicolsonSolver <: HeatConductionSolver
     x::Vector{Float64}
 end
 
-CrankNicolsonSolver(thermo_params::AbstractThermoParams) = CrankNicolsonSolver(thermo_params.Nz)
+CrankNicolsonSolver(thermo_params::AbstractThermoParams) = CrankNicolsonSolver(thermo_params.n_depth)
 CrankNicolsonSolver(N::Integer) = CrankNicolsonSolver(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
 
 
@@ -117,7 +117,7 @@ abstract type ThermoPhysicalModel end
     - `flux[:, 1]`     : F_sun,  flux of direct sunlight
     - `flux[:, 2]`     : F_scat, flux of scattered light
     - `flux[:, 3]`     : F_rad,  flux of thermal emission from surrounding surface
-- `temperature`    : Temperature matrix `(Nz, Ns)` according to the number of depth cells `Nz` and the number of faces `Ns`.
+- `temperature`    : Temperature matrix `(n_depth, n_faces)` according to the number of depth cells `n_depth` and the number of faces `n_faces`.
 
 - `face_forces`    : Thermal force on each face
 - `force`          : Thermal recoil force at body-fixed frame (Yarkovsky effect)
@@ -136,8 +136,8 @@ struct SingleTPM <: ThermoPhysicalModel
     shape          ::ShapeModel
     thermo_params  ::Union{UniformThermoParams, NonUniformThermoParams}
 
-    flux           ::Matrix{Float64}  # (Ns, 3)
-    temperature    ::Matrix{Float64}  # (Nz, Ns)
+    flux           ::Matrix{Float64}  # (n_faces, 3)
+    temperature    ::Matrix{Float64}  # (n_depth, n_faces)
 
     face_forces    ::Vector{SVector{3, Float64}}
     force          ::MVector{3, Float64}
@@ -169,11 +169,11 @@ Construct a thermophysical model for a single asteroid (`SingleTPM`).
 """
 function SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
 
-    Nz = thermo_params.Nz
-    Ns = length(shape.faces)
+    n_depth = thermo_params.n_depth
+    n_faces = length(shape.faces)
 
-    flux = zeros(Ns, 3)
-    temperature = zeros(Nz, Ns)
+    flux = zeros(n_faces, 3)
+    temperature = zeros(n_depth, n_faces)
 
     face_forces = zeros(SVector{3, Float64}, Ns)
     force  = zero(MVector{3, Float64})
@@ -237,12 +237,12 @@ Output data format for `SingleTPM`
 
 ## Saved only at the time steps desired by the user
 - `times_to_save`          : Timesteps to save temperature and thermal force on every face [s]
-- `depth_nodes`            : Depths of the calculation nodes for 1-D heat conduction [m], a vector of size `Nz`
-- `surface_temperature`    : Surface temperature [K], a matrix in size of `(Ns, Nt)`.
-    - `Ns` : Number of faces
+- `depth_nodes`            : Depths of the calculation nodes for 1-D heat conduction [m], a vector of size `n_depth`
+- `surface_temperature`    : Surface temperature [K], a matrix in size of `(n_faces, Nt)`.
+    - `n_faces` : Number of faces
     - `Nt` : Number of time steps to save surface temperature
-- `subsurface_temperature` : Temperature [K] as a function of depth [m] and time [s], `Dict` with face ID as key and a matrix `(Nz, Nt)` as an entry.
-    - `Nz` : The number of the depth nodes
+- `subsurface_temperature` : Temperature [K] as a function of depth [m] and time [s], `Dict` with face ID as key and a matrix `(n_depth, Nt)` as an entry.
+    - `n_depth` : The number of the depth nodes
     - `Nt` : The number of time steps to save temperature
 - `face_forces`            : Thermal force on every face of the shape model [N], a matrix in size of `(Ns, Nt)`.
     - `Ns` : Number of faces
@@ -284,10 +284,10 @@ function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64},
     force  = zeros(SVector{3, Float64}, nsteps)
     torque = zeros(SVector{3, Float64}, nsteps)
 
-    depth_nodes = stpm.thermo_params.Δz * (0:stpm.thermo_params.Nz-1)
+    depth_nodes = stpm.thermo_params.Δz * (0:stpm.thermo_params.n_depth-1)
     surface_temperature = zeros(nfaces, nsteps_to_save)
     subsurface_temperature = Dict{Int,Matrix{Float64}}(
-        nₛ => zeros(stpm.thermo_params.Nz, nsteps_to_save) for nₛ in face_ID
+        nₛ => zeros(stpm.thermo_params.n_depth, nsteps_to_save) for nₛ in face_ID
     )
     face_forces = zeros(SVector{3, Float64}, nfaces, nsteps_to_save)
 
