@@ -701,11 +701,11 @@ function run_TPM!(btpm::BinaryTPM, ephem, times_to_save::Vector{Float64}, face_I
         ProgressMeter.ijulia_behavior(:clear)
     end
     
-    for nₜ in eachindex(ephem.time)
-        r☉₁ = ephem.sun1[nₜ]  # Sun's position in the primary's frame
-        r☉₂ = ephem.sun2[nₜ]  # Sun's position in the secondary's frame
-        rₛ  = ephem.sec[nₜ]   # Secondary's position in the primary's frame
-        R₂₁ = ephem.S2P[nₜ]   # Rotation matrix from secondary to primary frames
+    for i_time in eachindex(ephem.time)
+        r☉₁ = ephem.sun1[i_time]  # Sun's position in the primary's frame
+        r☉₂ = ephem.sun2[i_time]  # Sun's position in the secondary's frame
+        rₛ  = ephem.sec[i_time]   # Secondary's position in the primary's frame
+        R₂₁ = ephem.S2P[i_time]   # Rotation matrix from secondary to primary frames
 
         ## Update enegey flux
         update_flux_sun!(btpm, r☉₁, r☉₂)
@@ -716,21 +716,21 @@ function run_TPM!(btpm::BinaryTPM, ephem, times_to_save::Vector{Float64}, face_I
 
         update_thermal_force!(btpm)
 
-        update_TPM_result!(result, btpm, nₜ)  # Save data
+        update_TPM_result!(result, btpm, i_time)  # Save data
 
         ## Update the progress meter
         if show_progress
             showvalues = [
-                ("Timestep             ", nₜ),
-                ("E_cons for primary   ", result.pri.E_cons[nₜ]),
-                ("E_cons for secondary ", result.sec.E_cons[nₜ]),
+                ("Timestep             ", i_time),
+                ("E_cons for primary   ", result.pri.E_cons[i_time]),
+                ("E_cons for secondary ", result.sec.E_cons[i_time]),
             ]
             ProgressMeter.next!(p; showvalues)
         end
         
         ## Update temperature distribution
-        nₜ == length(ephem.time) && break  # Stop to update the temperature at the final step
-        Δt = ephem.time[nₜ+1] - ephem.time[nₜ]
+        i_time == length(ephem.time) && break  # Stop to update the temperature at the final step
+        Δt = ephem.time[i_time+1] - ephem.time[i_time]
         update_temperature!(btpm, Δt)
     end
 
