@@ -175,7 +175,7 @@ function SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, SOLVER, B
     flux = zeros(n_faces, 3)
     temperature = zeros(n_depth, n_faces)
 
-    face_forces = zeros(SVector{3, Float64}, Ns)
+    face_forces = zeros(SVector{3, Float64}, n_faces)
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
 
@@ -238,15 +238,15 @@ Output data format for `SingleTPM`
 ## Saved only at the time steps desired by the user
 - `times_to_save`          : Timesteps to save temperature and thermal force on every face [s]
 - `depth_nodes`            : Depths of the calculation nodes for 1-D heat conduction [m], a vector of size `n_depth`
-- `surface_temperature`    : Surface temperature [K], a matrix in size of `(n_faces, Nt)`.
+- `surface_temperature`    : Surface temperature [K], a matrix in size of `(n_faces, n_times)`.
     - `n_faces` : Number of faces
-    - `Nt` : Number of time steps to save surface temperature
-- `subsurface_temperature` : Temperature [K] as a function of depth [m] and time [s], `Dict` with face ID as key and a matrix `(n_depth, Nt)` as an entry.
+    - `n_times` : Number of time steps to save surface temperature
+- `subsurface_temperature` : Temperature [K] as a function of depth [m] and time [s], `Dict` with face ID as key and a matrix `(n_depth, n_times)` as an entry.
     - `n_depth` : The number of the depth nodes
-    - `Nt` : The number of time steps to save temperature
-- `face_forces`            : Thermal force on every face of the shape model [N], a matrix in size of `(Ns, Nt)`.
-    - `Ns` : Number of faces
-    - `Nt` : Number of time steps to save surface temperature
+    - `n_times` : The number of time steps to save temperature
+- `face_forces`            : Thermal force on every face of the shape model [N], a matrix in size of `(n_faces, n_times)`.
+    - `n_faces` : Number of faces
+    - `n_times` : Number of time steps to save surface temperature
 """
 struct SingleTPMResult
     times  ::Vector{Float64}
