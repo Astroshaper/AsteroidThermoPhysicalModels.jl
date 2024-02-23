@@ -13,11 +13,10 @@
 
     ##= Ephemerides =##
     P = SPICE.convrt(8, "hours", "seconds")  # Rotation period of the asteroid [s]
+    ncycles = 2                              # Number of cycles to perform TPM
+    nsteps_in_cycle = 72                     # Number of time steps in one rotation period
 
-    ncycles = 2  # Number of cycles to perform TPM
-    nsteps_in_cycle = 72  # Number of time steps in one rotation period
-
-    et_begin = 0.0  # Start time of TPM
+    et_begin = 0.0                     # Start time of TPM
     et_end   = et_begin + P * ncycles  # End time of TPM
     et_range = range(et_begin, et_end; length=nsteps_in_cycle*ncycles+1)
 
@@ -31,7 +30,7 @@
     )
 
     ##= Load obj file =##
-    path_obj = joinpath("shape", "ryugu_test.obj")  # Small model for test
+    path_obj = joinpath("shape", "ryugu_test.obj")
     shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj; scale=1000, find_visible_facets=true)
 
     ##= Thermal properties: zero-conductivity case =##
@@ -43,7 +42,7 @@
         A_TH    = 0.0,
         ε       = 1.0,
         z_max   = 0.6,
-        n_depth = 41,
+        n_depth = 11,
     )
 
     println(thermo_params)
@@ -60,7 +59,7 @@
 
     ##= Run TPM =##
     times_to_save = ephem.time[end-nsteps_in_cycle:end]  # Save temperature during the final rotation
-    face_ID = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature
+    face_ID = [1, 2]  # Face indices to save subsurface temperature
 
     result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, times_to_save, face_ID)
     
