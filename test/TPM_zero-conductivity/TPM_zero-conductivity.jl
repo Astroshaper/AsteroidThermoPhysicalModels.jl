@@ -43,7 +43,7 @@
         A_TH    = 0.0,
         ε       = 1.0,
         z_max   = 0.6,
-        Nz      = 41,
+        n_depth = 41,
     )
 
     println(thermo_params)
