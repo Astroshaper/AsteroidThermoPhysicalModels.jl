@@ -11,37 +11,6 @@
     """
     println(msg)
 
-    ##= Download Files =##
-    paths_kernel = [
-        "lsk/naif0012.tls",
-        "pck/hyb2_ryugu_shape_v20190328.tpc",
-        "fk/hyb2_ryugu_v01.tf",
-        "spk/2162173_Ryugu.bsp",
-    ]
-    paths_shape = [
-        "SHAPE_SFM_49k_v20180804.obj",
-    ]
-
-    for path_kernel in paths_kernel
-        url_kernel = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/spice_bundle/spice_kernels/$(path_kernel)"
-        filepath = joinpath("kernel", path_kernel)
-        mkpath(dirname(filepath))
-        isfile(filepath) || Downloads.download(url_kernel, filepath)
-    end
-
-    for path_shape in paths_shape
-        url_shape = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/paper/Watanabe_2019/$(path_shape)"
-        filepath = joinpath("shape", path_shape)
-        mkpath(dirname(filepath))
-        isfile(filepath) || Downloads.download(url_shape, filepath)
-    end
-
-    ##= Load data with SPICE =##
-    for path_kernel in paths_kernel
-        filepath = joinpath("kernel", path_kernel)
-        SPICE.furnsh(filepath)
-    end
-
     ##= Ephemerides =##
     P = SPICE.convrt(8, "hours", "seconds")  # Rotation period of the asteroid [s]
 
@@ -61,12 +30,8 @@
         sun  = [inv(RotZ(2π * et / P)) * [SPICE.convrt(1, "au", "m"), 0, 0] for et in et_range],
     )
 
-    SPICE.kclear()
-
     ##= Load obj file =##
     path_obj = joinpath("shape", "ryugu_test.obj")  # Small model for test
-    # path_obj = joinpath("shape", "SHAPE_SFM_49k_v20180804.obj")
-    
     shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj; scale=1000, find_visible_facets=true)
 
     ##= Thermal properties: zero-conductivity case =##
