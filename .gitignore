@@ -11,6 +11,7 @@
 
 /test/TPM_Ryugu/output
 /test/TPM_non-uniform_thermoparams/output
+/test/TPM_zero-conductivity/output
 /test/TPM_Didymos/output
 
 # Keep these shape models

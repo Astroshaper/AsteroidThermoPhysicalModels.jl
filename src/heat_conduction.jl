@@ -8,6 +8,8 @@
     update_temperature!(stpm::SingleTPM, Δt)
 
 Calculate the temperature for the next time step based on 1D heat conduction equation.
+If the thermal inertia (conductivity) is zero, omit to solve the heat conduction equation.
+The surface termperature is determined only by radiative equilibrium.
 
 # Arguments
 - `stpm` : Thermophysical model for a single asteroid
@@ -62,23 +64,39 @@ function forward_euler!(stpm::SingleTPM, Δt)
     n_depth = size(T, 1)
     n_face = size(T, 2)
 
-    for i_face in 1:n_face
-        P  = stpm.thermo_params.P
-        Δz = stpm.thermo_params.Δz
-        l  = (stpm.thermo_params.l isa Real ? stpm.thermo_params.l : stpm.thermo_params.l[i_face])
+    ## Zero-conductivity (thermal inertia) case
+    if iszero(stpm.thermo_params.Γ)
+        for i_face in 1:n_face
+            A_B  = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[i_face] )
+            A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[i_face])
+            ε    = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[i_face]   )
+            εσ = ε * σ_SB
 
-        λ = (Δt/P) / (Δz/l)^2 / 4π
-        λ ≥ 0.5 && error("The forward Euler method is unstable because λ = $λ. This should be less than 0.5.")
+            F_sun, F_scat, F_rad = stpm.flux[i_face, :]
+            F_total = flux_total(A_B, A_TH, F_sun, F_scat, F_rad)
 
-        for i_depth in 2:(n_depth-1)
-            stpm.SOLVER.T[i_depth] = (1-2λ)*T[i_depth, i_face] + λ*(T[i_depth+1, i_face] + T[i_depth-1, i_face])  # Predict temperature at next time step
+            stpm.temperature[begin, i_face] = (F_total / εσ)^(1/4)
         end
+    ## Non-zero-conductivity (thermal inertia) case
+    else
+        for i_face in 1:n_face
+            P  = stpm.thermo_params.P
+            Δz = stpm.thermo_params.Δz
+            l  = (stpm.thermo_params.l isa Real ? stpm.thermo_params.l : stpm.thermo_params.l[i_face])
 
-        ## Apply boundary conditions
-        update_upper_temperature!(stpm, i_face)
-        update_lower_temperature!(stpm)
+            λ = (Δt/P) / (Δz/l)^2 / 4π
+            λ ≥ 0.5 && error("The forward Euler method is unstable because λ = $λ. This should be less than 0.5.")
 
-        T[:, i_face] .= stpm.SOLVER.T  # Copy temperature at next time step
+            for i_depth in 2:(n_depth-1)
+                stpm.SOLVER.T[i_depth] = (1-2λ)*T[i_depth, i_face] + λ*(T[i_depth+1, i_face] + T[i_depth-1, i_face])  # Predict temperature at next time step
+            end
+
+            ## Apply boundary conditions
+            update_upper_temperature!(stpm, i_face)
+            update_lower_temperature!(stpm)
+
+            T[:, i_face] .= stpm.SOLVER.T  # Copy temperature at next time step
+        end
     end
 end
 
