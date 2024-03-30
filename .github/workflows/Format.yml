@@ -7,7 +7,7 @@ on:
 jobs:
   code-style:
     runs-on: ubuntu-latest
-    if: ( github.event.pull_request.head.repo.fork == false ) || ( github.event_name == 'pull_request_target' && contains(github.event.pull_request.labels.*.name, 'ok to format') )
+    if: contains(github.event.pull_request.labels.*.name, 'ok to format')
     permissions:
       pull-requests: write
     steps:
