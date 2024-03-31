@@ -69,7 +69,7 @@ function forward_euler!(stpm::SingleTPM, Δt)
         for i_face in 1:n_face
             A_B  = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[i_face] )
             A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[i_face])
-            ε    = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[i_face]   )
+            ε    = (stpm.thermo_params.emissivity isa Real ? stpm.thermo_params.emissivity : stpm.thermo_params.emissivity[i_face])
             εσ = ε * σ_SB
 
             F_sun, F_scat, F_rad = stpm.flux[i_face, :]
@@ -247,7 +247,7 @@ function update_upper_temperature!(stpm::SingleTPM, i::Integer)
         Γ    = (stpm.thermo_params.inertia isa Real ? stpm.thermo_params.inertia : stpm.thermo_params.inertia[i])
         A_B  = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[i] )
         A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[i])
-        ε    = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[i]   )
+        ε    = (stpm.thermo_params.emissivity isa Real ? stpm.thermo_params.emissivity : stpm.thermo_params.emissivity[i])
         Δz   = stpm.thermo_params.Δz
     
         F_sun, F_scat, F_rad = stpm.flux[i, :]
@@ -276,7 +276,7 @@ Newton's method to update the surface temperature under radiation boundary condi
 - `Γ`       : Thermal inertia [tiu]
 - `P`       : Period of thermal cycle [sec]
 - `Δz̄`      : Non-dimensional step in depth, normalized by thermal skin depth `l`
-- `ε`       : Emissivity
+- `ε`       : Emissivity [-]
 """
 function update_surface_temperature!(T::AbstractVector, F_total::Float64, P::Float64, l::Float64, Γ::Float64, ε::Float64, Δz::Float64)
     Δz̄ = Δz / l    # Dimensionless length of depth step
