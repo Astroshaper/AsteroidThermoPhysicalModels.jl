@@ -44,7 +44,7 @@ abstract type AbstractThermoParams end
 
 # Fields
 - `P`     : Cycle of thermal cycle (rotation period) [sec]
-- `l`     : Thermal skin depth [m]
+- `skindepth` : Thermal skin depth [m]
 - `Γ`     : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
 - `A_B`   : Bond albedo
 - `A_TH`  : Albedo at thermal radiation wavelength
@@ -56,7 +56,7 @@ abstract type AbstractThermoParams end
 """
 struct NonUniformThermoParams <: AbstractThermoParams
     P       ::Float64          # Common for all faces
-    l       ::Vector{Float64}
+    skindepth::Vector{Float64}
     Γ       ::Vector{Float64}
     A_B     ::Vector{Float64}
     A_TH    ::Vector{Float64}
@@ -72,7 +72,7 @@ end
 
 # Fields
 - `P`     : Thermal cycle (rotation period) [sec]
-- `l`     : Thermal skin depth [m]
+- `skindepth`     : Thermal skin depth [m]
 - `Γ`     : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
 - `A_B`   : Bond albedo
 - `A_TH`  : Albedo at thermal radiation wavelength
@@ -84,7 +84,7 @@ end
 """
 struct UniformThermoParams <: AbstractThermoParams
     P       ::Float64
-    l       ::Float64
+    skindepth::Float64
     Γ       ::Float64
     A_B     ::Float64
     A_TH    ::Float64
@@ -126,7 +126,7 @@ function Base.show(io::IO, params::UniformThermoParams)
 
     msg *= "  P       = $(params.P) [sec]\n"
     msg *= "          = $(SPICE.convrt(params.P, "seconds", "hours")) [h]\n"
-    msg *= "  l       = $(params.l) [m]\n"
+    msg *= "  l       = $(params.skindepth) [m]\n"
     msg *= "  Γ       = $(params.Γ) [tiu]\n"
     msg *= "  A_B     = $(params.A_B)\n"
     msg *= "  A_TH    = $(params.A_TH)\n"
@@ -135,9 +135,9 @@ function Base.show(io::IO, params::UniformThermoParams)
     msg *= "-----------------------------------\n"
 
     msg *= "  z_max   = $(params.z_max) [m]\n"
-    msg *= "          = $(params.z_max / params.l) [l]\n"
+    msg *= "          = $(params.z_max / params.skindepth) [l]\n"
     msg *= "  Δz      = $(params.Δz) [m]\n"
-    msg *= "          = $(params.Δz / params.l) [l]\n"
+    msg *= "          = $(params.Δz / params.skindepth) [l]\n"
     msg *= "  n_depth = $(params.n_depth)\n"
     
     msg *= "-----------------------------------\n"

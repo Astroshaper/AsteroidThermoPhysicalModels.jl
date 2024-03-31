@@ -82,7 +82,7 @@ function forward_euler!(stpm::SingleTPM, Δt)
         for i_face in 1:n_face
             P  = stpm.thermo_params.P
             Δz = stpm.thermo_params.Δz
-            l  = (stpm.thermo_params.l isa Real ? stpm.thermo_params.l : stpm.thermo_params.l[i_face])
+            l  = (stpm.thermo_params.skindepth isa Real ? stpm.thermo_params.skindepth : stpm.thermo_params.skindepth[i_face])
 
             λ = (Δt/P) / (Δz/l)^2 / 4π
             λ ≥ 0.5 && error("The forward Euler method is unstable because λ = $λ. This should be less than 0.5.")
@@ -157,7 +157,7 @@ function crank_nicolson!(stpm::SingleTPM, Δt)
     # n_face = size(T, 2)
 
     # Δt̄ = stpm.thermo_params.Δt / stpm.thermo_params.P  # Non-dimensional timestep, normalized by period
-    # Δz̄ = stpm.thermo_params.Δz / stpm.thermo_params.l  # Non-dimensional step in depth, normalized by thermal skin depth
+    # Δz̄ = stpm.thermo_params.Δz / stpm.thermo_params.skindepth  # Non-dimensional step in depth, normalized by thermal skin depth
     # r = (1/4π) * (Δt̄ / 2Δz̄^2)
 
     # for i_face in 1:n_face
@@ -243,7 +243,7 @@ function update_upper_temperature!(stpm::SingleTPM, i::Integer)
     #### Radiation boundary condition ####
     if stpm.BC_UPPER isa RadiationBoundaryCondition
         P    = stpm.thermo_params.P
-        l    = (stpm.thermo_params.l    isa Real ? stpm.thermo_params.l    : stpm.thermo_params.l[i]   )
+        l    = (stpm.thermo_params.skindepth    isa Real ? stpm.thermo_params.skindepth    : stpm.thermo_params.skindepth[i]   )
         Γ    = (stpm.thermo_params.Γ    isa Real ? stpm.thermo_params.Γ    : stpm.thermo_params.Γ[i]   )
         A_B  = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[i] )
         A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[i])
