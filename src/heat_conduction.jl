@@ -65,7 +65,7 @@ function forward_euler!(stpm::SingleTPM, Δt)
     n_face = size(T, 2)
 
     ## Zero-conductivity (thermal inertia) case
-    if iszero(stpm.thermo_params.Γ)
+    if iszero(stpm.thermo_params.inertia)
         for i_face in 1:n_face
             A_B  = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[i_face] )
             A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[i_face])
@@ -244,7 +244,7 @@ function update_upper_temperature!(stpm::SingleTPM, i::Integer)
     if stpm.BC_UPPER isa RadiationBoundaryCondition
         P    = stpm.thermo_params.P
         l    = (stpm.thermo_params.skindepth    isa Real ? stpm.thermo_params.skindepth    : stpm.thermo_params.skindepth[i]   )
-        Γ    = (stpm.thermo_params.Γ    isa Real ? stpm.thermo_params.Γ    : stpm.thermo_params.Γ[i]   )
+        Γ    = (stpm.thermo_params.inertia isa Real ? stpm.thermo_params.inertia : stpm.thermo_params.inertia[i])
         A_B  = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[i] )
         A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[i])
         ε    = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[i]   )
