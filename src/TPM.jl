@@ -132,9 +132,9 @@ abstract type ThermoPhysicalModel end
 # TO DO:
 - roughness_maps   ::ShapeModel[]
 """
-struct SingleTPM <: ThermoPhysicalModel
+struct SingleTPM{P<:AbstractThermoParams, S<:HeatConductionSolver, BU<:BoundaryCondition, BL<:BoundaryCondition} <: ThermoPhysicalModel
     shape          ::ShapeModel
-    thermo_params  ::Union{UniformThermoParams, NonUniformThermoParams}
+    thermo_params  ::P
 
     flux           ::Matrix{Float64}  # (n_face, 3)
     temperature    ::Matrix{Float64}  # (n_depth, n_face)
@@ -145,9 +145,9 @@ struct SingleTPM <: ThermoPhysicalModel
 
     SELF_SHADOWING ::Bool
     SELF_HEATING   ::Bool
-    SOLVER         ::Union{ForwardEulerSolver, BackwardEulerSolver, CrankNicolsonSolver}
-    BC_UPPER       ::Union{RadiationBoundaryCondition, InsulationBoundaryCondition, IsothermalBoundaryCondition}
-    BC_LOWER       ::Union{RadiationBoundaryCondition, InsulationBoundaryCondition, IsothermalBoundaryCondition}
+    SOLVER         ::S
+    BC_UPPER       ::BU
+    BC_LOWER       ::BL
 end
 
 
@@ -356,7 +356,7 @@ function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, i_time::In
     result.force[i_time]  = stpm.force
     result.torque[i_time] = stpm.torque
 
-    P  = stpm.thermo_params.P  # Rotation period
+    P  = stpm.thermo_params.period # Rotation period
     t  = result.times[i_time]      # Current time
     t₀ = result.times[begin]   # Time at the beginning of the simulation
 
