@@ -13,12 +13,12 @@
 
     ##= Ephemerides =##
     P = SPICE.convrt(8, "hours", "seconds")  # Rotation period of the asteroid [s]
-    ncycles = 2                              # Number of cycles to perform TPM
-    nsteps_in_cycle = 72                     # Number of time steps in one rotation period
+    n_cycle = 2                              # Number of cycles to perform TPM
+    n_step_in_cycle = 72                     # Number of time steps in one rotation period
 
     et_begin = 0.0                     # Start time of TPM
-    et_end   = et_begin + P * ncycles  # End time of TPM
-    et_range = range(et_begin, et_end; length=nsteps_in_cycle*ncycles+1)
+    et_end   = et_begin + P * n_cycle  # End time of TPM
+    et_range = range(et_begin, et_end; length=n_step_in_cycle*n_cycle+1)
 
     """
     - `time` : Ephemeris times
@@ -58,7 +58,7 @@
     AsteroidThermoPhysicalModels.init_temperature!(stpm, 0)
 
     ##= Run TPM =##
-    times_to_save = ephem.time[end-nsteps_in_cycle:end]  # Save temperature during the final rotation
+    times_to_save = ephem.time[end-n_step_in_cycle:end]  # Save temperature during the final rotation
     face_ID = [1, 2]  # Face indices to save subsurface temperature
 
     result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, times_to_save, face_ID)
