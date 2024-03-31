@@ -48,7 +48,7 @@ abstract type AbstractThermoParams end
 - `inertia` : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
 - `A_B`   : Bond albedo
 - `A_TH`  : Albedo at thermal radiation wavelength
-- `ε`     : Emissivity
+- `emissivity` : Emissivity [-]
 
 - `z_max` : Depth of the bottom of a heat conduction equation [m]
 - `Δz`    : Depth step width [m]
@@ -60,7 +60,7 @@ struct NonUniformThermoParams <: AbstractThermoParams
     inertia ::Vector{Float64}
     A_B     ::Vector{Float64}
     A_TH    ::Vector{Float64}
-    ε       ::Vector{Float64}
+    emissivity::Vector{Float64}
 
     z_max   ::Float64          # Common for all faces
     Δz      ::Float64          # Common for all faces
@@ -76,7 +76,7 @@ end
 - `Γ`     : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
 - `A_B`   : Bond albedo
 - `A_TH`  : Albedo at thermal radiation wavelength
-- `ε`     : Emissivity
+- `emissivity` : Emissivity [-]
 
 - `z_max` : Depth of the bottom of a heat conduction equation [m]
 - `Δz`    : Depth step width [m]
@@ -88,7 +88,7 @@ struct UniformThermoParams <: AbstractThermoParams
     inertia ::Float64
     A_B     ::Float64
     A_TH    ::Float64
-    ε       ::Float64
+    emissivity::Float64
 
     z_max   ::Float64
     Δz      ::Float64
@@ -130,7 +130,7 @@ function Base.show(io::IO, params::UniformThermoParams)
     msg *= "  Γ       = $(params.inertia) [tiu]\n"
     msg *= "  A_B     = $(params.A_B)\n"
     msg *= "  A_TH    = $(params.A_TH)\n"
-    msg *= "  ε       = $(params.ε)\n"
+    msg *= "  ε       = $(params.emissivity)\n"
   
     msg *= "-----------------------------------\n"
 

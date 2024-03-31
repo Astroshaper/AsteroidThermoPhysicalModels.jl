@@ -51,7 +51,7 @@ Output enegey per second from the whole surface [W]
 function energy_out(stpm::SingleTPM)
     E_out = 0.
     for i in eachindex(stpm.shape.faces)
-        ε = (stpm.thermo_params.ε isa Real ? stpm.thermo_params.ε : stpm.thermo_params.ε[i])
+        ε = (stpm.thermo_params.emissivity isa Real ? stpm.thermo_params.emissivity : stpm.thermo_params.emissivity[i])
         T = stpm.temperature[begin, i]  # Surface temperature
         a = stpm.shape.face_areas[i]
 
@@ -204,7 +204,7 @@ function update_flux_rad_single!(stpm::SingleTPM)
         for visiblefacet in stpm.shape.visiblefacets[i]
             j    = visiblefacet.id
             fᵢⱼ  = visiblefacet.f
-            ε    = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[j])
+            ε    = (stpm.thermo_params.emissivity isa Real ? stpm.thermo_params.emissivity : stpm.thermo_params.emissivity[j])
             A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[j])
             Tⱼ   = stpm.temperature[begin, j]
             
@@ -421,8 +421,8 @@ function mutual_heating!(btpm::BinaryTPM, rₛ, R₂₁)
                 T₁ = btpm.pri.temperature[begin, i]
                 T₂ = btpm.sec.temperature[begin, j]
 
-                ε₁    = (thermo_params1.ε    isa Real ? thermo_params1.ε    : thermo_params1.ε[i])
-                ε₂    = (thermo_params2.ε    isa Real ? thermo_params2.ε    : thermo_params2.ε[j])
+                ε₁    = (thermo_params1.emissivity isa Real ? thermo_params1.emissivity : thermo_params1.emissivity[i])
+                ε₂    = (thermo_params2.emissivity isa Real ? thermo_params2.emissivity : thermo_params2.emissivity[j])
                 A_B₁  = (thermo_params1.A_B  isa Real ? thermo_params1.A_B  : thermo_params1.A_B[i])
                 A_B₂  = (thermo_params2.A_B  isa Real ? thermo_params2.A_B  : thermo_params2.A_B[j])
                 A_TH₁ = (thermo_params1.A_TH isa Real ? thermo_params1.A_TH : thermo_params1.A_TH[i])

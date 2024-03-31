@@ -529,7 +529,7 @@ end
 Subsolar temperature [K] on an asteroid at a heliocentric distance `r☉` [m],
 assuming radiative equilibrium with zero conductivity.
 """
-subsolar_temperature(r☉, params::AbstractThermoParams) = subsolar_temperature(r☉, params.A_B, params.ε)
+subsolar_temperature(r☉, params::AbstractThermoParams) = subsolar_temperature(r☉, params.A_B, params.emissivity)
 
 function subsolar_temperature(r☉, A_B, ε)
     Φ = SOLAR_CONST / SPICE.convrt(norm(r☉), "m", "au")^2  # Energy flux at the solar distance [W/m²]
