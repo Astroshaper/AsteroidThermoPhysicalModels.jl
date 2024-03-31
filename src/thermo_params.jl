@@ -55,7 +55,7 @@ abstract type AbstractThermoParams end
 - `n_depth` : Number of depth steps
 """
 struct NonUniformThermoParams <: AbstractThermoParams
-    P       ::Float64          # Common for all faces
+    period  ::Float64          # Common for all faces
     skindepth::Vector{Float64}
     inertia ::Vector{Float64}
     A_B     ::Vector{Float64}
@@ -71,8 +71,8 @@ end
     struct UniformThermoParams
 
 # Fields
-- `P`     : Thermal cycle (rotation period) [sec]
-- `skindepth`     : Thermal skin depth [m]
+- `period`: Thermal cycle (rotation period) [sec]
+- `skindepth`: Thermal skin depth [m]
 - `Γ`     : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
 - `A_B`   : Bond albedo
 - `A_TH`  : Albedo at thermal radiation wavelength
@@ -83,7 +83,7 @@ end
 - `n_depth`: Number of depth steps
 """
 struct UniformThermoParams <: AbstractThermoParams
-    P       ::Float64
+    period  ::Float64
     skindepth::Float64
     inertia ::Float64
     A_B     ::Float64
@@ -124,8 +124,8 @@ function Base.show(io::IO, params::UniformThermoParams)
     msg *= "|     Thermophysical parameters     |\n"
     msg *= "⋅-----------------------------------⋅\n"
 
-    msg *= "  P       = $(params.P) [sec]\n"
-    msg *= "          = $(SPICE.convrt(params.P, "seconds", "hours")) [h]\n"
+    msg *= "  P       = $(params.period) [sec]\n"
+    msg *= "          = $(SPICE.convrt(params.period, "seconds", "hours")) [h]\n"
     msg *= "  l       = $(params.skindepth) [m]\n"
     msg *= "  Γ       = $(params.inertia) [tiu]\n"
     msg *= "  A_B     = $(params.A_B)\n"

@@ -356,7 +356,7 @@ function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, i_time::In
     result.force[i_time]  = stpm.force
     result.torque[i_time] = stpm.torque
 
-    P  = stpm.thermo_params.P  # Rotation period
+    P  = stpm.thermo_params.period # Rotation period
     t  = result.times[i_time]      # Current time
     t₀ = result.times[begin]   # Time at the beginning of the simulation
 

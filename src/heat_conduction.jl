@@ -80,7 +80,7 @@ function forward_euler!(stpm::SingleTPM, Δt)
     ## Non-zero-conductivity (thermal inertia) case
     else
         for i_face in 1:n_face
-            P  = stpm.thermo_params.P
+            P  = stpm.thermo_params.period
             Δz = stpm.thermo_params.Δz
             l  = (stpm.thermo_params.skindepth isa Real ? stpm.thermo_params.skindepth : stpm.thermo_params.skindepth[i_face])
 
@@ -156,7 +156,7 @@ function crank_nicolson!(stpm::SingleTPM, Δt)
     # n_depth = size(T, 1)
     # n_face = size(T, 2)
 
-    # Δt̄ = stpm.thermo_params.Δt / stpm.thermo_params.P  # Non-dimensional timestep, normalized by period
+    # Δt̄ = stpm.thermo_params.Δt / stpm.thermo_params.period  # Non-dimensional timestep, normalized by period
     # Δz̄ = stpm.thermo_params.Δz / stpm.thermo_params.skindepth  # Non-dimensional step in depth, normalized by thermal skin depth
     # r = (1/4π) * (Δt̄ / 2Δz̄^2)
 
@@ -242,7 +242,7 @@ function update_upper_temperature!(stpm::SingleTPM, i::Integer)
 
     #### Radiation boundary condition ####
     if stpm.BC_UPPER isa RadiationBoundaryCondition
-        P    = stpm.thermo_params.P
+        P    = stpm.thermo_params.period
         l    = (stpm.thermo_params.skindepth    isa Real ? stpm.thermo_params.skindepth    : stpm.thermo_params.skindepth[i]   )
         Γ    = (stpm.thermo_params.inertia isa Real ? stpm.thermo_params.inertia : stpm.thermo_params.inertia[i])
         A_B  = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[i] )
