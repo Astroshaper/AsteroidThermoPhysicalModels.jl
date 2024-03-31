@@ -276,7 +276,7 @@ Outer constructor of `SingleTPMResult`
 function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64}, face_ID::Vector{Int})
     nsteps = length(ephem.time)             # Number of time steps
     nsteps_to_save = length(times_to_save)  # Number of time steps to save temperature
-    nfaces = length(stpm.shape.faces)       # Number of faces of the shape model
+    n_face = length(stpm.shape.faces)       # Number of faces of the shape model
 
     E_in   = zeros(nsteps)
     E_out  = zeros(nsteps)
@@ -289,7 +289,7 @@ function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64},
     subsurface_temperature = Dict{Int,Matrix{Float64}}(
         i => zeros(stpm.thermo_params.n_depth, nsteps_to_save) for i in face_ID
     )
-    face_forces = zeros(SVector{3, Float64}, nfaces, nsteps_to_save)
+    face_forces = zeros(SVector{3, Float64}, n_face, nsteps_to_save)
 
     return SingleTPMResult(
         ephem.time,
