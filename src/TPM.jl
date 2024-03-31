@@ -285,7 +285,7 @@ function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64},
     torque = zeros(SVector{3, Float64}, n_step)
 
     depth_nodes = stpm.thermo_params.Δz * (0:stpm.thermo_params.n_depth-1)
-    surface_temperature = zeros(nfaces, n_step_to_save)
+    surface_temperature = zeros(n_face, n_step_to_save)
     subsurface_temperature = Dict{Int,Matrix{Float64}}(
         i => zeros(stpm.thermo_params.n_depth, n_step_to_save) for i in face_ID
     )
