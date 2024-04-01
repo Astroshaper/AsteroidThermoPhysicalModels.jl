@@ -6,7 +6,7 @@
 [![codecov](https://codecov.io/gh/Astroshaper/AsteroidThermoPhysicalModels.jl/branch/main/graph/badge.svg?token=dJBiR91dCD)](https://codecov.io/gh/Astroshaper/AsteroidThermoPhysicalModels.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
-Julia-based toolkit for dynamical simulations of planets and small solar system bodies.
+Julia-based toolkit for thermophysical modeling of asteroids.
 
 ## Installation
 
