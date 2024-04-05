@@ -252,7 +252,7 @@ struct SingleTPMResult
     times  ::Vector{Float64}
     E_in   ::Vector{Float64}
     E_out  ::Vector{Float64}
-    E_cons ::Vector{Union{Float64, Missing}}
+    E_cons ::Vector{Float64}
     force  ::Vector{SVector{3, Float64}}
     torque ::Vector{SVector{3, Float64}}
 
@@ -280,7 +280,7 @@ function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64},
 
     E_in   = zeros(nsteps)
     E_out  = zeros(nsteps)
-    E_cons = Vector{Union{Float64, Missing}}(missing, nsteps)
+    E_cons = fill(NaN, nsteps)
     force  = zeros(SVector{3, Float64}, nsteps)
     torque = zeros(SVector{3, Float64}, nsteps)
 
