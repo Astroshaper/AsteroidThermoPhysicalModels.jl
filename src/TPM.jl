@@ -252,7 +252,7 @@ struct SingleTPMResult
     times  ::Vector{Float64}
     E_in   ::Vector{Float64}
     E_out  ::Vector{Float64}
-    E_cons ::Vector{Union{Float64, Missing}}
+    E_cons ::Vector{Float64}
     force  ::Vector{SVector{3, Float64}}
     torque ::Vector{SVector{3, Float64}}
 
@@ -278,11 +278,11 @@ function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64},
     n_step_to_save = length(times_to_save)  # Number of time steps to save temperature
     n_face = length(stpm.shape.faces)       # Number of faces of the shape model
 
-    E_in   = zeros(n_step)
-    E_out  = zeros(n_step)
-    E_cons = Vector{Union{Float64, Missing}}(missing, n_step)
-    force  = zeros(SVector{3, Float64}, n_step)
-    torque = zeros(SVector{3, Float64}, n_step)
+    E_in   = zeros(nsteps)
+    E_out  = zeros(nsteps)
+    E_cons = fill(NaN, nsteps)
+    force  = zeros(SVector{3, Float64}, nsteps)
+    torque = zeros(SVector{3, Float64}, nsteps)
 
     depth_nodes = stpm.thermo_params.Δz * (0:stpm.thermo_params.n_depth-1)
     surface_temperature = zeros(n_face, n_step_to_save)
