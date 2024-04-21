@@ -274,22 +274,22 @@ Outer constructor of `SingleTPMResult`
 - `face_ID`       : Face indices to save subsurface temperature
 """
 function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64}, face_ID::Vector{Int})
-    nsteps = length(ephem.time)             # Number of time steps
-    nsteps_to_save = length(times_to_save)  # Number of time steps to save temperature
-    nfaces = length(stpm.shape.faces)       # Number of faces of the shape model
+    n_step = length(ephem.time)             # Number of time steps
+    n_step_to_save = length(times_to_save)  # Number of time steps to save temperature
+    n_face = length(stpm.shape.faces)       # Number of faces of the shape model
 
-    E_in   = zeros(nsteps)
-    E_out  = zeros(nsteps)
-    E_cons = Vector{Union{Float64, Missing}}(missing, nsteps)
-    force  = zeros(SVector{3, Float64}, nsteps)
-    torque = zeros(SVector{3, Float64}, nsteps)
+    E_in   = zeros(n_step)
+    E_out  = zeros(n_step)
+    E_cons = Vector{Union{Float64, Missing}}(missing, n_step)
+    force  = zeros(SVector{3, Float64}, n_step)
+    torque = zeros(SVector{3, Float64}, n_step)
 
     depth_nodes = stpm.thermo_params.Δz * (0:stpm.thermo_params.n_depth-1)
-    surface_temperature = zeros(nfaces, nsteps_to_save)
+    surface_temperature = zeros(n_face, n_step_to_save)
     subsurface_temperature = Dict{Int,Matrix{Float64}}(
-        i => zeros(stpm.thermo_params.n_depth, nsteps_to_save) for i in face_ID
+        i => zeros(stpm.thermo_params.n_depth, n_step_to_save) for i in face_ID
     )
-    face_forces = zeros(SVector{3, Float64}, nfaces, nsteps_to_save)
+    face_forces = zeros(SVector{3, Float64}, n_face, n_step_to_save)
 
     return SingleTPMResult(
         ephem.time,
@@ -356,15 +356,15 @@ function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, i_time::In
     result.force[i_time]  = stpm.force
     result.torque[i_time] = stpm.torque
 
-    P  = stpm.thermo_params.P  # Rotation period
+    P  = stpm.thermo_params.period # Rotation period
     t  = result.times[i_time]      # Current time
     t₀ = result.times[begin]   # Time at the beginning of the simulation
 
     if t > t₀ + P  # Note that `E_cons` cannot be calculated during the first rotation
-        nsteps_in_period = count(@. t - P ≤ result.times < t)  # Number of time steps within the last rotation
+        n_step_in_period = count(@. t - P ≤ result.times < t)  # Number of time steps within the last rotation
 
-        ΣE_in  = sum(result.E_in[n-1]  * (result.times[n] - result.times[n-1]) for n in (i_time - nsteps_in_period + 1):i_time)
-        ΣE_out = sum(result.E_out[n-1] * (result.times[n] - result.times[n-1]) for n in (i_time - nsteps_in_period + 1):i_time)
+        ΣE_in  = sum(result.E_in[n-1]  * (result.times[n] - result.times[n-1]) for n in (i_time - n_step_in_period + 1):i_time)
+        ΣE_out = sum(result.E_out[n-1] * (result.times[n] - result.times[n-1]) for n in (i_time - n_step_in_period + 1):i_time)
 
         result.E_cons[i_time] = ΣE_out / ΣE_in
     end
@@ -469,8 +469,8 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
     filepath = joinpath(dirpath, "thermal_force.csv")
 
     n_face = size(result.face_forces, 1)  # Number of faces of the shape model
-    n_steps = size(result.face_forces, 2)  # Number of time steps to save temperature
-    nrows = n_face * n_steps
+    n_step = size(result.face_forces, 2)  # Number of time steps to save temperature
+    nrows = n_face * n_step
 
     df = DataFrame(
         time = reshape([t for _ in 1:n_face, t in result.times_to_save], nrows),
@@ -529,7 +529,7 @@ end
 Subsolar temperature [K] on an asteroid at a heliocentric distance `r☉` [m],
 assuming radiative equilibrium with zero conductivity.
 """
-subsolar_temperature(r☉, params::AbstractThermoParams) = subsolar_temperature(r☉, params.A_B, params.ε)
+subsolar_temperature(r☉, params::AbstractThermoParams) = subsolar_temperature(r☉, params.A_B, params.emissivity)
 
 function subsolar_temperature(r☉, A_B, ε)
     Φ = SOLAR_CONST / SPICE.convrt(norm(r☉), "m", "au")^2  # Energy flux at the solar distance [W/m²]

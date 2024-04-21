@@ -31,7 +31,7 @@ function update_thermal_force!(stpm::SingleTPM)
         ## Note that both scattered light and thermal radiation are assumed to be isotropic.
         A_B  = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[i])
         A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[i])
-        ε    = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[i])
+        ε    = (stpm.thermo_params.emissivity isa Real ? stpm.thermo_params.emissivity : stpm.thermo_params.emissivity[i])
         Eᵢ  = A_B * F_sun + A_B * F_scat + A_TH * F_rad + ε * σ_SB * Tᵢ^4
 
         ## Thermal force on each face
