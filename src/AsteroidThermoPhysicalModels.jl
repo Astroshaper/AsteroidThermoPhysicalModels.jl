@@ -3,6 +3,7 @@ module AsteroidThermoPhysicalModels
 using LinearAlgebra
 using StaticArrays
 using Statistics
+using Roots
 
 import SPICE
 

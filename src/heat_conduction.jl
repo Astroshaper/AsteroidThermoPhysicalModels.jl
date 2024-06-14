@@ -281,17 +281,24 @@ Newton's method to update the surface temperature under radiation boundary condi
 function update_surface_temperature!(T::AbstractVector, F_total::Float64, P::Float64, l::Float64, Γ::Float64, ε::Float64, Δz::Float64)
     Δz̄ = Δz / l    # Dimensionless length of depth step
     εσ = ε * σ_SB
+    T₂ = T[begin+1]
 
-    for _ in 1:20
-        T_pri = T[begin]
+    f(T₁)  = F_total + Γ / √(4π * P) * (T₂ - T₁) / Δz̄ - εσ*T₁^4  # Surface boundary condition
+    df(T₁) = - Γ / √(4π * P) / Δz̄ - 4*εσ*T₁^3  # Derivatives
+    T₁ = find_zero((f, df), T[begin], Roots.Newton())  # Newton's method
 
-        f = F_total + Γ / √(4π * P) * (T[begin+1] - T[begin]) / Δz̄ - εσ*T[begin]^4
-        df = - Γ / √(4π * P) / Δz̄ - 4*εσ*T[begin]^3             
-        T[begin] -= f / df
+    T[begin] = T₁
 
-        err = abs(1 - T_pri / T[begin])
-        err < 1e-10 && return
-    end
+    # for _ in 1:20
+    #     T_pri = T[begin]
+
+    #     f = F_total + Γ / √(4π * P) * (T[begin+1] - T[begin]) / Δz̄ - εσ*T[begin]^4
+    #     df = - Γ / √(4π * P) / Δz̄ - 4*εσ*T[begin]^3             
+    #     T[begin] -= f / df
+
+    #     err = abs(1 - T_pri / T[begin])
+    #     err < 1e-10 && return
+    # end
 end
 
 

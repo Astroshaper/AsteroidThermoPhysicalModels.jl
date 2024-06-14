@@ -9,6 +9,7 @@ using LinearAlgebra
 using StaticArrays
 using Rotations
 using DataFrames
+using Roots
 
 Aqua.test_all(AsteroidThermoPhysicalModels, ambiguities=false)
 
