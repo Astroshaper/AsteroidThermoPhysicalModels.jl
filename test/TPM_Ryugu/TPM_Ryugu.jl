@@ -104,7 +104,10 @@
     times_to_save = ephem.time[end-nsteps_in_cycle:end]  # Save temperature during the final rotation
     face_ID = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature
 
-    result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, times_to_save, face_ID)
+    @time result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, times_to_save, face_ID)
+    println("Check: ", stpm.temperature[begin, begin])
+    @time result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, times_to_save, face_ID)
+    println("Check: ", stpm.temperature[begin, begin])
     
     ##= Save TPM result =##
     @testset "Save TPM result" begin
