@@ -184,7 +184,7 @@ end
 
 
 """
-    struct BinaryTPM <: ThermoPhysicalModel
+    struct BinaryTPM{M1, M2} <: ThermoPhysicalModel
 
 # Fields
 - `pri`              : TPM for the primary
@@ -192,9 +192,9 @@ end
 - `MUTUAL_SHADOWING` : Flag to consider mutual shadowing
 - `MUTUAL_HEATING`   : Flag to consider mutual heating
 """
-struct BinaryTPM <: ThermoPhysicalModel
-    pri              ::SingleTPM
-    sec              ::SingleTPM
+struct BinaryTPM{M1, M2} <: ThermoPhysicalModel
+    pri              ::M1
+    sec              ::M2
 
     MUTUAL_SHADOWING ::Bool
     MUTUAL_HEATING   ::Bool
