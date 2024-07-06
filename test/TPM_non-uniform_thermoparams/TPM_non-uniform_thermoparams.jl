@@ -76,11 +76,11 @@
     When thermophysical properties vary from face to face
 
     - "Northern" hemisphere:
-        - Bond albedo          : A_B = 0.04 [-]
+        - reflectance for visible light : R_vis = 0.04 [-]
         - Thermal conductivity : k   = 0.1  [W/m/K]
         - Emissivity           : ε   = 1.0  [-]
     - "Southern" hemisphere:
-        - Bond albedo          : A_B = 0.1  [-]
+        - reflectance for visible light : R_vis = 0.1  [-]
         - Thermal conductivity : k   = 0.3  [W/m/K]
         - Emissivity           : ε   = 0.9  [-]
     """
@@ -96,8 +96,8 @@
         P       = P,
         l       = l,
         Γ       = Γ,
-        A_B     = [r[3] > 0 ? 0.04 : 0.1 for r in shape.face_centers],
-        A_TH    = 0.0,
+        R_vis   = [r[3] > 0 ? 0.04 : 0.1 for r in shape.face_centers],
+        R_ir    = 0.0,
         ε       = [r[3] > 0 ? 1.0 : 0.9  for r in shape.face_centers],
         z_max   = 0.6,
         n_depth = 41,

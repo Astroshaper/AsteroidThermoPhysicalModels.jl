@@ -46,8 +46,8 @@ abstract type AbstractThermoParams end
 - `period`    : Cycle of thermal cycle (rotation period) [sec]
 - `skindepth` : Thermal skin depth [m]
 - `inertia` : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
-- `A_B`   : Bond albedo
-- `A_TH`  : Albedo at thermal radiation wavelength
+- `reflectance_vis` : reflectances for visible light
+- `reflectance_ir`  : reflectances for thermal infrared
 - `emissivity` : Emissivity [-]
 
 - `z_max` : Depth of the bottom of a heat conduction equation [m]
@@ -58,8 +58,8 @@ struct NonUniformThermoParams <: AbstractThermoParams
     period  ::Float64          # Common for all faces
     skindepth::Vector{Float64}
     inertia ::Vector{Float64}
-    A_B     ::Vector{Float64}
-    A_TH    ::Vector{Float64}
+    reflectance_vis   ::Vector{Float64}
+    reflectance_ir    ::Vector{Float64}
     emissivity::Vector{Float64}
 
     z_max   ::Float64          # Common for all faces
@@ -74,8 +74,8 @@ end
 - `period`: Thermal cycle (rotation period) [sec]
 - `skindepth`: Thermal skin depth [m]
 - `inertia`  : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
-- `A_B`   : Bond albedo
-- `A_TH`  : Albedo at thermal radiation wavelength
+- `reflectance_vis` : reflectances for visible light
+- `reflectance_ir`  : reflectances for thermal infrared
 - `emissivity` : Emissivity [-]
 
 - `z_max` : Depth of the bottom of a heat conduction equation [m]
@@ -86,8 +86,8 @@ struct UniformThermoParams <: AbstractThermoParams
     period  ::Float64
     skindepth::Float64
     inertia ::Float64
-    A_B     ::Float64
-    A_TH    ::Float64
+    reflectance_vis ::Float64
+    reflectance_ir  ::Float64
     emissivity::Float64
 
     z_max   ::Float64
@@ -97,23 +97,23 @@ end
 
 
 """
-    thermoparams(; P, l, Γ, A_B, A_TH, ε, z_max, n_depth)
+    thermoparams(; P, l, Γ, R_vis, R_ir, ε, z_max, n_depth)
 """
-function thermoparams(; P, l, Γ, A_B, A_TH, ε, z_max, n_depth)
+function thermoparams(; P, l, Γ, R_vis, R_ir, ε, z_max, n_depth)
 
     Δz = z_max / (n_depth - 1)
-    LENGTH = maximum(length, [A_B, A_TH, ε, l, Γ])
+    LENGTH = maximum(length, [R_vis, R_ir, ε, l, Γ])
 
     if LENGTH > 1
-        A_B   isa Real && (A_B  = fill(A_B,  LENGTH))
-        A_TH  isa Real && (A_TH = fill(A_TH, LENGTH))
+        R_vis   isa Real && (R_vis  = fill(R_vis,  LENGTH))
+        R_ir  isa Real && (R_ir = fill(R_ir, LENGTH))
         ε     isa Real && (ε    = fill(ε,    LENGTH))
         l     isa Real && (l    = fill(l,    LENGTH))
         Γ     isa Real && (Γ    = fill(Γ,    LENGTH))
         
-        NonUniformThermoParams(P, l, Γ, A_B, A_TH, ε, z_max, Δz, n_depth)
+        NonUniformThermoParams(P, l, Γ, R_vis, R_ir, ε, z_max, Δz, n_depth)
     else
-        UniformThermoParams(P, l, Γ, A_B, A_TH, ε, z_max, Δz, n_depth)
+        UniformThermoParams(P, l, Γ, R_vis, R_ir, ε, z_max, Δz, n_depth)
     end
 end
 
@@ -128,8 +128,8 @@ function Base.show(io::IO, params::UniformThermoParams)
     msg *= "          = $(SPICE.convrt(params.period, "seconds", "hours")) [h]\n"
     msg *= "  l       = $(params.skindepth) [m]\n"
     msg *= "  Γ       = $(params.inertia) [tiu]\n"
-    msg *= "  A_B     = $(params.A_B)\n"
-    msg *= "  A_TH    = $(params.A_TH)\n"
+    msg *= "  R_vis   = $(params.reflectance_vis)\n"
+    msg *= "  R_ir    = $(params.reflectance_ir)\n"
     msg *= "  ε       = $(params.emissivity)\n"
   
     msg *= "-----------------------------------\n"
