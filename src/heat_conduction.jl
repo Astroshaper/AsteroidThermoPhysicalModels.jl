@@ -67,9 +67,9 @@ function forward_euler!(stpm::SingleTPM, Δt)
     ## Zero-conductivity (thermal inertia) case
     if iszero(stpm.thermo_params.inertia)
         for i_face in 1:n_face
-            R_vis = (stpm.thermo_params.reflectance_vis  isa Real ? stpm.thermo_params.reflectance_vis  : stpm.thermo_params.reflectance_vis[i_face] )
-            R_ir = (stpm.thermo_params.reflectance_ir isa Real ? stpm.thermo_params.reflectance_ir : stpm.thermo_params.reflectance_ir[i_face])
-            ε    = (stpm.thermo_params.emissivity isa Real ? stpm.thermo_params.emissivity : stpm.thermo_params.emissivity[i_face])
+            R_vis = _getindex(stpm.thermo_params.reflectance_vis, i_face)
+            R_ir  = _getindex(stpm.thermo_params.reflectance_ir, i_face)
+            ε     = _getindex(stpm.thermo_params.emissivity, i_face)
             εσ = ε * σ_SB
 
             F_sun, F_scat, F_rad = stpm.flux[i_face, :]
@@ -82,7 +82,7 @@ function forward_euler!(stpm::SingleTPM, Δt)
         for i_face in 1:n_face
             P  = stpm.thermo_params.period
             Δz = stpm.thermo_params.Δz
-            l  = (stpm.thermo_params.skindepth isa Real ? stpm.thermo_params.skindepth : stpm.thermo_params.skindepth[i_face])
+            l  = _getindex(stpm.thermo_params.skindepth, i_face)
 
             λ = (Δt/P) / (Δz/l)^2 / 4π
             λ ≥ 0.5 && error("The forward Euler method is unstable because λ = $λ. This should be less than 0.5.")
@@ -116,7 +116,7 @@ function backward_euler!(stpm::SingleTPM, Δt)
     # n_face = size(T, 2)
 
     # for i_face in 1:n_face
-    #     λ = (stpm.thermo_params.λ isa Real ? stpm.thermo_params.λ : stpm.thermo_params.λ[i_face])
+    #     λ = _getindex(stpm.thermo_params.λ, i_face)
 
     #     stpm.SOLVER.a .= -λ
     #     stpm.SOLVER.a[begin] = 0
@@ -242,13 +242,13 @@ function update_upper_temperature!(stpm::SingleTPM, i::Integer)
 
     #### Radiation boundary condition ####
     if stpm.BC_UPPER isa RadiationBoundaryCondition
-        P    = stpm.thermo_params.period
-        l    = (stpm.thermo_params.skindepth    isa Real ? stpm.thermo_params.skindepth    : stpm.thermo_params.skindepth[i]   )
-        Γ    = (stpm.thermo_params.inertia isa Real ? stpm.thermo_params.inertia : stpm.thermo_params.inertia[i])
-        R_vis = (stpm.thermo_params.reflectance_vis  isa Real ? stpm.thermo_params.reflectance_vis  : stpm.thermo_params.reflectance_vis[i] )
-        R_ir = (stpm.thermo_params.reflectance_ir isa Real ? stpm.thermo_params.reflectance_ir : stpm.thermo_params.reflectance_ir[i])
-        ε    = (stpm.thermo_params.emissivity isa Real ? stpm.thermo_params.emissivity : stpm.thermo_params.emissivity[i])
-        Δz   = stpm.thermo_params.Δz
+        P     = stpm.thermo_params.period
+        l     = _getindex(stpm.thermo_params.skindepth, i)
+        Γ     = _getindex(stpm.thermo_params.inertia, i)
+        R_vis = _getindex(stpm.thermo_params.reflectance_vis, i)
+        R_ir  = _getindex(stpm.thermo_params.reflectance_ir, i)
+        ε     = _getindex(stpm.thermo_params.emissivity, i)
+        Δz    = stpm.thermo_params.Δz
     
         F_sun, F_scat, F_rad = stpm.flux[i, :]
         F_total = flux_total(R_vis, R_ir, F_sun, F_scat, F_rad)
