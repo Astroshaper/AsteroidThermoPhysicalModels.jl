@@ -43,7 +43,7 @@ abstract type AbstractThermoParams end
     struct NonUniformThermoParams
 
 # Fields
-- `P`     : Cycle of thermal cycle (rotation period) [sec]
+- `period`    : Cycle of thermal cycle (rotation period) [sec]
 - `skindepth` : Thermal skin depth [m]
 - `inertia` : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
 - `A_B`   : Bond albedo
