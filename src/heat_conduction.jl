@@ -65,11 +65,11 @@ function forward_euler!(stpm::SingleTPM, Δt)
     n_face = size(T, 2)
 
     ## Zero-conductivity (thermal inertia) case
-    if iszero(stpm.thermo_params.Γ)
+    if iszero(stpm.thermo_params.inertia)
         for i_face in 1:n_face
             A_B  = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[i_face] )
             A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[i_face])
-            ε    = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[i_face]   )
+            ε    = (stpm.thermo_params.emissivity isa Real ? stpm.thermo_params.emissivity : stpm.thermo_params.emissivity[i_face])
             εσ = ε * σ_SB
 
             F_sun, F_scat, F_rad = stpm.flux[i_face, :]
@@ -80,9 +80,9 @@ function forward_euler!(stpm::SingleTPM, Δt)
     ## Non-zero-conductivity (thermal inertia) case
     else
         for i_face in 1:n_face
-            P  = stpm.thermo_params.P
+            P  = stpm.thermo_params.period
             Δz = stpm.thermo_params.Δz
-            l  = (stpm.thermo_params.l isa Real ? stpm.thermo_params.l : stpm.thermo_params.l[i_face])
+            l  = (stpm.thermo_params.skindepth isa Real ? stpm.thermo_params.skindepth : stpm.thermo_params.skindepth[i_face])
 
             λ = (Δt/P) / (Δz/l)^2 / 4π
             λ ≥ 0.5 && error("The forward Euler method is unstable because λ = $λ. This should be less than 0.5.")
@@ -156,8 +156,8 @@ function crank_nicolson!(stpm::SingleTPM, Δt)
     # n_depth = size(T, 1)
     # n_face = size(T, 2)
 
-    # Δt̄ = stpm.thermo_params.Δt / stpm.thermo_params.P  # Non-dimensional timestep, normalized by period
-    # Δz̄ = stpm.thermo_params.Δz / stpm.thermo_params.l  # Non-dimensional step in depth, normalized by thermal skin depth
+    # Δt̄ = stpm.thermo_params.Δt / stpm.thermo_params.period  # Non-dimensional timestep, normalized by period
+    # Δz̄ = stpm.thermo_params.Δz / stpm.thermo_params.skindepth  # Non-dimensional step in depth, normalized by thermal skin depth
     # r = (1/4π) * (Δt̄ / 2Δz̄^2)
 
     # for i_face in 1:n_face
@@ -242,12 +242,12 @@ function update_upper_temperature!(stpm::SingleTPM, i::Integer)
 
     #### Radiation boundary condition ####
     if stpm.BC_UPPER isa RadiationBoundaryCondition
-        P    = stpm.thermo_params.P
-        l    = (stpm.thermo_params.l    isa Real ? stpm.thermo_params.l    : stpm.thermo_params.l[i]   )
-        Γ    = (stpm.thermo_params.Γ    isa Real ? stpm.thermo_params.Γ    : stpm.thermo_params.Γ[i]   )
+        P    = stpm.thermo_params.period
+        l    = (stpm.thermo_params.skindepth    isa Real ? stpm.thermo_params.skindepth    : stpm.thermo_params.skindepth[i]   )
+        Γ    = (stpm.thermo_params.inertia isa Real ? stpm.thermo_params.inertia : stpm.thermo_params.inertia[i])
         A_B  = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[i] )
         A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[i])
-        ε    = (stpm.thermo_params.ε    isa Real ? stpm.thermo_params.ε    : stpm.thermo_params.ε[i]   )
+        ε    = (stpm.thermo_params.emissivity isa Real ? stpm.thermo_params.emissivity : stpm.thermo_params.emissivity[i])
         Δz   = stpm.thermo_params.Δz
     
         F_sun, F_scat, F_rad = stpm.flux[i, :]
@@ -276,7 +276,7 @@ Newton's method to update the surface temperature under radiation boundary condi
 - `Γ`       : Thermal inertia [tiu]
 - `P`       : Period of thermal cycle [sec]
 - `Δz̄`      : Non-dimensional step in depth, normalized by thermal skin depth `l`
-- `ε`       : Emissivity
+- `ε`       : Emissivity [-]
 """
 function update_surface_temperature!(T::AbstractVector, F_total::Float64, P::Float64, l::Float64, Γ::Float64, ε::Float64, Δz::Float64)
     Δz̄ = Δz / l    # Dimensionless length of depth step

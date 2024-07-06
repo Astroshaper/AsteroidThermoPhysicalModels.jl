@@ -53,12 +53,12 @@
     P₁ = SPICE.convrt(2.2593, "hours", "seconds")  # Rotation period of Didymos
     P₂ = SPICE.convrt(11.93 , "hours", "seconds")  # Rotation period of Dimorphos
 
-    ncycles = 2  # Number of cycles to perform TPM
-    nsteps_in_cycle = 72  # Number of time steps in one rotation period
+    n_cycle = 2  # Number of cycles to perform TPM
+    n_step_in_cycle = 72  # Number of time steps in one rotation period
 
     et_begin = SPICE.utc2et("2027-02-18T00:00:00")  # Start time of TPM
-    et_end   = et_begin + P₂ * ncycles  # End time of TPM
-    et_range = range(et_begin, et_end; length=nsteps_in_cycle*ncycles+1)
+    et_end   = et_begin + P₂ * n_cycle  # End time of TPM
+    et_range = range(et_begin, et_end; length=n_step_in_cycle*n_cycle+1)
 
     """
     - `time` : Ephemeris times
@@ -143,7 +143,7 @@
     AsteroidThermoPhysicalModels.init_temperature!(btpm, 200.)
     
     ##= Run TPM =##
-    times_to_save = ephem.time[end-nsteps_in_cycle:end]  # Save temperature during the final rotation
+    times_to_save = ephem.time[end-n_step_in_cycle:end]  # Save temperature during the final rotation
     face_ID_pri = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature of the primary
     face_ID_sec = [1, 2, 3, 4, 20]  # Face indices to save subsurface temperature of the secondary
 

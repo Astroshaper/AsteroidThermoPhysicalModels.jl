@@ -43,24 +43,24 @@ abstract type AbstractThermoParams end
     struct NonUniformThermoParams
 
 # Fields
-- `P`     : Cycle of thermal cycle (rotation period) [sec]
-- `l`     : Thermal skin depth [m]
-- `Γ`     : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
+- `period`    : Cycle of thermal cycle (rotation period) [sec]
+- `skindepth` : Thermal skin depth [m]
+- `inertia` : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
 - `A_B`   : Bond albedo
 - `A_TH`  : Albedo at thermal radiation wavelength
-- `ε`     : Emissivity
+- `emissivity` : Emissivity [-]
 
 - `z_max` : Depth of the bottom of a heat conduction equation [m]
 - `Δz`    : Depth step width [m]
 - `n_depth` : Number of depth steps
 """
 struct NonUniformThermoParams <: AbstractThermoParams
-    P       ::Float64          # Common for all faces
-    l       ::Vector{Float64}
-    Γ       ::Vector{Float64}
+    period  ::Float64          # Common for all faces
+    skindepth::Vector{Float64}
+    inertia ::Vector{Float64}
     A_B     ::Vector{Float64}
     A_TH    ::Vector{Float64}
-    ε       ::Vector{Float64}
+    emissivity::Vector{Float64}
 
     z_max   ::Float64          # Common for all faces
     Δz      ::Float64          # Common for all faces
@@ -71,24 +71,24 @@ end
     struct UniformThermoParams
 
 # Fields
-- `P`     : Thermal cycle (rotation period) [sec]
-- `l`     : Thermal skin depth [m]
-- `Γ`     : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
+- `period`: Thermal cycle (rotation period) [sec]
+- `skindepth`: Thermal skin depth [m]
+- `inertia`  : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
 - `A_B`   : Bond albedo
 - `A_TH`  : Albedo at thermal radiation wavelength
-- `ε`     : Emissivity
+- `emissivity` : Emissivity [-]
 
 - `z_max` : Depth of the bottom of a heat conduction equation [m]
 - `Δz`    : Depth step width [m]
 - `n_depth`: Number of depth steps
 """
 struct UniformThermoParams <: AbstractThermoParams
-    P       ::Float64
-    l       ::Float64
-    Γ       ::Float64
+    period  ::Float64
+    skindepth::Float64
+    inertia ::Float64
     A_B     ::Float64
     A_TH    ::Float64
-    ε       ::Float64
+    emissivity::Float64
 
     z_max   ::Float64
     Δz      ::Float64
@@ -124,20 +124,20 @@ function Base.show(io::IO, params::UniformThermoParams)
     msg *= "|     Thermophysical parameters     |\n"
     msg *= "⋅-----------------------------------⋅\n"
 
-    msg *= "  P       = $(params.P) [sec]\n"
-    msg *= "          = $(SPICE.convrt(params.P, "seconds", "hours")) [h]\n"
-    msg *= "  l       = $(params.l) [m]\n"
-    msg *= "  Γ       = $(params.Γ) [tiu]\n"
+    msg *= "  P       = $(params.period) [sec]\n"
+    msg *= "          = $(SPICE.convrt(params.period, "seconds", "hours")) [h]\n"
+    msg *= "  l       = $(params.skindepth) [m]\n"
+    msg *= "  Γ       = $(params.inertia) [tiu]\n"
     msg *= "  A_B     = $(params.A_B)\n"
     msg *= "  A_TH    = $(params.A_TH)\n"
-    msg *= "  ε       = $(params.ε)\n"
+    msg *= "  ε       = $(params.emissivity)\n"
   
     msg *= "-----------------------------------\n"
 
     msg *= "  z_max   = $(params.z_max) [m]\n"
-    msg *= "          = $(params.z_max / params.l) [l]\n"
+    msg *= "          = $(params.z_max / params.skindepth) [l]\n"
     msg *= "  Δz      = $(params.Δz) [m]\n"
-    msg *= "          = $(params.Δz / params.l) [l]\n"
+    msg *= "          = $(params.Δz / params.skindepth) [l]\n"
     msg *= "  n_depth = $(params.n_depth)\n"
     
     msg *= "-----------------------------------\n"
