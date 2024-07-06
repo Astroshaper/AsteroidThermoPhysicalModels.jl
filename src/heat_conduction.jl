@@ -67,13 +67,13 @@ function forward_euler!(stpm::SingleTPM, Δt)
     ## Zero-conductivity (thermal inertia) case
     if iszero(stpm.thermo_params.inertia)
         for i_face in 1:n_face
-            A_vis = (stpm.thermo_params.reflectance_vis  isa Real ? stpm.thermo_params.reflectance_vis  : stpm.thermo_params.reflectance_vis[i_face] )
-            A_ir = (stpm.thermo_params.reflectance_ir isa Real ? stpm.thermo_params.reflectance_ir : stpm.thermo_params.reflectance_ir[i_face])
+            R_vis = (stpm.thermo_params.reflectance_vis  isa Real ? stpm.thermo_params.reflectance_vis  : stpm.thermo_params.reflectance_vis[i_face] )
+            R_ir = (stpm.thermo_params.reflectance_ir isa Real ? stpm.thermo_params.reflectance_ir : stpm.thermo_params.reflectance_ir[i_face])
             ε    = (stpm.thermo_params.emissivity isa Real ? stpm.thermo_params.emissivity : stpm.thermo_params.emissivity[i_face])
             εσ = ε * σ_SB
 
             F_sun, F_scat, F_rad = stpm.flux[i_face, :]
-            F_total = flux_total(A_vis, A_ir, F_sun, F_scat, F_rad)
+            F_total = flux_total(R_vis, R_ir, F_sun, F_scat, F_rad)
 
             stpm.temperature[begin, i_face] = (F_total / εσ)^(1/4)
         end
@@ -245,13 +245,13 @@ function update_upper_temperature!(stpm::SingleTPM, i::Integer)
         P    = stpm.thermo_params.period
         l    = (stpm.thermo_params.skindepth    isa Real ? stpm.thermo_params.skindepth    : stpm.thermo_params.skindepth[i]   )
         Γ    = (stpm.thermo_params.inertia isa Real ? stpm.thermo_params.inertia : stpm.thermo_params.inertia[i])
-        A_vis = (stpm.thermo_params.reflectance_vis  isa Real ? stpm.thermo_params.reflectance_vis  : stpm.thermo_params.reflectance_vis[i] )
-        A_ir = (stpm.thermo_params.reflectance_ir isa Real ? stpm.thermo_params.reflectance_ir : stpm.thermo_params.reflectance_ir[i])
+        R_vis = (stpm.thermo_params.reflectance_vis  isa Real ? stpm.thermo_params.reflectance_vis  : stpm.thermo_params.reflectance_vis[i] )
+        R_ir = (stpm.thermo_params.reflectance_ir isa Real ? stpm.thermo_params.reflectance_ir : stpm.thermo_params.reflectance_ir[i])
         ε    = (stpm.thermo_params.emissivity isa Real ? stpm.thermo_params.emissivity : stpm.thermo_params.emissivity[i])
         Δz   = stpm.thermo_params.Δz
     
         F_sun, F_scat, F_rad = stpm.flux[i, :]
-        F_total = flux_total(A_vis, A_ir, F_sun, F_scat, F_rad)
+        F_total = flux_total(R_vis, R_ir, F_sun, F_scat, F_rad)
         update_surface_temperature!(stpm.SOLVER.T, F_total, P, l, Γ, ε, Δz)
     #### Insulation boundary condition ####
     elseif stpm.BC_UPPER isa InsulationBoundaryCondition

@@ -97,23 +97,23 @@ end
 
 
 """
-    thermoparams(; P, l, Γ, A_vis, A_ir, ε, z_max, n_depth)
+    thermoparams(; P, l, Γ, R_vis, R_ir, ε, z_max, n_depth)
 """
-function thermoparams(; P, l, Γ, A_vis, A_ir, ε, z_max, n_depth)
+function thermoparams(; P, l, Γ, R_vis, R_ir, ε, z_max, n_depth)
 
     Δz = z_max / (n_depth - 1)
-    LENGTH = maximum(length, [A_vis, A_ir, ε, l, Γ])
+    LENGTH = maximum(length, [R_vis, R_ir, ε, l, Γ])
 
     if LENGTH > 1
-        A_vis   isa Real && (A_vis  = fill(A_vis,  LENGTH))
-        A_ir  isa Real && (A_ir = fill(A_ir, LENGTH))
+        R_vis   isa Real && (R_vis  = fill(R_vis,  LENGTH))
+        R_ir  isa Real && (R_ir = fill(R_ir, LENGTH))
         ε     isa Real && (ε    = fill(ε,    LENGTH))
         l     isa Real && (l    = fill(l,    LENGTH))
         Γ     isa Real && (Γ    = fill(Γ,    LENGTH))
         
-        NonUniformThermoParams(P, l, Γ, A_vis, A_ir, ε, z_max, Δz, n_depth)
+        NonUniformThermoParams(P, l, Γ, R_vis, R_ir, ε, z_max, Δz, n_depth)
     else
-        UniformThermoParams(P, l, Γ, A_vis, A_ir, ε, z_max, Δz, n_depth)
+        UniformThermoParams(P, l, Γ, R_vis, R_ir, ε, z_max, Δz, n_depth)
     end
 end
 
@@ -128,8 +128,8 @@ function Base.show(io::IO, params::UniformThermoParams)
     msg *= "          = $(SPICE.convrt(params.period, "seconds", "hours")) [h]\n"
     msg *= "  l       = $(params.skindepth) [m]\n"
     msg *= "  Γ       = $(params.inertia) [tiu]\n"
-    msg *= "  A_vis   = $(params.reflectance_vis)\n"
-    msg *= "  A_ir    = $(params.reflectance_ir)\n"
+    msg *= "  R_vis   = $(params.reflectance_vis)\n"
+    msg *= "  R_ir    = $(params.reflectance_ir)\n"
     msg *= "  ε       = $(params.emissivity)\n"
   
     msg *= "-----------------------------------\n"
