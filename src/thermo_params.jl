@@ -73,7 +73,7 @@ end
 # Fields
 - `period`: Thermal cycle (rotation period) [sec]
 - `skindepth`: Thermal skin depth [m]
-- `Γ`     : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
+- `inertia`  : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
 - `A_B`   : Bond albedo
 - `A_TH`  : Albedo at thermal radiation wavelength
 - `emissivity` : Emissivity [-]
