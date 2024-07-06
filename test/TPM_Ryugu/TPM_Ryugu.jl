@@ -81,8 +81,8 @@
         P       = P,
         l       = l,
         Γ       = Γ,
-        A_B     = 0.04,  # Bolometric Bond albedo
-        A_TH    = 0.0,
+        A_vis   = 0.04,  # Bolometric reflectance for visible light
+        A_ir    = 0.0,
         ε       = 1.0,
         z_max   = 0.6,
         n_depth = 41,

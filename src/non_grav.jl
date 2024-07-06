@@ -29,10 +29,10 @@ function update_thermal_force!(stpm::SingleTPM)
 
         ## Total emittance from face i , Eᵢ [W/m²].
         ## Note that both scattered light and thermal radiation are assumed to be isotropic.
-        A_B  = (stpm.thermo_params.A_B  isa Real ? stpm.thermo_params.A_B  : stpm.thermo_params.A_B[i])
-        A_TH = (stpm.thermo_params.A_TH isa Real ? stpm.thermo_params.A_TH : stpm.thermo_params.A_TH[i])
+        A_vis = (stpm.thermo_params.reflectance_vis  isa Real ? stpm.thermo_params.reflectance_vis  : stpm.thermo_params.reflectance_vis[i])
+        A_ir = (stpm.thermo_params.reflectance_ir isa Real ? stpm.thermo_params.reflectance_ir : stpm.thermo_params.reflectance_ir[i])
         ε    = (stpm.thermo_params.emissivity isa Real ? stpm.thermo_params.emissivity : stpm.thermo_params.emissivity[i])
-        Eᵢ  = A_B * F_sun + A_B * F_scat + A_TH * F_rad + ε * σ_SB * Tᵢ^4
+        Eᵢ  = A_vis * F_sun + A_vis * F_scat + A_ir * F_rad + ε * σ_SB * Tᵢ^4
 
         ## Thermal force on each face
         stpm.face_forces[i] = - 2/3 * Eᵢ * aᵢ / c₀ * n̂ᵢ      # The first term normal to the face
