@@ -1,14 +1,12 @@
 name: Format suggestions
 on:
   pull_request:
-    types: [labeled]
-  pull_request_target:
-    types: [labeled]
+    types: [ opened, reopened, synchronize, labeled, unlabeled ]
 jobs:
   code-style:
     runs-on: ubuntu-latest
-    if: contains(github.event.pull_request.labels.*.name, 'ok to format')
-    permissions:
-      pull-requests: write
     steps:
-      - uses: julia-actions/julia-format@v2
+      - uses: julia-actions/julia-format@v3
+        with:
+          version: '1'
+          suggestion-label: 'format-suggest'
