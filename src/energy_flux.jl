@@ -27,8 +27,8 @@ Input energy per second on the whole surface [W]
 function energy_in(stpm::SingleTPM)
     E_in = 0.
     for i in eachindex(stpm.shape.faces)
-        R_vis  = (stpm.thermo_params.reflectance_vis  isa Real ? stpm.thermo_params.reflectance_vis  : stpm.thermo_params.reflectance_vis[i])
-        R_ir   = (stpm.thermo_params.reflectance_ir isa Real ? stpm.thermo_params.reflectance_ir : stpm.thermo_params.reflectance_ir[i])
+        R_vis  = _getindex(stpm.thermo_params.reflectance_vis, i)
+        R_ir   = _getindex(stpm.thermo_params.reflectance_ir, i)
         F_sun  = stpm.flux[i, 1]
         F_scat = stpm.flux[i, 2]
         F_rad  = stpm.flux[i, 3]
@@ -51,7 +51,7 @@ Output enegey per second from the whole surface [W]
 function energy_out(stpm::SingleTPM)
     E_out = 0.
     for i in eachindex(stpm.shape.faces)
-        ε = (stpm.thermo_params.emissivity isa Real ? stpm.thermo_params.emissivity : stpm.thermo_params.emissivity[i])
+        ε = _getindex(stpm.thermo_params.emissivity, i)
         T = stpm.temperature[begin, i]  # Surface temperature
         a = stpm.shape.face_areas[i]
 
@@ -151,7 +151,7 @@ function update_flux_scat_single!(stpm::SingleTPM)
         for visiblefacet in stpm.shape.visiblefacets[i_face]
             j   = visiblefacet.id
             fᵢⱼ = visiblefacet.f
-            R_vis = (stpm.thermo_params.reflectance_vis isa Real ? stpm.thermo_params.reflectance_vis : stpm.thermo_params.reflectance_vis[j])
+            R_vis = _getindex(stpm.thermo_params.reflectance_vis, j)
 
             stpm.flux[i_face, 2] += fᵢⱼ * R_vis * stpm.flux[j, 1]
         end
@@ -204,8 +204,8 @@ function update_flux_rad_single!(stpm::SingleTPM)
         for visiblefacet in stpm.shape.visiblefacets[i]
             j    = visiblefacet.id
             fᵢⱼ  = visiblefacet.f
-            ε    = (stpm.thermo_params.emissivity isa Real ? stpm.thermo_params.emissivity : stpm.thermo_params.emissivity[j])
-            R_ir = (stpm.thermo_params.reflectance_ir isa Real ? stpm.thermo_params.reflectance_ir : stpm.thermo_params.reflectance_ir[j])
+            ε    = _getindex(stpm.thermo_params.emissivity, j)
+            R_ir = _getindex(stpm.thermo_params.reflectance_ir, j)
             Tⱼ   = stpm.temperature[begin, j]
             
             stpm.flux[i, 3] += ε * σ_SB * (1 - R_ir) * fᵢⱼ * Tⱼ^4
@@ -421,12 +421,12 @@ function mutual_heating!(btpm::BinaryTPM, rₛ, R₂₁)
                 T₁ = btpm.pri.temperature[begin, i]
                 T₂ = btpm.sec.temperature[begin, j]
 
-                ε₁    = (thermo_params1.emissivity isa Real ? thermo_params1.emissivity : thermo_params1.emissivity[i])
-                ε₂    = (thermo_params2.emissivity isa Real ? thermo_params2.emissivity : thermo_params2.emissivity[j])
-                R_vis₁ = (thermo_params1.reflectance_vis isa Real ? thermo_params1.reflectance_vis : thermo_params1.reflectance_vis[i])
-                R_vis₂ = (thermo_params2.reflectance_vis isa Real ? thermo_params2.reflectance_vis : thermo_params2.reflectance_vis[j])
-                R_ir₁ = (thermo_params1.reflectance_ir isa Real ? thermo_params1.reflectance_ir : thermo_params1.reflectance_ir[i])
-                R_ir₂ = (thermo_params2.reflectance_ir isa Real ? thermo_params2.reflectance_ir : thermo_params2.reflectance_ir[j])
+                ε₁     = _getindex(thermo_params1.emissivity, i)
+                ε₂     = _getindex(thermo_params2.emissivity, j)
+                R_vis₁ = _getindex(thermo_params1.reflectance_vis, i)
+                R_vis₂ = _getindex(thermo_params2.reflectance_vis, j)
+                R_ir₁  = _getindex(thermo_params1.reflectance_ir, i)
+                R_ir₂  = _getindex(thermo_params2.reflectance_ir, j)
 
                 ## Mutual heating by scattered light
                 btpm.pri.flux[i, 2] += f₁₂ * R_vis₂ * btpm.sec.flux[j, 1]
