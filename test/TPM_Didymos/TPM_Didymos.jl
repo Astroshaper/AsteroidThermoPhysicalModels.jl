@@ -29,7 +29,7 @@
 
     ##= Download SPICE kernels =##
     for path_kernel in paths_kernel
-        url_kernel = "https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/$(path_kernel)"
+        url_kernel = "https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/$(path_kernel)?at=refs%2Ftags%2Fv161_20230929_001"
         filepath = joinpath("kernel", path_kernel)
         mkpath(dirname(filepath))
         isfile(filepath) || Downloads.download(url_kernel, filepath)
@@ -37,7 +37,7 @@
 
     ##= Download shape models =##
     for path_shape in paths_shape
-        url_kernel = "https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/dsk/$(path_shape)"
+        url_kernel = "https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/dsk/$(path_shape)?at=refs%2Ftags%2Fv161_20230929_001"
         filepath = joinpath("shape", path_shape)
         mkpath(dirname(filepath))
         isfile(filepath) || Downloads.download(url_kernel, filepath)
