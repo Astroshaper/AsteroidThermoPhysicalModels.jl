@@ -32,7 +32,7 @@ blackbody_radiation(T) = σ_SB * T^4
 
 
 """
-    blackbody_radiation(shape, temperatures, obs; λ=NaN, ν=NaN) -> radiance
+    thermal_radiation(shape, emissivities, temperatures, obs) -> radiance
 
 Calculate the radiance from an asteroid based on the shape model and temperature distribution.
 
@@ -41,7 +41,6 @@ Calculate the radiance from an asteroid based on the shape model and temperature
 - `emissivities` : Emissivity of each facet of the shape model [-]
 - `temperatures` : Temperature of each facet of the shape model [K]
 - `obs`          : Position vector of the observer [m]
-- `λ`            : Wavelength to be observed [m]
 """
 function thermal_radiation(shape, emissivities, temperatures, obs)
     if length(temperatures) != length(shape.faces)
