@@ -40,7 +40,7 @@ Calculate the radiance from an asteroid based on the shape model and temperature
 - `shape`        : Shape model of an asteroid
 - `emissivities` : Emissivity of each facet of the shape model [-]
 - `temperatures` : Temperature of each facet of the shape model [K]
-- `obs`          : Position vector of the observer [m]
+- `obs`          : Position vector of the observer in the same coordinate system as `shape` [m]
 """
 function thermal_radiation(shape, emissivities, temperatures, obs)
     if length(temperatures) != length(shape.faces)
