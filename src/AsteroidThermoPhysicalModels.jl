@@ -12,6 +12,9 @@ using ProgressMeter
 using FileIO
 using CSV
 
+import MeshIO
+import GeometryBasics
+
 const SOLAR_CONST = 1366.0   # Solar constant, Φ☉ [W/m^2]
 const c₀ = 299792458.0       # Speed of light [m/s]
 const σ_SB = 5.670374419e-8  # Stefan–Boltzmann constant [W/m^2/K^4]
