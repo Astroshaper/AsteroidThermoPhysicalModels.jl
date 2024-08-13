@@ -22,6 +22,6 @@
 | ``k`` | ``[\mathrm{W/m/K}]`` | Thermal conductivity |
 | ``z`` | ``[\mathrm{m}]`` | Depth |
 | ``E`` | ``[\mathrm{J}]`` | Emittance energy |
-| ``\Gamma`` | ``[\mathrm{tiu}] = [\mathrm{J \cdot m^{-2} \cdot K^{-1} \cdot s^{-1/2}}]`` | Thermal inertia |
+| ``\Gamma`` | ``[\mathrm{tiu}] = [\mathrm{J \cdot m^{-2} \cdot K^{-1} \cdot s^{-1/2}}]`` | Thermal inertia (cf. [Thermal inertia SI unit proposal](https://nathaniel.putzig.com/research/tiu.html)) |
 | ``\varepsilon`` | ``[\text{-}]`` | Emissivity |
 | ``\Phi`` | ``[\mathrm{W/m^2}]`` | Solar energy flux |
