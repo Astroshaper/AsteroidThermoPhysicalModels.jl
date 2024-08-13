@@ -46,8 +46,8 @@ abstract type AbstractThermoParams end
 - `period`    : Cycle of thermal cycle (rotation period) [sec]
 - `skindepth` : Thermal skin depth [m]
 - `inertia` : Thermal inertia [tiu (thermal intertia unit)]
-- `reflectance_vis` : reflectances for visible light
-- `reflectance_ir`  : reflectances for thermal infrared
+- `reflectance_vis` : reflectances for visible light [-]
+- `reflectance_ir`  : reflectances for thermal infrared [-]
 - `emissivity` : Emissivity [-]
 
 - `z_max` : Depth of the bottom of a heat conduction equation [m]
@@ -74,8 +74,8 @@ end
 - `period`: Thermal cycle (rotation period) [sec]
 - `skindepth`: Thermal skin depth [m]
 - `inertia`  : Thermal inertia [tiu (thermal intertia unit)]
-- `reflectance_vis` : reflectances for visible light
-- `reflectance_ir`  : reflectances for thermal infrared
+- `reflectance_vis` : reflectances for visible light [-]
+- `reflectance_ir`  : reflectances for thermal infrared [-]
 - `emissivity` : Emissivity [-]
 
 - `z_max` : Depth of the bottom of a heat conduction equation [m]
@@ -128,9 +128,9 @@ function Base.show(io::IO, params::UniformThermoParams)
     msg *= "          = $(SPICE.convrt(params.period, "seconds", "hours")) [h]\n"
     msg *= "  l       = $(params.skindepth) [m]\n"
     msg *= "  Γ       = $(params.inertia) [tiu]\n"
-    msg *= "  R_vis   = $(params.reflectance_vis)\n"
-    msg *= "  R_ir    = $(params.reflectance_ir)\n"
-    msg *= "  ε       = $(params.emissivity)\n"
+    msg *= "  R_vis   = $(params.reflectance_vis) [-]\n"
+    msg *= "  R_ir    = $(params.reflectance_ir) [-]\n"
+    msg *= "  ε       = $(params.emissivity) [-]\n"
   
     msg *= "-----------------------------------\n"
 
