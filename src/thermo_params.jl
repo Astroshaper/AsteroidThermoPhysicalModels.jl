@@ -28,7 +28,7 @@ thermal_skin_depth(P, k, ρ, Cₚ) = @. √(4π * P * k / (ρ * Cₚ))
 - `Cₚ` : Heat capacity [J/kg/K]
 
 # Return
-- `Γ` : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
+- `Γ` : Thermal inertia [tiu (thermal intertia unit)]
 """
 thermal_inertia(k, ρ, Cₚ) = @. √(k * ρ * Cₚ)
 
@@ -44,11 +44,11 @@ abstract type AbstractThermoParams end
 
 # Fields
 - `period`    : Cycle of thermal cycle (rotation period) [sec]
-- `skindepth` : Thermal skin depth [m]
-- `inertia` : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
-- `reflectance_vis` : reflectances for visible light
-- `reflectance_ir`  : reflectances for thermal infrared
-- `emissivity` : Emissivity [-]
+- `skindepth` : Vector of thermal skin depth [m]
+- `inertia` : Vector of thermal inertia [tiu (thermal intertia unit)]
+- `reflectance_vis` : Vector of reflectances for visible light [-]
+- `reflectance_ir`  : Vector of reflectances for thermal infrared [-]
+- `emissivity` : Vector of emissivity [-]
 
 - `z_max` : Depth of the bottom of a heat conduction equation [m]
 - `Δz`    : Depth step width [m]
@@ -58,8 +58,8 @@ struct NonUniformThermoParams <: AbstractThermoParams
     period  ::Float64          # Common for all faces
     skindepth::Vector{Float64}
     inertia ::Vector{Float64}
-    reflectance_vis   ::Vector{Float64}
-    reflectance_ir    ::Vector{Float64}
+    reflectance_vis::Vector{Float64}
+    reflectance_ir ::Vector{Float64}
     emissivity::Vector{Float64}
 
     z_max   ::Float64          # Common for all faces
@@ -73,9 +73,9 @@ end
 # Fields
 - `period`: Thermal cycle (rotation period) [sec]
 - `skindepth`: Thermal skin depth [m]
-- `inertia`  : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
-- `reflectance_vis` : reflectances for visible light
-- `reflectance_ir`  : reflectances for thermal infrared
+- `inertia`  : Thermal inertia [tiu (thermal intertia unit)]
+- `reflectance_vis` : Reflectance for visible light [-]
+- `reflectance_ir`  : Reflectance for thermal infrared [-]
 - `emissivity` : Emissivity [-]
 
 - `z_max` : Depth of the bottom of a heat conduction equation [m]
@@ -128,9 +128,9 @@ function Base.show(io::IO, params::UniformThermoParams)
     msg *= "          = $(SPICE.convrt(params.period, "seconds", "hours")) [h]\n"
     msg *= "  l       = $(params.skindepth) [m]\n"
     msg *= "  Γ       = $(params.inertia) [tiu]\n"
-    msg *= "  R_vis   = $(params.reflectance_vis)\n"
-    msg *= "  R_ir    = $(params.reflectance_ir)\n"
-    msg *= "  ε       = $(params.emissivity)\n"
+    msg *= "  R_vis   = $(params.reflectance_vis) [-]\n"
+    msg *= "  R_ir    = $(params.reflectance_ir) [-]\n"
+    msg *= "  ε       = $(params.emissivity) [-]\n"
   
     msg *= "-----------------------------------\n"
 
