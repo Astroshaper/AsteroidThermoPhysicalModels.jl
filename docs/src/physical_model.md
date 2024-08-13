@@ -8,20 +8,20 @@
 
 | Symbol | Unit | Description |
 | :----- | :--- | :---------- |
-| ``t`` | [s] | time |
-| ``T`` | [K] | Termperture |
-| ``R_\text{vis}`` | [-] | Reflectance for visible light |
-| ``R_\text{ir}`` | [-] | Reflectances for thermal infrared |
-| ``F_\text{sun}`` | [W/m²] | Flux of direct sunlight |
-| ``F_\text{scat}`` | [W/m²] | Flux of scattered light |
-| ``F_\text{rad}`` | [W/m²] | Flux of thermal radiation from surrounding surface |
-| ``\rho`` | [kg/m³] | Density |
-| ``C_p`` | [J/K] | Heat capacity at constant pressure |
-| ``P`` | [s] | Rotation period |
-| ``l`` | [m] | Thermal skin depth |
-| ``k`` | [W/m/K] | Thermal conductivity |
-| ``z`` | [m] | Depth |
-| ``E`` | [J] | Emittance energy |
-| ``\Gamma`` | [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)] | Thermal inertia |
-| ``\varepsilon`` | [-] | Emissivity |
-| ``\Phi`` | [W/m²] | Solar energy flux |
+| ``t`` | ``[\mathrm{s}]`` | time |
+| ``T`` | ``[\mathrm{K}]`` | Termperture |
+| ``R_\text{vis}`` | ``[\text{-}]`` | Reflectance for visible light |
+| ``R_\text{ir}`` | ``[\text{-}]`` | Reflectances for thermal infrared |
+| ``F_\text{sun}`` | ``[\mathrm{W/m^2}]`` | Flux of direct sunlight |
+| ``F_\text{scat}`` | ``[\mathrm{W/m^2}]`` | Flux of scattered light |
+| ``F_\text{rad}`` | ``[\mathrm{W/m^2}]`` | Flux of thermal radiation from surrounding surface |
+| ``\rho`` | ``[\mathrm{kg/m^3}]`` | Density |
+| ``C_p`` | ``[\mathrm{J/K}]`` | Heat capacity at constant pressure |
+| ``P`` | ``[\mathrm{s}]`` | Rotation period |
+| ``l`` | ``[\mathrm{m}]`` | Thermal skin depth |
+| ``k`` | ``[\mathrm{W/m/K}]`` | Thermal conductivity |
+| ``z`` | ``[\mathrm{m}]`` | Depth |
+| ``E`` | ``[\mathrm{J}]`` | Emittance energy |
+| ``\Gamma`` | ``[\mathrm{tiu}] = [\mathrm{J \cdot m^{-2} \cdot K^{-1} \cdot s^{-1/2}}]`` | Thermal inertia |
+| ``\varepsilon`` | ``[\text{-}]`` | Emissivity |
+| ``\Phi`` | ``[\mathrm{W/m^2}]`` | Solar energy flux |
