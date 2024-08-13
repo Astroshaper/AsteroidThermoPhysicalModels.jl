@@ -44,11 +44,11 @@ abstract type AbstractThermoParams end
 
 # Fields
 - `period`    : Cycle of thermal cycle (rotation period) [sec]
-- `skindepth` : Thermal skin depth [m]
-- `inertia` : Thermal inertia [tiu (thermal intertia unit)]
+- `skindepth` : Vector of thermal skin depth [m]
+- `inertia` : Vector of thermal inertia [tiu (thermal intertia unit)]
 - `reflectance_vis` : Vector of reflectances for visible light [-]
 - `reflectance_ir`  : Vector of reflectances for thermal infrared [-]
-- `emissivity` : Emissivity [-]
+- `emissivity` : Vector of emissivity [-]
 
 - `z_max` : Depth of the bottom of a heat conduction equation [m]
 - `Δz`    : Depth step width [m]
@@ -58,8 +58,8 @@ struct NonUniformThermoParams <: AbstractThermoParams
     period  ::Float64          # Common for all faces
     skindepth::Vector{Float64}
     inertia ::Vector{Float64}
-    reflectance_vis   ::Vector{Float64}
-    reflectance_ir    ::Vector{Float64}
+    reflectance_vis::Vector{Float64}
+    reflectance_ir ::Vector{Float64}
     emissivity::Vector{Float64}
 
     z_max   ::Float64          # Common for all faces
