@@ -11,7 +11,7 @@
 | ``t`` | ``[\mathrm{s}]`` | time |
 | ``T`` | ``[\mathrm{K}]`` | Termperture |
 | ``R_\text{vis}`` | ``[\text{-}]`` | Reflectance for visible light |
-| ``R_\text{ir}`` | ``[\text{-}]`` | Reflectances for thermal infrared |
+| ``R_\text{ir}`` | ``[\text{-}]`` | Reflectance for thermal infrared |
 | ``F_\text{sun}`` | ``[\mathrm{W/m^2}]`` | Flux of direct sunlight |
 | ``F_\text{scat}`` | ``[\mathrm{W/m^2}]`` | Flux of scattered light |
 | ``F_\text{rad}`` | ``[\mathrm{W/m^2}]`` | Flux of thermal radiation from surrounding surface |

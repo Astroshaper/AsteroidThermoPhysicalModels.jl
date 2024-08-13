@@ -10,8 +10,8 @@
 Total energy absorbed by the surface [W/m²]
 
 # Arguments
-- `R_vis`  : reflectances for visible light [-]
-- `R_ir`   : reflectances for thermal infrared [-]
+- `R_vis`  : Reflectance for visible light [-]
+- `R_ir`   : Reflectance for thermal infrared [-]
 - `F_sun`  : Flux of direct sunlight [W/m²]
 - `F_scat` : Flux of scattered light [W/m²]
 - `F_rad`  : Flux of thermal radiation from surrounding surface [W/m²]
