@@ -28,7 +28,7 @@ thermal_skin_depth(P, k, ρ, Cₚ) = @. √(4π * P * k / (ρ * Cₚ))
 - `Cₚ` : Heat capacity [J/kg/K]
 
 # Return
-- `Γ` : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
+- `Γ` : Thermal inertia [tiu (thermal intertia unit)]
 """
 thermal_inertia(k, ρ, Cₚ) = @. √(k * ρ * Cₚ)
 
@@ -45,7 +45,7 @@ abstract type AbstractThermoParams end
 # Fields
 - `period`    : Cycle of thermal cycle (rotation period) [sec]
 - `skindepth` : Thermal skin depth [m]
-- `inertia` : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
+- `inertia` : Thermal inertia [tiu (thermal intertia unit)]
 - `reflectance_vis` : reflectances for visible light
 - `reflectance_ir`  : reflectances for thermal infrared
 - `emissivity` : Emissivity [-]
@@ -73,7 +73,7 @@ end
 # Fields
 - `period`: Thermal cycle (rotation period) [sec]
 - `skindepth`: Thermal skin depth [m]
-- `inertia`  : Thermal inertia [J ⋅ m⁻² ⋅ K⁻¹ ⋅ s⁻⁰⁵ (tiu)]
+- `inertia`  : Thermal inertia [tiu (thermal intertia unit)]
 - `reflectance_vis` : reflectances for visible light
 - `reflectance_ir`  : reflectances for thermal infrared
 - `emissivity` : Emissivity [-]
