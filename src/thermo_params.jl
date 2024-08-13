@@ -47,7 +47,7 @@ abstract type AbstractThermoParams end
 - `skindepth` : Thermal skin depth [m]
 - `inertia` : Thermal inertia [tiu (thermal intertia unit)]
 - `reflectance_vis` : reflectances for visible light [-]
-- `reflectance_ir`  : reflectances for thermal infrared [-]
+- `reflectance_ir`  : Reflectances for thermal infrared [-]
 - `emissivity` : Emissivity [-]
 
 - `z_max` : Depth of the bottom of a heat conduction equation [m]
