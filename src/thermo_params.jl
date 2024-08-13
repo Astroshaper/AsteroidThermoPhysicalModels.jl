@@ -75,7 +75,7 @@ end
 - `skindepth`: Thermal skin depth [m]
 - `inertia`  : Thermal inertia [tiu (thermal intertia unit)]
 - `reflectance_vis` : Reflectance for visible light [-]
-- `reflectance_ir`  : reflectances for thermal infrared [-]
+- `reflectance_ir`  : Reflectance for thermal infrared [-]
 - `emissivity` : Emissivity [-]
 
 - `z_max` : Depth of the bottom of a heat conduction equation [m]
