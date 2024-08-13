@@ -14,20 +14,9 @@ function loadobj(shapepath::String; scale = 1, message = true)
     nodes = SVector{3,Float64}[]
     faces = SVector{3,Int64}[]
 
-    open(shapepath, "r") do f
-        for line in eachline(f)
-            line == "" && continue  # Skip blank lines
-            data = split(line)
-
-            if data[1] == "v"
-                node = parse.(Float64, data[2:4])  # (x, y, z) coordinates [km]
-                push!(nodes, node)
-            elseif data[1] == "f"
-                face = parse.(Int64, data[2:4])  # indices of three vertices
-                push!(faces, face)
-            end
-        end
-    end
+    mesh = load(shapepath)
+    nodes = Vector{SVector{3, Float64}}(GeometryBasics.coordinates(mesh))
+    faces = [SVector{3,Int}(convert.(Int, face)) for face in GeometryBasics.faces(mesh)]
 
     nodes *= scale  # if scale is 1000, converted [km] to [m]
 
