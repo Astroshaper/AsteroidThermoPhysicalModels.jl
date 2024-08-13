@@ -46,7 +46,7 @@ abstract type AbstractThermoParams end
 - `period`    : Cycle of thermal cycle (rotation period) [sec]
 - `skindepth` : Thermal skin depth [m]
 - `inertia` : Thermal inertia [tiu (thermal intertia unit)]
-- `reflectance_vis` : reflectances for visible light [-]
+- `reflectance_vis` : Reflectances for visible light [-]
 - `reflectance_ir`  : Reflectances for thermal infrared [-]
 - `emissivity` : Emissivity [-]
 
