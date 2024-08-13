@@ -74,7 +74,7 @@ end
 - `period`: Thermal cycle (rotation period) [sec]
 - `skindepth`: Thermal skin depth [m]
 - `inertia`  : Thermal inertia [tiu (thermal intertia unit)]
-- `reflectance_vis` : reflectances for visible light [-]
+- `reflectance_vis` : Reflectance for visible light [-]
 - `reflectance_ir`  : reflectances for thermal infrared [-]
 - `emissivity` : Emissivity [-]
 
