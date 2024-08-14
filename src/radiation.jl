@@ -12,7 +12,7 @@ at wavelength `λ` and temperature `T`.
 # Return
 - `radiance` : Spectral radiance [W/m²/m/steradian]
 
-c.f. https://github.com/JuliaAstro/Planck.jl/blob/main/src/Planck.jl
+cf. https://github.com/JuliaAstro/Planck.jl/blob/main/src/Planck.jl
 """
 blackbody_radiation(λ, T) = 2 * h * c₀^2 / λ^5 / expm1(h * c₀ / (λ * k_B * T))
 
