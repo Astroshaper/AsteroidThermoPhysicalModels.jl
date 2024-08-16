@@ -43,12 +43,12 @@ abstract type AbstractThermoParams end
     struct ThermoParams
 
 # Fields
-- `period`          : Cycle of thermal cycle (rotation period) [sec]
-- `skindepth`       : Thermal skin depth for each facet [m]
-- `inertia`         : Thermal inertia for each facet [thermal inertia unit (tiu)]
-- `reflectance_vis` : Reflectance in visible light for each facet [-]
-- `reflectance_ir`  : Reflectance in thermal infrared for each facet [-]
-- `emissivity`      : Emissivity for each facet [-]
+- `period`          : Period of thermal cycle (rotation period) [sec]
+- `skindepth`       : Vector of thermal skin depth for each facet [m]
+- `inertia`         : Vector of thermal inertia for each facet [thermal inertia unit (tiu)]
+- `reflectance_vis` : Vector of reflectance in visible light for each facet [-]
+- `reflectance_ir`  : Vector of reflectance in thermal infrared for each facet [-]
+- `emissivity`      : Vector of emissivity for each facet [-]
 
 - `z_max`   : Depth of the lower boundary of a heat conduction equation [m]
 - `Δz`      : Depth step width [m]
