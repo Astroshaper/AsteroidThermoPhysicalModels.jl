@@ -68,36 +68,6 @@ struct ThermoParams <: AbstractThermoParams
 end
 
 
-# function thermoparams(;
-#     P,
-#     l::Vector{Float64},
-#     Γ::Vector{Float64},
-#     R_vis::Vector{Float64},
-#     R_ir::Vector{Float64},
-#     ε::Vector{Float64},
-#     z_max,
-#     n_depth
-# )
-#     Δz = z_max / (n_depth - 1)    
-#     return ThermoParams(P, l, Γ, R_vis, R_ir, ε, z_max, Δz, n_depth)
-# end
-
-
-# function thermoparams(;
-#     P,
-#     l::Float64,
-#     Γ::Float64,
-#     R_vis::Float64,
-#     R_ir::Float64,
-#     ε::Float64,
-#     z_max,
-#     n_depth
-# )
-#     Δz = z_max / (n_depth - 1)    
-#     return ThermoParams(P, [l], [Γ], [R_vis], [R_ir], [ε], z_max, Δz, n_depth)
-# end
-
-
 # function Base.show(io::IO, params::ThermoParams)
 
 #     msg =  "⋅-----------------------------------⋅\n"
@@ -111,7 +81,7 @@ end
 #     msg *= "  Reflectance (visible)  = $(params.reflectance_vis)\n"
 #     msg *= "  Reflectance (infrared) = $(params.reflectance_ir)\n"
 #     msg *= "  Emissivity             = $(params.emissivity)\n"
-  
+
 #     msg *= "-----------------------------------\n"
 
 #     msg *= "  Maximum depth       = $(params.z_max) [m]\n"
