@@ -67,9 +67,9 @@ function forward_euler!(stpm::SingleTPM, Δt)
     ## Zero-conductivity (thermal inertia) case
     if iszero(stpm.thermo_params.inertia)
         for i_face in 1:n_face
-            R_vis = _getindex(stpm.thermo_params.reflectance_vis, i_face)
-            R_ir  = _getindex(stpm.thermo_params.reflectance_ir, i_face)
-            ε     = _getindex(stpm.thermo_params.emissivity, i_face)
+            R_vis = stpm.thermo_params.reflectance_vis[i_face]
+            R_ir  = stpm.thermo_params.reflectance_ir[i_face]
+            ε     = stpm.thermo_params.emissivity[i_face]
             εσ = ε * σ_SB
 
             F_sun, F_scat, F_rad = stpm.flux[i_face, :]
@@ -82,7 +82,7 @@ function forward_euler!(stpm::SingleTPM, Δt)
         for i_face in 1:n_face
             P  = stpm.thermo_params.period
             Δz = stpm.thermo_params.Δz
-            l  = _getindex(stpm.thermo_params.skindepth, i_face)
+            l  = stpm.thermo_params.skindepth[i_face]
 
             λ = (Δt/P) / (Δz/l)^2 / 4π
             λ ≥ 0.5 && error("The forward Euler method is unstable because λ = $λ. This should be less than 0.5.")
@@ -235,19 +235,19 @@ tridiagonal_matrix_algorithm!(stpm::SingleTPM) = tridiagonal_matrix_algorithm!(s
 Update the temperature of the upper surface based on the boundary condition `stpm.BC_UPPER`.
 
 # Arguments
-- `stpm`      : Thermophysical model for a single asteroid
-- `i`        : Index of the face of the shape model
+- `stpm` : Thermophysical model for a single asteroid
+- `i`    : Index of the face of the shape model
 """
 function update_upper_temperature!(stpm::SingleTPM, i::Integer)
 
     #### Radiation boundary condition ####
     if stpm.BC_UPPER isa RadiationBoundaryCondition
         P     = stpm.thermo_params.period
-        l     = _getindex(stpm.thermo_params.skindepth, i)
-        Γ     = _getindex(stpm.thermo_params.inertia, i)
-        R_vis = _getindex(stpm.thermo_params.reflectance_vis, i)
-        R_ir  = _getindex(stpm.thermo_params.reflectance_ir, i)
-        ε     = _getindex(stpm.thermo_params.emissivity, i)
+        l     = stpm.thermo_params.skindepth[i]
+        Γ     = stpm.thermo_params.inertia[i]
+        R_vis = stpm.thermo_params.reflectance_vis[i]
+        R_ir  = stpm.thermo_params.reflectance_ir[i]
+        ε     = stpm.thermo_params.emissivity[i]
         Δz    = stpm.thermo_params.Δz
     
         F_sun, F_scat, F_rad = stpm.flux[i, :]
@@ -260,7 +260,7 @@ function update_upper_temperature!(stpm::SingleTPM, i::Integer)
     elseif stpm.BC_UPPER isa IsothermalBoundaryCondition
         stpm.SOLVER.T[begin] = stpm.BC_UPPER.T_iso
     else
-        error("The upper boundary condition is not implemented.")
+        error("The given upper boundary condition is not implemented.")
     end
 end
 
