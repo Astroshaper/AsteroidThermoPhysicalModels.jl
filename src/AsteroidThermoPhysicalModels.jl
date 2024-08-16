@@ -16,10 +16,6 @@ const SOLAR_CONST = 1366.0   # Solar constant, Φ☉ [W/m^2]
 const c₀ = 299792458.0       # Speed of light [m/s]
 const σ_SB = 5.670374419e-8  # Stefan–Boltzmann constant [W/m^2/K^4]
 
-# utils for NonUniformThermoParams and UniformThermoParams
-_getindex(a::AbstractArray, i::Integer) = a[i]
-_getindex(a::Real, ::Integer) = a
-
 include("obj.jl")
 include("shape.jl")
 include("facet.jl")
