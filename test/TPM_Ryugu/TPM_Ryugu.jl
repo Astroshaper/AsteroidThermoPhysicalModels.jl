@@ -77,18 +77,27 @@
     l = AsteroidThermoPhysicalModels.thermal_skin_depth(P, k, ρ, Cₚ)
     Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)
 
-    thermo_params = AsteroidThermoPhysicalModels.thermoparams(
-        P       = P,
-        l       = l,
-        Γ       = Γ,
-        R_vis   = 0.04,  # Bolometric reflectance for visible light
-        R_ir    = 0.0,
-        ε       = 1.0,
-        z_max   = 0.6,
-        n_depth = 41,
+    R_vis = 0.04  # Reflectance in visible light [-]
+    R_ir  = 0.0   # Reflectance in thermal infrared [-]
+    ε     = 1.0   # Emissivity [-]
+
+    z_max = 0.6   # Depth of the lower boundary of a heat conduction equation [m]
+    n_depth = 41  # Number of depth steps
+    Δz = z_max / (n_depth - 1)  # Depth step width [m]
+
+    thermo_params = AsteroidThermoPhysicalModels.ThermoParams(
+        P,
+        fill(l,     length(shape.faces)),
+        fill(Γ,     length(shape.faces)),
+        fill(R_vis, length(shape.faces)),  
+        fill(R_ir,  length(shape.faces)),
+        fill(ε,     length(shape.faces)),  
+        z_max,
+        Δz,
+        n_depth
     )
 
-    println(thermo_params)
+    # println(thermo_params)
 
     ##= Setting of TPM =##
     stpm = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params;
