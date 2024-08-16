@@ -7,6 +7,12 @@
     """
     println(msg)
 
+    """
+    Calculate the intensity of blackbody radiation of at a wavelength of 6e-7 m and a temperature of 5850 K,
+    and compare it with the value calculated by Planck.jl.
+
+    cf. https://github.com/JuliaAstro/Planck.jl/blob/main/src/Planck.jl
+    """
     @test AsteroidThermoPhysicalModels.blackbody_radiation(6e-7, 5850) ≈ 2.583616647617974e13
 
     ##= Load shape model =##
