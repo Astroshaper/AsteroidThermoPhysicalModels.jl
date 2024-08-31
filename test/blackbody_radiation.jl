@@ -7,12 +7,9 @@
     """
     println(msg)
 
-    """
-    Calculate the intensity of blackbody radiation of at a wavelength of 6e-7 m and a temperature of 5850 K,
-    and compare it with the value calculated by Planck.jl.
-
-    cf. https://github.com/JuliaAstro/Planck.jl/blob/main/src/Planck.jl
-    """
+    ## Calculate the intensity of blackbody radiation of at a wavelength of 6e-7 m and a temperature of 5850 K,
+    ## and compare it with the value calculated by Planck.jl.
+    ## cf. https://github.com/JuliaAstro/Planck.jl/blob/main/src/Planck.jl
     @test AsteroidThermoPhysicalModels.blackbody_radiation(6e-7, 5850) ≈ 2.583616647617974e13
 
     ##= Load shape model =##
@@ -85,9 +82,9 @@
     result = run_TPM!(stpm, ephem, times_to_save, face_ID)
 
     ##= Check the thermal radiation from the local map =##
-    obs_above = [0.0, 0.0, 1000.0]      # Observer is just above the local map
-    obs_east  = RotY(+π/6) * obs_above  # Observed from 30° east
-    obs_west  = RotY(-π/6) * obs_above  # Observed from 30° west
+    obs_above = SVector{3, Float64}(0, 0, 1000)  # Observer is just above the local map
+    obs_east  = RotY(+π/6) * obs_above           # Observed from 30° east
+    obs_west  = RotY(-π/6) * obs_above           # Observed from 30° west
 
     emissivities = fill(1.0, length(shape.faces))
     temperatures = result.surface_temperature[:, 181]

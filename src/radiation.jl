@@ -42,7 +42,7 @@ Calculate the radiance from an asteroid based on the shape model and temperature
 - `temperatures` : Temperature of each facet of the shape model [K]
 - `obs`          : Position vector of the observer in the same coordinate system as `shape` [m]
 """
-function thermal_radiation(shape, emissivities, temperatures, obs)
+function thermal_radiation(shape::ShapeModel, emissivities::AbstractVector{<:Real}, temperatures::AbstractVector{<:Real}, obs::StaticVector{3, <:Real})
     if length(temperatures) != length(shape.faces)
         throw(ArgumentError("Length of `temperatures` must be equal to the number of faces of the shape model."))
     end
