@@ -86,8 +86,8 @@
     shape1 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape1_obj; scale=1000, find_visible_facets=true)
     shape2 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape2_obj; scale=1000, find_visible_facets=true)
 
-    n_face1 = length(shape1.faces)  # Number of faces of Didymos
-    n_face2 = length(shape2.faces)  # Number of faces of Dimorphos
+    n_face_shape1 = length(shape1.faces)  # Number of faces of Didymos
+    n_face_shape2 = length(shape2.faces)  # Number of faces of Dimorphos
     
     ##= Thermal properties =##
     k  = 0.125   # Thermal conductivity [W/m/K]
@@ -108,11 +108,11 @@
 
     thermo_params1 = AsteroidThermoPhysicalModels.ThermoParams(  # [Michel+2016; Naidu+2020]
         P₁,
-        fill(l₁,    n_face1),
-        fill(Γ,     n_face1),
-        fill(R_vis, n_face1),  
-        fill(R_ir,  n_face1),
-        fill(ε,     n_face1),  
+        fill(l₁,    n_face_shape1),
+        fill(Γ,     n_face_shape1),
+        fill(R_vis, n_face_shape1),
+        fill(R_ir,  n_face_shape1),
+        fill(ε,     n_face_shape1),
         z_max,
         Δz,
         n_depth,
@@ -120,11 +120,11 @@
 
     thermo_params2 = AsteroidThermoPhysicalModels.ThermoParams(  # [Michel+2016; Naidu+2020]
         P₂,
-        fill(l₂,    n_face2),
-        fill(Γ,     n_face2),
-        fill(R_vis, n_face2),  
-        fill(R_ir,  n_face2),
-        fill(ε,     n_face2),  
+        fill(l₂,    n_face_shape2),
+        fill(Γ,     n_face_shape2),
+        fill(R_vis, n_face_shape2),
+        fill(R_ir,  n_face_shape2),
+        fill(ε,     n_face_shape2),
         z_max,
         Δz,
         n_depth,
