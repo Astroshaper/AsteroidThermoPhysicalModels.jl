@@ -66,32 +66,3 @@ struct ThermoParams <: AbstractThermoParams
     Δz      ::Float64
     n_depth ::Int
 end
-
-
-# function Base.show(io::IO, params::ThermoParams)
-
-#     msg =  "⋅-----------------------------------⋅\n"
-#     msg *= "|     Thermophysical parameters     |\n"
-#     msg *= "⋅-----------------------------------⋅\n"
-
-#     msg *= "  Rotation period        = $(params.period) [sec]\n"
-#     msg *= "                         = $(SPICE.convrt(params.period, "seconds", "hours")) [h]\n"
-#     msg *= "  Thermal skindepth      = $(params.skindepth) [m]\n"
-#     msg *= "  Thermal inertia        = $(params.inertia) [tiu]\n"
-#     msg *= "  Reflectance (visible)  = $(params.reflectance_vis)\n"
-#     msg *= "  Reflectance (infrared) = $(params.reflectance_ir)\n"
-#     msg *= "  Emissivity             = $(params.emissivity)\n"
-
-#     msg *= "-----------------------------------\n"
-
-#     msg *= "  Maximum depth       = $(params.z_max) [m]\n"
-#     msg *= "                      = $(params.z_max / params.skindepth) [l]\n"
-#     msg *= "  Depth step width    = $(params.Δz) [m]\n"
-#     msg *= "                      = $(params.Δz / params.skindepth) [l]\n"
-#     msg *= "  Num. of depth nodes = $(params.n_depth)\n"
-    
-#     msg *= "-----------------------------------\n"
-    
-#     print(io, msg)
-# end
-
