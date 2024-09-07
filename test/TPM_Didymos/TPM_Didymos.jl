@@ -90,13 +90,13 @@
     n_face2 = length(shape2.faces)  # Number of faces of Dimorphos
     
     ##= Thermal properties =##
-    k  = 0.125
-    ρ  = 2170.
-    Cₚ = 600.
+    k  = 0.125   # Thermal conductivity [W/m/K]
+    ρ  = 2170.0  # Density [kg/m³]
+    Cₚ = 600.0   # Heat capacity [J/kg/K]
 
     l₁ = AsteroidThermoPhysicalModels.thermal_skin_depth(P₁, k, ρ, Cₚ)  # Thermal skin depth for Didymos
     l₂ = AsteroidThermoPhysicalModels.thermal_skin_depth(P₂, k, ρ, Cₚ)  # Thermal skin depth for Dimorphos
-    Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)
+    Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)          # Thermal inertia for Didymos and Dimorphos [tiu]
 
     R_vis = 0.059  # Reflectance in visible light [-]
     R_ir  = 0.0    # Reflectance in thermal infrared [-]

@@ -86,12 +86,12 @@
         - Emissivity           : ε   = 0.9  [-]
     """
 
-    k  = [r[3] > 0 ? 0.1 : 0.3  for r in shape.face_centers]
-    ρ  = 1270.0
-    Cₚ = 600.0
+    k  = [r[3] > 0 ? 0.1 : 0.3  for r in shape.face_centers]  # Thermal conductivity [W/m/K]
+    ρ  = 1270.0  # Density [kg/m³]
+    Cₚ = 600.0   # Heat capacity [J/kg/K]
     
-    l = AsteroidThermoPhysicalModels.thermal_skin_depth(P, k, ρ, Cₚ)
-    Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)
+    l = AsteroidThermoPhysicalModels.thermal_skin_depth(P, k, ρ, Cₚ)  # Thermal skin depth [m]
+    Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)        # Thermal inertia [tiu]
 
     R_vis = [r[3] > 0 ? 0.04 : 0.1 for r in shape.face_centers]  # Reflectance in visible light [-]
     R_ir  = [r[3] > 0 ? 1.0 : 0.9  for r in shape.face_centers]  # Reflectance in thermal infrared [-]

@@ -71,12 +71,12 @@
     n_face = length(shape.faces)  # Number of faces
 
     ##= Thermal properties =##
-    k  = 0.1
-    ρ  = 1270.0
-    Cₚ = 600.0
+    k  = 0.1     # Thermal conductivity [W/m/K]
+    ρ  = 1270.0  # Density [kg/m³]
+    Cₚ = 600.0   # Heat capacity [J/kg/K]
     
-    l = AsteroidThermoPhysicalModels.thermal_skin_depth(P, k, ρ, Cₚ)
-    Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)
+    l = AsteroidThermoPhysicalModels.thermal_skin_depth(P, k, ρ, Cₚ)  # Thermal skin depth [m]
+    Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)        # Thermal inertia [tiu]
 
     R_vis = 0.04  # Reflectance in visible light [-]
     R_ir  = 0.0   # Reflectance in thermal infrared [-]
