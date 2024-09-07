@@ -1,11 +1,9 @@
-name: CI
+name: Test
 on:
   push:
     branches: [main]
     tags: [v*]
   pull_request:
-  schedule:
-    - cron: '0 0 * * *'
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
@@ -15,6 +13,7 @@ jobs:
       matrix:
         version:
           - '1.6'
+          - '1.10' # next LTS
           - '1' # automatically expands to the latest stable 1.x release of Julia
           - nightly
         os:
