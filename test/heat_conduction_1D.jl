@@ -40,7 +40,7 @@
         P,
         fill(l,     n_face),
         fill(Γ,     n_face),
-        fill(R_vis, n_face),  
+        fill(R_vis, n_face),
         fill(R_ir,  n_face),
         fill(ε,     n_face),
         z_max,
