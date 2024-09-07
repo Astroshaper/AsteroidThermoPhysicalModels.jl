@@ -4,8 +4,6 @@ on:
     branches: [main]
     tags: [v*]
   pull_request:
-  schedule:
-    - cron: '0 0 * * *'
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
