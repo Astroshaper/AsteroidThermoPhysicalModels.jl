@@ -93,8 +93,8 @@
     l = AsteroidThermoPhysicalModels.thermal_skin_depth(P, k, ρ, Cₚ)
     Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)
 
-    R_vis = [r[3] > 0 ? 0.04 : 0.1 for r in shape.faces]  # Reflectance in visible light [-]
-    R_ir  = [r[3] > 0 ? 1.0 : 0.9  for r in shape.faces]  # Reflectance in thermal infrared [-]
+    R_vis = [r[3] > 0 ? 0.04 : 0.1 for r in shape.face_centers]  # Reflectance in visible light [-]
+    R_ir  = [r[3] > 0 ? 1.0 : 0.9  for r in shape.face_centers]  # Reflectance in thermal infrared [-]
     ε     = 1.0   # Emissivity [-]
 
     z_max = 0.6   # Depth of the lower boundary of a heat conduction equation [m]
