@@ -32,10 +32,11 @@
     ##= Load obj file =##
     path_obj = joinpath("shape", "ryugu_test.obj")
     shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj; scale=1000, find_visible_facets=true)
+    n_face = length(shape.faces)  # Number of faces
 
     ##= Thermal properties: zero-conductivity case =##
-    l = zeros(length(shape.faces))  # Thermal skin depth [m]
-    Γ = zeros(length(shape.faces))  # Thermal inertia [J m⁻² K⁻¹ s⁻¹/2]
+    l = zeros(n_face)  # Thermal skin depth [m]
+    Γ = zeros(n_face)  # Thermal inertia [J m⁻² K⁻¹ s⁻¹/2]
 
     R_vis = 0.1  # Reflectance in visible light [-]
     R_ir  = 0.0  # Reflectance in thermal infrared [-]
@@ -49,15 +50,13 @@
         P,
         l,
         Γ,
-        fill(R_vis, length(shape.faces)),  
-        fill(R_ir,  length(shape.faces)),
-        fill(ε,     length(shape.faces)),
+        fill(R_vis, n_face),  
+        fill(R_ir,  n_face),
+        fill(ε,     n_face),
         z_max,
         Δz,
         n_depth
     )
-
-    # println(thermo_params)
 
     ##= Setting of TPM =##
     stpm = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params;

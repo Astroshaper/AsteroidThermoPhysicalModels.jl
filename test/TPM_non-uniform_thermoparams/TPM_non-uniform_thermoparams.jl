@@ -70,6 +70,7 @@
     # path_obj = joinpath("shape", "SHAPE_SFM_49k_v20180804.obj")
     
     shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj; scale=1000, find_visible_facets=true)
+    n_face = length(shape.faces)  # Number of faces
 
     ##= Thermal properties =##
     """
@@ -106,7 +107,7 @@
         Γ,
         R_vis,
         R_ir,
-        fill(ε, length(shape.faces)),
+        fill(ε, n_face),
         z_max,
         Δz,
         n_depth

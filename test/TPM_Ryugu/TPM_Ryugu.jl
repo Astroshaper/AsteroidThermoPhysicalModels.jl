@@ -68,6 +68,7 @@
     # path_obj = joinpath("shape", "SHAPE_SFM_49k_v20180804.obj")
     
     shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj; scale=1000, find_visible_facets=true)
+    n_face = length(shape.faces)  # Number of faces
 
     ##= Thermal properties =##
     k  = 0.1
@@ -87,17 +88,15 @@
 
     thermo_params = AsteroidThermoPhysicalModels.ThermoParams(
         P,
-        fill(l,     length(shape.faces)),
-        fill(Γ,     length(shape.faces)),
-        fill(R_vis, length(shape.faces)),  
-        fill(R_ir,  length(shape.faces)),
-        fill(ε,     length(shape.faces)),  
+        fill(l,     n_face),
+        fill(Γ,     n_face),
+        fill(R_vis, n_face),  
+        fill(R_ir,  n_face),
+        fill(ε,     n_face),  
         z_max,
         Δz,
         n_depth
     )
-
-    # println(thermo_params)
 
     ##= Setting of TPM =##
     stpm = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params;

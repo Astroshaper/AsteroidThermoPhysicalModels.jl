@@ -10,6 +10,7 @@
     ##= Shape model =##
     path_obj = joinpath("shape", "single_face.obj")
     shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj)
+    n_face = length(shape.faces)  # Number of faces
 
     ##= Seeting of time step =##
     et_range = range(0.0, 1.0; step=0.4e-4)
@@ -37,17 +38,15 @@
 
     thermo_params = AsteroidThermoPhysicalModels.ThermoParams(
         P,
-        fill(l,     length(shape.faces)),
-        fill(Γ,     length(shape.faces)),
-        fill(R_vis, length(shape.faces)),  
-        fill(R_ir,  length(shape.faces)),
-        fill(ε,     length(shape.faces)),
+        fill(l,     n_face),
+        fill(Γ,     n_face),
+        fill(R_vis, n_face),  
+        fill(R_ir,  n_face),
+        fill(ε,     n_face),
         z_max,
         Δz,
         n_depth
     )
-
-    # println(thermo_params)
 
     ##= TPMs with different solvers =##
     SELF_SHADOWING = false
