@@ -10,6 +10,7 @@
     ##= Shape model =##
     path_obj = joinpath("shape", "single_face.obj")
     shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj)
+    n_face = length(shape.faces)  # Number of faces
 
     ##= Seeting of time step =##
     et_range = range(0.0, 1.0; step=0.4e-4)
@@ -27,18 +28,25 @@
     l = AsteroidThermoPhysicalModels.thermal_skin_depth(P, k, ρ, Cₚ)
     Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)
 
-    thermo_params = AsteroidThermoPhysicalModels.thermoparams(
-        P       = P,
-        l       = l,
-        Γ       = Γ,
-        R_vis   = 0.0,
-        R_ir    = 0.0,
-        ε       = 1.0,
-        z_max   = 1.0,
-        n_depth = 101,
-    )
+    R_vis = 0.0  # Reflectance in visible light [-]
+    R_ir  = 0.0  # Reflectance in thermal infrared [-]
+    ε     = 1.0  # Emissivity [-]
 
-    println(thermo_params)
+    z_max   = 1.0  # Depth of the lower boundary of a heat conduction equation [m]
+    n_depth = 101  # Number of depth steps
+    Δz = z_max / (n_depth - 1)  # Depth step width [m]
+
+    thermo_params = AsteroidThermoPhysicalModels.ThermoParams(
+        P,
+        fill(l,     n_face),
+        fill(Γ,     n_face),
+        fill(R_vis, n_face),
+        fill(R_ir,  n_face),
+        fill(ε,     n_face),
+        z_max,
+        Δz,
+        n_depth
+    )
 
     ##= TPMs with different solvers =##
     SELF_SHADOWING = false

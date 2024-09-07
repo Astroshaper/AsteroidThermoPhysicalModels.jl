@@ -85,42 +85,50 @@
     
     shape1 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape1_obj; scale=1000, find_visible_facets=true)
     shape2 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape2_obj; scale=1000, find_visible_facets=true)
+
+    n_face_shape1 = length(shape1.faces)  # Number of faces of Didymos
+    n_face_shape2 = length(shape2.faces)  # Number of faces of Dimorphos
     
     ##= Thermal properties =##
-    k  = 0.125
-    ρ  = 2170.
-    Cₚ = 600.
+    k  = 0.125   # Thermal conductivity [W/m/K]
+    ρ  = 2170.0  # Density [kg/m³]
+    Cₚ = 600.0   # Heat capacity [J/kg/K]
 
     l₁ = AsteroidThermoPhysicalModels.thermal_skin_depth(P₁, k, ρ, Cₚ)  # Thermal skin depth for Didymos
     l₂ = AsteroidThermoPhysicalModels.thermal_skin_depth(P₂, k, ρ, Cₚ)  # Thermal skin depth for Dimorphos
-    Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)
+    Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)          # Thermal inertia for Didymos and Dimorphos [tiu]
 
-    thermo_params1 = AsteroidThermoPhysicalModels.thermoparams(  # [Michel+2016; Naidu+2020]
-        P       = P₁,
-        l       = l₁,
-        Γ       = Γ,
-        R_vis   = 0.059,  # Bolometric reflectance for visible light
-        R_ir    = 0.0,
-        ε       = 0.9,
-        z_max   = 0.6,
-        n_depth = 41,
+    R_vis = 0.059  # Reflectance in visible light [-]
+    R_ir  = 0.0    # Reflectance in thermal infrared [-]
+    ε     = 0.9    # Emissivity [-]
+
+    z_max = 0.6   # Depth of the lower boundary of a heat conduction equation [m]
+    n_depth = 41  # Number of depth steps
+    Δz = z_max / (n_depth - 1)  # Depth step width [m]
+
+    thermo_params1 = AsteroidThermoPhysicalModels.ThermoParams(  # [Michel+2016; Naidu+2020]
+        P₁,
+        fill(l₁,    n_face_shape1),
+        fill(Γ,     n_face_shape1),
+        fill(R_vis, n_face_shape1),
+        fill(R_ir,  n_face_shape1),
+        fill(ε,     n_face_shape1),
+        z_max,
+        Δz,
+        n_depth,
     )
 
-    thermo_params2 = AsteroidThermoPhysicalModels.thermoparams(  # [Michel+2016; Naidu+2020]
-        P       = P₂,
-        l       = l₂,
-        Γ       = Γ,
-        R_vis   = 0.059,  # Bolometric reflectance for visible light
-        R_ir    = 0.0,
-        ε       = 0.9,
-        z_max   = 0.6,
-        n_depth = 41,
+    thermo_params2 = AsteroidThermoPhysicalModels.ThermoParams(  # [Michel+2016; Naidu+2020]
+        P₂,
+        fill(l₂,    n_face_shape2),
+        fill(Γ,     n_face_shape2),
+        fill(R_vis, n_face_shape2),
+        fill(R_ir,  n_face_shape2),
+        fill(ε,     n_face_shape2),
+        z_max,
+        Δz,
+        n_depth,
     )
-
-    println("Thermophysical parameters for Didymos")
-    println(thermo_params1)
-    println("Thermophysical parameters for Dimorphos")
-    println(thermo_params2)
 
     ##= Setting of TPM =##
     stpm1 = AsteroidThermoPhysicalModels.SingleTPM(shape1, thermo_params1;

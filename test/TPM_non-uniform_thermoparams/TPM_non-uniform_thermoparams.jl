@@ -70,6 +70,7 @@
     # path_obj = joinpath("shape", "SHAPE_SFM_49k_v20180804.obj")
     
     shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj; scale=1000, find_visible_facets=true)
+    n_face = length(shape.faces)  # Number of faces
 
     ##= Thermal properties =##
     """
@@ -85,22 +86,31 @@
         - Emissivity           : ε   = 0.9  [-]
     """
 
-    k  = [r[3] > 0 ? 0.1 : 0.3  for r in shape.face_centers]
-    ρ  = 1270.0
-    Cₚ = 600.0
+    k  = [r[3] > 0 ? 0.1 : 0.3  for r in shape.face_centers]  # Thermal conductivity [W/m/K]
+    ρ  = 1270.0  # Density [kg/m³]
+    Cₚ = 600.0   # Heat capacity [J/kg/K]
     
-    l = AsteroidThermoPhysicalModels.thermal_skin_depth(P, k, ρ, Cₚ)
-    Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)
+    l = AsteroidThermoPhysicalModels.thermal_skin_depth(P, k, ρ, Cₚ)  # Thermal skin depth [m]
+    Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)        # Thermal inertia [tiu]
 
-    thermo_params = AsteroidThermoPhysicalModels.thermoparams(
-        P       = P,
-        l       = l,
-        Γ       = Γ,
-        R_vis   = [r[3] > 0 ? 0.04 : 0.1 for r in shape.face_centers],
-        R_ir    = 0.0,
-        ε       = [r[3] > 0 ? 1.0 : 0.9  for r in shape.face_centers],
-        z_max   = 0.6,
-        n_depth = 41,
+    R_vis = [r[3] > 0 ? 0.04 : 0.1 for r in shape.face_centers]  # Reflectance in visible light [-]
+    R_ir  = [r[3] > 0 ? 1.0 : 0.9  for r in shape.face_centers]  # Reflectance in thermal infrared [-]
+    ε     = 1.0   # Emissivity [-]
+
+    z_max = 0.6   # Depth of the lower boundary of a heat conduction equation [m]
+    n_depth = 41  # Number of depth steps
+    Δz = z_max / (n_depth - 1)  # Depth step width [m]
+
+    thermo_params = AsteroidThermoPhysicalModels.ThermoParams(
+        P,
+        l,
+        Γ,
+        R_vis,
+        R_ir,
+        fill(ε, n_face),
+        z_max,
+        Δz,
+        n_depth
     )
 
     ##= Setting of TPM =##
