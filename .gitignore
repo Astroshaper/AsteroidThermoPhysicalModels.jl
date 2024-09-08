@@ -15,8 +15,7 @@
 /test/TPM_Didymos/output
 
 # Keep these shape models
+!fractal_v2572_f5000.obj
 !icosahedron.obj
-!single_face.obj
 !ryugu_test.obj
-
-
+!single_face.obj
