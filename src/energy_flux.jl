@@ -388,7 +388,7 @@ Calculate the mutual heating between the primary and secondary asteroids.
 - `rₛ`   : Position of the secondary relative to the primary (NOT normalized)
 - `R₂₁`  : Rotation matrix from secondary to primary
 
-# TO DO
+# TODO
 - Need to consider local horizon?
 """
 function mutual_heating!(btpm::BinaryTPM, rₛ, R₂₁)

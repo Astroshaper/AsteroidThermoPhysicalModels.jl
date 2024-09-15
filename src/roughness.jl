@@ -84,12 +84,12 @@ end
 #                   Random Gaussian surface
 ################################################################
 
-# TO DO: Functions to generate random Gaussian surface will be implmented.
+# TODO: Functions to generate random Gaussian surface will be implmented.
 
 
 ################################################################
 #                       Fractal surface
 ################################################################
 
-# TO DO: Functions to generate fractal surface will be implmented.
+# TODO: Functions to generate fractal surface will be implmented.
 
