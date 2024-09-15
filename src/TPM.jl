@@ -129,7 +129,7 @@ abstract type ThermoPhysicalModel end
 - `BC_UPPER`       : Boundary condition at the upper boundary
 - `BC_LOWER`       : Boundary condition at the lower boundary
 
-# TO DO:
+# TODO:
 - roughness_maps   ::ShapeModel[]
 """
 struct SingleTPM{P<:AbstractThermoParams, S<:HeatConductionSolver, BU<:BoundaryCondition, BL<:BoundaryCondition} <: ThermoPhysicalModel
