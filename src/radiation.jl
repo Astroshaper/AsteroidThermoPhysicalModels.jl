@@ -32,22 +32,25 @@ blackbody_radiation(T) = σ_SB * T^4
 
 
 """
-    thermal_radiation(shape, emissivities, temperatures, obs) -> radiance
+    thermal_radiation(shape, emissivities, temperatures, obs) -> L
 
-Calculate the radiance from an asteroid based on the shape model and temperature distribution.
+Calculate the radiance from the temperature distribution based on a shape model.
 
 # Arguments
 - `shape`        : Shape model of an asteroid
 - `emissivities` : Emissivity of each facet of the shape model [-]
 - `temperatures` : Temperature of each facet of the shape model [K]
 - `obs`          : Position vector of the observer in the same coordinate system as `shape` [m]
+
+# Return
+- `L` : Radiance [W/m²]
 """
 function thermal_radiation(shape::ShapeModel, emissivities::AbstractVector{<:Real}, temperatures::AbstractVector{<:Real}, obs::StaticVector{3, <:Real})
     if length(temperatures) != length(shape.faces)
         throw(ArgumentError("Length of `temperatures` must be equal to the number of faces of the shape model."))
     end
 
-    radiance = 0.0
+    L = 0.0  # Radiance [W/m²]
     for i in eachindex(shape.faces)
         c = shape.face_centers[i]
         n̂ = shape.face_normals[i]
@@ -65,8 +68,8 @@ function thermal_radiation(shape::ShapeModel, emissivities::AbstractVector{<:Rea
 
         ## TO DO: Ray-trace for each facet
 
-        radiance += ε * σ_SB * T^4 * a * cosθ / (π * d^2)  # π, 2π, or 4π?
+        L += ε * σ_SB * T^4 * a * cosθ / (π * d^2)  # π, 2π, or 4π?
     end
-    return radiance
+    return L
 end
 
