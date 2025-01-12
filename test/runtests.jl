@@ -17,6 +17,6 @@ include("TPM_non-uniform_thermoparams/TPM_non-uniform_thermoparams.jl")
 include("TPM_zero-conductivity/TPM_zero-conductivity.jl")
 include("TPM_Didymos/TPM_Didymos.jl")
 
-include("blackbody_radiation.jl")
+include("thermal_radiation.jl")
 include("find_visiblefacets.jl")
 include("heat_conduction_1D.jl")

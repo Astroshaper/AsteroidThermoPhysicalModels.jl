@@ -1,8 +1,8 @@
-@testset "blackbody_radiation" begin
+@testset "thermal_radiation" begin
 
     msg = """\n
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-    |               Test: blackbody_radiation                |
+    |                Test: thermal_radiation                 |
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     """
     println(msg)
