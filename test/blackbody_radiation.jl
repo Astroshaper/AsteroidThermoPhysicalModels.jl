@@ -22,6 +22,7 @@
     ncycles = 2  # Number of cycles to perform TPM
     nsteps_in_cycle = 360  # Number of time steps in one rotation period
     
+    ## TPM simulation time duration (ephemerides time)
     et_begin = 0.0  # Start time of TPM
     et_end   = et_begin + P * ncycles  # End time of TPM
     et_range = range(et_begin, et_end; length=nsteps_in_cycle*ncycles+1)
