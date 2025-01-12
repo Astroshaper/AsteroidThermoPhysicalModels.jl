@@ -15,6 +15,7 @@
     ##= Load shape model =##
     path_obj = joinpath("shape", "fractal_v2572_f5000.obj")
     shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj; scale=1, find_visible_facets=true)
+    n_face = length(shape.faces)  # Number of faces
 
     ##= Ephemerides =##
     P = SPICE.convrt(8, "hours", "seconds")  # Rotation period of the asteroid [s]
@@ -54,18 +55,25 @@
     l = AsteroidThermoPhysicalModels.thermal_skin_depth(P, k, ρ, Cₚ)
     Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)
 
-    thermo_params = AsteroidThermoPhysicalModels.thermoparams(
-        P       = P,
-        l       = l,
-        Γ       = Γ,
-        R_vis   = 0.04,
-        R_ir    = 0.0,
-        ε       = 1.0,
-        z_max   = 0.6,
-        n_depth = 41,
-    )
+    R_vis = 0.04  # Reflectance in visible light [-]
+    R_ir  = 0.0   # Reflectance in thermal infrared [-]
+    ε     = 1.0   # Emissivity [-]
 
-    println(thermo_params)
+    z_max = 0.6   # Depth of the lower boundary of a heat conduction equation [m]
+    n_depth = 41  # Number of depth steps
+    Δz = z_max / (n_depth - 1)  # Depth step width [m]
+
+    thermo_params = AsteroidThermoPhysicalModels.ThermoParams(
+        P,
+        fill(l,     n_face),
+        fill(Γ,     n_face),
+        fill(R_vis, n_face),
+        fill(R_ir,  n_face),
+        fill(ε,     n_face),
+        z_max,
+        Δz,
+        n_depth
+    )
 
     ##= Setting of TPM =##
     stpm = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params;
@@ -82,16 +90,19 @@
     
     result = run_TPM!(stpm, ephem, times_to_save, face_ID)
 
-    ##= Check the thermal radiation from the local map =##
-    obs_above = SVector{3, Float64}(0, 0, 1000)  # Observer is just above the local map
+    ##= Check the thermal radiation from the local terrain model =##
+    obs_above = SVector{3, Float64}(0, 0, 1000)  # Observer is just above the local terrain model
     obs_east  = RotY(+π/6) * obs_above           # Observed from 30° east
     obs_west  = RotY(-π/6) * obs_above           # Observed from 30° west
 
     emissivities = fill(1.0, length(shape.faces))
     temperatures = result.surface_temperature[:, 181]
 
-    println("==== Thermal radiation from the local map ====")
-    println("- Observation from 30° east   : ", AsteroidThermoPhysicalModels.thermal_radiation(shape, emissivities, temperatures, obs_east))
-    println("- Observation from just above : ", AsteroidThermoPhysicalModels.thermal_radiation(shape, emissivities, temperatures, obs_above))
-    println("- Observation from 30° west   : ", AsteroidThermoPhysicalModels.thermal_radiation(shape, emissivities, temperatures, obs_west))
+    ## Expected values of the thermal radiation
+    ## - Observation from 30° east   : 19.89394442347112  [W/m²]
+    ## - Observation from just above : 18.01010231251351  [W/m²]
+    ## - Observation from 30° west   : 12.406927167050457 [W/m²]
+    @test AsteroidThermoPhysicalModels.thermal_radiation(shape, emissivities, temperatures, obs_east)  ≈ 19.89394442347112
+    @test AsteroidThermoPhysicalModels.thermal_radiation(shape, emissivities, temperatures, obs_above) ≈ 18.01010231251351
+    @test AsteroidThermoPhysicalModels.thermal_radiation(shape, emissivities, temperatures, obs_west)  ≈ 12.406927167050457
 end
