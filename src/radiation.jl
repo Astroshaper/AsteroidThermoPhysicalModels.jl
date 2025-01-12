@@ -59,16 +59,18 @@ function thermal_radiation(shape::ShapeModel, emissivities::AbstractVector{<:Rea
         ε = emissivities[i]
         T = temperatures[i]
         
-        ## Direction and distance from the facet to the observer
+        ## Direction and distance from the facet center to the observer
         d̂ = normalize(obs - c)
         d = norm(obs - c)
 
         cosθ = n̂ ⋅ d̂
-        cosθ < 0 && continue  # Ignore the facet if the observer is on the back side
+        cosθ < 0 && continue  # Ignore the facet if the observer is below the horizon.
 
-        ## TO DO: Ray-trace for each facet
+        ## TODO: Ray-trace for each facet
 
-        L += ε * σ_SB * T^4 * a * cosθ / (π * d^2)  # π, 2π, or 4π?
+        ## TODO: Consider the solid angle of the facet.
+        ## The coefficient may change from π to 2π or 4π.
+        L += ε * σ_SB * T^4 * a * cosθ / (π * d^2)
     end
     return L
 end
