@@ -1,6 +1,5 @@
-
 """
-    blackbody_radiation(λ, T) -> radiance
+    blackbody_radiance(λ, T) -> L_λ
 
 Accroding to Planck's law, calculate the spectral intensity of blackbody radiation
 at wavelength `λ` and temperature `T`.
@@ -10,14 +9,14 @@ at wavelength `λ` and temperature `T`.
 - `T` : Temperature [K]
 
 # Return
-- `radiance` : Spectral radiance [W/m²/m/steradian]
+- `L_λ` : Spectral radiance [W/m²/m/steradian]
 
 cf. https://github.com/JuliaAstro/Planck.jl/blob/main/src/Planck.jl
 """
-blackbody_radiation(λ, T) = 2 * h * c₀^2 / λ^5 / expm1(h * c₀ / (λ * k_B * T))
+blackbody_radiance(λ, T) = 2 * h * c₀^2 / λ^5 / expm1(h * c₀ / (λ * k_B * T))
 
 """
-    blackbody_radiation(T) -> radiance
+    blackbody_radiance(T) -> L
 
 According to Stefan-Boltzmann law, calculate the total radiance of blackbody radiation
 at temperature `T`, integrated over all wavelength.
@@ -26,13 +25,13 @@ at temperature `T`, integrated over all wavelength.
 - `T` : Temperature [K]
 
 # Return
-- `radiance` : Total radiance [W/m²]
+- `L` : Radiance [W/m²/steradian]
 """
-blackbody_radiation(T) = σ_SB * T^4
+blackbody_radiance(T) = σ_SB * T^4  ## TODO: テストを追加する
 
 
 """
-    thermal_radiation(shape, emissivities, temperatures, obs) -> L
+    thermal_radiance(shape, emissivities, temperatures, obs) -> L
 
 Calculate the radiance from the temperature distribution based on a shape model.
 
@@ -45,7 +44,7 @@ Calculate the radiance from the temperature distribution based on a shape model.
 # Return
 - `L` : Radiance [W/m²]
 """
-function thermal_radiation(shape::ShapeModel, emissivities::AbstractVector{<:Real}, temperatures::AbstractVector{<:Real}, obs::StaticVector{3, <:Real})
+function thermal_radiance(shape::ShapeModel, emissivities::AbstractVector{<:Real}, temperatures::AbstractVector{<:Real}, obs::StaticVector{3, <:Real})
     if length(temperatures) != length(shape.faces)
         throw(ArgumentError("Length of `temperatures` must be equal to the number of faces of the shape model."))
     end
@@ -74,4 +73,3 @@ function thermal_radiation(shape::ShapeModel, emissivities::AbstractVector{<:Rea
     end
     return L
 end
-

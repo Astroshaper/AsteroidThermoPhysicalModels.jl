@@ -10,7 +10,7 @@
     ## Calculate the intensity of blackbody radiation of at a wavelength of 6e-7 m and a temperature of 5850 K,
     ## and compare it with the value calculated by Planck.jl.
     ## cf. https://github.com/JuliaAstro/Planck.jl/blob/main/src/Planck.jl
-    @test AsteroidThermoPhysicalModels.blackbody_radiation(6e-7, 5850) ≈ 2.583616647617974e13
+    @test AsteroidThermoPhysicalModels.blackbody_radiance(6e-7, 5850) ≈ 2.583616647617974e13
 
     ##= Load shape model =##
     path_obj = joinpath("shape", "fractal_v2572_f5000.obj")
@@ -102,7 +102,7 @@
     ## - Observation from 30° east   : 19.89394442347112  [W/m²]
     ## - Observation from just above : 18.01010231251351  [W/m²]
     ## - Observation from 30° west   : 12.406927167050457 [W/m²]
-    @test AsteroidThermoPhysicalModels.thermal_radiation(shape, emissivities, temperatures, obs_east)  ≈ 19.89394442347112
-    @test AsteroidThermoPhysicalModels.thermal_radiation(shape, emissivities, temperatures, obs_above) ≈ 18.01010231251351
-    @test AsteroidThermoPhysicalModels.thermal_radiation(shape, emissivities, temperatures, obs_west)  ≈ 12.406927167050457
+    @test AsteroidThermoPhysicalModels.thermal_radiance(shape, emissivities, temperatures, obs_east)  ≈ 19.89394442347112
+    @test AsteroidThermoPhysicalModels.thermal_radiance(shape, emissivities, temperatures, obs_above) ≈ 18.01010231251351
+    @test AsteroidThermoPhysicalModels.thermal_radiance(shape, emissivities, temperatures, obs_west)  ≈ 12.406927167050457
 end
