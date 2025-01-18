@@ -13,7 +13,7 @@
     @test AsteroidThermoPhysicalModels.blackbody_radiance(6e-7, 5850) ≈ 2.583616647617974e13
 
     ## Check the value of Stefan-Boltzmann law at a temperature of 5850 K
-    @test AsteroidThermoPhysicalModels.blackbody_radiance(5850) ≈ σ_SB * 5850^4
+    @test AsteroidThermoPhysicalModels.blackbody_radiance(5850) ≈ AsteroidThermoPhysicalModels.σ_SB * 5850^4
 
     ######## Thermal radiance from the local terrain model ########
 
