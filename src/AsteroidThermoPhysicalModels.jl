@@ -31,7 +31,7 @@ include("TPM.jl")
 include("heat_conduction.jl")
 include("energy_flux.jl")
 include("non_grav.jl")
-include("radiation.jl")
+include("thermal_radiation.jl")
 export thermal_skin_depth, thermal_inertia, init_temperature!, run_TPM!
 
 include("roughness.jl")
