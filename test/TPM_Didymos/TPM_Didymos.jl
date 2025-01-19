@@ -108,8 +108,6 @@
 
     thermo_params1 = AsteroidThermoPhysicalModels.ThermoParams(P₁, l₁, Γ, R_vis, R_ir, ε, z_max, Δz, n_depth)
     thermo_params2 = AsteroidThermoPhysicalModels.ThermoParams(P₂, l₂, Γ, R_vis, R_ir, ε, z_max, Δz, n_depth)
-    AsteroidThermoPhysicalModels.broadcast_thermo_params!(thermo_params1, shape1)
-    AsteroidThermoPhysicalModels.broadcast_thermo_params!(thermo_params2, shape2)
 
     ##= Setting of TPM =##
     stpm1 = AsteroidThermoPhysicalModels.SingleTPM(shape1, thermo_params1;

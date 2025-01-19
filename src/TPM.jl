@@ -211,6 +211,8 @@ Construct a thermophysical model for a single asteroid (`SingleTPM`).
 """
 function SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
 
+    broadcast_thermo_params!(thermo_params, shape)
+
     n_depth = thermo_params.n_depth
     n_face = length(shape.faces)
 
@@ -221,7 +223,7 @@ function SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, SOLVER, B
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
 
-    SingleTPM(shape, thermo_params, flux, temperature, face_forces, force, torque, SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
+    return SingleTPM(shape, thermo_params, flux, temperature, face_forces, force, torque, SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
 end
 
 
@@ -249,7 +251,7 @@ end
 Construct a thermophysical model for a binary asteroid (`BinaryTPM`).
 """
 function BinaryTPM(pri, sec; MUTUAL_SHADOWING, MUTUAL_HEATING)
-    BinaryTPM(pri, sec, MUTUAL_SHADOWING, MUTUAL_HEATING)
+    return BinaryTPM(pri, sec, MUTUAL_SHADOWING, MUTUAL_HEATING)
 end
 
 

@@ -37,7 +37,6 @@
     Δz = z_max / (n_depth - 1)  # Depth step width [m]
 
     thermo_params = AsteroidThermoPhysicalModels.ThermoParams(P, l, Γ, R_vis, R_ir, ε, z_max, Δz, n_depth)
-    AsteroidThermoPhysicalModels.broadcast_thermo_params!(thermo_params, shape)
 
     ##= TPMs with different solvers =##
     SELF_SHADOWING = false
