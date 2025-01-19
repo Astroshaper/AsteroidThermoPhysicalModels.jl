@@ -116,17 +116,23 @@ Broadcast the thermophysical parameters to all faces if the values are uniform g
 - `n_face`        : Number of faces of the shape model
 """
 function broadcast_thermo_params!(thermo_params::ThermoParams, n_face::Int)
-    resize!(thermo_params.skindepth,       n_face)
-    resize!(thermo_params.inertia,         n_face)
-    resize!(thermo_params.reflectance_vis, n_face)
-    resize!(thermo_params.reflectance_ir,  n_face)
-    resize!(thermo_params.emissivity,      n_face)
+    if length(thermo_params.inertia) == 1
+        resize!(thermo_params.skindepth,       n_face)
+        resize!(thermo_params.inertia,         n_face)
+        resize!(thermo_params.reflectance_vis, n_face)
+        resize!(thermo_params.reflectance_ir,  n_face)
+        resize!(thermo_params.emissivity,      n_face)
 
-    thermo_params.skindepth[2:end]       .= thermo_params.skindepth[begin]
-    thermo_params.inertia[2:end]         .= thermo_params.inertia[begin]
-    thermo_params.reflectance_vis[2:end] .= thermo_params.reflectance_vis[begin]
-    thermo_params.reflectance_ir[2:end]  .= thermo_params.reflectance_ir[begin]
-    thermo_params.emissivity[2:end]      .= thermo_params.emissivity[begin]
+        thermo_params.skindepth[2:end]       .= thermo_params.skindepth[begin]
+        thermo_params.inertia[2:end]         .= thermo_params.inertia[begin]
+        thermo_params.reflectance_vis[2:end] .= thermo_params.reflectance_vis[begin]
+        thermo_params.reflectance_ir[2:end]  .= thermo_params.reflectance_ir[begin]
+        thermo_params.emissivity[2:end]      .= thermo_params.emissivity[begin]
+    elseif length(thermo_params.inertia) == n_face
+        # Do nothing
+    else
+        throw(ArgumentError("The length of the thermophysical parameters is invalid."))
+    end
 end
 
 
