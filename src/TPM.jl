@@ -214,6 +214,8 @@ function SingleAsteroidThermoPhysicalModel(shape, thermo_params; SELF_SHADOWING,
 
     broadcast_thermo_params!(thermo_params, shape)
 
+    broadcast_thermo_params!(thermo_params, shape)
+
     n_depth = thermo_params.n_depth
     n_face = length(shape.faces)
 
