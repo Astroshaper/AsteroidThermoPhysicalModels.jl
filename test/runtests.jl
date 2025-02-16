@@ -2,7 +2,6 @@ using AsteroidThermoPhysicalModels
 using Test
 using Aqua
 using SPICE
-using Git
 using Downloads
 using Statistics
 using LinearAlgebra
