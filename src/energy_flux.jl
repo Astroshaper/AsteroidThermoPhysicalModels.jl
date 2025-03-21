@@ -111,7 +111,8 @@ Update solar irradiation flux on every face of a shape model.
 """
 function update_flux_sun!(stpm::SingleTPM, r☉::StaticVector{3})
     r̂☉ = SVector{3}(normalize(r☉))
-    F☉ = SOLAR_CONST / SPICE.convrt(norm(r☉), "m", "au")^2
+    m2au = 6.6845871261251464e-12  # Meter to astronomical unit, same as `SPICE.convrt(1, "m", "au")`
+    F☉ = SOLAR_CONST / (norm(r☉) * m2au)^2
 
     update_flux_sun!(stpm, r̂☉, F☉)
 end

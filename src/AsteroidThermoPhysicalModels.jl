@@ -4,8 +4,6 @@ using LinearAlgebra
 using StaticArrays
 using Statistics
 
-import SPICE
-
 using DataFrames
 using ProgressMeter
 
