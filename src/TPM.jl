@@ -532,7 +532,6 @@ assuming radiative equilibrium with zero conductivity.
 subsolar_temperature(r☉, params::AbstractThermoParams) = subsolar_temperature(r☉, params.reflectance_vis, params.emissivity)
 
 function subsolar_temperature(r☉, R_vis, ε)
-    m2au = 6.6845871261251464e-12  # Meter to astronomical unit, same as `SPICE.convrt(1, "m", "au")`
     Φ = SOLAR_CONST / (norm(r☉) * m2au)^2  # Energy flux at the solar distance [W/m²]
     Tₛₛ = ((1 - R_vis) * Φ / (ε * σ_SB))^(1/4)
 

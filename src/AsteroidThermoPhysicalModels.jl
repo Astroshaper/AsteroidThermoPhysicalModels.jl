@@ -18,6 +18,8 @@ const c₀ = 299792458.0       # Speed of light [m/s]
 const σ_SB = 5.670374419e-8  # Stefan–Boltzmann constant [W/m^2/K^4]
 const h = 6.62607015e-34     # Planck constant [J⋅s]
 const k_B = 1.380649e-23     # Boltzmann constant [J/K]
+const au2m = 149597870700    # 1 astronomical unit is $au2m meters, same as `SPICE.convrt(1, "au", "m")`
+const m2au = 1/au2m  # 1 meter is $m2au astronomical unit, same as `SPICE.convrt(1, "m", "au")`
 
 include("obj.jl")
 include("shape.jl")
