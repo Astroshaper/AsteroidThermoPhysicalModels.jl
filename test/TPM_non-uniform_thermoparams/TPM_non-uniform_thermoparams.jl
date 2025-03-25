@@ -25,7 +25,7 @@
     ]
 
     for path_kernel in paths_kernel
-        url_kernel = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/spice_bundle/spice_kernels/$(path_kernel)"
+        url_kernel = "https://data.darts.isas.jaxa.jp/pub/hayabusa2/old/2020/spice_bundle/spice_kernels/$(path_kernel)"
         filepath = joinpath("kernel", path_kernel)
         mkpath(dirname(filepath))
         isfile(filepath) || Downloads.download(url_kernel, filepath)
