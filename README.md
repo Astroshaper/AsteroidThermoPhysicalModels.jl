@@ -33,6 +33,8 @@ Based on orbit, spin, and 3-D shape, you can calculate the distribution of the s
 - 1-dimensional heat diffusion in depth direction
 - Self-shadowing: Local shadows casted by topography
 - Self-heating: Re-absorption of scattered and radiated photons by surrounding facets. Only single scattering is implemented.
+- Mutual shadowing (eclipse) for a binary asteroid
+- Mutual heating for a binary asteroid
 
 ### Thermophysics to be implemented
 - Surface roughness (smaller than facets of the shape model)
