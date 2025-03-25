@@ -40,6 +40,7 @@ Based on orbit, spin, and 3-D shape, you can calculate the distribution of the s
 - Surface roughness (smaller than facets of the shape model)
 
 ### Example
-Distribution of surface temperature on asteroid Ryugu. The color map ranges from 200 to 400 K.
+Temperature distribution of asteroid Didymos and its satellite Dimorphos.
 
-![Thermophysics_Ryugu](https://user-images.githubusercontent.com/21192162/149468024-f403011f-b3d3-47ce-a69c-7daf78a40658.png)
+![TPM_Didymos](https://github.com/user-attachments/assets/a8fd7ad3-5722-4b9b-839d-5c8c2eba6cad)
+
