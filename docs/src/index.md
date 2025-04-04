@@ -4,12 +4,34 @@ A Julia-based toolkit for thermophysical modeling (TPM) of asteroids. It allows 
 
 ## Getting started
 
+### Installation
+
 To install `AsteroidThermoPhysicalModels.jl`, use Julia's package manager:
 
 ```julia
 using Pkg
 Pkg.add(url="https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl")
-Pkg.add(url="https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl#0.0.6")  # if you would like a specific version
+```
+
+If you'd like to install a specific version, you can just add the version number.
+
+```julia
+using Pkg
+Pkg.add(url="https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl#0.0.6") 
+```
+
+Then, load the package:
+```julia
+using AsteroidThermoPhysicalModels
+```
+
+### Update and test
+
+To update the package and run tests:
+
+```julia
+Pkg.update("AsteroidThermoPhysicalModels")
+Pkg.test("AsteroidThermoPhysicalModels")
 ```
 
 ## TPM workflow
