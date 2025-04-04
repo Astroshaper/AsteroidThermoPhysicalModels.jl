@@ -14,7 +14,7 @@ makedocs(;
         repolink="https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl"
     ),
     pages = [
-        "Home" => "index.md",
+        "Introduction" => "index.md",
         "Physical model" => "physical_model.md",
         "API" => "api.md",
     ],
