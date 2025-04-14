@@ -101,13 +101,16 @@ end
 
 
 """
-Abstract type of a thermophysical model
+Abstract type of an asteroid's thermophysical model.
+The `AbstractAsteroidTPM` type is an alias for `AbstractAsteroidThermoPhysicalModel`.
 """
-abstract type ThermoPhysicalModel end
+abstract type AbstractAsteroidThermoPhysicalModel end
+
+const AbstractAsteroidTPM = AbstractAsteroidThermoPhysicalModel  # Alias for the abstract type. `TPM` is a abbreviation for a "thermophysical model".
 
 
 """
-    struct SingleTPM <: ThermoPhysicalModel
+    struct SingleTPM <: AbstractAsteroidTPM
 
 # Fields
 - `shape`          : Shape model
@@ -132,7 +135,7 @@ abstract type ThermoPhysicalModel end
 # TODO:
 - roughness_maps   ::ShapeModel[]
 """
-struct SingleTPM{P<:AbstractThermoParams, S<:HeatConductionSolver, BU<:BoundaryCondition, BL<:BoundaryCondition} <: ThermoPhysicalModel
+struct SingleTPM{P<:AbstractThermoParams, S<:HeatConductionSolver, BU<:BoundaryCondition, BL<:BoundaryCondition} <: AbstractAsteroidTPM
     shape          ::ShapeModel
     thermo_params  ::P
 
@@ -184,7 +187,7 @@ end
 
 
 """
-    struct BinaryTPM{M1, M2} <: ThermoPhysicalModel
+    struct BinaryTPM{M1, M2} <: AbstractAsteroidTPM
 
 # Fields
 - `pri`              : TPM for the primary
@@ -192,7 +195,7 @@ end
 - `MUTUAL_SHADOWING` : Flag to consider mutual shadowing
 - `MUTUAL_HEATING`   : Flag to consider mutual heating
 """
-struct BinaryTPM{M1, M2} <: ThermoPhysicalModel
+struct BinaryTPM{M1, M2} <: AbstractAsteroidTPM
     pri              ::M1
     sec              ::M2
 
