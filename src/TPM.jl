@@ -113,7 +113,7 @@ Broadcast the thermophysical parameters to all faces if the values are uniform g
 
 # Arguments
 - `thermo_params` : Thermophysical parameters
-- `n_face`        : Number of faces of the shape model
+- `n_face`        : Number of faces on the shape model
 """
 function broadcast_thermo_params!(thermo_params::ThermoParams, n_face::Int)
     if length(thermo_params.inertia) == 1
