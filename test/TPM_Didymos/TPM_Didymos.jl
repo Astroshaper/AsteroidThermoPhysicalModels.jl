@@ -89,7 +89,7 @@
     n_face_shape1 = length(shape1.faces)  # Number of faces of Didymos
     n_face_shape2 = length(shape2.faces)  # Number of faces of Dimorphos
     
-    ##= Thermal properties of Didymos & Dimorphos [c.f. Michel+2016; Naidu+2020] =##
+    ##= Thermal properties of Didymos & Dimorphos [cf. Michel+2016; Naidu+2020] =##
     k  = 0.125   # Thermal conductivity [W/m/K]
     ρ  = 2170.0  # Density [kg/m³]
     Cₚ = 600.0   # Heat capacity [J/kg/K]
