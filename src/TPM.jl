@@ -154,6 +154,9 @@ struct SingleAsteroidThermoPhysicalModel{P<:AbstractThermoParams, S<:HeatConduct
 end
 
 
+const SingleAsteroidTPM = SingleAsteroidThermoPhysicalModel  # Alias for the struct. `TPM` is a abbreviation for a "thermophysical model".
+
+
 """
     SingleAsteroidThermoPhysicalModel(shape, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true) -> stpm
 
@@ -202,6 +205,9 @@ struct BinaryAsteroidThermoPhysicalModel{M1, M2} <: AbstractAsteroidTPM
     MUTUAL_SHADOWING ::Bool
     MUTUAL_HEATING   ::Bool
 end
+
+
+const BinaryAsteroidTPM = BinaryAsteroidThermoPhysicalModel
 
 
 """
@@ -267,6 +273,9 @@ struct SingleAsteroidThermoPhysicalModelResult
 end
 
 
+const SingleAsteroidTPMResult = SingleAsteroidThermoPhysicalModelResult  # Alias for the struct. `TPM` is a abbreviation for a "thermophysical model result".
+
+
 """
 Outer constructor of `SingleAsteroidThermoPhysicalModelResult`
 
@@ -323,6 +332,9 @@ struct BinaryAsteroidThermoPhysicalModelResult
     pri::SingleAsteroidThermoPhysicalModelResult
     sec::SingleAsteroidThermoPhysicalModelResult
 end
+
+
+const BinaryAsteroidTPMResult = BinaryAsteroidThermoPhysicalModelResult  # Alias for the struct. `TPM` is a abbreviation for a "thermophysical model result"
 
 
 """
