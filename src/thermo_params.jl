@@ -111,5 +111,5 @@ function ThermoParams(
     n_depth              ::Int
 )
 
-    return ThermoParams(thermal_conductivity, [density], [heat_capacity], [reflectance_vis], [reflectance_ir], [emissivity], z_max, Δz, n_depth)
+    return ThermoParams([thermal_conductivity], [density], [heat_capacity], [reflectance_vis], [reflectance_ir], [emissivity], z_max, Δz, n_depth)
 end
