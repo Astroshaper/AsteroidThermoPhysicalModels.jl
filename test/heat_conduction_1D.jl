@@ -63,21 +63,38 @@
         AsteroidThermoPhysicalModels.crank_nicolson!(stpm_CN, Δt)
     end
 
-    ##= Save data =##
-    # df = DataFrames.DataFrame(
-    #     x = xs,
-        # T_FE_100Δt = stpm_FE.temperature[:, 1, 101],  # t =  4 ms <- 0.4e-4 * 100
-        # T_BE_100Δt = stpm_BE.temperature[:, 1, 101],  # t =  4 ms
-        # T_CN_100Δt = stpm_CN.temperature[:, 1, 101],  # t =  4 ms
-        # T_FE_200Δt = stpm_FE.temperature[:, 1, 201],  # t =  8 ms
-        # T_BE_200Δt = stpm_BE.temperature[:, 1, 201],  # t =  8 ms
-        # T_CN_200Δt = stpm_CN.temperature[:, 1, 201],  # t =  8 ms
-        # T_FE_400Δt = stpm_FE.temperature[:, 1, 401],  # t = 16 ms
-        # T_BE_400Δt = stpm_BE.temperature[:, 1, 401],  # t = 16 ms
-        # T_CN_400Δt = stpm_CN.temperature[:, 1, 401],  # t = 16 ms
-        # T_FE_800Δt = stpm_FE.temperature[:, 1, 801],  # t = 32 ms
-        # T_BE_800Δt = stpm_BE.temperature[:, 1, 801],  # t = 32 ms
-        # T_CN_800Δt = stpm_CN.temperature[:, 1, 801],  # t = 32 ms
-    # )
-    # jldsave("heat_conduction_1D.jld2"; df)
+    """
+        relative_error(a, b) -> δ
+
+    Calculate the relative error between `a` and `b`.
+
+    # Arguments
+    - `a` : Scholar value
+    - `b` : Scholar value
+
+    # Return
+    - `δ` : Relative error between `a` and `b`
+    """
+    function relative_error(a::Real, b::Real)
+        eps = 1e-10  # Small values to avoid zero division
+        δ = abs(a - b) / (abs(b) + eps)
+
+        return δ
+    end
+
+    @testset "Solver comparison" begin
+        δ_max_FE_BE = maximum(relative_error.(stpm_FE.temperature, stpm_BE.temperature))
+        δ_max_FE_CN = maximum(relative_error.(stpm_FE.temperature, stpm_CN.temperature))
+        δ_max_BE_CN = maximum(relative_error.(stpm_BE.temperature, stpm_CN.temperature))
+        
+        ## Allowable relative error
+        @test δ_max_FE_BE < 0.01
+        @test δ_max_FE_CN < 0.01
+        @test δ_max_BE_CN < 0.01
+        
+        println("Maximum relative errors:")
+        println("    - Forward Euler  vs. Backward Euler: ", δ_max_FE_BE)
+        println("    - Forward Euler  vs. Crank-Nicolson: ", δ_max_FE_CN)
+        println("    - Backward Euler vs. Crank-Nicolson: ", δ_max_BE_CN)
+    end
 end
