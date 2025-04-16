@@ -107,6 +107,50 @@ abstract type ThermoPhysicalModel end
 
 
 """
+    broadcast_thermo_params!(thermo_params::ThermoParams, n_face::Int)
+
+Broadcast the thermophysical parameters to all faces if the values are uniform globally.
+
+# Arguments
+- `thermo_params` : Thermophysical parameters
+- `n_face`        : Number of faces on the shape model
+"""
+function broadcast_thermo_params!(thermo_params::ThermoParams, n_face::Int)
+    if length(thermo_params.thermal_conductivity) == 1
+        resize!(thermo_params.thermal_conductivity, n_face)
+        resize!(thermo_params.density,              n_face)
+        resize!(thermo_params.heat_capacity,        n_face)
+        resize!(thermo_params.reflectance_vis,      n_face)
+        resize!(thermo_params.reflectance_ir,       n_face)
+        resize!(thermo_params.emissivity,           n_face)
+
+        thermo_params.thermal_conductivity[2:end] .= thermo_params.thermal_conductivity[begin]
+        thermo_params.density[2:end]              .= thermo_params.density[begin]
+        thermo_params.heat_capacity[2:end]        .= thermo_params.heat_capacity[begin]
+        thermo_params.reflectance_vis[2:end]      .= thermo_params.reflectance_vis[begin]
+        thermo_params.reflectance_ir[2:end]       .= thermo_params.reflectance_ir[begin]
+        thermo_params.emissivity[2:end]           .= thermo_params.emissivity[begin]
+    elseif length(thermo_params.thermal_conductivity) == n_face
+        # Do nothing
+    else
+        throw(ArgumentError("The length of the thermophysical parameters is invalid."))
+    end
+end
+
+
+"""
+    broadcast_thermo_params!(thermo_params::ThermoParams, shape::ShapeModel)
+
+Broadcast the thermophysical parameters to all faces if the values are uniform globally.
+
+# Arguments
+- `thermo_params` : Thermophysical parameters
+- `shape`         : Shape model
+"""
+broadcast_thermo_params!(thermo_params::ThermoParams, shape::ShapeModel) = broadcast_thermo_params!(thermo_params, length(shape.faces))
+
+
+"""
     struct SingleTPM <: ThermoPhysicalModel
 
 # Fields
@@ -169,6 +213,8 @@ Construct a thermophysical model for a single asteroid (`SingleTPM`).
 """
 function SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
 
+    broadcast_thermo_params!(thermo_params, shape)
+
     n_depth = thermo_params.n_depth
     n_face = length(shape.faces)
 
@@ -179,7 +225,7 @@ function SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, SOLVER, B
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
 
-    SingleTPM(shape, thermo_params, flux, temperature, face_forces, force, torque, SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
+    return SingleTPM(shape, thermo_params, flux, temperature, face_forces, force, torque, SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
 end
 
 
@@ -207,7 +253,7 @@ end
 Construct a thermophysical model for a binary asteroid (`BinaryTPM`).
 """
 function BinaryTPM(pri, sec; MUTUAL_SHADOWING, MUTUAL_HEATING)
-    BinaryTPM(pri, sec, MUTUAL_SHADOWING, MUTUAL_HEATING)
+    return BinaryTPM(pri, sec, MUTUAL_SHADOWING, MUTUAL_HEATING)
 end
 
 
@@ -231,7 +277,6 @@ Output data format for `SingleTPM`
 - `times`  : Timesteps, given the same vector as `ephem.time` [s]
 - `E_in`   : Input energy per second on the whole surface [W]
 - `E_out`  : Output enegey per second from the whole surface [W]
-- `E_cons` : Energy conservation ratio [-], ratio of total energy going out to total energy coming in in the last rotation cycle
 - `force`  : Thermal force on the asteroid [N]
 - `torque` : Thermal torque on the asteroid [N ⋅ m]
 
@@ -252,7 +297,6 @@ struct SingleTPMResult
     times  ::Vector{Float64}
     E_in   ::Vector{Float64}
     E_out  ::Vector{Float64}
-    E_cons ::Vector{Float64}
     force  ::Vector{SVector{3, Float64}}
     torque ::Vector{SVector{3, Float64}}
 
@@ -280,7 +324,6 @@ function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64},
 
     E_in   = zeros(n_step)
     E_out  = zeros(n_step)
-    E_cons = fill(NaN, n_step)
     force  = zeros(SVector{3, Float64}, n_step)
     torque = zeros(SVector{3, Float64}, n_step)
 
@@ -295,7 +338,6 @@ function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64},
         ephem.time,
         E_in,
         E_out,
-        E_cons,
         force,
         torque,
         times_to_save,
@@ -356,18 +398,7 @@ function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, i_time::In
     result.force[i_time]  = stpm.force
     result.torque[i_time] = stpm.torque
 
-    P  = stpm.thermo_params.period # Rotation period
-    t  = result.times[i_time]      # Current time
-    t₀ = result.times[begin]   # Time at the beginning of the simulation
-
-    if t > t₀ + P  # Note that `E_cons` cannot be calculated during the first rotation
-        n_step_in_period = count(@. t - P ≤ result.times < t)  # Number of time steps within the last rotation
-
-        ΣE_in  = sum(result.E_in[n-1]  * (result.times[n] - result.times[n-1]) for n in (i_time - n_step_in_period + 1):i_time)
-        ΣE_out = sum(result.E_out[n-1] * (result.times[n] - result.times[n-1]) for n in (i_time - n_step_in_period + 1):i_time)
-
-        result.E_cons[i_time] = ΣE_out / ΣE_in
-    end
+    t  = result.times[i_time]  # Current time
 
     if t in result.times_to_save  # In the step of saving temperature
         i_time_save = findfirst(isequal(t), result.times_to_save)
@@ -422,7 +453,6 @@ function export_TPM_results(dirpath, result::SingleTPMResult)
     df.time     = result.times
     df.E_in     = result.E_in
     df.E_out    = result.E_out
-    df.E_cons   = result.E_cons
     df.force_x  = [f[1] for f in result.force]
     df.force_y  = [f[2] for f in result.force]
     df.force_z  = [f[3] for f in result.force]
@@ -657,7 +687,6 @@ function run_TPM!(stpm::SingleTPM, ephem, times_to_save::Vector{Float64}, face_I
         if show_progress
             showvalues = [
                 ("Timestep ", i_time),
-                ("E_cons   ", result.E_cons[i_time]),
             ]
             ProgressMeter.next!(p; showvalues)
         end
@@ -722,8 +751,6 @@ function run_TPM!(btpm::BinaryTPM, ephem, times_to_save::Vector{Float64}, face_I
         if show_progress
             showvalues = [
                 ("Timestep             ", i_time),
-                ("E_cons for primary   ", result.pri.E_cons[i_time]),
-                ("E_cons for secondary ", result.sec.E_cons[i_time]),
             ]
             ProgressMeter.next!(p; showvalues)
         end
@@ -736,4 +763,3 @@ function run_TPM!(btpm::BinaryTPM, ephem, times_to_save::Vector{Float64}, face_I
 
     return result
 end
-

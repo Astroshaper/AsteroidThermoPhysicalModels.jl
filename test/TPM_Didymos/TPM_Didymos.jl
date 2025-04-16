@@ -54,7 +54,7 @@
     P₂ = SPICE.convrt(11.93 , "hours", "seconds")  # Rotation period of Dimorphos
 
     n_cycle = 2  # Number of cycles to perform TPM
-    n_step_in_cycle = 72  # Number of time steps in one rotation period
+    n_step_in_cycle = 120  # Number of time steps in one rotation period
 
     et_begin = SPICE.utc2et("2027-02-18T00:00:00")  # Start time of TPM
     et_end   = et_begin + P₂ * n_cycle  # End time of TPM
@@ -89,14 +89,10 @@
     n_face_shape1 = length(shape1.faces)  # Number of faces of Didymos
     n_face_shape2 = length(shape2.faces)  # Number of faces of Dimorphos
     
-    ##= Thermal properties =##
+    ##= Thermal properties of Didymos & Dimorphos [cf. Michel+2016; Naidu+2020] =##
     k  = 0.125   # Thermal conductivity [W/m/K]
     ρ  = 2170.0  # Density [kg/m³]
     Cₚ = 600.0   # Heat capacity [J/kg/K]
-
-    l₁ = AsteroidThermoPhysicalModels.thermal_skin_depth(P₁, k, ρ, Cₚ)  # Thermal skin depth for Didymos
-    l₂ = AsteroidThermoPhysicalModels.thermal_skin_depth(P₂, k, ρ, Cₚ)  # Thermal skin depth for Dimorphos
-    Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)          # Thermal inertia for Didymos and Dimorphos [tiu]
 
     R_vis = 0.059  # Reflectance in visible light [-]
     R_ir  = 0.0    # Reflectance in thermal infrared [-]
@@ -106,29 +102,8 @@
     n_depth = 41  # Number of depth steps
     Δz = z_max / (n_depth - 1)  # Depth step width [m]
 
-    thermo_params1 = AsteroidThermoPhysicalModels.ThermoParams(  # [Michel+2016; Naidu+2020]
-        P₁,
-        fill(l₁,    n_face_shape1),
-        fill(Γ,     n_face_shape1),
-        fill(R_vis, n_face_shape1),
-        fill(R_ir,  n_face_shape1),
-        fill(ε,     n_face_shape1),
-        z_max,
-        Δz,
-        n_depth,
-    )
-
-    thermo_params2 = AsteroidThermoPhysicalModels.ThermoParams(  # [Michel+2016; Naidu+2020]
-        P₂,
-        fill(l₂,    n_face_shape2),
-        fill(Γ,     n_face_shape2),
-        fill(R_vis, n_face_shape2),
-        fill(R_ir,  n_face_shape2),
-        fill(ε,     n_face_shape2),
-        z_max,
-        Δz,
-        n_depth,
-    )
+    thermo_params1 = AsteroidThermoPhysicalModels.ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+    thermo_params2 = AsteroidThermoPhysicalModels.ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 
     ##= Setting of TPM =##
     stpm1 = AsteroidThermoPhysicalModels.SingleTPM(shape1, thermo_params1;

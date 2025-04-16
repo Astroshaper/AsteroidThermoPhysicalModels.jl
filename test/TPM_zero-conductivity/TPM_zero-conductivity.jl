@@ -35,8 +35,9 @@
     n_face = length(shape.faces)  # Number of faces
 
     ##= Thermal properties: zero-conductivity case =##
-    l = zeros(n_face)  # Thermal skin depth [m]
-    Γ = zeros(n_face)  # Thermal inertia [J m⁻² K⁻¹ s⁻¹/2]
+    k  = 0.0     # Thermal conductivity [W/m/K]
+    ρ  = 1270.0  # Density [kg/m³]
+    Cₚ = 600.0   # Heat capacity [J/kg/K]
 
     R_vis = 0.1  # Reflectance in visible light [-]
     R_ir  = 0.0  # Reflectance in thermal infrared [-]
@@ -46,17 +47,7 @@
     n_depth = 41  # Number of depth steps
     Δz = z_max / (n_depth - 1)  # Depth step width [m]
 
-    thermo_params = AsteroidThermoPhysicalModels.ThermoParams(
-        P,
-        l,
-        Γ,
-        fill(R_vis, n_face),  
-        fill(R_ir,  n_face),
-        fill(ε,     n_face),
-        z_max,
-        Δz,
-        n_depth
-    )
+    thermo_params = AsteroidThermoPhysicalModels.ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 
     ##= Setting of TPM =##
     stpm = AsteroidThermoPhysicalModels.SingleTPM(shape, thermo_params;
