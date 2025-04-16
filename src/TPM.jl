@@ -647,7 +647,6 @@ function run_TPM!(stpm::SingleAsteroidThermoPhysicalModel, ephem, times_to_save:
         if show_progress
             showvalues = [
                 ("Timestep ", i_time),
-                ("E_cons   ", result.E_cons[i_time]),
             ]
             ProgressMeter.next!(p; showvalues)
         end
@@ -712,8 +711,6 @@ function run_TPM!(btpm::BinaryAsteroidThermoPhysicalModel, ephem, times_to_save:
         if show_progress
             showvalues = [
                 ("Timestep             ", i_time),
-                ("E_cons for primary   ", result.pri.E_cons[i_time]),
-                ("E_cons for secondary ", result.sec.E_cons[i_time]),
             ]
             ProgressMeter.next!(p; showvalues)
         end
