@@ -687,7 +687,6 @@ function run_TPM!(stpm::SingleTPM, ephem, times_to_save::Vector{Float64}, face_I
         if show_progress
             showvalues = [
                 ("Timestep ", i_time),
-                ("E_cons   ", result.E_cons[i_time]),
             ]
             ProgressMeter.next!(p; showvalues)
         end
@@ -752,8 +751,6 @@ function run_TPM!(btpm::BinaryTPM, ephem, times_to_save::Vector{Float64}, face_I
         if show_progress
             showvalues = [
                 ("Timestep             ", i_time),
-                ("E_cons for primary   ", result.pri.E_cons[i_time]),
-                ("E_cons for secondary ", result.sec.E_cons[i_time]),
             ]
             ProgressMeter.next!(p; showvalues)
         end
