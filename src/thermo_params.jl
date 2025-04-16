@@ -33,6 +33,20 @@ thermal_skin_depth(P, k, ρ, Cₚ) = @. √(4π * P * k / (ρ * Cₚ))
 thermal_inertia(k, ρ, Cₚ) = @. √(k * ρ * Cₚ)
 
 
+"""
+    thermal_diffusivity(k, ρ, Cp) -> α
+
+# Arguments
+- `k`  : Thermal conductivity [W/m/K]
+- `ρ`  : Material density [kg/m³]
+- `Cₚ` : Heat capacity [J/kg/K]
+
+# Return
+- `α` : Thermal diffusivity [m²/s]
+"""
+thermal_diffusivity(k, ρ, Cₚ) = @. k / (ρ * Cₚ)
+
+
 # ****************************************************************
 #               Struct for thermophysical parameters
 # ****************************************************************

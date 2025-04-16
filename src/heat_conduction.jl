@@ -85,7 +85,8 @@ function forward_euler!(stpm::SingleAsteroidTPM, Δt)
             Cₚ = stpm.thermo_params.heat_capacity[i_face]
             Δz = stpm.thermo_params.Δz
 
-            λ = k * Δt / (ρ * Cₚ * Δz^2)
+            α = thermal_diffusivity(k, ρ, Cₚ)  # Thermal diffusivity [m²/s]
+            λ = α * Δt / Δz^2
             λ ≥ 0.5 && error("The forward Euler method is unstable because λ = $λ. This should be less than 0.5.")
 
             for i_depth in 2:(n_depth-1)
