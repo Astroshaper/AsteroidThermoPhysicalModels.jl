@@ -88,14 +88,14 @@ function forward_euler!(stpm::SingleTPM, Δt)
             λ ≥ 0.5 && error("The forward Euler method is unstable because λ = $λ. This should be less than 0.5.")
 
             for i_depth in 2:(n_depth-1)
-                stpm.SOLVER.T[i_depth] = (1-2λ)*T[i_depth, i_face] + λ*(T[i_depth+1, i_face] + T[i_depth-1, i_face])  # Predict temperature at next time step
+                stpm.SOLVER.x[i_depth] = (1-2λ)*T[i_depth, i_face] + λ*(T[i_depth+1, i_face] + T[i_depth-1, i_face])  # Predict temperature at next time step
             end
 
             ## Apply boundary conditions
             update_upper_temperature!(stpm, i_face)
             update_lower_temperature!(stpm)
 
-            T[:, i_face] .= stpm.SOLVER.T  # Copy temperature at next time step
+            T[:, i_face] .= stpm.SOLVER.x  # Copy temperature at next time step
         end
     end
 end
@@ -323,13 +323,13 @@ function update_upper_temperature!(stpm::SingleTPM, i::Integer)
     
         F_sun, F_scat, F_rad = stpm.flux[i, :]
         F_total = flux_total(R_vis, R_ir, F_sun, F_scat, F_rad)
-        update_surface_temperature!(stpm.SOLVER.T, F_total, P, l, Γ, ε, Δz)
+        update_surface_temperature!(stpm.SOLVER.x, F_total, P, l, Γ, ε, Δz)
     #### Insulation boundary condition ####
     elseif stpm.BC_UPPER isa InsulationBoundaryCondition
-        stpm.SOLVER.T[begin] = stpm.SOLVER.T[begin+1]
+        stpm.SOLVER.x[begin] = stpm.SOLVER.x[begin+1]
     #### Isothermal boundary condition ####
     elseif stpm.BC_UPPER isa IsothermalBoundaryCondition
-        stpm.SOLVER.T[begin] = stpm.BC_UPPER.T_iso
+        stpm.SOLVER.x[begin] = stpm.BC_UPPER.T_iso
     else
         error("The given upper boundary condition is not implemented.")
     end
@@ -382,10 +382,10 @@ function update_lower_temperature!(stpm::SingleTPM)
 
     #### Insulation boundary condition ####
     if stpm.BC_LOWER isa InsulationBoundaryCondition
-        stpm.SOLVER.T[end] = stpm.SOLVER.T[end-1]
+        stpm.SOLVER.x[end] = stpm.SOLVER.x[end-1]
     #### Isothermal boundary condition ####
     elseif stpm.BC_LOWER isa IsothermalBoundaryCondition
-        stpm.SOLVER.T[end] = stpm.BC_LOWER.T_iso
+        stpm.SOLVER.x[end] = stpm.BC_LOWER.T_iso
     else
         error("The lower boundary condition is not implemented.")
     end

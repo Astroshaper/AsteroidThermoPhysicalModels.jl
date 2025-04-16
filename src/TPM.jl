@@ -17,7 +17,7 @@ Type of the forward Euler method:
 The `ForwardEulerSolver` type includes a vector for the temperature at the next time step.
 """
 struct ForwardEulerSolver <: HeatConductionSolver
-    T::Vector{Float64}
+    x::Vector{Float64}  # Temperature vector for the next time step
 end
 
 ForwardEulerSolver(thermo_params::AbstractThermoParams) = ForwardEulerSolver(thermo_params.n_depth)
@@ -736,4 +736,3 @@ function run_TPM!(btpm::BinaryTPM, ephem, times_to_save::Vector{Float64}, face_I
 
     return result
 end
-
