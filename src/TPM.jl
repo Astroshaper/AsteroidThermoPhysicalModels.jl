@@ -106,11 +106,9 @@ The `AbstractAsteroidTPM` type is an alias for `AbstractAsteroidThermoPhysicalMo
 """
 abstract type AbstractAsteroidThermoPhysicalModel end
 
-const AbstractAsteroidTPM = AbstractAsteroidThermoPhysicalModel  # Alias for the abstract type. `TPM` is a abbreviation for a "thermophysical model".
-
 
 """
-    struct SingleAsteroidThermoPhysicalModel <: AbstractAsteroidTPM
+    struct SingleAsteroidThermoPhysicalModel <: AbstractAsteroidThermoPhysicalModel
 
 # Fields
 - `shape`          : Shape model
@@ -135,7 +133,7 @@ const AbstractAsteroidTPM = AbstractAsteroidThermoPhysicalModel  # Alias for the
 # TODO:
 - roughness_maps   ::ShapeModel[]
 """
-struct SingleAsteroidThermoPhysicalModel{P<:AbstractThermoParams, S<:HeatConductionSolver, BU<:BoundaryCondition, BL<:BoundaryCondition} <: AbstractAsteroidTPM
+struct SingleAsteroidThermoPhysicalModel{P<:AbstractThermoParams, S<:HeatConductionSolver, BU<:BoundaryCondition, BL<:BoundaryCondition} <: AbstractAsteroidThermoPhysicalModel
     shape          ::ShapeModel
     thermo_params  ::P
 
@@ -152,9 +150,6 @@ struct SingleAsteroidThermoPhysicalModel{P<:AbstractThermoParams, S<:HeatConduct
     BC_UPPER       ::BU
     BC_LOWER       ::BL
 end
-
-
-const SingleAsteroidTPM = SingleAsteroidThermoPhysicalModel  # Alias for the struct. `TPM` is a abbreviation for a "thermophysical model".
 
 
 """
@@ -190,7 +185,7 @@ end
 
 
 """
-    struct BinaryAsteroidThermoPhysicalModel{M1, M2} <: AbstractAsteroidTPM
+    struct BinaryAsteroidThermoPhysicalModel{M1, M2} <: AbstractAsteroidThermoPhysicalModel
 
 # Fields
 - `pri`              : TPM for the primary
@@ -198,16 +193,13 @@ end
 - `MUTUAL_SHADOWING` : Flag to consider mutual shadowing
 - `MUTUAL_HEATING`   : Flag to consider mutual heating
 """
-struct BinaryAsteroidThermoPhysicalModel{M1, M2} <: AbstractAsteroidTPM
+struct BinaryAsteroidThermoPhysicalModel{M1, M2} <: AbstractAsteroidThermoPhysicalModel
     pri              ::M1
     sec              ::M2
 
     MUTUAL_SHADOWING ::Bool
     MUTUAL_HEATING   ::Bool
 end
-
-
-const BinaryAsteroidTPM = BinaryAsteroidThermoPhysicalModel
 
 
 """
