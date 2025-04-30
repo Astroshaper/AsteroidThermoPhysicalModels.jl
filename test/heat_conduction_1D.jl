@@ -40,8 +40,8 @@
     BC_UPPER       = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(0)
     BC_LOWER       = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(0)
 
-    stpm_FE = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.ForwardEulerSolver(thermo_params))
-    stpm_BE = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.BackwardEulerSolver(thermo_params))
+    stpm_FE = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.ExplicitEulerSolver(thermo_params))
+    stpm_BE = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.ImplicitEulerSolver(thermo_params))
     stpm_CN = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.CrankNicolsonSolver(thermo_params))
 
     ##= Initial temperature =##
@@ -58,8 +58,8 @@
         i_time == length(et_range) && break  # Stop to update the temperature at the final step
         Δt = ephem.time[i_time+1] - ephem.time[i_time]
         
-        AsteroidThermoPhysicalModels.forward_euler!(stpm_FE, Δt)
-        AsteroidThermoPhysicalModels.backward_euler!(stpm_BE, Δt)
+        AsteroidThermoPhysicalModels.explicit_euler!(stpm_FE, Δt)
+        AsteroidThermoPhysicalModels.implicit_euler!(stpm_BE, Δt)
         AsteroidThermoPhysicalModels.crank_nicolson!(stpm_CN, Δt)
     end
 
@@ -93,8 +93,8 @@
         @test δ_max_BE_CN < 0.01
         
         println("Maximum relative errors:")
-        println("    - Forward Euler  vs. Backward Euler: ", δ_max_FE_BE)
-        println("    - Forward Euler  vs. Crank-Nicolson: ", δ_max_FE_CN)
-        println("    - Backward Euler vs. Crank-Nicolson: ", δ_max_BE_CN)
+        println("    - Explicit Euler vs. Implicit Euler : ", δ_max_FE_BE)
+        println("    - Explicit Euler vs. Crank-Nicolson : ", δ_max_FE_CN)
+        println("    - Implicit Euler vs. Crank-Nicolson : ", δ_max_BE_CN)
     end
 end
