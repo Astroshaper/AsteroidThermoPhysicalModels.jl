@@ -646,7 +646,8 @@ function run_TPM!(stpm::SingleAsteroidThermoPhysicalModel, ephem, times_to_save:
         ## Update the progress meter
         if show_progress
             showvalues = [
-                ("Timestep ", i_time),
+                ("Timestep     ", i_time),
+                ("E_out / E_in ", result.E_out[i_time] / result.E_in[i_time]),  # Energy output/input ratio at the time step
             ]
             ProgressMeter.next!(p; showvalues)
         end
@@ -710,7 +711,9 @@ function run_TPM!(btpm::BinaryAsteroidThermoPhysicalModel, ephem, times_to_save:
         ## Update the progress meter
         if show_progress
             showvalues = [
-                ("Timestep             ", i_time),
+                ("Timestep                   ", i_time),
+                ("E_out / E_in for primary   ", result.pri.E_out[i_time] / result.pri.E_in[i_time]),  # Energy output/input ratio on the primary at the time step
+                ("E_out / E_in for secondary ", result.sec.E_out[i_time] / result.sec.E_in[i_time]),  # Energy output/input ratio on the secondary at the time step
             ]
             ProgressMeter.next!(p; showvalues)
         end
