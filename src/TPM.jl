@@ -580,49 +580,6 @@ end
 # ****************************************************************
 
 
-# """
-# """
-# function run_TPM!(shape::ShapeModel, orbit::OrbitalElements, spin::SpinParams, thermo_params::AbstractThermoParams, savepath="tmp.jld2")
-#     @unpack P, Δt, t_begin, t_end = thermo_params
-    
-#     init_temperatures_zero!(shape, thermo_params)
-
-#     ts = (t_begin:Δt:t_end) * P
-#     timestamp = prep_timestamp(ts)
-#     # surface_temperature_table = zeros(length(shape.faces), Int(1/thermo_params.Δt)-1)
-
-#     for (i, t) in enumerate(ts)
-#         update_orbit!(orbit, t)
-#         update_spin!(spin, t)
-            
-#         r̂☉ = normalize(orbit.r) * -1  # Shift the origin from the sun to the body
-#         r̂☉ = orbit_to_body(r̂☉, spin)
-        
-#         update_flux_sun!(shape, orbit.F☉, r̂☉)
-#         update_flux_scat_single!(shape, thermo_params)
-#         update_flux_rad_single!(shape, thermo_params)
-        
-#         update_force!(shape, thermo_params)
-#         sum_force_torque!(shape)
-        
-#         f = SVector{3}(shape.force)   # Body-fixed frame
-#         τ = SVector{3}(shape.torque)  # Body-fixed frame
-
-#         f = body_to_orbit(f, spin)  # Orbital plane frame
-#         τ = body_to_orbit(τ, spin)  # Orbital plane frame
-
-#         E_in, E_out, E_cons = energy_io(shape, thermo_params)
-
-#         save_timestamp!(timestamp, i, orbit.u, orbit.ν, spin.ϕ, f..., τ..., E_in, E_out, E_cons)
-        
-#         update_temperatures!(shape, thermo_params)
-#     end
-#     mean_energy_cons_frac!(timestamp, spin)
-#     jldsave(savepath; shape, orbit, spin, thermo_params, timestamp)
-
-#     timestamp
-# end
-
 """
     run_TPM!(stpm::SingleAsteroidThermoPhysicalModel, ephem, savepath)
 
