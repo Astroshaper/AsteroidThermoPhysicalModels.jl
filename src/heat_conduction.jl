@@ -115,9 +115,9 @@ In this function, the heat conduction equation is non-dimensionalized in time an
 - `Δt`   : Time step [sec]
 """
 function backward_euler!(stpm::SingleAsteroidTPM, Δt)
-    # T = stpm.temperature
-    # n_depth = size(T, 1)
-    # n_face = size(T, 2)
+    T = stpm.temperature
+    n_depth = size(T, 1)
+    n_face = size(T, 2)
 
     ## Zero-conductivity (thermal inertia) case
     if iszero(stpm.thermo_params.inertia)
@@ -193,9 +193,9 @@ In this function, the heat conduction equation is non-dimensionalized in time an
 - `Δt`   : Time step [sec]
 """
 function crank_nicolson!(stpm::SingleAsteroidTPM, Δt)
-    # T = stpm.temperature
-    # n_depth = size(T, 1)
-    # n_face = size(T, 2)
+    T = stpm.temperature
+    n_depth = size(T, 1)
+    n_face = size(T, 2)
 
     ## Zero-conductivity (thermal inertia) case
     if iszero(stpm.thermo_params.inertia)
