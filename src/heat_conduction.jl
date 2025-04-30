@@ -5,7 +5,7 @@
 # ****************************************************************
 
 """
-    update_temperature!(stpm::SingleTPM, Δt)
+    update_temperature!(stpm::SingleAsteroidTPM, Δt)
 
 Calculate the temperature for the next time step based on 1D heat conduction equation.
 If the thermal inertia (conductivity) is zero, omit to solve the heat conduction equation.
@@ -15,7 +15,7 @@ The surface termperature is determined only by radiative equilibrium.
 - `stpm` : Thermophysical model for a single asteroid
 - `Δt`   : Time step [sec]
 """
-function update_temperature!(stpm::SingleTPM, Δt)
+function update_temperature!(stpm::SingleAsteroidTPM, Δt)
     if stpm.SOLVER isa ForwardEulerSolver
         forward_euler!(stpm, Δt)
     elseif stpm.SOLVER isa BackwardEulerSolver
@@ -29,7 +29,7 @@ end
 
 
 """
-    update_temperature!(btpm::BinaryTPM, Δt)
+    update_temperature!(btpm::BinaryAsteroidTPM, Δt)
 
 Calculate the temperature for the next time step based on 1D heat conductivity equation.
 
@@ -37,7 +37,7 @@ Calculate the temperature for the next time step based on 1D heat conductivity e
 - `btpm` : Thermophysical model for a binary asteroid
 - `Δt`   : Time step [sec]
 """
-function update_temperature!(btpm::BinaryTPM, Δt)
+function update_temperature!(btpm::BinaryAsteroidTPM, Δt)
     update_temperature!(btpm.pri, Δt)
     update_temperature!(btpm.sec, Δt)
 end
@@ -48,7 +48,7 @@ end
 
 
 """
-    forward_euler!(stpm::SingleTPM, Δt)
+    forward_euler!(stpm::SingleAsteroidTPM, Δt)
 
 Predict the temperature at the next time step by the forward Euler method.
 - Explicit in time
@@ -59,7 +59,7 @@ In this function, the heat conduction equation is non-dimensionalized in time an
 - `stpm` : Thermophysical model for a single asteroid
 - `Δt`   : Time step [sec]
 """
-function forward_euler!(stpm::SingleTPM, Δt)
+function forward_euler!(stpm::SingleAsteroidTPM, Δt)
     T = stpm.temperature
     n_depth = size(T, 1)
     n_face = size(T, 2)
@@ -102,7 +102,7 @@ end
 
 
 """
-    backward_euler!(stpm::SingleTPM, Δt)
+    backward_euler!(stpm::SingleAsteroidTPM, Δt)
 
 Predict the temperature at the next time step by the backward Euler method.
 - Implicit in time (Unconditionally stable in the heat conduction equation)
@@ -110,7 +110,7 @@ Predict the temperature at the next time step by the backward Euler method.
 - Second order in space
 In this function, the heat conduction equation is non-dimensionalized in time and length.
 """
-function backward_euler!(stpm::SingleTPM, Δt)
+function backward_euler!(stpm::SingleAsteroidTPM, Δt)
     # T = stpm.temperature
     # n_depth = size(T, 1)
     # n_face = size(T, 2)
@@ -143,7 +143,7 @@ end
 
 
 """
-    crank_nicolson!(stpm::SingleTPM, Δt)
+    crank_nicolson!(stpm::SingleAsteroidTPM, Δt)
 
 Predict the temperature at the next time step by the Crank-Nicolson method.
 - Implicit in time (Unconditionally stable in the heat conduction equation)
@@ -151,7 +151,7 @@ Predict the temperature at the next time step by the Crank-Nicolson method.
 - Second order in space
 In this function, the heat conduction equation is non-dimensionalized in time and length.
 """
-function crank_nicolson!(stpm::SingleTPM, Δt)
+function crank_nicolson!(stpm::SingleAsteroidTPM, Δt)
     # T = stpm.temperature
     # n_depth = size(T, 1)
     # n_face = size(T, 2)
@@ -192,7 +192,7 @@ end
 
 """
     tridiagonal_matrix_algorithm!(a, b, c, d, x)
-    tridiagonal_matrix_algorithm!(stpm::SingleTPM)
+    tridiagonal_matrix_algorithm!(stpm::SingleAsteroidThermoPhysicalModel)
 
 Tridiagonal matrix algorithm to solve the heat conduction equation by the backward Euler and Crank-Nicolson methods.
 
@@ -222,7 +222,7 @@ function tridiagonal_matrix_algorithm!(a, b, c, d, x)
     end
 end
 
-tridiagonal_matrix_algorithm!(stpm::SingleTPM) = tridiagonal_matrix_algorithm!(stpm.SOLVER.a, stpm.SOLVER.b, stpm.SOLVER.c, stpm.SOLVER.d, stpm.SOLVER.x)
+tridiagonal_matrix_algorithm!(stpm::SingleAsteroidTPM) = tridiagonal_matrix_algorithm!(stpm.SOLVER.a, stpm.SOLVER.b, stpm.SOLVER.c, stpm.SOLVER.d, stpm.SOLVER.x)
 
 
 # ****************************************************************
@@ -230,7 +230,7 @@ tridiagonal_matrix_algorithm!(stpm::SingleTPM) = tridiagonal_matrix_algorithm!(s
 # ****************************************************************
 
 """
-    update_upper_temperature!(stpm::SingleTPM, i::Integer)
+    update_upper_temperature!(stpm::SingleAsteroidTPM, i::Integer)
 
 Update the temperature of the upper surface based on the boundary condition `stpm.BC_UPPER`.
 
@@ -238,7 +238,7 @@ Update the temperature of the upper surface based on the boundary condition `stp
 - `stpm` : Thermophysical model for a single asteroid
 - `i`    : Index of the face of the shape model
 """
-function update_upper_temperature!(stpm::SingleTPM, i::Integer)
+function update_upper_temperature!(stpm::SingleAsteroidTPM, i::Integer)
 
     #### Radiation boundary condition ####
     if stpm.BC_UPPER isa RadiationBoundaryCondition
@@ -307,7 +307,7 @@ Update the temperature of the bottom surface based on the boundary condition `st
 # Arguments
 - `stpm`       : Thermophysical model for a single asteroid
 """
-function update_lower_temperature!(stpm::SingleTPM)
+function update_lower_temperature!(stpm::SingleAsteroidTPM)
 
     #### Insulation boundary condition ####
     if stpm.BC_LOWER isa InsulationBoundaryCondition
@@ -319,4 +319,3 @@ function update_lower_temperature!(stpm::SingleTPM)
         error("The lower boundary condition is not implemented.")
     end
 end
-

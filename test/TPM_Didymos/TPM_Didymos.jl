@@ -110,7 +110,7 @@
     thermo_params2 = AsteroidThermoPhysicalModels.ThermoParams(P₂, l₂, Γ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 
     ##= Setting of TPM =##
-    stpm1 = AsteroidThermoPhysicalModels.SingleTPM(shape1, thermo_params1;
+    stpm1 = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape1, thermo_params1;
         SELF_SHADOWING = true,
         SELF_HEATING   = true,
         SOLVER         = AsteroidThermoPhysicalModels.ForwardEulerSolver(thermo_params1),
@@ -118,7 +118,7 @@
         BC_LOWER       = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
     )
 
-    stpm2 = AsteroidThermoPhysicalModels.SingleTPM(shape2, thermo_params2;
+    stpm2 = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape2, thermo_params2;
         SELF_SHADOWING = true,
         SELF_HEATING   = true,
         SOLVER         = AsteroidThermoPhysicalModels.ForwardEulerSolver(thermo_params2),
@@ -126,7 +126,7 @@
         BC_LOWER       = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
     )
 
-    btpm  = AsteroidThermoPhysicalModels.BinaryTPM(stpm1, stpm2; MUTUAL_SHADOWING=true, MUTUAL_HEATING=true)
+    btpm  = AsteroidThermoPhysicalModels.BinaryAsteroidTPM(stpm1, stpm2; MUTUAL_SHADOWING=true, MUTUAL_HEATING=true)
     AsteroidThermoPhysicalModels.init_temperature!(btpm, 200.)
     
     ##= Run TPM =##

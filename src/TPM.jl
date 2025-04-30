@@ -101,9 +101,10 @@ end
 
 
 """
-Abstract type of a thermophysical model
+Abstract type of an asteroid's thermophysical model.
+The `AbstractAsteroidTPM` type is an alias for `AbstractAsteroidThermoPhysicalModel`.
 """
-abstract type ThermoPhysicalModel end
+abstract type AbstractAsteroidThermoPhysicalModel end
 
 
 """
@@ -149,7 +150,7 @@ broadcast_thermo_params!(thermo_params::ThermoParams, shape::ShapeModel) = broad
 
 
 """
-    struct SingleTPM <: ThermoPhysicalModel
+    struct SingleAsteroidThermoPhysicalModel <: AbstractAsteroidThermoPhysicalModel
 
 # Fields
 - `shape`          : Shape model
@@ -174,7 +175,7 @@ broadcast_thermo_params!(thermo_params::ThermoParams, shape::ShapeModel) = broad
 # TODO:
 - roughness_maps   ::ShapeModel[]
 """
-struct SingleTPM{P<:AbstractThermoParams, S<:HeatConductionSolver, BU<:BoundaryCondition, BL<:BoundaryCondition} <: ThermoPhysicalModel
+struct SingleAsteroidThermoPhysicalModel{P<:AbstractThermoParams, S<:HeatConductionSolver, BU<:BoundaryCondition, BL<:BoundaryCondition} <: AbstractAsteroidThermoPhysicalModel
     shape          ::ShapeModel
     thermo_params  ::P
 
@@ -194,9 +195,9 @@ end
 
 
 """
-    SingleTPM(shape, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true) -> stpm
+    SingleAsteroidThermoPhysicalModel(shape, thermo_params; SELF_SHADOWING=true, SELF_HEATING=true) -> stpm
 
-Construct a thermophysical model for a single asteroid (`SingleTPM`).
+Construct a thermophysical model for a single asteroid (`SingleAsteroidThermoPhysicalModel`).
 
 # Arguments
 - `shape`          : Shape model
@@ -209,7 +210,7 @@ Construct a thermophysical model for a single asteroid (`SingleTPM`).
 - `BC_UPPER`       : Boundary condition at the upper boundary
 - `BC_LOWER`       : Boundary condition at the lower boundary
 """
-function SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
+function SingleAsteroidThermoPhysicalModel(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
 
     broadcast_thermo_params!(thermo_params, shape)
 
@@ -223,12 +224,12 @@ function SingleTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, SOLVER, B
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
 
-    return SingleTPM(shape, thermo_params, flux, temperature, face_forces, force, torque, SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
+    SingleAsteroidThermoPhysicalModel(shape, thermo_params, flux, temperature, face_forces, force, torque, SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
 end
 
 
 """
-    struct BinaryTPM{M1, M2} <: ThermoPhysicalModel
+    struct BinaryAsteroidThermoPhysicalModel{M1, M2} <: AbstractAsteroidThermoPhysicalModel
 
 # Fields
 - `pri`              : TPM for the primary
@@ -236,7 +237,7 @@ end
 - `MUTUAL_SHADOWING` : Flag to consider mutual shadowing
 - `MUTUAL_HEATING`   : Flag to consider mutual heating
 """
-struct BinaryTPM{M1, M2} <: ThermoPhysicalModel
+struct BinaryAsteroidThermoPhysicalModel{M1, M2} <: AbstractAsteroidThermoPhysicalModel
     pri              ::M1
     sec              ::M2
 
@@ -246,19 +247,19 @@ end
 
 
 """
-    BinaryTPM(pri, sec; MUTUAL_SHADOWING=true, MUTUAL_HEATING=true) -> btpm
+    BinaryAsteroidThermoPhysicalModel(pri, sec; MUTUAL_SHADOWING=true, MUTUAL_HEATING=true) -> btpm
 
-Construct a thermophysical model for a binary asteroid (`BinaryTPM`).
+Construct a thermophysical model for a binary asteroid (`BinaryAsteroidThermoPhysicalModel`).
 """
-function BinaryTPM(pri, sec; MUTUAL_SHADOWING, MUTUAL_HEATING)
-    return BinaryTPM(pri, sec, MUTUAL_SHADOWING, MUTUAL_HEATING)
+function BinaryAsteroidThermoPhysicalModel(pri, sec; MUTUAL_SHADOWING, MUTUAL_HEATING)
+    BinaryAsteroidThermoPhysicalModel(pri, sec, MUTUAL_SHADOWING, MUTUAL_HEATING)
 end
 
 
 """
 Return surface temperature of a single asteroid corrsponding to each face.
 """
-surface_temperature(stpm::SingleTPM) = stpm.temperature[begin, :]
+surface_temperature(stpm::SingleAsteroidThermoPhysicalModel) = stpm.temperature[begin, :]
 
 
 # ****************************************************************
@@ -266,9 +267,9 @@ surface_temperature(stpm::SingleTPM) = stpm.temperature[begin, :]
 # ****************************************************************
 
 """
-    struct SingleTPMResult
+    struct SingleAsteroidThermoPhysicalModelResult
 
-Output data format for `SingleTPM` 
+Output data format for `SingleAsteroidThermoPhysicalModel` 
 
 # Fields
 ## Saved at all time steps
@@ -292,7 +293,7 @@ Output data format for `SingleTPM`
     - `n_face` : Number of faces
     - `n_time` : Number of time steps to save surface temperature
 """
-struct SingleTPMResult
+struct SingleAsteroidThermoPhysicalModelResult
     times  ::Vector{Float64}
     E_in   ::Vector{Float64}
     E_out  ::Vector{Float64}
@@ -309,7 +310,7 @@ end
 
 
 """
-Outer constructor of `SingleTPMResult`
+Outer constructor of `SingleAsteroidThermoPhysicalModelResult`
 
 # Arguments
 - `stpm`          : Thermophysical model for a single asteroid
@@ -317,7 +318,7 @@ Outer constructor of `SingleTPMResult`
 - `times_to_save` : Timesteps to save temperature
 - `face_ID`       : Face indices to save subsurface temperature
 """
-function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64}, face_ID::Vector{Int})
+function SingleAsteroidThermoPhysicalModelResult(stpm::SingleAsteroidThermoPhysicalModel, ephem, times_to_save::Vector{Float64}, face_ID::Vector{Int})
     n_step = length(ephem.time)             # Number of time steps
     n_step_to_save = length(times_to_save)  # Number of time steps to save temperature
     n_face = length(stpm.shape.faces)       # Number of faces of the shape model
@@ -335,7 +336,7 @@ function SingleTPMResult(stpm::SingleTPM, ephem, times_to_save::Vector{Float64},
     )
     face_forces = zeros(SVector{3, Float64}, n_face, n_step_to_save)
 
-    return SingleTPMResult(
+    return SingleAsteroidThermoPhysicalModelResult(
         ephem.time,
         E_in,
         E_out,
@@ -352,22 +353,22 @@ end
 
 
 """
-    struct BinaryTPMResult
+    struct BinaryAsteroidThermoPhysicalModelResult
 
-Output data format for `BinaryTPM`
+Output data format for `BinaryAsteroidThermoPhysicalModel`
 
 # Fields
 - `pri` : TPM result for the primary
 - `sec` : TPM result for the secondary
 """
-struct BinaryTPMResult
-    pri::SingleTPMResult
-    sec::SingleTPMResult
+struct BinaryAsteroidThermoPhysicalModelResult
+    pri::SingleAsteroidThermoPhysicalModelResult
+    sec::SingleAsteroidThermoPhysicalModelResult
 end
 
 
 """
-Outer constructor of `BinaryTPMResult`
+Outer constructor of `BinaryAsteroidThermoPhysicalModelResult`
 
 # Arguments
 - `btpm`          : Thermophysical model for a binary asteroid
@@ -376,25 +377,25 @@ Outer constructor of `BinaryTPMResult`
 - `face_ID_pri`   : Face indices to save subsurface temperature of the primary
 - `face_ID_sec`   : Face indices to save subsurface temperature of the secondary
 """
-function BinaryTPMResult(btpm::BinaryTPM, ephem, times_to_save::Vector{Float64}, face_ID_pri::Vector{Int}, face_ID_sec::Vector{Int})
-    result_pri = SingleTPMResult(btpm.pri, ephem, times_to_save, face_ID_pri)
-    result_sec = SingleTPMResult(btpm.sec, ephem, times_to_save, face_ID_sec)
+function BinaryAsteroidThermoPhysicalModelResult(btpm::BinaryAsteroidThermoPhysicalModel, ephem, times_to_save::Vector{Float64}, face_ID_pri::Vector{Int}, face_ID_sec::Vector{Int})
+    result_pri = SingleAsteroidThermoPhysicalModelResult(btpm.pri, ephem, times_to_save, face_ID_pri)
+    result_sec = SingleAsteroidThermoPhysicalModelResult(btpm.sec, ephem, times_to_save, face_ID_sec)
 
-    return BinaryTPMResult(result_pri, result_sec)
+    return BinaryAsteroidThermoPhysicalModelResult(result_pri, result_sec)
 end
 
 
 """
-    update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, i_time::Integer)
+    update_TPM_result!(result::SingleAsteroidThermoPhysicalModelResult, stpm::SingleAsteroidThermoPhysicalModel, i_time::Integer)
 
 Save the results of TPM at the time step `i_time` to `result`.
 
 # Arguments
-- `result` : Output data format for `SingleTPM`
+- `result` : Output data format for `SingleAsteroidThermoPhysicalModel`
 - `stpm`   : Thermophysical model for a single asteroid
 - `i_time` : Time step to save data
 """
-function update_TPM_result!(result::SingleTPMResult, stpm::SingleTPM, i_time::Integer)
+function update_TPM_result!(result::SingleAsteroidThermoPhysicalModelResult, stpm::SingleAsteroidThermoPhysicalModel, i_time::Integer)
     result.E_in[i_time]   = energy_in(stpm)
     result.E_out[i_time]  = energy_out(stpm)
     result.force[i_time]  = stpm.force
@@ -428,26 +429,26 @@ end
 
 
 """
-    update_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, ephem, i_time::Integer)
+    update_TPM_result!(result::BinaryAsteroidThermoPhysicalModelResult, btpm::BinaryAsteroidThermoPhysicalModel, ephem, i_time::Integer)
 
 Save the results of TPM at the time step `i_time` to `result`.
 
 # Arguments
-- `result` : Output data format for `BinaryTPM`
+- `result` : Output data format for `BinaryAsteroidThermoPhysicalModel`
 - `btpm`   : Thermophysical model for a binary asteroid
 - `ephem`  : Ephemerides
 - `i_time`     : Time step
 """
-function update_TPM_result!(result::BinaryTPMResult, btpm::BinaryTPM, i_time::Integer)
+function update_TPM_result!(result::BinaryAsteroidThermoPhysicalModelResult, btpm::BinaryAsteroidThermoPhysicalModel, i_time::Integer)
     update_TPM_result!(result.pri, btpm.pri, i_time)
     update_TPM_result!(result.sec, btpm.sec, i_time)
 end
 
 
 """
-    export_TPM_results(dirpath, result::SingleTPMResult)
+    export_TPM_results(dirpath, result::SingleAsteroidThermoPhysicalModelResult)
 
-Export the result of `SingleTPM` to CSV files. 
+Export the result of `SingleAsteroidThermoPhysicalModel` to CSV files. 
 The output files are saved in the following directory structure:
 
     dirpath
@@ -458,9 +459,9 @@ The output files are saved in the following directory structure:
 
 # Arguments
 - `dirpath` : Path to the directory to save CSV files.
-- `result`  : Output data format for `SingleTPM`
+- `result`  : Output data format for `SingleAsteroidThermoPhysicalModel`
 """
-function export_TPM_results(dirpath, result::SingleTPMResult)
+function export_TPM_results(dirpath, result::SingleAsteroidThermoPhysicalModelResult)
     
     df = DataFrame()
     df.time     = result.times
@@ -529,9 +530,9 @@ end
 
 
 """
-    export_TPM_results(dirpath, result::BinaryTPMResult)
+    export_TPM_results(dirpath, result::BinaryAsteroidThermoPhysicalModelResult)
 
-Export the result of `BinaryTPM` to CSV files. 
+Export the result of `BinaryAsteroidThermoPhysicalModel` to CSV files. 
 The output files are saved in the following directory structure:
 
     dirpath
@@ -548,9 +549,9 @@ The output files are saved in the following directory structure:
 
 # Arguments
 - `dirpath` : Path to the directory to save CSV files.
-- `result`  : Output data format for `BinaryTPM`
+- `result`  : Output data format for `BinaryAsteroidThermoPhysicalModel`
 """
-function export_TPM_results(dirpath, result::BinaryTPMResult)
+function export_TPM_results(dirpath, result::BinaryAsteroidThermoPhysicalModelResult)
     dirpath_pri = joinpath(dirpath, "pri")
     dirpath_sec = joinpath(dirpath, "sec")
 
@@ -584,7 +585,7 @@ end
 
 
 """
-    init_temperature!(stpm::SingleTPM, T₀::Real)
+    init_temperature!(stpm::SingleAsteroidThermoPhysicalModel, T₀::Real)
 
 Initialize all temperature cells at the given temperature `T₀`
 
@@ -592,13 +593,13 @@ Initialize all temperature cells at the given temperature `T₀`
 - `stpm` : Thermophysical model for a single asteroid
 - `T₀`   : Initial temperature of all cells [K]
 """
-function init_temperature!(stpm::SingleTPM, T₀::Real)
+function init_temperature!(stpm::SingleAsteroidThermoPhysicalModel, T₀::Real)
     stpm.temperature .= T₀
 end
 
 
 """
-    init_temperature!(btpm::BinaryTPM, T₀::Real)
+    init_temperature!(btpm::BinaryTBinaryAsteroidThermoPhysicalModelPM, T₀::Real)
 
 Initialize all temperature cells at the given temperature `T₀`
 
@@ -606,7 +607,7 @@ Initialize all temperature cells at the given temperature `T₀`
 - `btpm` : Thermophysical model for a binary asteroid
 - `T₀`   : Initial temperature of all cells [K]
 """
-function init_temperature!(btpm::BinaryTPM, T₀::Real)
+function init_temperature!(btpm::BinaryAsteroidThermoPhysicalModel, T₀::Real)
     init_temperature!(btpm.pri, T₀)
     init_temperature!(btpm.sec, T₀)
 end
@@ -617,51 +618,8 @@ end
 # ****************************************************************
 
 
-# """
-# """
-# function run_TPM!(shape::ShapeModel, orbit::OrbitalElements, spin::SpinParams, thermo_params::AbstractThermoParams, savepath="tmp.jld2")
-#     @unpack P, Δt, t_begin, t_end = thermo_params
-    
-#     init_temperatures_zero!(shape, thermo_params)
-
-#     ts = (t_begin:Δt:t_end) * P
-#     timestamp = prep_timestamp(ts)
-#     # surface_temperature_table = zeros(length(shape.faces), Int(1/thermo_params.Δt)-1)
-
-#     for (i, t) in enumerate(ts)
-#         update_orbit!(orbit, t)
-#         update_spin!(spin, t)
-            
-#         r̂☉ = normalize(orbit.r) * -1  # Shift the origin from the sun to the body
-#         r̂☉ = orbit_to_body(r̂☉, spin)
-        
-#         update_flux_sun!(shape, orbit.F☉, r̂☉)
-#         update_flux_scat_single!(shape, thermo_params)
-#         update_flux_rad_single!(shape, thermo_params)
-        
-#         update_force!(shape, thermo_params)
-#         sum_force_torque!(shape)
-        
-#         f = SVector{3}(shape.force)   # Body-fixed frame
-#         τ = SVector{3}(shape.torque)  # Body-fixed frame
-
-#         f = body_to_orbit(f, spin)  # Orbital plane frame
-#         τ = body_to_orbit(τ, spin)  # Orbital plane frame
-
-#         E_in, E_out, E_cons = energy_io(shape, thermo_params)
-
-#         save_timestamp!(timestamp, i, orbit.u, orbit.ν, spin.ϕ, f..., τ..., E_in, E_out, E_cons)
-        
-#         update_temperatures!(shape, thermo_params)
-#     end
-#     mean_energy_cons_frac!(timestamp, spin)
-#     jldsave(savepath; shape, orbit, spin, thermo_params, timestamp)
-
-#     timestamp
-# end
-
 """
-    run_TPM!(stpm::SingleTPM, ephem, savepath)
+    run_TPM!(stpm::SingleAsteroidThermoPhysicalModel, ephem, savepath)
 
 Run TPM for a single asteroid.
 
@@ -676,9 +634,9 @@ Run TPM for a single asteroid.
 # Keyword arguments
 - `show_progress` : Flag to show the progress meter
 """
-function run_TPM!(stpm::SingleTPM, ephem, times_to_save::Vector{Float64}, face_ID::Vector{Int}; show_progress=true)
+function run_TPM!(stpm::SingleAsteroidThermoPhysicalModel, ephem, times_to_save::Vector{Float64}, face_ID::Vector{Int}; show_progress=true)
 
-    result = SingleTPMResult(stpm, ephem, times_to_save, face_ID)
+    result = SingleAsteroidThermoPhysicalModelResult(stpm, ephem, times_to_save, face_ID)
 
     ## ProgressMeter setting
     if show_progress
@@ -715,7 +673,7 @@ function run_TPM!(stpm::SingleTPM, ephem, times_to_save::Vector{Float64}, face_I
 end
 
 """
-    run_TPM!(btpm::BinaryTPM, ephem, savepath)
+    run_TPM!(btpm::BinaryAsteroidThermoPhysicalModel, ephem, savepath)
 
 Run TPM for a binary asteroid.
 
@@ -735,9 +693,9 @@ Run TPM for a binary asteroid.
 # Keyword arguments
 - `show_progress` : Flag to show the progress meter
 """
-function run_TPM!(btpm::BinaryTPM, ephem, times_to_save::Vector{Float64}, face_ID_pri::Vector{Int}, face_ID_sec::Vector{Int}; show_progress=true)
+function run_TPM!(btpm::BinaryAsteroidThermoPhysicalModel, ephem, times_to_save::Vector{Float64}, face_ID_pri::Vector{Int}, face_ID_sec::Vector{Int}; show_progress=true)
 
-    result = BinaryTPMResult(btpm, ephem, times_to_save, face_ID_pri, face_ID_sec)
+    result = BinaryAsteroidThermoPhysicalModelResult(btpm, ephem, times_to_save, face_ID_pri, face_ID_sec)
 
     ## ProgressMeter setting
     if show_progress
@@ -780,4 +738,3 @@ function run_TPM!(btpm::BinaryTPM, ephem, times_to_save::Vector{Float64}, face_I
 
     return result
 end
-
