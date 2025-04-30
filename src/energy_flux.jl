@@ -20,11 +20,11 @@ flux_total(R_vis, R_ir, F_sun, F_scat, F_rad) = (1 - R_vis) * F_sun + (1 - R_vis
 
 
 """
-    energy_in(stpm::SingleTPM) -> E_in
+    energy_in(stpm::SingleAsteroidTPM) -> E_in
 
 Input energy per second on the whole surface [W]
 """
-function energy_in(stpm::SingleTPM)
+function energy_in(stpm::SingleAsteroidTPM)
     E_in = 0.
     for i in eachindex(stpm.shape.faces)
         R_vis  = stpm.thermo_params.reflectance_vis[i]
@@ -41,14 +41,14 @@ end
 
 
 """
-    energy_out(stpm::SingleTPM) -> E_out
+    energy_out(stpm::SingleAsteroidTPM) -> E_out
 
 Output enegey per second from the whole surface [W]
 
 # Arguments
 - `stpm` : Thermophysical model for a single asteroid
 """
-function energy_out(stpm::SingleTPM)
+function energy_out(stpm::SingleAsteroidTPM)
     E_out = 0.
     for i in eachindex(stpm.shape.faces)
         ε = stpm.thermo_params.emissivity[i]
@@ -67,7 +67,7 @@ end
 
 
 """
-    update_flux_sun!(stpm::SingleTPM, r̂☉::StaticVector{3}, F☉::Real)
+    update_flux_sun!(stpm::SingleAsteroidTPM, r̂☉::StaticVector{3}, F☉::Real)
 
 Update solar irradiation flux on every face of a shape model.
 
@@ -75,7 +75,7 @@ Update solar irradiation flux on every face of a shape model.
 - `r̂☉`    : Normalized vector indicating the direction of the sun in the body-fixed frame
 - `F☉`    : Solar radiation flux [W/m²]
 """
-function update_flux_sun!(stpm::SingleTPM, r̂☉::StaticVector{3}, F☉::Real)
+function update_flux_sun!(stpm::SingleAsteroidTPM, r̂☉::StaticVector{3}, F☉::Real)
     r̂☉ = normalize(r̂☉)
 
     if stpm.SELF_SHADOWING
@@ -101,7 +101,7 @@ end
 
 
 """
-    update_flux_sun!(stpm::SingleTPM, r☉::StaticVector{3})
+    update_flux_sun!(stpm::SingleAsteroidTPM, r☉::StaticVector{3})
 
 Update solar irradiation flux on every face of a shape model.
 
@@ -109,7 +109,7 @@ Update solar irradiation flux on every face of a shape model.
 - `stpm` : Thermophysical model for a single asteroid
 - `r☉`   : Position of the sun in the body-fixed frame (NOT normalized)
 """
-function update_flux_sun!(stpm::SingleTPM, r☉::StaticVector{3})
+function update_flux_sun!(stpm::SingleAsteroidTPM, r☉::StaticVector{3})
     r̂☉ = SVector{3}(normalize(r☉))
     F☉ = SOLAR_CONST / (norm(r☉) * m2au)^2
 
@@ -118,14 +118,14 @@ end
 
 
 """
-    update_flux_sun!(btpm::BinaryTPM, r☉₁::StaticVector{3}, r☉₂::StaticVector{3})
+    update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, r☉₂::StaticVector{3})
 
 # Arguments
 - `btpm` : Thermophysical model for a binary asteroid
 - `r☉₁`  : Sun's position in the body-fixed frame of the primary, which is not normalized.
 - `r☉₂`  : Sun's position in the body-fixed frame of the secondary, which is not normalized.
 """
-function update_flux_sun!(btpm::BinaryTPM, r☉₁::StaticVector{3}, r☉₂::StaticVector{3})
+function update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, r☉₂::StaticVector{3})
     update_flux_sun!(btpm.pri, r☉₁)
     update_flux_sun!(btpm.sec, r☉₂)
 end
@@ -136,14 +136,14 @@ end
 # ****************************************************************
 
 """
-    update_flux_scat_single!(stpm::SingleTPM)
+    update_flux_scat_single!(stpm::SingleAsteroidTPM)
 
 Update flux of scattered sunlight, only considering single scattering.
 
 # Arguments
 - `stpm` : Thermophysical model for a single asteroid
 """
-function update_flux_scat_single!(stpm::SingleTPM)
+function update_flux_scat_single!(stpm::SingleAsteroidTPM)
     stpm.SELF_HEATING == false && return
 
     for i_face in eachindex(stpm.shape.faces)
@@ -160,14 +160,14 @@ end
 
 
 """
-    update_flux_scat_single!(btpm::BinaryTPM)
+    update_flux_scat_single!(btpm::BinaryAsteroidTPM)
 
 Update flux of scattered sunlight, only considering single scattering.
 
 # Arguments
 - `btpm` : Thermophysical model for a binary asteroid
 """
-function update_flux_scat_single!(btpm::BinaryTPM)
+function update_flux_scat_single!(btpm::BinaryAsteroidTPM)
     update_flux_scat_single!(btpm.pri)
     update_flux_scat_single!(btpm.sec)
 end
@@ -188,7 +188,7 @@ end
 # ****************************************************************
 
 """
-    update_flux_rad_single!(stpm::SingleTPM)
+    update_flux_rad_single!(stpm::SingleAsteroidTPM)
 
 Update flux of absorption of thermal radiation from surrounding surface.
 Single radiation-absorption is only considered, assuming albedo is close to zero at thermal infrared wavelength.
@@ -196,7 +196,7 @@ Single radiation-absorption is only considered, assuming albedo is close to zero
 # Arguments
 - `stpm` : Thermophysical model for a single asteroid
 """
-function update_flux_rad_single!(stpm::SingleTPM)
+function update_flux_rad_single!(stpm::SingleAsteroidTPM)
     stpm.SELF_HEATING == false && return
 
     for i in eachindex(stpm.shape.faces)
@@ -215,7 +215,7 @@ end
 
 
 """
-    update_flux_rad_single!(btpm::BinaryTPM)
+    update_flux_rad_single!(btpm::BinaryAsteroidTPM)
 
 Update flux of absorption of thermal radiation from surrounding surface.
 Single radiation-absorption is only considered, assuming albedo is close to zero at thermal infrared wavelength.
@@ -223,7 +223,7 @@ Single radiation-absorption is only considered, assuming albedo is close to zero
 # Arguments
 - `btpm` : Thermophysical model for a binary asteroid
 """
-function update_flux_rad_single!(btpm::BinaryTPM)
+function update_flux_rad_single!(btpm::BinaryAsteroidTPM)
     update_flux_rad_single!(btpm.pri)
     update_flux_rad_single!(btpm.sec)
 end
@@ -235,7 +235,7 @@ end
 
 
 """
-    mutual_shadowing!(btpm::BinaryTPM, r☉, rₛ, R₂₁)
+    mutual_shadowing!(btpm::BinaryAsteroidTPM, r☉, rₛ, R₂₁)
 
 Detect eclipse events between the primary and secondary, and update the solar fluxes of the faces.
 
@@ -245,7 +245,7 @@ Detect eclipse events between the primary and secondary, and update the solar fl
 - `rₛ`   : Position of the secondary relative to the primary (NOT normalized)
 - `R₂₁`  : Rotation matrix from secondary to primary
 """
-function mutual_shadowing!(btpm::BinaryTPM, r☉, rₛ, R₂₁)
+function mutual_shadowing!(btpm::BinaryAsteroidTPM, r☉, rₛ, R₂₁)
     btpm.MUTUAL_SHADOWING == false && return
 
     shape1 = btpm.pri.shape
@@ -379,7 +379,7 @@ end
 
 
 """
-    mutual_heating!(btpm::BinaryTPM, rₛ, R₂₁)
+    mutual_heating!(btpm::BinaryAsteroidTPM, rₛ, R₂₁)
 
 Calculate the mutual heating between the primary and secondary asteroids.
 
@@ -391,7 +391,7 @@ Calculate the mutual heating between the primary and secondary asteroids.
 # TODO
 - Need to consider local horizon?
 """
-function mutual_heating!(btpm::BinaryTPM, rₛ, R₂₁)
+function mutual_heating!(btpm::BinaryAsteroidTPM, rₛ, R₂₁)
     btpm.MUTUAL_HEATING == false && return
 
     shape1 = btpm.pri.shape
