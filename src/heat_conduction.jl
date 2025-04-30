@@ -192,7 +192,7 @@ In this function, the heat conduction equation is non-dimensionalized in time an
 - `stpm` : Thermophysical model for a single asteroid
 - `Δt`   : Time step [sec]
 """
-function crank_nicolson!(stpm::SingleTPM, Δt)
+function crank_nicolson!(stpm::SingleAsteroidTPM, Δt)
     T = stpm.temperature
     n_depth = size(T, 1)
     n_face = size(T, 2)
