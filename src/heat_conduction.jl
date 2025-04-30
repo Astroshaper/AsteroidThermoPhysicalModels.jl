@@ -16,10 +16,10 @@ The surface termperature is determined only by radiative equilibrium.
 - `Δt`   : Time step [sec]
 """
 function update_temperature!(stpm::SingleAsteroidTPM, Δt)
-    if stpm.SOLVER isa ForwardEulerSolver
-        forward_euler!(stpm, Δt)
-    elseif stpm.SOLVER isa BackwardEulerSolver
-        backward_euler!(stpm, Δt)
+    if stpm.SOLVER isa ExplicitEulerSolver
+        explicit_euler!(stpm, Δt)
+    elseif stpm.SOLVER isa ImplicitEulerSolver
+        implicit_euler!(stpm, Δt)
     elseif stpm.SOLVER isa CrankNicolsonSolver
         crank_nicolson!(stpm, Δt)
     else
@@ -48,9 +48,9 @@ end
 
 
 """
-    forward_euler!(stpm::SingleAsteroidTPM, Δt)
+    explicit_euler!(stpm::SingleAsteroidTPM, Δt)
 
-Predict the temperature at the next time step by the forward Euler method.
+Predict the temperature at the next time step by the explicit (forward) Euler method.
 - Explicit in time
 - First order in time
 In this function, the heat conduction equation is non-dimensionalized in time and length.
@@ -59,7 +59,7 @@ In this function, the heat conduction equation is non-dimensionalized in time an
 - `stpm` : Thermophysical model for a single asteroid
 - `Δt`   : Time step [sec]
 """
-function forward_euler!(stpm::SingleAsteroidTPM, Δt)
+function explicit_euler!(stpm::SingleAsteroidTPM, Δt)
     T = stpm.temperature
     n_depth = size(T, 1)
     n_face = size(T, 2)
@@ -85,7 +85,7 @@ function forward_euler!(stpm::SingleAsteroidTPM, Δt)
             l  = stpm.thermo_params.skindepth[i_face]
 
             λ = (Δt/P) / (Δz/l)^2 / 4π
-            λ ≥ 0.5 && error("The forward Euler method is unstable because λ = $λ. This should be less than 0.5.")
+            λ ≥ 0.5 && error("The explicit Euler method is unstable because λ = $λ. This should be less than 0.5.")
 
             for i_depth in 2:(n_depth-1)
                 stpm.SOLVER.x[i_depth] = (1-2λ)*T[i_depth, i_face] + λ*(T[i_depth+1, i_face] + T[i_depth-1, i_face])  # Predict temperature at next time step
@@ -102,9 +102,9 @@ end
 
 
 """
-    backward_euler!(stpm::SingleAsteroidTPM, Δt)
+    implicit_euler!(stpm::SingleAsteroidTPM, Δt)
 
-Predict the temperature at the next time step by the backward Euler method.
+Predict the temperature at the next time step by the implicit (backward) Euler method.
 - Implicit in time (Unconditionally stable in the heat conduction equation)
 - First order in time
 - Second order in space
@@ -114,7 +114,7 @@ In this function, the heat conduction equation is non-dimensionalized in time an
 - `stpm` : Thermophysical model for a single asteroid
 - `Δt`   : Time step [sec]
 """
-function backward_euler!(stpm::SingleAsteroidTPM, Δt)
+function implicit_euler!(stpm::SingleAsteroidTPM, Δt)
     T = stpm.temperature
     n_depth = size(T, 1)
     n_face = size(T, 2)
@@ -265,7 +265,7 @@ end
     tridiagonal_matrix_algorithm!(a, b, c, d, x)
     tridiagonal_matrix_algorithm!(stpm::SingleAsteroidThermoPhysicalModel)
 
-Tridiagonal matrix algorithm to solve the heat conduction equation by the backward Euler and Crank-Nicolson methods.
+Tridiagonal matrix algorithm to solve the heat conduction equation by the implicit Euler and Crank-Nicolson methods.
 
     | b₁ c₁ 0  ⋯  0   | | x₁ |   | d₁ |
     | a₂ b₂ c₂ ⋯  0   | | x₂ |   | d₂ |
