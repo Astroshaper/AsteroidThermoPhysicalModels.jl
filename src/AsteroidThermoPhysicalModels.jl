@@ -28,19 +28,22 @@ export ShapeModel, load_shape_obj
 
 include("thermo_params.jl")
 include("TPM.jl")
+
+# Alias for the types defined in `TPM.jl`
+# `TPM` is a abbreviation for a "thermophysical model".
+const AbstractAsteroidTPM = AbstractAsteroidThermoPhysicalModel
+const SingleAsteroidTPM = SingleAsteroidThermoPhysicalModel
+const BinaryAsteroidTPM = BinaryAsteroidThermoPhysicalModel
+const SingleAsteroidTPMResult = SingleAsteroidThermoPhysicalModelResult
+const BinaryAsteroidTPMResult = BinaryAsteroidThermoPhysicalModelResult
+export AbstractAsteroidThermoPhysicalModel, SingleAsteroidThermoPhysicalModel, BinaryAsteroidThermoPhysicalModel
+export AbstractAsteroidTPM, SingleAsteroidTPM, BinaryAsteroidTPM
+
 include("heat_conduction.jl")
 include("energy_flux.jl")
 include("non_grav.jl")
 include("thermal_radiation.jl")
 export thermal_skin_depth, thermal_inertia, init_temperature!, run_TPM!
-
-# Alias for the abstract type and struct defined in `TPM.jl`
-# `TPM` is a abbreviation for a "thermophysical model".
-const AbstractAsteroidTPM = AbstractAsteroidThermoPhysicalModel
-const SingleAsteroidTPM = SingleAsteroidThermoPhysicalModel
-const BinaryAsteroidTPM = BinaryAsteroidThermoPhysicalModel
-export AbstractAsteroidThermoPhysicalModel, SingleAsteroidThermoPhysicalModel, BinaryAsteroidThermoPhysicalModel
-export AbstractAsteroidTPM, SingleAsteroidTPM, BinaryAsteroidTPM
 
 include("roughness.jl")
 

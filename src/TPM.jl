@@ -265,9 +265,6 @@ struct SingleAsteroidThermoPhysicalModelResult
 end
 
 
-const SingleAsteroidTPMResult = SingleAsteroidThermoPhysicalModelResult  # Alias for the struct. `TPM` is a abbreviation for a "thermophysical model result".
-
-
 """
 Outer constructor of `SingleAsteroidThermoPhysicalModelResult`
 
@@ -324,9 +321,6 @@ struct BinaryAsteroidThermoPhysicalModelResult
     pri::SingleAsteroidThermoPhysicalModelResult
     sec::SingleAsteroidThermoPhysicalModelResult
 end
-
-
-const BinaryAsteroidTPMResult = BinaryAsteroidThermoPhysicalModelResult  # Alias for the struct. `TPM` is a abbreviation for a "thermophysical model result"
 
 
 """
