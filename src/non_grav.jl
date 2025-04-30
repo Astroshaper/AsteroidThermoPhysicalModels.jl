@@ -5,14 +5,14 @@
 # ****************************************************************
 
 """
-    update_thermal_force!(stpm::SingleAsteroidThermoPhysicalModel)
+    update_thermal_force!(stpm::SingleAsteroidTPM)
 
 Calculate the thermal force and torque on every face and integrate them over all faces.
 
 # Arguments
 - `stpm` : Thermophysical model for a single asteroid
 """
-function update_thermal_force!(stpm::SingleAsteroidThermoPhysicalModel)
+function update_thermal_force!(stpm::SingleAsteroidTPM)
     stpm.force  .= 0.
     stpm.torque .= 0.
 
@@ -52,15 +52,14 @@ end
 
 
 """
-    update_thermal_force!(btpm::BinaryAsteroidThermoPhysicalModel)
+    update_thermal_force!(btpm::BinaryAsteroidTPM)
 
 Calculate the thermal force and torque on every face and integrate them over all faces.
 
 # Arguments
 - `btpm` : Thermophysical model for a binary asteroid
 """
-function update_thermal_force!(btpm::BinaryAsteroidThermoPhysicalModel)
+function update_thermal_force!(btpm::BinaryAsteroidTPM)
     update_thermal_force!(btpm.pri)
     update_thermal_force!(btpm.sec)
 end
-

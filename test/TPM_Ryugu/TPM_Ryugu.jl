@@ -99,7 +99,7 @@
     )
 
     ##= Setting of TPM =##
-    stpm = AsteroidThermoPhysicalModels.SingleAsteroidThermoPhysicalModel(shape, thermo_params;
+    stpm = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params;
         SELF_SHADOWING = true,
         SELF_HEATING   = true,
         SOLVER         = AsteroidThermoPhysicalModels.ForwardEulerSolver(thermo_params),
