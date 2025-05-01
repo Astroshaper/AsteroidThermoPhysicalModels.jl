@@ -40,6 +40,7 @@ export AbstractAsteroidThermoPhysicalModel, SingleAsteroidThermoPhysicalModel, B
 export AbstractAsteroidTPM, SingleAsteroidTPM, BinaryAsteroidTPM
 
 include("heat_conduction.jl")
+include("heat_conduction_analytical.jl")
 include("energy_flux.jl")
 include("non_grav.jl")
 include("thermal_radiation.jl")

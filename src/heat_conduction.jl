@@ -16,10 +16,10 @@ The surface termperature is determined only by radiative equilibrium.
 - `Δt`   : Time step [sec]
 """
 function update_temperature!(stpm::SingleAsteroidTPM, Δt)
-    if stpm.SOLVER isa ForwardEulerSolver
-        forward_euler!(stpm, Δt)
-    elseif stpm.SOLVER isa BackwardEulerSolver
-        backward_euler!(stpm, Δt)
+    if stpm.SOLVER isa ExplicitEulerSolver
+        explicit_euler!(stpm, Δt)
+    elseif stpm.SOLVER isa ImplicitEulerSolver
+        implicit_euler!(stpm, Δt)
     elseif stpm.SOLVER isa CrankNicolsonSolver
         crank_nicolson!(stpm, Δt)
     else
@@ -48,9 +48,9 @@ end
 
 
 """
-    forward_euler!(stpm::SingleAsteroidTPM, Δt)
+    explicit_euler!(stpm::SingleAsteroidTPM, Δt)
 
-Predict the temperature at the next time step by the forward Euler method.
+Predict the temperature at the next time step by the explicit (forward) Euler method.
 - Explicit in time
 - First order in time
 In this function, the heat conduction equation is non-dimensionalized in time and length.
@@ -59,7 +59,7 @@ In this function, the heat conduction equation is non-dimensionalized in time an
 - `stpm` : Thermophysical model for a single asteroid
 - `Δt`   : Time step [sec]
 """
-function forward_euler!(stpm::SingleAsteroidTPM, Δt)
+function explicit_euler!(stpm::SingleAsteroidTPM, Δt)
     T = stpm.temperature
     n_depth = size(T, 1)
     n_face = size(T, 2)
@@ -85,60 +85,97 @@ function forward_euler!(stpm::SingleAsteroidTPM, Δt)
             l  = stpm.thermo_params.skindepth[i_face]
 
             λ = (Δt/P) / (Δz/l)^2 / 4π
-            λ ≥ 0.5 && error("The forward Euler method is unstable because λ = $λ. This should be less than 0.5.")
+            λ ≥ 0.5 && error("The explicit Euler method is unstable because λ = $λ. This should be less than 0.5.")
 
             for i_depth in 2:(n_depth-1)
-                stpm.SOLVER.T[i_depth] = (1-2λ)*T[i_depth, i_face] + λ*(T[i_depth+1, i_face] + T[i_depth-1, i_face])  # Predict temperature at next time step
+                stpm.SOLVER.x[i_depth] = (1-2λ)*T[i_depth, i_face] + λ*(T[i_depth+1, i_face] + T[i_depth-1, i_face])  # Predict temperature at next time step
             end
 
             ## Apply boundary conditions
             update_upper_temperature!(stpm, i_face)
             update_lower_temperature!(stpm)
 
-            T[:, i_face] .= stpm.SOLVER.T  # Copy temperature at next time step
+            T[:, i_face] .= stpm.SOLVER.x  # Copy temperature at next time step
         end
     end
 end
 
 
 """
-    backward_euler!(stpm::SingleAsteroidTPM, Δt)
+    implicit_euler!(stpm::SingleAsteroidTPM, Δt)
 
-Predict the temperature at the next time step by the backward Euler method.
+Predict the temperature at the next time step by the implicit (backward) Euler method.
 - Implicit in time (Unconditionally stable in the heat conduction equation)
 - First order in time
 - Second order in space
 In this function, the heat conduction equation is non-dimensionalized in time and length.
+
+# Arguments
+- `stpm` : Thermophysical model for a single asteroid
+- `Δt`   : Time step [sec]
 """
-function backward_euler!(stpm::SingleAsteroidTPM, Δt)
-    # T = stpm.temperature
-    # n_depth = size(T, 1)
-    # n_face = size(T, 2)
+function implicit_euler!(stpm::SingleAsteroidTPM, Δt)
+    T = stpm.temperature
+    n_depth = size(T, 1)
+    n_face = size(T, 2)
 
-    # for i_face in 1:n_face
-    #     λ = _getindex(stpm.thermo_params.λ, i_face)
+    ## Zero-conductivity (thermal inertia) case
+    if iszero(stpm.thermo_params.inertia)
+        for i_face in 1:n_face
+            R_vis = stpm.thermo_params.reflectance_vis[i_face]
+            R_ir  = stpm.thermo_params.reflectance_ir[i_face]
+            ε     = stpm.thermo_params.emissivity[i_face]
+            εσ = ε * σ_SB
 
-    #     stpm.SOLVER.a .= -λ
-    #     stpm.SOLVER.a[begin] = 0
-    #     stpm.SOLVER.a[end]   = 0
+            F_sun, F_scat, F_rad = stpm.flux[i_face, :]
+            F_total = flux_total(R_vis, R_ir, F_sun, F_scat, F_rad)
 
-    #     stpm.SOLVER.b .= 1 + 2λ
-    #     stpm.SOLVER.b[begin] = 1
-    #     stpm.SOLVER.b[end]   = 1
+            stpm.temperature[begin, i_face] = (F_total / εσ)^(1/4)
+        end
+    ## Non-zero-conductivity (thermal inertia) case
+    else
+        for i_face in 1:n_face
+            P  = stpm.thermo_params.period
+            Δz = stpm.thermo_params.Δz
+            l  = stpm.thermo_params.skindepth[i_face]
 
-    #     stpm.SOLVER.c .= -λ
-    #     stpm.SOLVER.c[begin] = 0
-    #     stpm.SOLVER.c[end]   = 0
+            # Non-dimensional timestep, normalized by period
+            Δt̄ = Δt / P
+            # Non-dimensional step in depth, normalized by thermal skin depth
+            Δz̄ = Δz / l
+            # Stability parameter for implicit methods
+            λ = (Δt̄) / (Δz̄^2) / 4π
 
-    #     stpm.SOLVER.d .= T[:, i_face, i_time]
+            # Initialize the tridiagonal matrix coefficients
+            stpm.SOLVER.a .= -λ
+            stpm.SOLVER.a[begin] = 0
+            stpm.SOLVER.a[end]   = 0
 
-    #     tridiagonal_matrix_algorithm!(stpm)
-    #     T[:, i_face, i_time+1] .= stpm.SOLVER.x
-    # end
+            stpm.SOLVER.b .= 1 + 2λ
+            stpm.SOLVER.b[begin] = 1
+            stpm.SOLVER.b[end]   = 1
 
-    ## Apply boundary conditions
-    # update_upper_temperature!(stpm)
-    # update_lower_temperature!(stpm)
+            stpm.SOLVER.c .= -λ
+            stpm.SOLVER.c[begin] = 0
+            stpm.SOLVER.c[end]   = 0
+
+            # Set the right-hand side vector
+            stpm.SOLVER.d .= T[:, i_face]
+            
+            # Apply boundary conditions
+            update_lower_temperature!(stpm)
+            
+            # Solve the tridiagonal system
+            tridiagonal_matrix_algorithm!(stpm)
+            
+            # Apply upper boundary condition (surface temperature)
+            stpm.SOLVER.x[begin] = T[begin, i_face]  # 一時的に元の表面温度を保存
+            update_upper_temperature!(stpm, i_face)
+            
+            # Copy temperature at next time step
+            T[:, i_face] .= stpm.SOLVER.x
+        end
+    end
 end
 
 
@@ -150,43 +187,77 @@ Predict the temperature at the next time step by the Crank-Nicolson method.
 - Second order in time
 - Second order in space
 In this function, the heat conduction equation is non-dimensionalized in time and length.
+
+# Arguments
+- `stpm` : Thermophysical model for a single asteroid
+- `Δt`   : Time step [sec]
 """
 function crank_nicolson!(stpm::SingleAsteroidTPM, Δt)
-    # T = stpm.temperature
-    # n_depth = size(T, 1)
-    # n_face = size(T, 2)
+    T = stpm.temperature
+    n_depth = size(T, 1)
+    n_face = size(T, 2)
 
-    # Δt̄ = stpm.thermo_params.Δt / stpm.thermo_params.period  # Non-dimensional timestep, normalized by period
-    # Δz̄ = stpm.thermo_params.Δz / stpm.thermo_params.skindepth  # Non-dimensional step in depth, normalized by thermal skin depth
-    # r = (1/4π) * (Δt̄ / 2Δz̄^2)
+    ## Zero-conductivity (thermal inertia) case
+    if iszero(stpm.thermo_params.inertia)
+        for i_face in 1:n_face
+            R_vis = stpm.thermo_params.reflectance_vis[i_face]
+            R_ir  = stpm.thermo_params.reflectance_ir[i_face]
+            ε     = stpm.thermo_params.emissivity[i_face]
+            εσ = ε * σ_SB
 
-    # for i_face in 1:n_face
-    #     stpm.SOLVER.a .= -r
-    #     stpm.SOLVER.a[begin] = 0
-    #     stpm.SOLVER.a[end]   = 0
+            F_sun, F_scat, F_rad = stpm.flux[i_face, :]
+            F_total = flux_total(R_vis, R_ir, F_sun, F_scat, F_rad)
 
-    #     stpm.SOLVER.b .= 1 + 2r
-    #     stpm.SOLVER.b[begin] = 1
-    #     stpm.SOLVER.b[end]   = 1
+            stpm.temperature[begin, i_face] = (F_total / εσ)^(1/4)
+        end
+    ## Non-zero-conductivity (thermal inertia) case
+    else
+        for i_face in 1:n_face
+            P  = stpm.thermo_params.period
+            Δz = stpm.thermo_params.Δz
+            l  = stpm.thermo_params.skindepth[i_face]
 
-    #     stpm.SOLVER.c .= -r
-    #     stpm.SOLVER.c[begin] = 0
-    #     stpm.SOLVER.c[end]   = 0
+            # Non-dimensional timestep, normalized by period
+            Δt̄ = Δt / P
+            # Non-dimensional step in depth, normalized by thermal skin depth
+            Δz̄ = Δz / l
+            # Stability parameter for Crank-Nicolson method
+            r = (1/4π) * (Δt̄ / (2*Δz̄^2))
 
-    #     for i_depth in 2:n_depth-1
-    #         stpm.SOLVER.d[i_depth] = r*T[i_depth+1, i_face, i_time] + (1-2r)*T[i_depth, i_face, i_time] + r*T[i_depth-1, i_face, i_time]
-    #     end
+            # Initialize the tridiagonal matrix coefficients
+            stpm.SOLVER.a .= -r
+            stpm.SOLVER.a[begin] = 0
+            stpm.SOLVER.a[end]   = 0
 
-    #     # stpm.SOLVER.d[1]  = 0  # Upper boundary condition
-    #     # stpm.SOLVER.d[n_depth] = 0 # Lower boundary condition
+            stpm.SOLVER.b .= 1 + 2r
+            stpm.SOLVER.b[begin] = 1
+            stpm.SOLVER.b[end]   = 1
 
-    #     tridiagonal_matrix_algorithm!(stpm)
-    #     T[:, i_face, i_time+1] .= stpm.SOLVER.x
-    # end
+            stpm.SOLVER.c .= -r
+            stpm.SOLVER.c[begin] = 0
+            stpm.SOLVER.c[end]   = 0
 
-    # ## Apply boundary conditions
-    # update_upper_temperature!(stpm)
-    # update_lower_temperature!(stpm)
+            # Set the right-hand side vector
+            for i_depth in 2:n_depth-1
+                stpm.SOLVER.d[i_depth] = r*T[i_depth+1, i_face] + (1-2r)*T[i_depth, i_face] + r*T[i_depth-1, i_face]
+            end
+            stpm.SOLVER.d[begin] = T[begin, i_face]  # Will be overwritten by boundary condition
+            stpm.SOLVER.d[end]   = T[end, i_face]    # Will be overwritten by boundary condition
+            
+            # Apply boundary conditions
+            update_lower_temperature!(stpm)
+            
+            # Solve the tridiagonal system
+            tridiagonal_matrix_algorithm!(stpm)
+            
+            # Apply upper boundary condition (surface temperature)
+            stpm.SOLVER.x[begin] = T[begin, i_face]  # 一時的に元の表面温度を保存
+            update_upper_temperature!(stpm, i_face)
+            
+            # Copy temperature at next time step
+            T[:, i_face] .= stpm.SOLVER.x
+        end
+    end
 end
 
 
@@ -194,7 +265,7 @@ end
     tridiagonal_matrix_algorithm!(a, b, c, d, x)
     tridiagonal_matrix_algorithm!(stpm::SingleAsteroidThermoPhysicalModel)
 
-Tridiagonal matrix algorithm to solve the heat conduction equation by the backward Euler and Crank-Nicolson methods.
+Tridiagonal matrix algorithm to solve the heat conduction equation by the implicit Euler and Crank-Nicolson methods.
 
     | b₁ c₁ 0  ⋯  0   | | x₁ |   | d₁ |
     | a₂ b₂ c₂ ⋯  0   | | x₂ |   | d₂ |
@@ -252,13 +323,13 @@ function update_upper_temperature!(stpm::SingleAsteroidTPM, i::Integer)
     
         F_sun, F_scat, F_rad = stpm.flux[i, :]
         F_total = flux_total(R_vis, R_ir, F_sun, F_scat, F_rad)
-        update_surface_temperature!(stpm.SOLVER.T, F_total, P, l, Γ, ε, Δz)
+        update_surface_temperature!(stpm.SOLVER.x, F_total, P, l, Γ, ε, Δz)
     #### Insulation boundary condition ####
     elseif stpm.BC_UPPER isa InsulationBoundaryCondition
-        stpm.SOLVER.T[begin] = stpm.SOLVER.T[begin+1]
+        stpm.SOLVER.x[begin] = stpm.SOLVER.x[begin+1]
     #### Isothermal boundary condition ####
     elseif stpm.BC_UPPER isa IsothermalBoundaryCondition
-        stpm.SOLVER.T[begin] = stpm.BC_UPPER.T_iso
+        stpm.SOLVER.x[begin] = stpm.BC_UPPER.T_iso
     else
         error("The given upper boundary condition is not implemented.")
     end
@@ -311,10 +382,10 @@ function update_lower_temperature!(stpm::SingleAsteroidTPM)
 
     #### Insulation boundary condition ####
     if stpm.BC_LOWER isa InsulationBoundaryCondition
-        stpm.SOLVER.T[end] = stpm.SOLVER.T[end-1]
+        stpm.SOLVER.x[end] = stpm.SOLVER.x[end-1]
     #### Isothermal boundary condition ####
     elseif stpm.BC_LOWER isa IsothermalBoundaryCondition
-        stpm.SOLVER.T[end] = stpm.BC_LOWER.T_iso
+        stpm.SOLVER.x[end] = stpm.BC_LOWER.T_iso
     else
         error("The lower boundary condition is not implemented.")
     end
