@@ -13,7 +13,7 @@
     n_face = length(shape.faces)  # Number of faces
 
     ##= Seeting of time step =##
-    et_range = range(0.0, 1.0; step=0.4e-4)
+    et_range = range(0.0, 1.0; step=1e-5)
 
     ephem = (
         time = collect(et_range),
@@ -103,7 +103,7 @@
         T_analytical = similar(Ts)
         α = k / (ρ * Cₚ)  # Thermal diffusivity [m²/s]
         for (i, x) in enumerate(xs)
-            T_analytical[i] = AsteroidThermoPhysicalModels.analytical_solution_isothermal(x, ephem.time[end], z_max, α)
+            T_analytical[i] = AsteroidThermoPhysicalModels.analytical_solution_isothermal(x, ephem.time[end], z_max, α; n_max=100)
         end
 
         # Maximum relative error between numerical and analytical solutions
