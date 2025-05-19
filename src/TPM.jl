@@ -158,10 +158,9 @@ broadcast_thermo_params!(thermo_params::ThermoParams, shape::ShapeModel) = broad
 - `shape`          : Shape model
 - `thermo_params`  : Thermophysical parameters
 
-- `flux`           : Flux on each face. Matrix of size (Number of faces, 3). Three components are:
-    - `flux[:, 1]`     : F_sun,  flux of direct sunlight
-    - `flux[:, 2]`     : F_scat, flux of scattered light
-    - `flux[:, 3]`     : F_rad,  flux of thermal emission from surrounding surface
+- `flux_sun`       : Flux of direct sunlight on each face [W/m²]
+- `flux_scat`      : Flux of scattered light on each face [W/m²]
+- `flux_rad`       : Flux of thermal emission from surrounding surface on each face [W/m²]
 - `temperature`    : Temperature matrix `(n_depth, n_face)` according to the number of depth cells `n_depth` and the number of faces `n_face`.
 
 - `face_forces`    : Thermal force on each face
@@ -181,7 +180,9 @@ struct SingleAsteroidThermoPhysicalModel{P<:AbstractThermoParams, S<:HeatConduct
     shape          ::ShapeModel
     thermo_params  ::P
 
-    flux           ::Matrix{Float64}  # (n_face, 3)
+    flux_sun       ::Vector{Float64}  # Flux of direct sunlight
+    flux_scat      ::Vector{Float64}  # Flux of scattered light
+    flux_rad       ::Vector{Float64}  # Flux of thermal emission from surrounding surface
     temperature    ::Matrix{Float64}  # (n_depth, n_face)
 
     face_forces    ::Vector{SVector{3, Float64}}
@@ -221,14 +222,16 @@ function SingleAsteroidThermoPhysicalModel(shape, thermo_params; SELF_SHADOWING,
     n_depth = thermo_params.n_depth
     n_face = length(shape.faces)
 
-    flux = zeros(n_face, 3)
+    flux_sun = zeros(n_face)
+    flux_scat = zeros(n_face)
+    flux_rad = zeros(n_face)
     temperature = zeros(n_depth, n_face)
 
     face_forces = zeros(SVector{3, Float64}, n_face)
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
 
-    SingleAsteroidThermoPhysicalModel(shape, thermo_params, flux, temperature, face_forces, force, torque, SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
+    SingleAsteroidThermoPhysicalModel(shape, thermo_params, flux_sun, flux_scat, flux_rad, temperature, face_forces, force, torque, SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
 end
 
 

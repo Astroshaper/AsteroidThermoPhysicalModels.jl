@@ -29,9 +29,9 @@ function energy_in(stpm::SingleAsteroidTPM)
     for i in eachindex(stpm.shape.faces)
         R_vis  = stpm.thermo_params.reflectance_vis[i]
         R_ir   = stpm.thermo_params.reflectance_ir[i]
-        F_sun  = stpm.flux[i, 1]
-        F_scat = stpm.flux[i, 2]
-        F_rad  = stpm.flux[i, 3]
+        F_sun  = stpm.flux_sun[i]
+        F_scat = stpm.flux_scat[i]
+        F_rad  = stpm.flux_rad[i]
         a      = stpm.shape.face_areas[i]
         
         E_in += flux_total(R_vis, R_ir, F_sun, F_scat, F_rad) * a
@@ -82,18 +82,18 @@ function update_flux_sun!(stpm::SingleAsteroidTPM, r̂☉::StaticVector{3}, F☉
         for i in eachindex(stpm.shape.faces)
             if isilluminated(stpm.shape, r̂☉, i)
                 n̂ = stpm.shape.face_normals[i]
-                stpm.flux[i, 1] = F☉ * (n̂ ⋅ r̂☉)
+                stpm.flux_sun[i] = F☉ * (n̂ ⋅ r̂☉)
             else
-                stpm.flux[i, 1] = 0
+                stpm.flux_sun[i] = 0
             end
         end
     else
         for i in eachindex(stpm.shape.faces)
             n̂ = stpm.shape.face_normals[i]
             if n̂ ⋅ r̂☉ > 0
-                stpm.flux[i, 1] = F☉ * (n̂ ⋅ r̂☉)
+                stpm.flux_sun[i] = F☉ * (n̂ ⋅ r̂☉)
             else
-                stpm.flux[i, 1] = 0
+                stpm.flux_sun[i] = 0
             end
         end
     end
@@ -147,13 +147,13 @@ function update_flux_scat_single!(stpm::SingleAsteroidTPM)
     stpm.SELF_HEATING == false && return
 
     for i_face in eachindex(stpm.shape.faces)
-        stpm.flux[i_face, 2] = 0.
+        stpm.flux_scat[i_face] = 0.
         for visiblefacet in stpm.shape.visiblefacets[i_face]
             j   = visiblefacet.id
             fᵢⱼ = visiblefacet.f
             R_vis = stpm.thermo_params.reflectance_vis[j]
 
-            stpm.flux[i_face, 2] += fᵢⱼ * R_vis * stpm.flux[j, 1]
+            stpm.flux_scat[i_face] += fᵢⱼ * R_vis * stpm.flux_sun[j]
         end
     end
 end
@@ -200,7 +200,7 @@ function update_flux_rad_single!(stpm::SingleAsteroidTPM)
     stpm.SELF_HEATING == false && return
 
     for i in eachindex(stpm.shape.faces)
-        stpm.flux[i, 3] = 0.
+        stpm.flux_rad[i] = 0.
         for visiblefacet in stpm.shape.visiblefacets[i]
             j    = visiblefacet.id
             fᵢⱼ  = visiblefacet.f
@@ -208,7 +208,7 @@ function update_flux_rad_single!(stpm::SingleAsteroidTPM)
             R_ir = stpm.thermo_params.reflectance_ir[j]
             Tⱼ   = stpm.temperature[begin, j]
             
-            stpm.flux[i, 3] += ε * σ_SB * (1 - R_ir) * fᵢⱼ * Tⱼ^4
+            stpm.flux_rad[i] += ε * σ_SB * (1 - R_ir) * fᵢⱼ * Tⱼ^4
         end
     end
 end
@@ -271,7 +271,7 @@ function mutual_shadowing!(btpm::BinaryAsteroidTPM, r☉, rₛ, R₂₁)
 
             ## if △A₁B₁C₁ is NOT facing the sun
             if r̂☉ ⋅ n̂₁ < 0
-                btpm.pri.flux[i, 1] = 0
+                btpm.pri.flux_sun[i] = 0
                 continue
             end
 
@@ -282,7 +282,7 @@ function mutual_shadowing!(btpm::BinaryAsteroidTPM, r☉, rₛ, R₂₁)
 
             ## In the secondary shadow
             if θ₁ < θ_r₂
-                btpm.pri.flux[i, 1] = 0
+                btpm.pri.flux_sun[i] = 0
                 continue
             ## Out of the secondary shadow
             elseif θ₁ > θ_R₂
@@ -305,7 +305,7 @@ function mutual_shadowing!(btpm::BinaryAsteroidTPM, r☉, rₛ, R₂₁)
                     ## if △A₁B₁C₁ and △A₂B₂C₂ are facing each other
                     if d₁₂ ⋅ n̂₁ > 0 && d₁₂ ⋅ n̂₂ < 0
                         if raycast(A₂, B₂, C₂, r̂☉, G₁)
-                            btpm.pri.flux[i, 1] = 0
+                            btpm.pri.flux_sun[i] = 0
                             break
                         end
                     end
@@ -331,7 +331,7 @@ function mutual_shadowing!(btpm::BinaryAsteroidTPM, r☉, rₛ, R₂₁)
 
             ## if △A₂B₂C₂ is NOT facing the sun
             if r̂☉ ⋅ n̂₂ < 0
-                btpm.sec.flux[j, 1] = 0
+                btpm.sec.flux_sun[j] = 0
                 continue
             end
 
@@ -342,7 +342,7 @@ function mutual_shadowing!(btpm::BinaryAsteroidTPM, r☉, rₛ, R₂₁)
 
             ## In the primary shadow
             if θ₂ < θ_r₁
-                btpm.sec.flux[j, 1] = 0
+                btpm.sec.flux_sun[j] = 0
                 continue
             ## Out of the primary shadow
             elseif θ₂ > θ_R₁
@@ -358,7 +358,7 @@ function mutual_shadowing!(btpm::BinaryAsteroidTPM, r☉, rₛ, R₂₁)
                     ## if △A₁B₁C₁ and △A₂B₂C₂ are facing each other
                     if d₁₂ ⋅ n̂₁ > 0 && d₁₂ ⋅ n̂₂ < 0
                         if raycast(A₁, B₁, C₁, r̂☉, G₂)
-                            btpm.sec.flux[j, 1] = 0
+                            btpm.sec.flux_sun[j] = 0
                             break
                         end
                     end
@@ -368,7 +368,7 @@ function mutual_shadowing!(btpm::BinaryAsteroidTPM, r☉, rₛ, R₂₁)
     
     #### Total eclipse of the secondary ####
     elseif π - θ₋ ≤ θ < π
-        btpm.sec.flux[:, 1] .= 0
+        btpm.sec.flux_sun .= 0
     end
 end
 
@@ -429,12 +429,12 @@ function mutual_heating!(btpm::BinaryAsteroidTPM, rₛ, R₂₁)
                 R_ir₂  = thermo_params2.reflectance_ir[j]
 
                 ## Mutual heating by scattered light
-                btpm.pri.flux[i, 2] += f₁₂ * R_vis₂ * btpm.sec.flux[j, 1]
-                btpm.sec.flux[j, 2] += f₂₁ * R_vis₁ * btpm.pri.flux[i, 1]
+                btpm.pri.flux_scat[i] += f₁₂ * R_vis₂ * btpm.sec.flux_sun[j]
+                btpm.sec.flux_scat[j] += f₂₁ * R_vis₁ * btpm.pri.flux_sun[i]
 
                 ## Mutual heating by thermal radiation
-                btpm.pri.flux[i, 3] += ε₂ * σ_SB * (1 - R_ir₂) * f₁₂ * T₂^4
-                btpm.sec.flux[j, 3] += ε₁ * σ_SB * (1 - R_ir₁) * f₂₁ * T₁^4
+                btpm.pri.flux_rad[i] += ε₂ * σ_SB * (1 - R_ir₂) * f₁₂ * T₂^4
+                btpm.sec.flux_rad[j] += ε₁ * σ_SB * (1 - R_ir₁) * f₂₁ * T₁^4
             end
         end
     end
