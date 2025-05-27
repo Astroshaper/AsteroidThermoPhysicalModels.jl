@@ -158,7 +158,7 @@ The Yarkovsky effect is an orbital perturbation caused by the asymmetric thermal
 
 ### YORP Effect
 
-The YORP effect (Yarkovsky–O'Keefe–Radzievskii–Paddack effect) is a rotational perturbation resulting from thermal radiatoion due to the asymmetric shape of the asteroid. This effect influences the rotation rate and the orientation of the asteroid's spin axis. The thermal torque calculated by the TPM can be used to determine the magnitude and direction of the YORP effect on the asteroid's rotation. You should note that the output torque is calculated in the asteroid-fixed frame, so you need to transform it to the inertial frame.
+The YORP effect (Yarkovsky–O'Keefe–Radzievskii–Paddack effect) is a rotational perturbation resulting from thermal radiation due to the asymmetric shape of the asteroid. This effect influences the rotation rate and the orientation of the asteroid's spin axis. The thermal torque calculated by the TPM can be used to determine the magnitude and direction of the YORP effect on the asteroid's rotation. You should note that the output torque is calculated in the asteroid-fixed frame, so you need to transform it to the inertial frame.
 
 ## References
 
