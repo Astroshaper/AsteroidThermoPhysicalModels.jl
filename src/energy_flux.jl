@@ -5,9 +5,9 @@
 
 
 """
-    flux_total(R_vis, R_ir, F_sun, F_scat, F_rad) -> F_total
+    absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad) -> F_abs
 
-Total energy absorbed by the surface [W/m²]
+Total energy flux absorbed by the surface [W/m²]
 
 # Arguments
 - `R_vis`  : Reflectance for visible light [-]
@@ -16,7 +16,7 @@ Total energy absorbed by the surface [W/m²]
 - `F_scat` : Flux of scattered light [W/m²]
 - `F_rad`  : Flux of thermal radiation from surrounding surface [W/m²]
 """
-flux_total(R_vis, R_ir, F_sun, F_scat, F_rad) = (1 - R_vis) * F_sun + (1 - R_vis) * F_scat + (1 - R_ir) * F_rad
+absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad) = (1 - R_vis) * F_sun + (1 - R_vis) * F_scat + (1 - R_ir) * F_rad
 
 
 """
@@ -34,7 +34,7 @@ function energy_in(stpm::SingleAsteroidTPM)
         F_rad  = stpm.flux_rad[i]
         a      = stpm.shape.face_areas[i]
         
-        E_in += flux_total(R_vis, R_ir, F_sun, F_scat, F_rad) * a
+        E_in += absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad) * a
     end
     E_in
 end

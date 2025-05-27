@@ -75,9 +75,9 @@ function forward_euler!(stpm::SingleAsteroidTPM, Δt)
             F_sun = stpm.flux_sun[i_face]
             F_scat = stpm.flux_scat[i_face]
             F_rad = stpm.flux_rad[i_face]
-            F_total = flux_total(R_vis, R_ir, F_sun, F_scat, F_rad)
+            F_abs = absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad)
 
-            stpm.temperature[begin, i_face] = (F_total / εσ)^(1/4)
+            stpm.temperature[begin, i_face] = (F_abs / εσ)^(1/4)
         end
     ## Non-zero-conductivity (thermal inertia) case
     else
@@ -257,8 +257,8 @@ function update_upper_temperature!(stpm::SingleAsteroidTPM, i::Integer)
         F_sun = stpm.flux_sun[i]
         F_scat = stpm.flux_scat[i]
         F_rad = stpm.flux_rad[i]
-        F_total = flux_total(R_vis, R_ir, F_sun, F_scat, F_rad)
-        update_surface_temperature!(stpm.SOLVER.T, F_total, k, ρ, Cₚ, ε, Δz)
+        F_abs = absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad)
+        update_surface_temperature!(stpm.SOLVER.T, F_abs, k, ρ, Cₚ, ε, Δz)
     #### Insulation boundary condition ####
     elseif stpm.BC_UPPER isa InsulationBoundaryCondition
         stpm.SOLVER.T[begin] = stpm.SOLVER.T[begin+1]
@@ -272,26 +272,26 @@ end
 
 
 """
-    update_surface_temperature!(T::AbstractVector, F_total::Real, k::Real, ρ::Real, Cₚ::Real, ε::Real, Δz::Real)
+    update_surface_temperature!(T::AbstractVector, F_abs::Real, k::Real, ρ::Real, Cₚ::Real, ε::Real, Δz::Real)
 
 Newton's method to update the surface temperature under radiation boundary condition.
 
 # Arguments
 - `T`       : 1-D array of temperatures
-- `F_total` : Total energy absorbed by the facet
+- `F_abs`   : Total energy flux absorbed by the facet
 - `k`       : Thermal conductivity [W/m/K]
 - `ρ`       : Density [kg/m³]
 - `Cₚ`      : Heat capacity [J/kg/K]
 - `ε`       : Emissivity [-]
 - `Δz`      : Depth step width [m]
 """
-function update_surface_temperature!(T::AbstractVector, F_total::Float64, k::Float64, ρ::Float64, Cₚ::Float64, ε::Float64, Δz::Float64)
+function update_surface_temperature!(T::AbstractVector, F_abs::Float64, k::Float64, ρ::Float64, Cₚ::Float64, ε::Float64, Δz::Float64)
     εσ = ε * σ_SB
 
     for _ in 1:20
         T_pri = T[begin]
 
-        f = F_total + k * (T[begin+1] - T[begin]) / Δz - εσ*T[begin]^4
+        f = F_abs + k * (T[begin+1] - T[begin]) / Δz - εσ*T[begin]^4
         df = - k / Δz - 4*εσ*T[begin]^3             
         T[begin] -= f / df
 
