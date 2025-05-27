@@ -257,7 +257,7 @@ After running the TPM, you can analyze the results to understand the thermal beh
 # Access physical quantities
 result.times  # Time steps for thermophysical modeling [s]
 result.E_in   # Input energy per second on the whole surface [W]
-result.E_out  # Output enegey per second from the whole surface [W]
+result.E_out  # Output energy per second from the whole surface [W]
 result.force  # Thermal force on the asteroid at the body-fixed frame [N]
 result.torque # Thermal torque on the asteroid at the body-fixed frame [N ⋅ m]
 
