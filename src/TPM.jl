@@ -275,7 +275,7 @@ Output data format for `SingleAsteroidThermoPhysicalModel`
 ## Saved at all time steps
 - `times`  : Timesteps, given the same vector as `ephem.time` [s]
 - `E_in`   : Input energy per second on the whole surface [W]
-- `E_out`  : Output enegey per second from the whole surface [W]
+- `E_out`  : Output energy per second from the whole surface [W]
 - `E_cons` : Energy conservation ratio [-], ratio of total energy going out to total energy coming in in the last rotation cycle
 - `force`  : Thermal force on the asteroid [N]
 - `torque` : Thermal torque on the asteroid [N ⋅ m]

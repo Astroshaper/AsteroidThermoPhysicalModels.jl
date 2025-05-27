@@ -43,7 +43,7 @@ end
 """
     energy_out(stpm::SingleAsteroidTPM) -> E_out
 
-Output enegey per second from the whole surface [W]
+Output energy per second from the whole surface [W]
 
 # Arguments
 - `stpm` : Thermophysical model for a single asteroid
