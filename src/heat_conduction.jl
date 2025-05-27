@@ -73,9 +73,9 @@ function forward_euler!(stpm::SingleAsteroidTPM, Δt)
             εσ = ε * σ_SB
 
             F_sun, F_scat, F_rad = stpm.flux[i_face, :]
-            F_total = flux_total(R_vis, R_ir, F_sun, F_scat, F_rad)
+            F_abs = absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad)
 
-            stpm.temperature[begin, i_face] = (F_total / εσ)^(1/4)
+            stpm.temperature[begin, i_face] = (F_abs / εσ)^(1/4)
         end
     ## Non-zero-conductivity (thermal inertia) case
     else
@@ -251,8 +251,8 @@ function update_upper_temperature!(stpm::SingleAsteroidTPM, i::Integer)
         Δz    = stpm.thermo_params.Δz
     
         F_sun, F_scat, F_rad = stpm.flux[i, :]
-        F_total = flux_total(R_vis, R_ir, F_sun, F_scat, F_rad)
-        update_surface_temperature!(stpm.SOLVER.T, F_total, P, l, Γ, ε, Δz)
+        F_abs = absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad)
+        update_surface_temperature!(stpm.SOLVER.T, F_abs, P, l, Γ, ε, Δz)
     #### Insulation boundary condition ####
     elseif stpm.BC_UPPER isa InsulationBoundaryCondition
         stpm.SOLVER.T[begin] = stpm.SOLVER.T[begin+1]
@@ -266,26 +266,26 @@ end
 
 
 """
-    update_surface_temperature!(T::AbstractVector, F_total::Real, k::Real, l::Real, Δz::Real, ε::Real)
+    update_surface_temperature!(T::AbstractVector, F_abs::Real, k::Real, l::Real, Δz::Real, ε::Real)
 
 Newton's method to update the surface temperature under radiation boundary condition.
 
 # Arguments
 - `T`       : 1-D array of temperatures
-- `F_total` : Total energy absorbed by the facet
+- `F_abs`   : Total energy flux absorbed by the facet
 - `Γ`       : Thermal inertia [tiu]
 - `P`       : Period of thermal cycle [sec]
 - `Δz̄`      : Non-dimensional step in depth, normalized by thermal skin depth `l`
 - `ε`       : Emissivity [-]
 """
-function update_surface_temperature!(T::AbstractVector, F_total::Float64, P::Float64, l::Float64, Γ::Float64, ε::Float64, Δz::Float64)
+function update_surface_temperature!(T::AbstractVector, F_abs::Float64, P::Float64, l::Float64, Γ::Float64, ε::Float64, Δz::Float64)
     Δz̄ = Δz / l    # Dimensionless length of depth step
     εσ = ε * σ_SB
 
     for _ in 1:20
         T_pri = T[begin]
 
-        f = F_total + Γ / √(4π * P) * (T[begin+1] - T[begin]) / Δz̄ - εσ*T[begin]^4
+        f = F_abs + Γ / √(4π * P) * (T[begin+1] - T[begin]) / Δz̄ - εσ*T[begin]^4
         df = - Γ / √(4π * P) / Δz̄ - 4*εσ*T[begin]^3             
         T[begin] -= f / df
 
