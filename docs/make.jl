@@ -16,7 +16,8 @@ makedocs(;
     pages = [
         "Introduction" => "index.md",
         "Physical model" => "physical_model.md",
-        "API" => "api.md",
+        "Usage Examples" => "examples.md",
+        "API Reference" => "api.md",
     ],
 )
 
