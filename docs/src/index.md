@@ -39,20 +39,24 @@ Pkg.test("AsteroidThermoPhysicalModels")
 A thermophysical simulation follows this general workflow:
 
 1. **Set up the environment**:
+
    - Define ephemerides of the target asteroid(s)
    - Load a shape model(s)
    - Set thermophysical parameters
 
 2. **Configure the TPM model**:
+
    - Choose a solver for the heat conduction equation
    - Set boundary conditions
    - Initialize temperature distribution
 
 3. **Run the simulation**:
+
    - Execute the TPM calculation
    - Export results
 
 4. **Analyze the results**:
+
    - Process temperature distributions
    - Calculate non-gravitational effects
 
