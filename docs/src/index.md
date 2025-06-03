@@ -45,7 +45,7 @@ After running the simulation, you will get the following output files. You shoul
 - `physical_quantities.csv`
     - `time`     : Time steps
     - `E_in`     : Input energy per second on the whole surface [W]
-    - `E_out`    : Output enegey per second from the whole surface [W]
+    - `E_out`    : Output energy per second from the whole surface [W]
     - `E_cons`   : Energy conservation ratio [-], ratio of total energy going out to total energy coming in during the last rotation cycle
     - `force_x`  : x-component of the thermal force
     - `force_y`  : y-component of the thermal force
