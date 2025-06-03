@@ -46,7 +46,7 @@
     P = SPICE.convrt(7.63262, "hours", "seconds")  # Rotation period of Ryugu
 
     n_cycle = 2  # Number of cycles to perform TPM
-    n_step_in_cycle = 72  # Number of time steps in one rotation period
+    n_step_in_cycle = 120  # Number of time steps in one rotation period
 
     et_begin = SPICE.utc2et("2018-07-01T00:00:00")  # Start time of TPM
     et_end   = et_begin + P * n_cycle  # End time of TPM
@@ -74,7 +74,7 @@
     k  = 0.1     # Thermal conductivity [W/m/K]
     ρ  = 1270.0  # Density [kg/m³]
     Cₚ = 600.0   # Heat capacity [J/kg/K]
-    
+
     l = AsteroidThermoPhysicalModels.thermal_skin_depth(P, k, ρ, Cₚ)  # Thermal skin depth [m]
     Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)        # Thermal inertia [tiu]
 
@@ -83,10 +83,10 @@
     ε     = 1.0   # Emissivity [-]
 
     z_max = 0.6   # Depth of the lower boundary of a heat conduction equation [m]
-    n_depth = 41  # Number of depth steps
+    n_depth = 61  # Number of depth steps
     Δz = z_max / (n_depth - 1)  # Depth step width [m]
 
-    thermo_params = AsteroidThermoPhysicalModels.ThermoParams(P, l, Γ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+    thermo_params = AsteroidThermoPhysicalModels.ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 
     ##= Setting of TPM =##
     stpm = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params;

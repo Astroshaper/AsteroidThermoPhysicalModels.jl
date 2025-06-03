@@ -64,8 +64,8 @@ function forward_euler!(stpm::SingleAsteroidTPM, Δt)
     n_depth = size(T, 1)
     n_face = size(T, 2)
 
-    ## Zero-conductivity (thermal inertia) case
-    if iszero(stpm.thermo_params.inertia)
+    ## Zero-conductivity case
+    if iszero(stpm.thermo_params.thermal_conductivity)
         for i_face in 1:n_face
             R_vis = stpm.thermo_params.reflectance_vis[i_face]
             R_ir  = stpm.thermo_params.reflectance_ir[i_face]
@@ -80,11 +80,13 @@ function forward_euler!(stpm::SingleAsteroidTPM, Δt)
     ## Non-zero-conductivity (thermal inertia) case
     else
         for i_face in 1:n_face
-            P  = stpm.thermo_params.period
+            k  = stpm.thermo_params.thermal_conductivity[i_face]
+            ρ  = stpm.thermo_params.density[i_face]
+            Cₚ = stpm.thermo_params.heat_capacity[i_face]
             Δz = stpm.thermo_params.Δz
-            l  = stpm.thermo_params.skindepth[i_face]
 
-            λ = (Δt/P) / (Δz/l)^2 / 4π
+            α = thermal_diffusivity(k, ρ, Cₚ)  # Thermal diffusivity [m²/s]
+            λ = α * Δt / Δz^2
             λ ≥ 0.5 && error("The forward Euler method is unstable because λ = $λ. This should be less than 0.5.")
 
             for i_depth in 2:(n_depth-1)
@@ -242,9 +244,9 @@ function update_upper_temperature!(stpm::SingleAsteroidTPM, i::Integer)
 
     #### Radiation boundary condition ####
     if stpm.BC_UPPER isa RadiationBoundaryCondition
-        P     = stpm.thermo_params.period
-        l     = stpm.thermo_params.skindepth[i]
-        Γ     = stpm.thermo_params.inertia[i]
+        k     = stpm.thermo_params.thermal_conductivity[i]
+        ρ     = stpm.thermo_params.density[i]
+        Cₚ    = stpm.thermo_params.heat_capacity[i]
         R_vis = stpm.thermo_params.reflectance_vis[i]
         R_ir  = stpm.thermo_params.reflectance_ir[i]
         ε     = stpm.thermo_params.emissivity[i]
@@ -252,7 +254,7 @@ function update_upper_temperature!(stpm::SingleAsteroidTPM, i::Integer)
     
         F_sun, F_scat, F_rad = stpm.flux[i, :]
         F_total = flux_total(R_vis, R_ir, F_sun, F_scat, F_rad)
-        update_surface_temperature!(stpm.SOLVER.T, F_total, P, l, Γ, ε, Δz)
+        update_surface_temperature!(stpm.SOLVER.T, F_total, k, ρ, Cₚ, ε, Δz)
     #### Insulation boundary condition ####
     elseif stpm.BC_UPPER isa InsulationBoundaryCondition
         stpm.SOLVER.T[begin] = stpm.SOLVER.T[begin+1]
@@ -266,27 +268,27 @@ end
 
 
 """
-    update_surface_temperature!(T::AbstractVector, F_total::Real, k::Real, l::Real, Δz::Real, ε::Real)
+    update_surface_temperature!(T::AbstractVector, F_total::Real, k::Real, ρ::Real, Cₚ::Real, ε::Real, Δz::Real)
 
 Newton's method to update the surface temperature under radiation boundary condition.
 
 # Arguments
 - `T`       : 1-D array of temperatures
 - `F_total` : Total energy absorbed by the facet
-- `Γ`       : Thermal inertia [tiu]
-- `P`       : Period of thermal cycle [sec]
-- `Δz̄`      : Non-dimensional step in depth, normalized by thermal skin depth `l`
+- `k`       : Thermal conductivity [W/m/K]
+- `ρ`       : Density [kg/m³]
+- `Cₚ`      : Heat capacity [J/kg/K]
 - `ε`       : Emissivity [-]
+- `Δz`      : Depth step width [m]
 """
-function update_surface_temperature!(T::AbstractVector, F_total::Float64, P::Float64, l::Float64, Γ::Float64, ε::Float64, Δz::Float64)
-    Δz̄ = Δz / l    # Dimensionless length of depth step
+function update_surface_temperature!(T::AbstractVector, F_total::Float64, k::Float64, ρ::Float64, Cₚ::Float64, ε::Float64, Δz::Float64)
     εσ = ε * σ_SB
 
     for _ in 1:20
         T_pri = T[begin]
 
-        f = F_total + Γ / √(4π * P) * (T[begin+1] - T[begin]) / Δz̄ - εσ*T[begin]^4
-        df = - Γ / √(4π * P) / Δz̄ - 4*εσ*T[begin]^3             
+        f = F_total + k * (T[begin+1] - T[begin]) / Δz - εσ*T[begin]^4
+        df = - k / Δz - 4*εσ*T[begin]^3             
         T[begin] -= f / df
 
         err = abs(1 - T_pri / T[begin])
