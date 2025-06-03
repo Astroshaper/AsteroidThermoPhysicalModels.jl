@@ -82,21 +82,21 @@ The YORP effect (Yarkovsky-O'Keefe-Radzievskii-Paddack effect) is a rotational p
 
 | Symbol | Unit | Description |
 | :----- | :--- | :---------- |
-| ``t`` | ``[\mathrm{s}]`` | Time |
-| ``T`` | ``[\mathrm{K}]`` | Temperature |
-| ``R_\text{vis}`` | ``[\text{-}]`` | Reflectance for visible light |
-| ``R_\text{ir}`` | ``[\text{-}]`` | Reflectance for thermal infrared |
-| ``F_\text{sun}`` | ``[\mathrm{W/m^2}]`` | Flux of direct sunlight |
-| ``F_\text{scat}`` | ``[\mathrm{W/m^2}]`` | Flux of scattered light |
-| ``F_\text{rad}`` | ``[\mathrm{W/m^2}]`` | Flux of thermal radiation from surrounding surface |
-| ``\rho`` | ``[\mathrm{kg/m^3}]`` | Density |
-| ``C_p`` | ``[\mathrm{J/(kg \cdot K)}]`` | Heat capacity at constant pressure |
-| ``P`` | ``[\mathrm{s}]`` | Rotation period |
-| ``l`` | ``[\mathrm{m}]`` | Thermal skin depth |
-| ``k`` | ``[\mathrm{W/(m \cdot K)}]`` | Thermal conductivity |
-| ``z`` | ``[\mathrm{m}]`` | Depth |
-| ``E`` | ``[\mathrm{J}]`` | Emittance energy |
-| ``\Gamma`` | ``[\mathrm{tiu}] = [\mathrm{J \cdot m^{-2} \cdot K^{-1} \cdot s^{-1/2}}]`` | Thermal inertia (cf. [Thermal inertia SI unit proposal](https://nathaniel.putzig.com/research/tiu.html)) |
-| ``\varepsilon`` | ``[\text{-}]`` | Emissivity |
-| ``\Phi`` | ``[\mathrm{W/m^2}]`` | Solar energy flux |
+| ``t``                | ``[\mathrm{s}]``                 | Time |
+| ``T``                | ``[\mathrm{K}]``                 | Temperature |
+| ``R_\text{vis}``     | ``[\text{-}]``                   | Reflectance for visible light |
+| ``R_\text{ir}``      | ``[\text{-}]``                   | Reflectance for thermal infrared |
+| ``F_\text{sun}``     | ``[\mathrm{W/m^2}]``             | Flux of direct sunlight |
+| ``F_\text{scat}``    | ``[\mathrm{W/m^2}]``             | Flux of scattered light |
+| ``F_\text{rad}``     | ``[\mathrm{W/m^2}]``             | Flux of thermal radiation from surrounding surface |
+| ``\rho``             | ``[\mathrm{kg/m^3}]``            | Density |
+| ``C_p``              | ``[\mathrm{J/K}]``               | Heat capacity at constant pressure |
+| ``P``                | ``[\mathrm{s}]``                 | Rotation period |
+| ``l``                | ``[\mathrm{m}]``                 | Thermal skin depth |
+| ``k``                | ``[\mathrm{W/(m \cdot K)}]``     | Thermal conductivity |
+| ``z``                | ``[\mathrm{m}]``                 | Depth |
+| ``E``                | ``[\mathrm{J}]``                 | Emittance energy |
+| ``\Gamma``           | ``[\mathrm{tiu}] = [\mathrm{J \cdot m^{-2} \cdot K^{-1} \cdot s^{-1/2}}]`` | Thermal inertia (cf. [Thermal inertia SI unit proposal](https://nathaniel.putzig.com/research/tiu.html))    |
+| ``\varepsilon``      | ``[\text{-}]``                   | Emissivity |
+| ``\Phi``             | ``[\mathrm{W/m^2}]``             | Solar energy flux |
 | ``\sigma_\text{SB}`` | ``[\mathrm{W/(m^2 \cdot K^4)}]`` | Stefan-Boltzmann constant |
