@@ -258,7 +258,7 @@ function update_upper_temperature!(stpm::SingleAsteroidTPM, i::Integer)
         F_scat = stpm.flux_scat[i]
         F_rad = stpm.flux_rad[i]
         F_total = flux_total(R_vis, R_ir, F_sun, F_scat, F_rad)
-        update_surface_temperature!(stpm.SOLVER.T, F_total, P, l, Γ, ε, Δz)
+        update_surface_temperature!(stpm.SOLVER.T, F_total, k, ρ, Cₚ, ε, Δz)
     #### Insulation boundary condition ####
     elseif stpm.BC_UPPER isa InsulationBoundaryCondition
         stpm.SOLVER.T[begin] = stpm.SOLVER.T[begin+1]
