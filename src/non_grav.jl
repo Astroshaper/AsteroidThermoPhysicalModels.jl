@@ -22,9 +22,9 @@ function update_thermal_force!(stpm::SingleAsteroidTPM)
         n̂ᵢ = stpm.shape.face_normals[i]
         aᵢ = stpm.shape.face_areas[i]
 
-        F_sun  = stpm.flux[i, 1]
-        F_scat = stpm.flux[i, 2]
-        F_rad  = stpm.flux[i, 3]
+        F_sun  = stpm.flux_sun[i]
+        F_scat = stpm.flux_scat[i]
+        F_rad  = stpm.flux_rad[i]
         Tᵢ = stpm.temperature[begin, i]
 
         ## Total emittance from face i , Eᵢ [W/m²].

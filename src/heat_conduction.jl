@@ -72,7 +72,9 @@ function forward_euler!(stpm::SingleAsteroidTPM, Δt)
             ε     = stpm.thermo_params.emissivity[i_face]
             εσ = ε * σ_SB
 
-            F_sun, F_scat, F_rad = stpm.flux[i_face, :]
+            F_sun = stpm.flux_sun[i_face]
+            F_scat = stpm.flux_scat[i_face]
+            F_rad = stpm.flux_rad[i_face]
             F_total = flux_total(R_vis, R_ir, F_sun, F_scat, F_rad)
 
             stpm.temperature[begin, i_face] = (F_total / εσ)^(1/4)
@@ -252,7 +254,9 @@ function update_upper_temperature!(stpm::SingleAsteroidTPM, i::Integer)
         ε     = stpm.thermo_params.emissivity[i]
         Δz    = stpm.thermo_params.Δz
     
-        F_sun, F_scat, F_rad = stpm.flux[i, :]
+        F_sun = stpm.flux_sun[i]
+        F_scat = stpm.flux_scat[i]
+        F_rad = stpm.flux_rad[i]
         F_total = flux_total(R_vis, R_ir, F_sun, F_scat, F_rad)
         update_surface_temperature!(stpm.SOLVER.T, F_total, k, ρ, Cₚ, ε, Δz)
     #### Insulation boundary condition ####
