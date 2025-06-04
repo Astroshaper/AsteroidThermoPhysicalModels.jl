@@ -131,24 +131,20 @@ function implicit_euler!(stpm::SingleAsteroidTPM, Δt)
             ε     = stpm.thermo_params.emissivity[i_face]
             εσ = ε * σ_SB
 
-            F_sun, F_scat, F_rad = stpm.flux[i_face, :]
-            F_total = flux_total(R_vis, R_ir, F_sun, F_scat, F_rad)
+            F_sun = stpm.flux_sun[i_face]
+            F_scat = stpm.flux_scat[i_face]
+            F_rad = stpm.flux_rad[i_face]
+            F_abs = absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad)
 
-            stpm.temperature[begin, i_face] = (F_total / εσ)^(1/4)
+            stpm.temperature[begin, i_face] = (F_abs / εσ)^(1/4)
         end
     ## Non-zero-conductivity (thermal inertia) case
     else
         for i_face in 1:n_face
-            P  = stpm.thermo_params.period
-            Δz = stpm.thermo_params.Δz
-            l  = stpm.thermo_params.skindepth[i_face]
 
-            # Non-dimensional timestep, normalized by period
-            Δt̄ = Δt / P
-            # Non-dimensional step in depth, normalized by thermal skin depth
-            Δz̄ = Δz / l
-            # Stability parameter for implicit methods
-            λ = (Δt̄) / (Δz̄^2) / 4π
+            # Stability parameter `λ` for implicit methods
+            Δz = stpm.thermo_params.Δz
+            λ = Δt / (Δz^2) / 4π
 
             # Initialize the tridiagonal matrix coefficients
             stpm.SOLVER.a .= -λ
@@ -173,7 +169,7 @@ function implicit_euler!(stpm::SingleAsteroidTPM, Δt)
             tridiagonal_matrix_algorithm!(stpm)
             
             # Apply upper boundary condition (surface temperature)
-            stpm.SOLVER.x[begin] = T[begin, i_face]  # 一時的に元の表面温度を保存
+            stpm.SOLVER.x[begin] = T[begin, i_face]  # Temporarily save previous surface temperature
             update_upper_temperature!(stpm, i_face)
             
             # Copy temperature at next time step
@@ -202,31 +198,27 @@ function crank_nicolson!(stpm::SingleAsteroidTPM, Δt)
     n_face = size(T, 2)
 
     ## Zero-conductivity (thermal inertia) case
-    if iszero(stpm.thermo_params.inertia)
+    if iszero(stpm.thermo_params.thermal_conductivity)
         for i_face in 1:n_face
             R_vis = stpm.thermo_params.reflectance_vis[i_face]
             R_ir  = stpm.thermo_params.reflectance_ir[i_face]
             ε     = stpm.thermo_params.emissivity[i_face]
             εσ = ε * σ_SB
 
-            F_sun, F_scat, F_rad = stpm.flux[i_face, :]
-            F_total = flux_total(R_vis, R_ir, F_sun, F_scat, F_rad)
+            F_sun = stpm.flux_sun[i_face]
+            F_scat = stpm.flux_scat[i_face]
+            F_rad = stpm.flux_rad[i_face]
+            F_abs = absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad)
 
-            stpm.temperature[begin, i_face] = (F_total / εσ)^(1/4)
+            stpm.temperature[begin, i_face] = (F_abs / εσ)^(1/4)
         end
     ## Non-zero-conductivity (thermal inertia) case
     else
         for i_face in 1:n_face
-            P  = stpm.thermo_params.period
-            Δz = stpm.thermo_params.Δz
-            l  = stpm.thermo_params.skindepth[i_face]
 
-            # Non-dimensional timestep, normalized by period
-            Δt̄ = Δt / P
-            # Non-dimensional step in depth, normalized by thermal skin depth
-            Δz̄ = Δz / l
-            # Stability parameter for Crank-Nicolson method
-            r = (1/4π) * (Δt̄ / (2*Δz̄^2))
+            # Stability parameter `r` for Crank-Nicolson method
+            Δz = stpm.thermo_params.Δz
+            r = Δt / (2*Δz^2) / 4π
 
             # Initialize the tridiagonal matrix coefficients
             stpm.SOLVER.a .= -r
@@ -255,7 +247,7 @@ function crank_nicolson!(stpm::SingleAsteroidTPM, Δt)
             tridiagonal_matrix_algorithm!(stpm)
             
             # Apply upper boundary condition (surface temperature)
-            stpm.SOLVER.x[begin] = T[begin, i_face]  # 一時的に元の表面温度を保存
+            stpm.SOLVER.x[begin] = T[begin, i_face]  # Temporarily save previous surface temperature
             update_upper_temperature!(stpm, i_face)
             
             # Copy temperature at next time step
@@ -330,7 +322,7 @@ function update_upper_temperature!(stpm::SingleAsteroidTPM, i::Integer)
         F_scat = stpm.flux_scat[i]
         F_rad = stpm.flux_rad[i]
         F_abs = absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad)
-        update_surface_temperature!(stpm.SOLVER.T, F_abs, k, ρ, Cₚ, ε, Δz)
+        update_surface_temperature!(stpm.SOLVER.x, F_abs, k, ρ, Cₚ, ε, Δz)
     #### Insulation boundary condition ####
     elseif stpm.BC_UPPER isa InsulationBoundaryCondition
         stpm.SOLVER.x[begin] = stpm.SOLVER.x[begin+1]
