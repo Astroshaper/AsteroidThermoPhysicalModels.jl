@@ -64,7 +64,7 @@ function explicit_euler!(stpm::SingleAsteroidTPM, Δt)
     n_depth = size(T, 1)
     n_face = size(T, 2)
 
-    ## Zero-conductivity case
+    ## Zero-conductivity (thermal inertia) case
     if iszero(stpm.thermo_params.thermal_conductivity)
         for i_face in 1:n_face
             R_vis = stpm.thermo_params.reflectance_vis[i_face]
@@ -124,7 +124,7 @@ function implicit_euler!(stpm::SingleAsteroidTPM, Δt)
     n_face = size(T, 2)
 
     ## Zero-conductivity (thermal inertia) case
-    if iszero(stpm.thermo_params.inertia)
+    if iszero(stpm.thermo_params.thermal_conductivity)
         for i_face in 1:n_face
             R_vis = stpm.thermo_params.reflectance_vis[i_face]
             R_ir  = stpm.thermo_params.reflectance_ir[i_face]
@@ -269,7 +269,8 @@ end
     tridiagonal_matrix_algorithm!(a, b, c, d, x)
     tridiagonal_matrix_algorithm!(stpm::SingleAsteroidThermoPhysicalModel)
 
-Tridiagonal matrix algorithm to solve the heat conduction equation by the implicit Euler and Crank-Nicolson methods.
+Tridiagonal matrix algorithm to solve the heat conduction equation
+by the implicit (backward) Euler and Crank-Nicolson methods.
 
     | b₁ c₁ 0  ⋯  0   | | x₁ |   | d₁ |
     | a₂ b₂ c₂ ⋯  0   | | x₂ |   | d₂ |
