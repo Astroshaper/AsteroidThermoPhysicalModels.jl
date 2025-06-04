@@ -255,18 +255,18 @@ function crank_nicolson!(stpm::SingleAsteroidTPM, Δt)
             
         # Apply lower boundary condition to the matrix system
         if stpm.BC_LOWER isa IsothermalBoundaryCondition
-                # T[end] = T_iso
-                stpm.SOLVER.a[end] = 0
-                stpm.SOLVER.b[end] = 1
-                stpm.SOLVER.c[end] = 0
-                stpm.SOLVER.d[end] = stpm.BC_LOWER.T_iso
+            # T[end] = T_iso
+            stpm.SOLVER.a[end] = 0
+            stpm.SOLVER.b[end] = 1
+            stpm.SOLVER.c[end] = 0
+            stpm.SOLVER.d[end] = stpm.BC_LOWER.T_iso
         elseif stpm.BC_LOWER isa InsulationBoundaryCondition
-                # ∂T/∂z = 0 → T[n+1] = T[n]
-                stpm.SOLVER.a[end] = -r
-                stpm.SOLVER.b[end] = 1 + r
-                stpm.SOLVER.c[end] = 0
-                # For Crank-Nicolson, modify RHS
-                stpm.SOLVER.d[end] = r*T[end-1, i_face] + (1-r)*T[end, i_face]
+            # ∂T/∂z = 0 → T[n+1] = T[n]
+            stpm.SOLVER.a[end] = -r
+            stpm.SOLVER.b[end] = 1 + r
+            stpm.SOLVER.c[end] = 0
+            # For Crank-Nicolson, modify RHS
+            stpm.SOLVER.d[end] = r*T[end-1, i_face] + (1-r)*T[end, i_face]
         end
             
         # Apply upper boundary condition to the matrix system
