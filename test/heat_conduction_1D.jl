@@ -101,7 +101,7 @@
 
     @testset "Numercal vs. analytical solution (isothermal boundary condition)" begin
         T_analytical = similar(Ts)
-        α = k / (ρ * Cₚ)  # Thermal diffusivity [m²/s]
+        α = AsteroidThermoPhysicalModels.thermal_diffusivity(k, ρ, Cₚ)  # Thermal diffusivity [m²/s]
         for (i, x) in enumerate(xs)
             T_analytical[i] = AsteroidThermoPhysicalModels.analytical_solution_isothermal(x, ephem.time[end], z_max, α; n_max=100)
         end
