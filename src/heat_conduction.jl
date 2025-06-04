@@ -141,10 +141,13 @@ function implicit_euler!(stpm::SingleAsteroidTPM, Δt)
     ## Non-zero-conductivity (thermal inertia) case
     else
         for i_face in 1:n_face
-
-            # Stability parameter `λ` for implicit methods
+            k  = stpm.thermo_params.thermal_conductivity[i_face]
+            ρ  = stpm.thermo_params.density[i_face]
+            Cₚ = stpm.thermo_params.heat_capacity[i_face]
             Δz = stpm.thermo_params.Δz
-            λ = Δt / (Δz^2) / 4π
+
+            α = thermal_diffusivity(k, ρ, Cₚ)  # Thermal diffusivity [m²/s]
+            λ = α * Δt / Δz^2
 
             # Initialize the tridiagonal matrix coefficients
             stpm.SOLVER.a .= -λ
@@ -215,10 +218,13 @@ function crank_nicolson!(stpm::SingleAsteroidTPM, Δt)
     ## Non-zero-conductivity (thermal inertia) case
     else
         for i_face in 1:n_face
-
-            # Stability parameter `r` for Crank-Nicolson method
+            k  = stpm.thermo_params.thermal_conductivity[i_face]
+            ρ  = stpm.thermo_params.density[i_face]
+            Cₚ = stpm.thermo_params.heat_capacity[i_face]
             Δz = stpm.thermo_params.Δz
-            r = Δt / (2*Δz^2) / 4π
+
+            α = thermal_diffusivity(k, ρ, Cₚ)  # Thermal diffusivity [m²/s]
+            r = α * Δt / (2 * Δz^2)
 
             # Initialize the tridiagonal matrix coefficients
             stpm.SOLVER.a .= -r
