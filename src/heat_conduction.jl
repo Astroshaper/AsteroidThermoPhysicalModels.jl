@@ -165,15 +165,46 @@ function implicit_euler!(stpm::SingleAsteroidTPM, Δt)
             # Set the right-hand side vector
             stpm.SOLVER.d .= T[:, i_face]
             
-            # Apply boundary conditions
-            update_lower_temperature!(stpm)
+            # Apply lower boundary condition to the matrix system
+            if stpm.BC_LOWER isa IsothermalBoundaryCondition
+                # T[end] = T_iso
+                stpm.SOLVER.a[end] = 0
+                stpm.SOLVER.b[end] = 1
+                stpm.SOLVER.c[end] = 0
+                stpm.SOLVER.d[end] = stpm.BC_LOWER.T_iso
+            elseif stpm.BC_LOWER isa InsulationBoundaryCondition
+                # ∂T/∂z = 0 → T[n+1] = T[n]
+                stpm.SOLVER.a[end] = -λ
+                stpm.SOLVER.b[end] = 1 + λ
+                stpm.SOLVER.c[end] = 0
+                # d[end] already contains T[end, i_face]
+            end
+            
+            # Apply upper boundary condition to the matrix system
+            if stpm.BC_UPPER isa IsothermalBoundaryCondition
+                # T[1] = T_iso
+                stpm.SOLVER.a[begin] = 0
+                stpm.SOLVER.b[begin] = 1
+                stpm.SOLVER.c[begin] = 0
+                stpm.SOLVER.d[begin] = stpm.BC_UPPER.T_iso
+            elseif stpm.BC_UPPER isa InsulationBoundaryCondition
+                # ∂T/∂z = 0 → T[0] = T[1]
+                stpm.SOLVER.a[begin] = 0
+                stpm.SOLVER.b[begin] = 1 + λ
+                stpm.SOLVER.c[begin] = -λ
+                # d[begin] already contains T[begin, i_face]
+            elseif stpm.BC_UPPER isa RadiationBoundaryCondition
+                # For radiation BC, we keep the standard interior equation
+                # and handle it separately after solving
+            end
             
             # Solve the tridiagonal system
             tridiagonal_matrix_algorithm!(stpm)
             
-            # Apply upper boundary condition (surface temperature)
-            stpm.SOLVER.x[begin] = T[begin, i_face]  # Temporarily save previous surface temperature
-            update_upper_temperature!(stpm, i_face)
+            # Special handling for radiation boundary condition
+            if stpm.BC_UPPER isa RadiationBoundaryCondition
+                update_upper_temperature!(stpm, i_face)
+            end
             
             # Copy temperature at next time step
             T[:, i_face] .= stpm.SOLVER.x
@@ -243,18 +274,51 @@ function crank_nicolson!(stpm::SingleAsteroidTPM, Δt)
             for i_depth in 2:n_depth-1
                 stpm.SOLVER.d[i_depth] = r*T[i_depth+1, i_face] + (1-2r)*T[i_depth, i_face] + r*T[i_depth-1, i_face]
             end
-            stpm.SOLVER.d[begin] = T[begin, i_face]  # Will be overwritten by boundary condition
-            stpm.SOLVER.d[end]   = T[end, i_face]    # Will be overwritten by boundary condition
+            stpm.SOLVER.d[begin] = T[begin, i_face]
+            stpm.SOLVER.d[end]   = T[end, i_face]
             
-            # Apply boundary conditions
-            update_lower_temperature!(stpm)
+            # Apply lower boundary condition to the matrix system
+            if stpm.BC_LOWER isa IsothermalBoundaryCondition
+                # T[end] = T_iso
+                stpm.SOLVER.a[end] = 0
+                stpm.SOLVER.b[end] = 1
+                stpm.SOLVER.c[end] = 0
+                stpm.SOLVER.d[end] = stpm.BC_LOWER.T_iso
+            elseif stpm.BC_LOWER isa InsulationBoundaryCondition
+                # ∂T/∂z = 0 → T[n+1] = T[n]
+                stpm.SOLVER.a[end] = -r
+                stpm.SOLVER.b[end] = 1 + r
+                stpm.SOLVER.c[end] = 0
+                # For Crank-Nicolson, modify RHS
+                stpm.SOLVER.d[end] = r*T[end-1, i_face] + (1-r)*T[end, i_face]
+            end
+            
+            # Apply upper boundary condition to the matrix system
+            if stpm.BC_UPPER isa IsothermalBoundaryCondition
+                # T[1] = T_iso
+                stpm.SOLVER.a[begin] = 0
+                stpm.SOLVER.b[begin] = 1
+                stpm.SOLVER.c[begin] = 0
+                stpm.SOLVER.d[begin] = stpm.BC_UPPER.T_iso
+            elseif stpm.BC_UPPER isa InsulationBoundaryCondition
+                # ∂T/∂z = 0 → T[0] = T[1]
+                stpm.SOLVER.a[begin] = 0
+                stpm.SOLVER.b[begin] = 1 + r
+                stpm.SOLVER.c[begin] = -r
+                # For Crank-Nicolson, modify RHS
+                stpm.SOLVER.d[begin] = r*T[begin+1, i_face] + (1-r)*T[begin, i_face]
+            elseif stpm.BC_UPPER isa RadiationBoundaryCondition
+                # For radiation BC, we keep the standard interior equation
+                # and handle it separately after solving
+            end
             
             # Solve the tridiagonal system
             tridiagonal_matrix_algorithm!(stpm)
             
-            # Apply upper boundary condition (surface temperature)
-            stpm.SOLVER.x[begin] = T[begin, i_face]  # Temporarily save previous surface temperature
-            update_upper_temperature!(stpm, i_face)
+            # Special handling for radiation boundary condition
+            if stpm.BC_UPPER isa RadiationBoundaryCondition
+                update_upper_temperature!(stpm, i_face)
+            end
             
             # Copy temperature at next time step
             T[:, i_face] .= stpm.SOLVER.x
