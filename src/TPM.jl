@@ -10,28 +10,28 @@ abstract type HeatConductionSolver end
 
 
 """
-Type of the forward Euler method:
+Type of the explicit (forward) Euler method:
 - Explicit in time
 - First order in time
 
-The `ForwardEulerSolver` type includes a vector for the temperature at the next time step.
+The `ExplicitEulerSolver` type includes a vector for the temperature at the next time step.
 """
-struct ForwardEulerSolver <: HeatConductionSolver
-    T::Vector{Float64}
+struct ExplicitEulerSolver <: HeatConductionSolver
+    x::Vector{Float64}  # Temperature vector for the next time step
 end
 
-ForwardEulerSolver(thermo_params::AbstractThermoParams) = ForwardEulerSolver(thermo_params.n_depth)
-ForwardEulerSolver(N::Integer) = ForwardEulerSolver(zeros(N))
+ExplicitEulerSolver(thermo_params::AbstractThermoParams) = ExplicitEulerSolver(thermo_params.n_depth)
+ExplicitEulerSolver(N::Integer) = ExplicitEulerSolver(zeros(N))
 
 
 """
-Type of the backward Euler method:
+Type of the implicit (backward) Euler method:
 - Implicit in time (Unconditionally stable in the heat conduction equation)
 - First order in time
 
-The `BackwardEulerSolver` type has vectors for the tridiagonal matrix algorithm.
+The `ImplicitEulerSolver` type has vectors for the tridiagonal matrix algorithm.
 """
-struct BackwardEulerSolver <: HeatConductionSolver
+struct ImplicitEulerSolver <: HeatConductionSolver
     a::Vector{Float64}
     b::Vector{Float64}
     c::Vector{Float64}
@@ -39,8 +39,8 @@ struct BackwardEulerSolver <: HeatConductionSolver
     x::Vector{Float64}
 end
 
-BackwardEulerSolver(thermo_params::AbstractThermoParams) = BackwardEulerSolver(thermo_params.n_depth)
-BackwardEulerSolver(N::Integer) = BackwardEulerSolver(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
+ImplicitEulerSolver(thermo_params::AbstractThermoParams) = ImplicitEulerSolver(thermo_params.n_depth)
+ImplicitEulerSolver(N::Integer) = ImplicitEulerSolver(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
 
 
 """
@@ -214,8 +214,6 @@ Construct a thermophysical model for a single asteroid (`SingleAsteroidThermoPhy
 - `BC_LOWER`       : Boundary condition at the lower boundary
 """
 function SingleAsteroidThermoPhysicalModel(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
-
-    broadcast_thermo_params!(thermo_params, shape)
 
     broadcast_thermo_params!(thermo_params, shape)
 
