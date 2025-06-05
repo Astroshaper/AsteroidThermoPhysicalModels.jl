@@ -9,10 +9,10 @@ Calculate the analytical solution of the 1D heat equation with isothermal bounda
 - Initial condition: T₀(x) = x < 0.5L ? 2x/L : 2(1 - x/L)  # Triangular profile as follows:
         T₀
         ^ 
-      1 |   ^
-        |  / \
-        | /   \
-        |/     \
+      1 |   ・
+        |  ・ ・
+        | ・   ・
+        |・     ・
       0 +---+---+--> x
         0  L/2  L
 
