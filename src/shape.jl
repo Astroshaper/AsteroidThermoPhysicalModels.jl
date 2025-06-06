@@ -163,10 +163,47 @@ end
 ################################################################
 
 """
-    polyhedron_volume(nodes, faces)      -> vol
+    polyhedron_volume(nodes, faces) -> vol
     polyhedron_volume(shape::ShapeModel) -> vol
 
-Calculate volume of a polyhedral
+Calculate the volume of a closed polyhedral shape using the divergence theorem.
+
+# Arguments
+- `nodes::Vector{SVector{3}}` : Vector of vertex positions
+- `faces::Vector{SVector{3,Int}}` : Vector of triangular face definitions (vertex indices)
+- `shape::ShapeModel` : Complete shape model containing nodes and faces
+
+# Returns
+- `vol::Float64` : Volume of the polyhedron [unit³]
+
+# Algorithm
+Uses the divergence theorem to compute volume from surface triangles:
+```
+V = (1/6) Σᵢ (Aᵢ × Bᵢ) ⋅ Cᵢ
+```
+where Aᵢ, Bᵢ, Cᵢ are the three vertices of triangle i.
+
+# Requirements
+- The polyhedron must be closed (watertight)
+- Face normals should point outward for positive volume
+- Faces must be consistently oriented (all clockwise or all counter-clockwise)
+
+# Example
+```julia
+# Create a tetrahedron
+nodes = [SVector(0.0, 0.0, 0.0),
+         SVector(1.0, 0.0, 0.0),
+         SVector(0.0, 1.0, 0.0),
+         SVector(0.0, 0.0, 1.0)]
+faces = [SVector(1, 2, 3),
+         SVector(1, 2, 4),
+         SVector(1, 3, 4),
+         SVector(2, 3, 4)]
+vol = polyhedron_volume(nodes, faces)  # Returns 1/6
+```
+
+# See Also
+- `equivalent_radius` to convert volume to equivalent spherical radius
 """
 function polyhedron_volume(nodes, faces)
     volume = 0.
@@ -179,12 +216,89 @@ end
 
 polyhedron_volume(shape::ShapeModel) = polyhedron_volume(shape.nodes, shape.faces)
 
+"""
+    equivalent_radius(VOLUME::Real) -> R_eq
+    equivalent_radius(shape::ShapeModel) -> R_eq
+
+Calculate the radius of a sphere with the same volume as the given volume or shape.
+
+# Arguments
+- `VOLUME::Real` : Volume of the object [unit³]
+- `shape::ShapeModel` : Shape model to compute equivalent radius for
+
+# Returns
+- `R_eq::Float64` : Equivalent spherical radius [unit]
+
+# Formula
+```
+R_eq = (3V/4π)^(1/3)
+```
+
+# Example
+```julia
+# For a cube with side length 2
+volume = 8.0  # 2³
+R_eq = equivalent_radius(volume)  # Returns ≈ 1.24
+
+# For a shape model
+shape = load_shape_obj("asteroid.obj")
+R_eq = equivalent_radius(shape)
+```
+
+# See Also
+- `polyhedron_volume` for volume calculation
+- `maximum_radius`, `minimum_radius` for other size metrics
+"""
 equivalent_radius(VOLUME::Real) = (3VOLUME/4π)^(1/3)
 equivalent_radius(shape::ShapeModel) = equivalent_radius(polyhedron_volume(shape))
 
+"""
+    maximum_radius(nodes) -> R_max
+    maximum_radius(shape::ShapeModel) -> R_max
+
+Find the maximum distance from the origin to any vertex in the shape.
+
+# Arguments
+- `nodes::Vector{SVector{3}}` : Vector of vertex positions
+- `shape::ShapeModel` : Shape model
+
+# Returns
+- `R_max::Float64` : Maximum radius [unit]
+
+# Notes
+- Assumes the shape is centered at the origin
+- Useful for determining bounding spheres
+- For binary systems, ensure each component is centered appropriately
+
+# See Also
+- `minimum_radius` for the minimum distance
+- `equivalent_radius` for volume-based radius
+"""
 maximum_radius(nodes) = maximum(norm, nodes)
 maximum_radius(shape::ShapeModel) = maximum_radius(shape.nodes)
 
+"""
+    minimum_radius(nodes) -> R_min
+    minimum_radius(shape::ShapeModel) -> R_min
+
+Find the minimum distance from the origin to any vertex in the shape.
+
+# Arguments
+- `nodes::Vector{SVector{3}}` : Vector of vertex positions
+- `shape::ShapeModel` : Shape model
+
+# Returns
+- `R_min::Float64` : Minimum radius [unit]
+
+# Notes
+- Assumes the shape is centered at the origin
+- For highly irregular shapes, this may be much smaller than the equivalent radius
+- Useful for determining the deepest surface features
+
+# See Also
+- `maximum_radius` for the maximum distance
+- `equivalent_radius` for volume-based radius
+"""
 minimum_radius(nodes) = minimum(norm, nodes)
 minimum_radius(shape::ShapeModel) = minimum_radius(shape.nodes)
 
