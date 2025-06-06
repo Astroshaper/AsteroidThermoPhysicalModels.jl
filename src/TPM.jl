@@ -262,7 +262,31 @@ end
 
 
 """
-Return surface temperature of a single asteroid corrsponding to each face.
+    surface_temperature(stpm::SingleAsteroidThermoPhysicalModel) -> T_surface
+
+Extract the surface temperature values for all faces of the asteroid.
+
+# Arguments
+- `stpm::SingleAsteroidThermoPhysicalModel` : Thermophysical model for a single asteroid
+
+# Returns
+- `T_surface::Vector{Float64}` : Surface temperature for each face [K]
+
+# Notes
+- Returns temperatures from the uppermost layer (index 1) of the temperature matrix
+- The length of the returned vector equals the number of faces in the shape model
+- Useful for visualization, thermal emission calculations, and analysis
+
+# Example
+```julia
+T_surf = surface_temperature(stpm)
+T_mean = mean(T_surf)  # Average surface temperature
+T_max = maximum(T_surf)  # Hottest point
+T_min = minimum(T_surf)  # Coldest point
+```
+
+# See Also
+- `stpm.temperature` for the full temperature matrix including subsurface
 """
 surface_temperature(stpm::SingleAsteroidThermoPhysicalModel) = stpm.temperature[begin, :]
 
@@ -608,20 +632,63 @@ end
 
 
 """
-    run_TPM!(stpm::SingleAsteroidThermoPhysicalModel, ephem, savepath)
+    run_TPM!(stpm::SingleAsteroidThermoPhysicalModel, ephem, times_to_save, face_ID; show_progress=true) -> result
 
-Run TPM for a single asteroid.
+Execute the thermophysical model simulation for a single asteroid over the specified time period.
 
 # Arguments
-- `stpm`          : Thermophysical model for a single asteroid
-- `ephem`         : Ephemerides
-    - `ephem.time` : Ephemeris times
-    - `ephem.sun`  : Sun's position in the asteroid-fixed frame (Not normalized)
-- `times_to_save` : Timesteps to save temperature
-- `face_ID`       : Face indices where to save subsurface termperature
+- `stpm::SingleAsteroidThermoPhysicalModel` : Thermophysical model containing shape, thermal parameters, and state
+- `ephem` : Ephemerides data structure containing:
+    - `time::Vector{Float64}` : Time points for the simulation [s]
+    - `sun::Vector{SVector{3}}` : Sun's position vectors in the asteroid-fixed frame (not normalized) [m]
+- `times_to_save::Vector{Float64}` : Specific time points at which to save detailed temperature data [s]
+- `face_ID::Vector{Int}` : Face indices for which to save subsurface temperature profiles
 
-# Keyword arguments
-- `show_progress` : Flag to show the progress meter
+# Keyword Arguments
+- `show_progress::Bool=true` : Display progress meter during simulation
+
+# Returns
+- `result::SingleAsteroidThermoPhysicalModelResult` : Structure containing:
+    - Time series of energy balance (E_in, E_out)
+    - Thermal forces and torques at each time step
+    - Surface temperatures at specified save times
+    - Subsurface temperature profiles for selected faces
+
+# Algorithm
+1. For each time step:
+   - Update solar flux based on sun position
+   - Calculate scattered light flux (if self-heating enabled)
+   - Calculate thermal radiation flux (if self-heating enabled)
+   - Compute thermal forces and torques
+   - Save results if at a save point
+   - Update temperature distribution for next step
+
+# Example
+```julia
+# Setup ephemerides
+ephem = (
+    time = collect(0:60:86400),  # One day, 1-minute steps
+    sun = [SVector(au2m, 0.0, 0.0) for _ in 1:1441]  # Sun at 1 AU
+)
+
+# Run simulation
+times_to_save = [0.0, 21600.0, 43200.0, 64800.0, 86400.0]  # Every 6 hours
+face_ID = [1, 100, 500]  # Save subsurface data for these faces
+result = run_TPM!(stpm, ephem, times_to_save, face_ID)
+
+# Check energy balance
+println("Final E_out/E_in ratio: ", result.E_out[end]/result.E_in[end])
+```
+
+# Performance Notes
+- Computation time scales with number of faces and time steps
+- Self-shadowing and self-heating calculations add significant overhead
+- Consider using larger time steps if thermal inertia is low
+
+# See Also
+- `init_temperature!` to set initial conditions
+- `export_TPM_results` to save results to files
+- `update_temperature!` for the core temperature update algorithm
 """
 function run_TPM!(stpm::SingleAsteroidThermoPhysicalModel, ephem, times_to_save::Vector{Float64}, face_ID::Vector{Int}; show_progress=true)
 

@@ -7,10 +7,46 @@
 """
     update_thermal_force!(stpm::SingleAsteroidTPM)
 
-Calculate the thermal force and torque on every face and integrate them over all faces.
+Calculate the thermal recoil force (Yarkovsky effect) and torque (YORP effect) on the asteroid
+by integrating photon momentum from thermal emission and reflection over all surface facets.
 
 # Arguments
-- `stpm` : Thermophysical model for a single asteroid
+- `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
+
+# Physics
+The function calculates non-gravitational effects caused by anisotropic photon emission:
+- **Yarkovsky effect**: Net force due to thermal lag causing asymmetric emission
+- **YORP effect**: Net torque changing the asteroid's rotation state
+
+# Algorithm
+For each facet i, the thermal force is computed as:
+```
+F_i = -(2/3) × (E_i × A_i)/c × n̂_i + Σⱼ (E_i × A_i)/c × f_ij × d̂_ij
+```
+where:
+- E_i = total emittance from facet i (reflection + thermal emission) [W/m²]
+- A_i = area of facet i [m²]
+- c = speed of light [m/s]
+- n̂_i = outward normal vector of facet i
+- f_ij = view factor from facet i to j
+- d̂_ij = unit vector from facet i to j
+
+The first term represents direct photon recoil normal to the surface.
+The second term accounts for photons intercepted by other facets (self-heating contribution).
+
+# Outputs (stored in stpm)
+- `stpm.face_forces` : Thermal force vector on each facet [N]
+- `stpm.force` : Total thermal force in body-fixed frame [N]
+- `stpm.torque` : Total thermal torque in body-fixed frame [N⋅m]
+
+# Physical Significance
+- The force causes orbital drift (Yarkovsky effect)
+- The torque changes rotation period and obliquity (YORP effect)
+- Both effects are crucial for asteroid orbital evolution
+
+# References
+- Bottke Jr, W. F., et al. (2006). The Yarkovsky and YORP effects
+- Rozitis, B., & Green, S. F. (2012). The influence of rough surface thermal-infrared beaming
 """
 function update_thermal_force!(stpm::SingleAsteroidTPM)
     stpm.force  .= 0.

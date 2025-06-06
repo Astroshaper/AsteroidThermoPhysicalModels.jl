@@ -4,12 +4,82 @@
 # #                      Face properties
 # ################################################################
 
+"""
+    face_center(vs::StaticVector{3, <:StaticVector{3}}) -> center
+    face_center(v1::StaticVector{3}, v2::StaticVector{3}, v3::StaticVector{3}) -> center
+
+Calculate the centroid (center) of a triangular face.
+
+# Arguments
+- `vs` : A static vector containing three vertices of the triangle
+- `v1`, `v2`, `v3` : Three vertices of the triangle
+
+# Returns
+- `center::StaticVector{3}` : The centroid position vector of the triangle
+
+# Example
+```julia
+v1 = SVector(0.0, 0.0, 0.0)
+v2 = SVector(1.0, 0.0, 0.0)
+v3 = SVector(0.0, 1.0, 0.0)
+center = face_center(v1, v2, v3)  # Returns SVector(1/3, 1/3, 0.0)
+```
+"""
 face_center(vs::StaticVector{3, <:StaticVector{3}}) = face_center(vs...)
 face_center(v1::StaticVector{3}, v2::StaticVector{3}, v3::StaticVector{3}) = (v1 + v2 + v3) / 3
 
+"""
+    face_normal(vs::StaticVector{3, <:StaticVector{3}}) -> n̂
+    face_normal(v1::StaticVector{3}, v2::StaticVector{3}, v3::StaticVector{3}) -> n̂
+
+Calculate the unit normal vector of a triangular face using the right-hand rule.
+The normal direction follows the ordering of vertices: v1 → v2 → v3.
+
+# Arguments
+- `vs` : A static vector containing three vertices of the triangle
+- `v1`, `v2`, `v3` : Three vertices of the triangle in counter-clockwise order
+
+# Returns
+- `n̂::StaticVector{3}` : The unit normal vector of the triangle
+
+# Mathematical Formula
+The normal vector is calculated as: n̂ = normalize((v2 - v1) × (v3 - v2))
+
+# Example
+```julia
+v1 = SVector(0.0, 0.0, 0.0)
+v2 = SVector(1.0, 0.0, 0.0)
+v3 = SVector(0.0, 1.0, 0.0)
+n̂ = face_normal(v1, v2, v3)  # Returns SVector(0.0, 0.0, 1.0)
+```
+"""
 face_normal(vs::StaticVector{3, <:StaticVector{3}}) = face_normal(vs...)
 face_normal(v1::StaticVector{3}, v2::StaticVector{3}, v3::StaticVector{3}) = normalize((v2 - v1) × (v3 - v2))
 
+"""
+    face_area(vs::StaticVector{3, <:StaticVector{3}}) -> area
+    face_area(v1::StaticVector{3}, v2::StaticVector{3}, v3::StaticVector{3}) -> area
+
+Calculate the area of a triangular face using the cross product method.
+
+# Arguments
+- `vs` : A static vector containing three vertices of the triangle
+- `v1`, `v2`, `v3` : Three vertices of the triangle
+
+# Returns
+- `area::Float64` : The area of the triangle [unit²]
+
+# Mathematical Formula
+The area is calculated as: A = ||(v2 - v1) × (v3 - v2)|| / 2
+
+# Example
+```julia
+v1 = SVector(0.0, 0.0, 0.0)
+v2 = SVector(1.0, 0.0, 0.0)
+v3 = SVector(0.0, 1.0, 0.0)
+area = face_area(v1, v2, v3)  # Returns 0.5
+```
+"""
 face_area(vs::StaticVector{3, <:StaticVector{3}}) = face_area(vs...)
 face_area(v1::StaticVector{3}, v2::StaticVector{3}, v3::StaticVector{3}) = norm((v2 - v1) × (v3 - v2)) / 2
 
@@ -21,16 +91,40 @@ face_area(v1::StaticVector{3}, v2::StaticVector{3}, v3::StaticVector{3}) = norm(
 """
     view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ) -> fᵢⱼ, dᵢⱼ, d̂ᵢⱼ
 
-View factor from facet i to j, assuming Lambertian emission.
+Calculate the view factor from facet i to facet j, assuming Lambertian emission.
+The view factor represents the fraction of radiation leaving surface i that directly reaches surface j.
 
-- ---------------
-- (i)   fᵢⱼ   (j)
--  △    -->    △
-- ---------------
--  cᵢ          cⱼ  : Center of each face
--  n̂ᵢ          n̂ⱼ  : Normal vector of each face
--  -           aⱼ  : Area of j-th face
-- ---------------
+# Arguments
+- `cᵢ::StaticVector{3}` : Center position of facet i
+- `cⱼ::StaticVector{3}` : Center position of facet j
+- `n̂ᵢ::StaticVector{3}` : Unit normal vector of facet i
+- `n̂ⱼ::StaticVector{3}` : Unit normal vector of facet j
+- `aⱼ::Float64` : Area of facet j [m²]
+
+# Returns
+- `fᵢⱼ::Float64` : View factor from facet i to facet j [-]
+- `dᵢⱼ::Float64` : Distance between facet centers [m]
+- `d̂ᵢⱼ::StaticVector{3}` : Unit direction vector from facet i to facet j
+
+# Mathematical Formula
+The view factor for differential areas is calculated as:
+```
+fᵢⱼ = (cosθᵢ × cosθⱼ) / (π × dᵢⱼ²) × aⱼ
+```
+where:
+- θᵢ is the angle between n̂ᵢ and the line connecting the centers
+- θⱼ is the angle between n̂ⱼ and the line connecting the centers
+
+# Diagram
+```
+(i)   fᵢⱼ   (j)
+ △    -->    △
+ cᵢ          cⱼ  : Center of each face
+ n̂ᵢ          n̂ⱼ  : Normal vector of each face
+```
+
+# References
+- Howell, J. R., et al. (2010). Thermal Radiation Heat Transfer
 """
 function view_factor(cᵢ, cⱼ, n̂ᵢ, n̂ⱼ, aⱼ)
     dᵢⱼ = norm(cⱼ - cᵢ)       # Distance from i to j
@@ -51,8 +145,35 @@ end
 """
     raycast(A, B, C, R) -> Bool
 
-Intersection detection between ray R and triangle ABC.
-Note that the starting point of the ray is the origin (0, 0, 0).
+Detect intersection between a ray and a triangle using the Möller-Trumbore algorithm.
+The ray starts from the origin (0, 0, 0) and extends in direction R.
+
+# Arguments
+- `A::StaticVector{3}` : First vertex of the triangle
+- `B::StaticVector{3}` : Second vertex of the triangle
+- `C::StaticVector{3}` : Third vertex of the triangle
+- `R::StaticVector{3}` : Direction vector of the ray (does not need to be normalized)
+
+# Returns
+- `Bool` : `true` if the ray intersects the triangle, `false` otherwise
+
+# Algorithm
+Uses the Möller-Trumbore ray-triangle intersection algorithm which:
+1. Computes the intersection point using barycentric coordinates
+2. Checks if the intersection point lies within the triangle
+3. Ensures the intersection occurs in the positive ray direction (t > 0)
+
+# Example
+```julia
+A = SVector(1.0, 0.0, 0.0)
+B = SVector(0.0, 1.0, 0.0)
+C = SVector(0.0, 0.0, 1.0)
+R = SVector(1.0, 1.0, 1.0)  # Ray direction
+intersects = raycast(A, B, C, R)
+```
+
+# References
+- Möller, T., & Trumbore, B. (1997). Fast, minimum storage ray-triangle intersection
 """
 function raycast(A::StaticVector{3}, B::StaticVector{3}, C::StaticVector{3}, R::StaticVector{3})
     E1 = B - A
@@ -74,8 +195,28 @@ end
 """
     raycast(A, B, C, R, O) -> Bool
 
-Intersection detection between ray R and triangle ABC.
-Use when the starting point of the ray is an arbitrary point `O`.
+Detect intersection between a ray and a triangle, with arbitrary ray origin.
+This is a convenience wrapper that translates the triangle to place the ray origin at (0,0,0).
+
+# Arguments
+- `A::StaticVector{3}` : First vertex of the triangle
+- `B::StaticVector{3}` : Second vertex of the triangle
+- `C::StaticVector{3}` : Third vertex of the triangle
+- `R::StaticVector{3}` : Direction vector of the ray (does not need to be normalized)
+- `O::StaticVector{3}` : Origin point of the ray
+
+# Returns
+- `Bool` : `true` if the ray intersects the triangle, `false` otherwise
+
+# Example
+```julia
+A = SVector(1.0, 0.0, 0.0)
+B = SVector(0.0, 1.0, 0.0)
+C = SVector(0.0, 0.0, 1.0)
+O = SVector(0.5, 0.5, -1.0)  # Ray origin
+R = SVector(0.0, 0.0, 1.0)   # Ray direction
+intersects = raycast(A, B, C, R, O)
+```
 """
 raycast(A::StaticVector{3}, B::StaticVector{3}, C::StaticVector{3}, R::StaticVector{3}, O::StaticVector{3}) = raycast(A - O, B - O, C - O, R)
 

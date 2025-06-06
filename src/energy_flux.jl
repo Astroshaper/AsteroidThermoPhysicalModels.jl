@@ -7,14 +7,40 @@
 """
     absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad) -> F_abs
 
-Total energy flux absorbed by the surface [W/m²]
+Calculate the total energy flux absorbed by a surface element, accounting for
+wavelength-dependent reflectance properties.
 
 # Arguments
-- `R_vis`  : Reflectance for visible light [-]
-- `R_ir`   : Reflectance for thermal infrared [-]
-- `F_sun`  : Flux of direct sunlight [W/m²]
-- `F_scat` : Flux of scattered light [W/m²]
-- `F_rad`  : Flux of thermal radiation from surrounding surface [W/m²]
+- `R_vis::Real` : Reflectance for visible light [-], valid between 0 and 1.
+- `R_ir::Real` : Reflectance for thermal infrared [-], valid between 0 and 1.
+- `F_sun::Real` : Direct solar radiation flux [W/m²]
+- `F_scat::Real` : Scattered sunlight flux from other surfaces [W/m²]
+- `F_rad::Real` : Thermal radiation flux from surrounding surfaces [W/m²]
+
+# Returns
+- `F_abs::Real` : Total absorbed energy flux [W/m²]
+
+# Mathematical Formula
+```
+F_abs = (1 - R_vis) × F_sun + (1 - R_vis) × F_scat + (1 - R_ir) × F_rad
+```
+
+# Physical Interpretation
+The function accounts for different reflectance properties at different wavelengths:
+- Solar radiation (F_sun) and scattered light (F_scat) are in the visible spectrum
+- Thermal radiation (F_rad) is in the infrared spectrum
+- The absorbed fraction is (1 - reflectance) for each component
+
+# Example
+```julia
+R_vis = 0.1   # 10% reflectance in visible
+R_ir = 0.05   # 5% reflectance in IR
+F_sun = 1000.0   # Direct solar flux
+F_scat = 50.0    # Scattered light
+F_rad = 100.0    # Thermal radiation
+F_abs = absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad)
+# Returns: 0.9 × 1000 + 0.9 × 50 + 0.95 × 100 = 1040.0 W/m²
+```
 """
 absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad) = (1 - R_vis) * F_sun + (1 - R_vis) * F_scat + (1 - R_ir) * F_rad
 
@@ -22,7 +48,36 @@ absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad) = (1 - R_vis) * F_sun + 
 """
     energy_in(stpm::SingleAsteroidTPM) -> E_in
 
-Input energy per second on the whole surface [W]
+Calculate the total energy input rate (power) absorbed by the entire asteroid surface.
+
+# Arguments
+- `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
+
+# Returns
+- `E_in::Float64` : Total absorbed power [W]
+
+# Calculation
+Integrates the absorbed energy flux over all surface facets:
+```
+E_in = Σᵢ F_abs,ᵢ × Aᵢ
+```
+where:
+- F_abs,ᵢ is the absorbed energy flux on facet i (calculated by `absorbed_energy_flux`)
+- Aᵢ is the area of facet i
+
+# Components
+The absorbed energy includes:
+1. Direct solar radiation
+2. Scattered light from other facets (if self-heating is enabled)
+3. Thermal radiation from other facets (if self-heating is enabled)
+
+# Usage
+This function is typically used to check energy conservation in the model by
+comparing with `energy_out`.
+
+# See Also
+- `energy_out` for the total emitted power
+- `absorbed_energy_flux` for the flux calculation
 """
 function energy_in(stpm::SingleAsteroidTPM)
     E_in = 0.
@@ -43,10 +98,33 @@ end
 """
     energy_out(stpm::SingleAsteroidTPM) -> E_out
 
-Output energy per second from the whole surface [W]
+Calculate the total energy output rate (power) emitted by the entire asteroid surface
+through thermal radiation.
 
 # Arguments
-- `stpm` : Thermophysical model for a single asteroid
+- `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
+
+# Returns
+- `E_out::Float64` : Total emitted power [W]
+
+# Calculation
+Integrates the thermal emission over all surface facets using the Stefan-Boltzmann law:
+```
+E_out = Σᵢ εᵢ × σ × Tᵢ⁴ × Aᵢ
+```
+where:
+- εᵢ is the emissivity of facet i
+- σ is the Stefan-Boltzmann constant (5.67×10⁻⁸ W/m²/K⁴)
+- Tᵢ is the surface temperature of facet i [K]
+- Aᵢ is the area of facet i [m²]
+
+# Energy Conservation
+In thermal equilibrium, E_out should approximately equal E_in (from `energy_in`).
+The ratio E_out/E_in is often used as a convergence criterion in thermophysical models.
+
+# See Also
+- `energy_in` for the total absorbed power
+- `update_thermal_force!` for thermal recoil effects from this emission
 """
 function energy_out(stpm::SingleAsteroidTPM)
     E_out = 0.

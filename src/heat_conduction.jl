@@ -7,8 +7,31 @@
 """
     update_temperature_zero_conductivity!(stpm::SingleAsteroidTPM)
 
-Update temperature for zero thermal conductivity case.
-Surface temperature is determined solely by radiative equilibrium.
+Update surface temperature for the zero thermal conductivity case.
+When thermal conductivity is zero, there is no heat conduction into the subsurface,
+and the surface temperature is determined solely by instantaneous radiative equilibrium.
+
+# Arguments
+- `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
+
+# Mathematical Formula
+For each face, the surface temperature T is calculated from:
+```
+εσT⁴ = (1-Rᵥᵢₛ)F_sun + (1-Rᵥᵢₛ)F_scat + (1-Rᵢᵣ)F_rad
+```
+where:
+- ε : Emissivity
+- σ : Stefan-Boltzmann constant
+- Rᵥᵢₛ : Reflectance in visible light
+- Rᵢᵣ : Reflectance in thermal infrared
+- F_sun : Direct solar flux
+- F_scat : Scattered light flux
+- F_rad : Thermal radiation flux from surrounding surfaces
+
+# Notes
+- This function is called when `stpm.thermo_params.thermal_conductivity` is zero
+- The temperature instantly adjusts to balance incoming and outgoing radiation
+- No subsurface temperatures are updated (only surface layer)
 """
 function update_temperature_zero_conductivity!(stpm::SingleAsteroidTPM)
     for i_face in eachindex(stpm.shape.faces)
@@ -29,13 +52,33 @@ end
 """
     update_temperature!(stpm::SingleAsteroidTPM, Δt)
 
-Calculate the temperature for the next time step based on 1D heat conduction equation.
-If the thermal inertia (conductivity) is zero, omit to solve the heat conduction equation.
-The surface termperature is determined only by radiative equilibrium.
+Update the temperature distribution for the next time step by solving the 1D heat conduction equation.
+The solver method is determined by `stpm.SOLVER`, and special handling is applied for zero conductivity.
 
 # Arguments
-- `stpm` : Thermophysical model for a single asteroid
-- `Δt`   : Time step [sec]
+- `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
+- `Δt::Real` : Time step [s]
+
+# Solver Selection
+The function automatically selects the appropriate solver based on `stpm.SOLVER`:
+- `ExplicitEulerSolver`: Forward Euler method (conditionally stable, requires λ < 0.5)
+- `ImplicitEulerSolver`: Backward Euler method (unconditionally stable)
+- `CrankNicolsonSolver`: Crank-Nicolson method (unconditionally stable, second-order accurate)
+
+# Special Cases
+- If thermal conductivity is zero, calls `update_temperature_zero_conductivity!` instead
+- The zero-conductivity case uses instantaneous radiative equilibrium
+
+# Mathematical Background
+Solves the 1D heat conduction equation:
+```
+∂T/∂t = α ∂²T/∂z²
+```
+where α = k/(ρCₚ) is the thermal diffusivity.
+
+# See Also
+- `explicit_euler!`, `implicit_euler!`, `crank_nicolson!` for specific solver implementations
+- `update_temperature_zero_conductivity!` for the zero-conductivity case
 """
 function update_temperature!(stpm::SingleAsteroidTPM, Δt)
     # Handle zero-conductivity case
@@ -79,14 +122,41 @@ end
 """
     explicit_euler!(stpm::SingleAsteroidTPM, Δt)
 
-Predict the temperature at the next time step by the explicit (forward) Euler method.
-- Explicit in time
-- First order in time
-In this function, the heat conduction equation is non-dimensionalized in time and length.
+Solve the 1D heat conduction equation using the explicit (forward) Euler method.
+This method is conditionally stable and requires careful time step selection.
 
 # Arguments
-- `stpm` : Thermophysical model for a single asteroid
-- `Δt`   : Time step [sec]
+- `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
+- `Δt::Real` : Time step [s]
+
+# Method Properties
+- **Time discretization**: Explicit (forward difference)
+- **Accuracy**: First-order in time, second-order in space
+- **Stability**: Conditionally stable, requires λ = αΔt/Δz² < 0.5
+
+# Discretization
+The heat conduction equation ∂T/∂t = α∂²T/∂z² is discretized as:
+```
+T[i,n+1] = T[i,n] + λ(T[i+1,n] - 2T[i,n] + T[i-1,n])
+```
+where:
+- λ = αΔt/Δz² is the dimensionless time step
+- α = k/(ρCₚ) is the thermal diffusivity
+- n is the time index, i is the depth index
+
+# Stability Criterion
+The method is stable only when λ < 0.5. If this condition is violated, an error is thrown.
+
+# Boundary Conditions
+- Upper boundary: Determined by `update_upper_temperature!`
+- Lower boundary: Determined by `update_lower_temperature!`
+
+# Performance Notes
+- This method is simple and fast but requires small time steps for stability
+- Consider using implicit methods for larger time steps
+
+# Errors
+- Throws an error if λ ≥ 0.5 (stability violation)
 """
 function explicit_euler!(stpm::SingleAsteroidTPM, Δt)
     T = stpm.temperature
@@ -119,15 +189,47 @@ end
 """
     implicit_euler!(stpm::SingleAsteroidTPM, Δt)
 
-Predict the temperature at the next time step by the implicit (backward) Euler method.
-- Implicit in time (Unconditionally stable in the heat conduction equation)
-- First order in time
-- Second order in space
-In this function, the heat conduction equation is non-dimensionalized in time and length.
+Solve the 1D heat conduction equation using the implicit (backward) Euler method.
+This method is unconditionally stable, allowing for larger time steps than explicit methods.
 
 # Arguments
-- `stpm` : Thermophysical model for a single asteroid
-- `Δt`   : Time step [sec]
+- `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
+- `Δt::Real` : Time step [s]
+
+# Method Properties
+- **Time discretization**: Implicit (backward difference)
+- **Accuracy**: First-order in time, second-order in space
+- **Stability**: Unconditionally stable for any time step size
+
+# Discretization
+The heat conduction equation ∂T/∂t = α∂²T/∂z² is discretized as:
+```
+T[i,n+1] - T[i,n] = λ(T[i+1,n+1] - 2T[i,n+1] + T[i-1,n+1])
+```
+This leads to a tridiagonal system:
+```
+-λT[i-1,n+1] + (1+2λ)T[i,n+1] - λT[i+1,n+1] = T[i,n]
+```
+where λ = αΔt/Δz²
+
+# Solution Method
+The resulting tridiagonal system is solved using the Thomas algorithm
+(tridiagonal matrix algorithm) for each face.
+
+# Boundary Conditions
+Different boundary conditions modify the tridiagonal matrix:
+- **Radiation BC**: Special treatment after solving the system
+- **Insulation BC**: Modified coefficients at boundaries
+- **Isothermal BC**: Direct temperature assignment
+
+# Advantages
+- Unconditionally stable - no restriction on time step size
+- Allows for larger time steps compared to explicit methods
+- More computationally intensive per step but often faster overall
+
+# See Also
+- `tridiagonal_matrix_algorithm!` for the solution algorithm
+- `update_upper_temperature!`, `update_lower_temperature!` for boundary conditions
 """
 function implicit_euler!(stpm::SingleAsteroidTPM, Δt)
     T = stpm.temperature
@@ -209,15 +311,46 @@ end
 """
     crank_nicolson!(stpm::SingleAsteroidTPM, Δt)
 
-Predict the temperature at the next time step by the Crank-Nicolson method.
-- Implicit in time (Unconditionally stable in the heat conduction equation)
-- Second order in time
-- Second order in space
-In this function, the heat conduction equation is non-dimensionalized in time and length.
+Solve the 1D heat conduction equation using the Crank-Nicolson method.
+This method combines the explicit and implicit Euler methods for improved accuracy.
 
 # Arguments
-- `stpm` : Thermophysical model for a single asteroid
-- `Δt`   : Time step [sec]
+- `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
+- `Δt::Real` : Time step [s]
+
+# Method Properties
+- **Time discretization**: Semi-implicit (average of forward and backward differences)
+- **Accuracy**: Second-order in both time and space
+- **Stability**: Unconditionally stable for any time step size
+
+# Discretization
+The heat conduction equation ∂T/∂t = α∂²T/∂z² is discretized using the average
+of explicit and implicit schemes:
+```
+T[i,n+1] - T[i,n] = (α∆t)/(2∆z²) × 
+    [(T[i+1,n+1] - 2T[i,n+1] + T[i-1,n+1]) + (T[i+1,n] - 2T[i,n] + T[i-1,n])]
+```
+This leads to a tridiagonal system:
+```
+-rT[i-1,n+1] + (1+2r)T[i,n+1] - rT[i+1,n+1] = 
+    rT[i-1,n] + (1-2r)T[i,n] + rT[i+1,n]
+```
+where r = α∆t/(2∆z²)
+
+# Advantages
+- Higher accuracy than both explicit and implicit Euler methods
+- Unconditionally stable
+- Optimal balance between accuracy and computational cost
+- Second-order accuracy in both time and space
+
+# Implementation Details
+The method requires solving a tridiagonal system at each time step,
+similar to the implicit Euler method but with a modified right-hand side
+that includes information from the current time step.
+
+# See Also
+- `tridiagonal_matrix_algorithm!` for the solution algorithm
+- `implicit_euler!`, `explicit_euler!` for comparison with other methods
 """
 function crank_nicolson!(stpm::SingleAsteroidTPM, Δt)
     T = stpm.temperature
