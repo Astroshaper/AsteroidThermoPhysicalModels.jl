@@ -1,17 +1,15 @@
 module AsteroidThermoPhysicalModels
 
+using CSV
+using DataFrames
+using FileIO
 using LinearAlgebra
+using ProgressMeter
 using StaticArrays
 using Statistics
 
-using DataFrames
-using ProgressMeter
-
-using FileIO
-using CSV
-
-import MeshIO
 import GeometryBasics
+import MeshIO
 
 const SOLAR_CONST = 1366.0   # Solar constant, Φ☉ [W/m^2]
 const c₀ = 299792458.0       # Speed of light [m/s]
@@ -31,9 +29,9 @@ include("TPM.jl")
 
 # Alias for the types defined in `TPM.jl`
 # `TPM` is a abbreviation for a "thermophysical model".
-const AbstractAsteroidTPM = AbstractAsteroidThermoPhysicalModel
-const SingleAsteroidTPM = SingleAsteroidThermoPhysicalModel
-const BinaryAsteroidTPM = BinaryAsteroidThermoPhysicalModel
+const AbstractAsteroidTPM     = AbstractAsteroidThermoPhysicalModel
+const SingleAsteroidTPM       = SingleAsteroidThermoPhysicalModel
+const BinaryAsteroidTPM       = BinaryAsteroidThermoPhysicalModel
 const SingleAsteroidTPMResult = SingleAsteroidThermoPhysicalModelResult
 const BinaryAsteroidTPMResult = BinaryAsteroidThermoPhysicalModelResult
 export AbstractAsteroidThermoPhysicalModel, SingleAsteroidThermoPhysicalModel, BinaryAsteroidThermoPhysicalModel
