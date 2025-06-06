@@ -11,8 +11,8 @@ Calculate the total energy flux absorbed by a surface element, accounting for
 wavelength-dependent reflectance properties.
 
 # Arguments
-- `R_vis::Real` : Reflectance for visible light [-] (0 ≤ R_vis ≤ 1)
-- `R_ir::Real` : Reflectance for thermal infrared [-] (0 ≤ R_ir ≤ 1)
+- `R_vis::Real` : Reflectance for visible light [-], valid between 0 and 1.
+- `R_ir::Real` : Reflectance for thermal infrared [-], valid between 0 and 1.
 - `F_sun::Real` : Direct solar radiation flux [W/m²]
 - `F_scat::Real` : Scattered sunlight flux from other surfaces [W/m²]
 - `F_rad::Real` : Thermal radiation flux from surrounding surfaces [W/m²]
