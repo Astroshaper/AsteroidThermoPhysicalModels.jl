@@ -1,15 +1,12 @@
 module AsteroidThermoPhysicalModels
 
+using AsteroidShapeModels
 using CSV
 using DataFrames
-using FileIO
 using LinearAlgebra
 using ProgressMeter
 using StaticArrays
 using Statistics
-
-import GeometryBasics
-import MeshIO
 
 const SOLAR_CONST = 1366.0   # Solar constant, Φ☉ [W/m^2]
 const c₀ = 299792458.0       # Speed of light [m/s]
@@ -19,10 +16,12 @@ const k_B = 1.380649e-23     # Boltzmann constant [J/K]
 const au2m = 149597870700    # 1 astronomical unit is $au2m meters, same as `SPICE.convrt(1, "au", "m")`
 const m2au = 1/au2m  # 1 meter is $m2au astronomical unit, same as `SPICE.convrt(1, "m", "au")`
 
-include("obj.jl")
-include("shape.jl")
-include("facet.jl")
-export ShapeModel, load_shape_obj
+# Re-export types and functions from AsteroidShapeModels.jl
+export ShapeModel, VisibleFacet
+export load_shape_obj, load_shape_grid
+export face_center, face_normal, face_area
+export polyhedron_volume, equivalent_radius, maximum_radius, minimum_radius
+export view_factor, raycast, find_visiblefacets!, isilluminated
 
 include("thermo_params.jl")
 include("TPM.jl")
