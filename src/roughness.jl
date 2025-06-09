@@ -134,29 +134,57 @@ end
 #                 Parallel sinusoidal trenches
 ################################################################
 
+# TODO: Implement parallel sinusoidal trenches for modeling regular surface patterns
+# This will be useful for simulating:
+# - Regular groove patterns on asteroid surfaces
+# - Systematic surface textures
+# - Periodic roughness features
+#
+# Planned implementation:
 # function parallel_sinusoidal_trenches(Ct, N_trench, x)
 #     z = Ct + Ct * sin(2π * (N_trench + 0.5) * x)
 # end
-
-# function parallel_sinusoidal_trenches(Ct, N_trench; Nx=2^5, Ny=2^5)
-#     xs = LinRange(0, 1, Nx + 1)
-#     ys = LinRange(0, 1, Ny + 1)
-#     zs = [parallel_sinusoidal_trenches(Ct, N_trench, x) for x in xs, y in ys]
-
-#     xs, ys, zs 
-# end
+#
+# Parameters:
+# - Ct: Trench depth coefficient
+# - N_trench: Number of trenches
+# - x: Position along trench direction
 
 
 ################################################################
 #                   Random Gaussian surface
 ################################################################
 
-# TODO: Functions to generate random Gaussian surface will be implmented.
+# TODO: Implement random Gaussian surface generation
+# This will be useful for modeling stochastic surface roughness
+# 
+# Planned features:
+# - Gaussian height distribution with adjustable RMS roughness
+# - Spatial correlation length control
+# - Power spectral density specification
+# - Seed control for reproducible surfaces
+#
+# Applications:
+# - Small-scale surface roughness
+# - Statistical thermal modeling
+# - Monte Carlo simulations of rough surfaces
 
 
 ################################################################
 #                       Fractal surface
 ################################################################
 
-# TODO: Functions to generate fractal surface will be implmented.
+# TODO: Implement fractal surface generation  
+# This will enable multi-scale roughness modeling
+# 
+# Planned features:
+# - Fractal dimension control (Hurst exponent)
+# - Multi-scale power-law behavior
+# - Self-affine surface generation
+# - Brownian motion-based algorithms
+#
+# Applications:
+# - Realistic asteroid surface textures
+# - Scale-invariant roughness
+# - Natural terrain modeling
 
