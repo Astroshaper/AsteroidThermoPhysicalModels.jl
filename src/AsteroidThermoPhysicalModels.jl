@@ -8,13 +8,20 @@ using ProgressMeter
 using StaticArrays
 using Statistics
 
-const SOLAR_CONST = 1366.0   # Solar constant, Φ☉ [W/m^2]
-const c₀ = 299792458.0       # Speed of light [m/s]
-const σ_SB = 5.670374419e-8  # Stefan–Boltzmann constant [W/m^2/K^4]
+# Physical constants used throughout the package
+const SOLAR_CONST = 1366.0   # Solar constant at 1 AU, Φ☉ [W/m²]
+                             # Average solar irradiance at Earth's mean distance
+const c₀ = 299792458.0       # Speed of light in vacuum [m/s]
+                             # Exact value (defined)
+const σ_SB = 5.670374419e-8  # Stefan–Boltzmann constant [W/m²/K⁴]
+                             # σ = 2π⁵k⁴/(15h³c²)
 const h = 6.62607015e-34     # Planck constant [J⋅s]
+                             # Exact value (defined in SI since 2019)
 const k_B = 1.380649e-23     # Boltzmann constant [J/K]
-const au2m = 149597870700    # 1 astronomical unit is $au2m meters, same as `SPICE.convrt(1, "au", "m")`
-const m2au = 1/au2m  # 1 meter is $m2au astronomical unit, same as `SPICE.convrt(1, "m", "au")`
+                             # Exact value (defined in SI since 2019)
+const au2m = 149597870700    # 1 astronomical unit [m]
+                             # IAU 2012 definition (exact)
+const m2au = 1/au2m          # Conversion factor: meters to AU
 
 # Re-export types and functions from AsteroidShapeModels.jl
 export ShapeModel, VisibleFacet

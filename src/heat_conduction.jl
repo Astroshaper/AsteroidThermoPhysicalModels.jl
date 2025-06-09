@@ -528,15 +528,23 @@ Newton's method to update the surface temperature under radiation boundary condi
 - `Δz`      : Depth step width [m]
 """
 function update_surface_temperature!(T::AbstractVector, F_abs::Float64, k::Float64, ρ::Float64, Cₚ::Float64, ε::Float64, Δz::Float64)
-    εσ = ε * σ_SB
+    εσ = ε * σ_SB  # Pre-compute emissivity × Stefan-Boltzmann constant
 
+    # Newton-Raphson iteration to solve the nonlinear energy balance equation
     for _ in 1:20
-        T_pri = T[begin]
+        T_pri = T[begin]  # Store previous temperature for convergence check
 
+        # Energy balance at surface: F_absorbed + F_conduction - F_emission = 0
+        # f(T) = F_abs + k(T₂-T₁)/Δz - εσT₁⁴ = 0
         f = F_abs + k * (T[begin+1] - T[begin]) / Δz - εσ*T[begin]^4
+        
+        # Derivative: df/dT = -k/Δz - 4εσT³
         df = - k / Δz - 4*εσ*T[begin]^3             
+        
+        # Newton-Raphson update: T_new = T_old - f/df
         T[begin] -= f / df
 
+        # Check relative convergence
         err = abs(1 - T_pri / T[begin])
         err < 1e-10 && return
     end

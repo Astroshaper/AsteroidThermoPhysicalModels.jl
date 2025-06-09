@@ -71,12 +71,17 @@ function update_thermal_force!(stpm::SingleAsteroidTPM)
         Eᵢ    = R_vis * F_sun + R_vis * F_scat + R_ir * F_rad + ε * σ_SB * Tᵢ^4
 
         ## Thermal force on each face
-        stpm.face_forces[i] = - 2/3 * Eᵢ * aᵢ / c₀ * n̂ᵢ      # The first term normal to the face
+        # Photon recoil force: F = -momentum flux = -Energy flux / c
+        # The factor 2/3 comes from Lambertian emission (isotropic in hemisphere)
+        # For Lambertian surface: ∫cos(θ)dΩ = 2π/3 over hemisphere
+        stpm.face_forces[i] = - 2/3 * Eᵢ * aᵢ / c₀ * n̂ᵢ  # Direct recoil force normal to face
         for visiblefacet in stpm.shape.visiblefacets[i]
             fᵢⱼ = visiblefacet.f
             d̂ᵢⱼ = visiblefacet.d̂
 
-            stpm.face_forces[i] += Eᵢ * aᵢ / c₀ * fᵢⱼ * d̂ᵢⱼ  # The second term of self-heating
+            # Self-heating contribution: photons re-absorbed by other faces
+            # No 2/3 factor here because the direction is already specified by d̂ᵢⱼ
+            stpm.face_forces[i] += Eᵢ * aᵢ / c₀ * fᵢⱼ * d̂ᵢⱼ  # Re-absorption recoil force
         end
 
         ## Thermal force on the entire shape
