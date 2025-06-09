@@ -95,7 +95,7 @@ function update_temperature!(stpm::SingleAsteroidTPM, Δt)
     elseif stpm.SOLVER isa CrankNicolsonSolver
         crank_nicolson!(stpm, Δt)
     else
-        error("The solver is not implemented.")
+        error("Unknown solver type: $(typeof(stpm.SOLVER)). Expected ExplicitEulerSolver, ImplicitEulerSolver, or CrankNicolsonSolver.")
     end
 end
 
@@ -171,7 +171,7 @@ function explicit_euler!(stpm::SingleAsteroidTPM, Δt)
 
         α = thermal_diffusivity(k, ρ, Cₚ)  # Thermal diffusivity [m²/s]
         λ = α * Δt / Δz^2
-        λ ≥ 0.5 && error("The forward Euler method is unstable because λ = $λ. This should be less than 0.5.")
+        λ ≥ 0.5 && error("Explicit Euler method is unstable because λ = αΔt/Δz² = $λ (must be < 0.5). Consider reducing time step from Δt = $Δt or using an implicit solver.")
 
         for i_depth in 2:(n_depth-1)
             stpm.SOLVER.x[i_depth] = (1-2λ)*T[i_depth, i_face] + λ*(T[i_depth+1, i_face] + T[i_depth-1, i_face])  # Predict temperature at next time step
