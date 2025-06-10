@@ -582,10 +582,34 @@ end
 
 
 """
-    subsolar_temperature(r☉) -> Tₛₛ
+    subsolar_temperature(r☉, R_vis, ε) -> Tₛₛ
+    subsolar_temperature(r☉, params::AbstractThermoParams) -> Tₛₛ
 
-Subsolar temperature [K] on an asteroid at a heliocentric distance `r☉` [m],
-assuming radiative equilibrium with zero conductivity.
+Calculate the subsolar temperature on an asteroid at a given heliocentric distance.
+
+# Arguments
+- `r☉::Vector`                   : Sun's position vector in the asteroid's fixed frame [m]
+- `R_vis::Real`                  : Visible light reflectance (albedo) [-]
+- `ε::Real`                      : Emissivity [-]
+- `params::AbstractThermoParams` : Thermal parameters (alternative input)
+
+# Returns
+- `Tₛₛ::Float64` : Subsolar point temperature [K]
+
+# Mathematical Formula
+Assuming radiative equilibrium with zero thermal conductivity (zero thermal inertia):
+```math
+T_{ss} = \\left[\\frac{(1 - R_{vis}) \\Phi_\\odot}{\\varepsilon \\sigma}\\right]^{1/4}
+```
+where:
+- ``\\Phi_\\odot = \\Phi_0 / r^2`` is the solar flux at distance r [au]
+- ``\\Phi_0 = 1366`` W/m² is the solar constant at 1 au
+- ``\\sigma`` is the Stefan-Boltzmann constant
+
+# Notes
+- This gives the maximum temperature for a non-rotating asteroid
+- Actual subsolar temperature may be lower due to thermal inertia
+- Valid for airless bodies with negligible heat conduction
 """
 subsolar_temperature(r☉, params::AbstractThermoParams) = subsolar_temperature(r☉, params.reflectance_vis, params.emissivity)
 

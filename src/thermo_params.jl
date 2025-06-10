@@ -7,14 +7,30 @@
 """
     thermal_skin_depth(P, k, ρ, Cp) -> l_2π
 
-# Arguments
-- `P`  : Cycle of thermal cycle [sec]
-- `k`  : Thermal conductivity [W/m/K]
-- `ρ`  : Material density [kg/m³]
-- `Cₚ` : Heat capacity [J/kg/K]
+Calculate the thermal skin depth for a periodic temperature variation.
 
-# Return
-- `l_2π` : Thermal skin depth [m], as defined in Rozitis & Green (2011).
+# Arguments
+- `P::Real`  : Period of thermal cycle [s]
+- `k::Real`  : Thermal conductivity [W/m/K]
+- `ρ::Real`  : Material density [kg/m³]
+- `Cₚ::Real` : Heat capacity [J/kg/K]
+
+# Returns
+- `l_2π::Real` : Thermal skin depth [m]
+
+# Mathematical Formula
+The thermal skin depth is defined as:
+```math
+l_{2\\pi} = \\sqrt{\\frac{4\\pi P k}{\\rho C_p}}
+```
+
+# Physical Meaning
+- Represents the e-folding depth of temperature variations
+- Temperature amplitude decreases by factor e^(-2π) ≈ 0.0019 at this depth
+- Useful for determining computational domain depth
+
+# Reference
+- Rozitis & Green (2011), MNRAS 415, 2042-2062
 """
 thermal_skin_depth(P, k, ρ, Cₚ) = @. √(4π * P * k / (ρ * Cₚ))
 
@@ -22,13 +38,29 @@ thermal_skin_depth(P, k, ρ, Cₚ) = @. √(4π * P * k / (ρ * Cₚ))
 """
     thermal_inertia(k, ρ, Cp) -> Γ
 
-# Arguments
-- `k`  : Thermal conductivity [W/m/K]
-- `ρ`  : Material density [kg/m³]
-- `Cₚ` : Heat capacity [J/kg/K]
+Calculate the thermal inertia of a material.
 
-# Return
-- `Γ` : Thermal inertia [tiu (thermal intertia unit)]
+# Arguments
+- `k::Real`  : Thermal conductivity [W/m/K]
+- `ρ::Real`  : Material density [kg/m³]
+- `Cₚ::Real` : Heat capacity [J/kg/K]
+
+# Returns
+- `Γ::Real` : Thermal inertia [J m⁻² K⁻¹ s⁻¹/²]
+
+# Mathematical Formula
+```math
+\\Gamma = \\sqrt{k \\rho C_p}
+```
+
+# Physical Meaning
+- Measures resistance to temperature change
+- High Γ: slow temperature response (rock-like)
+- Low Γ: rapid temperature response (dust-like)
+- Typical values: 50-2500 J m⁻² K⁻¹ s⁻¹/² for a planetary surface
+
+# Note
+The unit is sometimes called "tiu" (thermal inertia unit).
 """
 thermal_inertia(k, ρ, Cₚ) = @. √(k * ρ * Cₚ)
 
@@ -36,13 +68,26 @@ thermal_inertia(k, ρ, Cₚ) = @. √(k * ρ * Cₚ)
 """
     thermal_diffusivity(k, ρ, Cp) -> α
 
-# Arguments
-- `k`  : Thermal conductivity [W/m/K]
-- `ρ`  : Material density [kg/m³]
-- `Cₚ` : Heat capacity [J/kg/K]
+Calculate the thermal diffusivity of a material.
 
-# Return
-- `α` : Thermal diffusivity [m²/s]
+# Arguments
+- `k::Real`  : Thermal conductivity [W/m/K]
+- `ρ::Real`  : Material density [kg/m³]
+- `Cₚ::Real` : Heat capacity [J/kg/K]
+
+# Returns
+- `α::Real` : Thermal diffusivity [m²/s]
+
+# Mathematical Formula
+```math
+\\alpha = \\frac{k}{\\rho C_p}
+```
+
+# Physical Meaning
+- Measures how quickly temperature propagates through material
+- Appears in the heat diffusion equation: ∂T/∂t = α∇²T
+- High α: rapid heat diffusion
+- Low α: slow heat diffusion
 """
 thermal_diffusivity(k, ρ, Cₚ) = @. k / (ρ * Cₚ)
 
