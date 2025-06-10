@@ -49,6 +49,10 @@ Pkg.test("AsteroidThermoPhysicalModels")
 
 ### Thermophysical Processes
 - **Heat Conduction**: 1-dimensional heat diffusion in depth direction
+  - Multiple numerical solvers available:
+    - Explicit Euler method (conditionally stable, fast for small time steps)
+    - Implicit Euler method (unconditionally stable, first-order accurate)
+    - Crank-Nicolson method (unconditionally stable, second-order accurate)
 - **Self-Shadowing**: Local shadows cast by topography
 - **Self-Heating**: Re-absorption of scattered and radiated photons by surrounding facets
 - **Binary Systems**: Support for mutual shadowing (eclipses) and mutual heating between primary and secondary bodies
@@ -92,8 +96,23 @@ thermo_params = ThermoParams(
     41           # Number of depth steps
 )
 
-# Create and run TPM model
-# See documentation for complete examples
+# Create TPM model with solver selection
+stpm = SingleAsteroidTPM(
+    shape,
+    thermo_params;
+    SELF_SHADOWING = true,
+    SELF_HEATING = true,
+    SOLVER = CrankNicolsonSolver(thermo_params),  # Choose solver
+    BC_UPPER = RadiationBoundaryCondition(),
+    BC_LOWER = InsulationBoundaryCondition()
+)
+
+# Available solvers:
+# - ExplicitEulerSolver(thermo_params)   # Fast but requires small time steps
+# - ImplicitEulerSolver(thermo_params)   # Stable for any time step
+# - CrankNicolsonSolver(thermo_params)   # Best accuracy
+
+# Run simulation - see documentation for complete examples
 ```
 
 ## 📊 Output

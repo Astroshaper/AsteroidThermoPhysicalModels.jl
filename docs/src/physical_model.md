@@ -26,6 +26,41 @@ where:
 - ``C_p`` is the specific heat capacity at constant pressure
 - ``k`` is the thermal conductivity
 
+### Numerical Solvers
+
+`AsteroidThermoPhysicalModels.jl` provides three numerical methods to solve the heat conduction equation:
+
+1. **Explicit Euler Method** (`ExplicitEulerSolver`)
+   - Forward difference in time
+   - Conditionally stable: requires ``\lambda = \alpha \Delta t / \Delta z^2 < 0.5``
+   - First-order accurate in time
+   - Fast for small time steps
+
+2. **Implicit Euler Method** (`ImplicitEulerSolver`)
+   - Backward difference in time
+   - Unconditionally stable for any time step
+   - First-order accurate in time
+   - Requires solving a tridiagonal system
+
+3. **Crank-Nicolson Method** (`CrankNicolsonSolver`)
+   - Average of forward and backward differences
+   - Unconditionally stable
+   - Second-order accurate in both time and space
+   - Best balance of accuracy and stability
+
+The solver can be specified when creating the thermophysical model:
+
+```julia
+# Example: Using Crank-Nicolson solver
+stpm = SingleAsteroidTPM(shape, thermo_params;
+   SELF_SHADOWING = true,
+   SELF_HEATING   = true,
+   SOLVER         = AsteroidThermoPhysicalModels.CrankNicolsonSolver(thermo_params),
+   BC_UPPER       = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
+   BC_LOWER       = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
+)
+```
+
 ### Boundary Conditions
 
 #### Upper Boundary Condition (Surface)
