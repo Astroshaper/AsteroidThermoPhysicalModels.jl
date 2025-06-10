@@ -16,15 +16,15 @@
     ephem = (time = collect(et_range),)
     
     # Thermal properties
-    k  = 1.0     # Thermal conductivity [W/m/K]
-    ρ  = 1000.0  # Density [kg/m³]
-    Cₚ = 1000.0  # Heat capacity [J/kg/K]
-    R_vis = 0.0
-    R_ir  = 0.0
-    ε     = 1.0
-    z_max = 1.0
-    n_depth = 21
-    Δz = z_max / (n_depth - 1)
+    k  = 1.0                    # Thermal conductivity [W/m/K]
+    ρ  = 1000.0                 # Density [kg/m³]
+    Cₚ = 1000.0                 # Heat capacity [J/kg/K]
+    R_vis = 0.0                 # Reflectance in visible light [-]
+    R_ir  = 0.0                 # Reflectance in thermal infrared [-]
+    ε     = 1.0                 # Emissivity [-]
+    z_max = 1.0                 # Depth of the lower boundary of a heat conduction equation [m]
+    n_depth = 21                # Number of depth steps
+    Δz = z_max / (n_depth - 1)  # Depth step width [m]
     
     thermo_params = AsteroidThermoPhysicalModels.ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
     
