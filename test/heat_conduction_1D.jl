@@ -1,3 +1,12 @@
+#=
+heat_conduction_1D.jl
+
+Tests for 1D heat conduction solvers:
+- Compares Explicit Euler, Implicit Euler, and Crank-Nicolson methods
+- Validates against analytical solutions for isothermal boundaries
+- Checks numerical accuracy and stability
+- Ensures all three methods converge to the same solution
+=#
 
 @testset "heat_conduction_1D" begin
     msg = """\n

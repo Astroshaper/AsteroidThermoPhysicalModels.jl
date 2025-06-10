@@ -1,5 +1,14 @@
-# The following tests are almost the same as `TPM_Ryugu.jl`.
-# The only difference is that the thermophysical properties vary depending on the location of the asteroid.
+#=
+TPM_non-uniform_thermoparams.jl
+
+Tests thermophysical modeling with spatially varying material properties.
+This test verifies:
+- Different thermal parameters for each surface facet
+- Correct handling of heterogeneous asteroid surfaces
+- Temperature evolution with non-uniform thermal inertia
+Based on TPM_Ryugu test but with varying thermophysical properties.
+=#
+
 @testset "non-uniform_thermoparams" begin
     DIR_OUTPUT = joinpath(@__DIR__, "output")
     rm(DIR_OUTPUT; recursive=true, force=true)

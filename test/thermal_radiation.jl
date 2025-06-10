@@ -1,3 +1,14 @@
+#=
+thermal_radiation.jl
+
+Tests for thermal radiation calculations.
+This test validates:
+- Blackbody radiation calculations (Planck's law)
+- Stefan-Boltzmann law implementation
+- View factor calculations for thermal radiation exchange
+- Self-heating effects between asteroid surface elements
+=#
+
 @testset "thermal_radiation" begin
 
     msg = """\n

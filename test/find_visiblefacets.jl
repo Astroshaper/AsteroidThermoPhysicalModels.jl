@@ -1,4 +1,13 @@
-# See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for more information.
+#=
+find_visiblefacets.jl
+
+Tests for visible facet determination in shape models.
+This test verifies:
+- Correct identification of mutually visible facets
+- View factor calculations between surface elements
+- Performance with different shape model complexities
+=#
+
 @testset "find_visiblefacets" begin
     msg = """\n
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓

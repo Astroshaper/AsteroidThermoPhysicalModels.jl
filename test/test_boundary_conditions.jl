@@ -1,3 +1,13 @@
+#=
+test_boundary_conditions.jl
+
+Tests for various boundary conditions in heat conduction:
+- Radiation boundary condition (surface energy balance)
+- Insulation boundary condition (zero flux)
+- Isothermal boundary condition (fixed temperature)
+Validates both upper and lower boundary implementations.
+=#
+
 @testset "Boundary Conditions" begin
     msg = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓

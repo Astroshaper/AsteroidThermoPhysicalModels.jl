@@ -1,3 +1,14 @@
+#=
+runtests.jl
+
+Main test suite for `AsteroidThermoPhysicalModels.jl` package.
+This file orchestrates all tests including:
+- Code quality checks using Aqua.jl
+- Thermophysical model tests for various asteroids
+- Unit tests for individual components
+- Validation against analytical solutions
+=#
+
 using AsteroidThermoPhysicalModels
 using Test
 using Aqua

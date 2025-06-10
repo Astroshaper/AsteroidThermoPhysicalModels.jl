@@ -1,4 +1,14 @@
-# See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos for more information.
+#=
+TPM_Didymos.jl
+
+End-to-end thermophysical model test for the Didymos binary asteroid system.
+This test simulates:
+- Binary asteroid mutual effects (shadowing and thermal radiation)
+- Temperature evolution over multiple rotation periods
+- Generation of output files
+See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos for more information.
+=#
+
 @testset "TPM_Didymos" begin
     DIR_OUTPUT = joinpath(@__DIR__, "output")
     rm(DIR_OUTPUT; recursive=true, force=true)

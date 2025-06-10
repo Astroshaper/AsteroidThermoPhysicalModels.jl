@@ -1,4 +1,13 @@
-# See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for more information.
+#=
+TPM_zero-conductivity.jl
+
+Tests the special case of zero thermal conductivity.
+This test validates:
+- Instantaneous thermal equilibrium (no heat conduction)
+- Surface temperatures determined purely by energy balance
+- Limiting case behavior for very low thermal inertia materials
+=#
+
 @testset "TPM_zero-conductivity" begin
     DIR_OUTPUT = joinpath(@__DIR__, "output")
     rm(DIR_OUTPUT; recursive=true, force=true)

@@ -1,4 +1,14 @@
-# See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for more information.
+#=
+TPM_Ryugu.jl
+
+End-to-end thermophysical model test for asteroid Ryugu.
+This test simulates:
+- Temperature evolution using actual Ryugu shape model
+- Self-shadowing and self-heating effects
+- Validation of TPM implementation for real asteroids
+See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for more information.
+=#
+
 @testset "TPM_Ryugu" begin
     DIR_OUTPUT = joinpath(@__DIR__, "output")
     rm(DIR_OUTPUT; recursive=true, force=true)
