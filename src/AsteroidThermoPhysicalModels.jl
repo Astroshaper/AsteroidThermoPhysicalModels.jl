@@ -9,7 +9,7 @@ using StaticArrays
 using Statistics
 
 # Physical constants used throughout the package
-const SOLAR_CONST = 1366.0   # Solar constant at 1 AU, Φ☉ [W/m²]
+const SOLAR_CONST = 1366.0   # Solar constant at 1 au, Φ☉ [W/m²]
                              # Average solar irradiance at Earth's mean distance
 const c₀ = 299792458.0       # Speed of light in vacuum [m/s]
                              # Exact value (defined)
@@ -21,7 +21,7 @@ const k_B = 1.380649e-23     # Boltzmann constant [J/K]
                              # Exact value (defined in SI since 2019)
 const au2m = 149597870700    # 1 astronomical unit [m]
                              # IAU 2012 definition (exact)
-const m2au = 1/au2m          # Conversion factor: meters to AU
+const m2au = 1/au2m          # Conversion factor: meters to au
 
 # Re-export types and functions from AsteroidShapeModels.jl
 export ShapeModel, VisibleFacet
