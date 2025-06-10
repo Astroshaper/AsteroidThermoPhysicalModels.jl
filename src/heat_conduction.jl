@@ -556,12 +556,30 @@ end
 # ****************************************************************
 
 """
-    update_bottom_temperature!(shape::ShapeModel)
+    update_lower_temperature!(stpm::SingleAsteroidTPM)
 
-Update the temperature of the bottom surface based on the boundary condition `stpm.BC_LOWER`.
+Update the temperature at the lower boundary (deepest layer) based on the boundary condition.
 
 # Arguments
-- `stpm`       : Thermophysical model for a single asteroid
+- `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
+
+# Boundary Conditions
+The function applies one of the following boundary conditions at the bottom of the computational domain:
+
+1. **Insulation (Neumann)**: `∂T/∂z = 0`
+   - No heat flux through the lower boundary
+   - Temperature gradient is zero: `T[end] = T[end-1]`
+   - Most commonly used for asteroid modeling
+
+2. **Isothermal (Dirichlet)**: `T = T_iso`
+   - Fixed temperature at the lower boundary
+   - Used when deep interior temperature is known
+   - `T[end] = stpm.BC_LOWER.T_iso`
+
+# Notes
+- This function is called after solving the heat conduction equation
+- For explicit Euler method, it directly updates the temperature vector
+- The lower boundary should be deep enough that the chosen condition doesn't affect surface temperatures
 """
 function update_lower_temperature!(stpm::SingleAsteroidTPM)
 

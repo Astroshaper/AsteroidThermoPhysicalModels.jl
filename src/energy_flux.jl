@@ -147,11 +147,25 @@ end
 """
     update_flux_sun!(stpm::SingleAsteroidTPM, r̂☉::StaticVector{3}, F☉::Real)
 
-Update solar irradiation flux on every face of a shape model.
+Update the direct solar irradiation flux on every face of the asteroid.
 
-- `shape` : Shape model
-- `r̂☉`    : Normalized vector indicating the direction of the sun in the body-fixed frame
-- `F☉`    : Solar radiation flux [W/m²]
+# Arguments
+- `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
+- `r̂☉::StaticVector{3}` : Unit vector pointing toward the Sun in body-fixed frame
+- `F☉::Real` : Solar flux at the asteroid's location [W/m²]
+
+# Algorithm
+For each face, the solar flux is calculated as:
+```
+F_sun = F☉ × max(0, n̂ · r̂☉)
+```
+where n̂ is the face normal. If `SELF_SHADOWING` is enabled, the function also
+checks whether each face is shadowed by other parts of the asteroid using ray-casting.
+
+# Notes
+- Faces with negative dot product (facing away from Sun) receive zero flux
+- Shadowed faces (when `SELF_SHADOWING = true`) also receive zero flux
+- The input solar direction `r̂☉` is normalized internally for safety
 """
 function update_flux_sun!(stpm::SingleAsteroidTPM, r̂☉::StaticVector{3}, F☉::Real)
     r̂☉ = normalize(r̂☉)
@@ -181,11 +195,21 @@ end
 """
     update_flux_sun!(stpm::SingleAsteroidTPM, r☉::StaticVector{3})
 
-Update solar irradiation flux on every face of a shape model.
+Update solar irradiation flux on every face using the Sun's position vector.
 
 # Arguments
-- `stpm` : Thermophysical model for a single asteroid
-- `r☉`   : Position of the sun in the body-fixed frame (NOT normalized)
+- `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
+- `r☉::StaticVector{3}` : Position vector from asteroid to Sun in body-fixed frame [m]
+
+# Algorithm
+1. Calculates the solar flux using the inverse square law: 
+2. Normalizes the Sun direction vector
+3. Calls the main `update_flux_sun!` function with computed values
+
+# Notes
+- The input vector `r☉` should be in meters
+- Solar flux is automatically computed from the solar constant and distance
+- This is a convenience function that handles flux calculation
 """
 function update_flux_sun!(stpm::SingleAsteroidTPM, r☉::StaticVector{3})
     r̂☉ = SVector{3}(normalize(r☉))
@@ -198,10 +222,17 @@ end
 """
     update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, r☉₂::StaticVector{3})
 
+Update solar irradiation flux on both components of a binary asteroid system.
+
 # Arguments
-- `btpm` : Thermophysical model for a binary asteroid
-- `r☉₁`  : Sun's position in the body-fixed frame of the primary, which is not normalized.
-- `r☉₂`  : Sun's position in the body-fixed frame of the secondary, which is not normalized.
+- `btpm::BinaryAsteroidTPM` : Thermophysical model for a binary asteroid
+- `r☉₁::StaticVector{3}` : Sun's position vector in the primary's body-fixed frame [m]
+- `r☉₂::StaticVector{3}` : Sun's position vector in the secondary's body-fixed frame [m]
+
+# Notes
+- Each component's solar flux is calculated independently using its own Sun vector.
+- The vectors should account for the different orientations of the two bodies.
+- Mutual shadowing between components is handled separately by `mutual_shadowing!`.
 """
 function update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, r☉₂::StaticVector{3})
     update_flux_sun!(btpm.pri, r☉₁)
