@@ -11,9 +11,9 @@ in the subsurface of asteroids, including:
 - Various boundary conditions (radiation, insulation, isothermal)
 =#
 
-# ****************************************************************
-#                      1D heat conduction
-# ****************************************************************
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                      1D heat conduction                           ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     update_temperature_zero_conductivity!(stpm::SingleAsteroidTPM)
@@ -125,9 +125,9 @@ function update_temperature!(btpm::BinaryAsteroidTPM, Δt)
     update_temperature!(btpm.sec, Δt)
 end
 
-# ****************************************************************
-#               Solvers of a heat conduction equation
-# ****************************************************************
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║               Solvers of a heat conduction equation               ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 
 """
@@ -482,9 +482,9 @@ end
 tridiagonal_matrix_algorithm!(stpm::SingleAsteroidTPM) = tridiagonal_matrix_algorithm!(stpm.SOLVER.a, stpm.SOLVER.b, stpm.SOLVER.c, stpm.SOLVER.d, stpm.SOLVER.x)
 
 
-# ****************************************************************
-#                    Upper boundary condition
-# ****************************************************************
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                    Upper boundary condition                       ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     update_upper_temperature!(stpm::SingleAsteroidTPM, i::Integer)
@@ -562,9 +562,9 @@ function update_surface_temperature!(T::AbstractVector, F_abs::Float64, k::Float
 end
 
 
-# ****************************************************************
-#                    Lower boundary condition
-# ****************************************************************
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                    Lower boundary condition                       ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     update_lower_temperature!(stpm::SingleAsteroidTPM)

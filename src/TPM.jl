@@ -10,9 +10,9 @@ This file defines the main data structures and simulation functions including:
 - Result storage and export functionality
 =#
 
-# ****************************************************************
-#         Types of solvers for heat conduction equations
-# ****************************************************************
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║          Types of solvers for heat conduction equations           ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
 Abstract type of a solver for a heat conduction equation 
@@ -76,9 +76,9 @@ CrankNicolsonSolver(thermo_params::AbstractThermoParams) = CrankNicolsonSolver(t
 CrankNicolsonSolver(N::Integer) = CrankNicolsonSolver(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
 
 
-# ****************************************************************
-#    Types of boundary conditions for heat conduction equations
-# ****************************************************************
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║    Types of boundary conditions for heat conduction equations    ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
 Abstract type of a boundary condition for a heat conduction equation
@@ -106,9 +106,9 @@ struct IsothermalBoundaryCondition <: BoundaryCondition
 end
 
 
-# ****************************************************************
-#                Types of thermophsycal models
-# ****************************************************************
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                Types of thermophsycal models                      ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 
 """
@@ -302,9 +302,9 @@ T_min = minimum(T_surf)  # Coldest point
 surface_temperature(stpm::SingleAsteroidThermoPhysicalModel) = stpm.temperature[begin, :]
 
 
-# ****************************************************************
-#                     Output data format
-# ****************************************************************
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                     Output data format                            ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     struct SingleAsteroidThermoPhysicalModelResult
@@ -587,9 +587,9 @@ function export_TPM_results(dirpath, result::BinaryAsteroidThermoPhysicalModelRe
 end
 
 
-# ****************************************************************
-#                   Initialize temperatures
-# ****************************************************************
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                   Initialize temperatures                         ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 
 """
@@ -661,9 +661,9 @@ function init_temperature!(btpm::BinaryAsteroidThermoPhysicalModel, T₀::Real)
 end
 
 
-# ****************************************************************
-#                    Thermophysical modeling
-# ****************************************************************
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                    Thermophysical modeling                        ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 
 """

@@ -21,7 +21,7 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
     """
     println(msg)
 
-    ##= SPICE kernels =##
+    ## --- SPICE kernels ---
     paths_kernel = [
         "fk/hera_v10.tf",
         "lsk/naif0012.tls",
@@ -31,13 +31,13 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
         "spk/didymos_gmv_260901_311001_v01.bsp",
     ]
 
-    ##= Shape models =##
+    ## --- Shape models ---
     paths_shape = [
         "g_50677mm_rad_obj_didy_0000n00000_v001.obj",
         "g_08438mm_lgt_obj_dimo_0000n00000_v002.obj",
     ]
 
-    ##= Download SPICE kernels =##
+    ## --- Download SPICE kernels ---
     for path_kernel in paths_kernel
         url_kernel = "https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/$(path_kernel)?at=refs%2Ftags%2Fv161_20230929_001"
         filepath = joinpath("kernel", path_kernel)
@@ -45,7 +45,7 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
         isfile(filepath) || Downloads.download(url_kernel, filepath)
     end
 
-    ##= Download shape models =##
+    ## --- Download shape models ---
     for path_shape in paths_shape
         url_kernel = "https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/dsk/$(path_shape)?at=refs%2Ftags%2Fv161_20230929_001"
         filepath = joinpath("shape", path_shape)
@@ -53,13 +53,13 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
         isfile(filepath) || Downloads.download(url_kernel, filepath)
     end
 
-    ##= Load the SPICE kernels =##
+    ## --- Load the SPICE kernels ---
     for path_kernel in paths_kernel
         filepath = joinpath("kernel", path_kernel)
         SPICE.furnsh(filepath)
     end
 
-    ##= Ephemerides =##
+    ## --- Ephemerides ---
     P₁ = SPICE.convrt(2.2593, "hours", "seconds")  # Rotation period of Didymos
     P₂ = SPICE.convrt(11.93 , "hours", "seconds")  # Rotation period of Dimorphos
 
@@ -89,7 +89,7 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
 
     SPICE.kclear()
 
-    ##= Load the shape models =##
+    ## --- Load the shape models ---
     path_shape1_obj = joinpath("shape", "g_50677mm_rad_obj_didy_0000n00000_v001.obj")
     path_shape2_obj = joinpath("shape", "g_08438mm_lgt_obj_dimo_0000n00000_v002.obj")
     
@@ -99,7 +99,7 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
     n_face_shape1 = length(shape1.faces)  # Number of faces of Didymos
     n_face_shape2 = length(shape2.faces)  # Number of faces of Dimorphos
     
-    ##= Thermal properties of Didymos & Dimorphos [cf. Michel+2016; Naidu+2020] =##
+    ## --- Thermal properties of Didymos & Dimorphos [cf. Michel+2016; Naidu+2020] ---
     k  = 0.125   # Thermal conductivity [W/m/K]
     ρ  = 2170.0  # Density [kg/m³]
     Cₚ = 600.0   # Heat capacity [J/kg/K]
@@ -115,7 +115,7 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
     thermo_params1 = AsteroidThermoPhysicalModels.ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
     thermo_params2 = AsteroidThermoPhysicalModels.ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 
-    ##= Setting of TPM =##
+    ## --- Setting of TPM ---
     stpm1 = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape1, thermo_params1;
         SELF_SHADOWING = true,
         SELF_HEATING   = true,
@@ -135,14 +135,14 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
     btpm  = AsteroidThermoPhysicalModels.BinaryAsteroidTPM(stpm1, stpm2; MUTUAL_SHADOWING=true, MUTUAL_HEATING=true)
     AsteroidThermoPhysicalModels.init_temperature!(btpm, 200.)
     
-    ##= Run TPM =##
+    ## --- Run TPM ---
     times_to_save = ephem.time[end-n_step_in_cycle:end]  # Save temperature during the final rotation
     face_ID_pri = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature of the primary
     face_ID_sec = [1, 2, 3, 4, 20]  # Face indices to save subsurface temperature of the secondary
 
     result = AsteroidThermoPhysicalModels.run_TPM!(btpm, ephem, times_to_save, face_ID_pri, face_ID_sec)
 
-    ##= Save TPM result =##
+    ## --- Save TPM result ---
     @testset "Save TPM result" begin
         AsteroidThermoPhysicalModels.export_TPM_results(DIR_OUTPUT, result)
 

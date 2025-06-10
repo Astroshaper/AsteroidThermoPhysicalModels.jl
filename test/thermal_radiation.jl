@@ -28,12 +28,12 @@ This test validates:
 
     ######## Thermal radiance from the local terrain model ########
 
-    ##= Load shape model =##
+    ## --- Load shape model ---
     path_obj = joinpath("shape", "fractal_v2572_f5000.obj")
     shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj; scale=1, find_visible_facets=true)
     n_face = length(shape.faces)  # Number of faces
 
-    ##= Ephemerides =##
+    ## --- Ephemerides ---
     P = SPICE.convrt(8, "hours", "seconds")  # Rotation period of the asteroid [s]
     
     ncycles = 2  # Number of cycles to perform TPM
@@ -63,7 +63,7 @@ This test validates:
         sun  = [global_to_local(lat, lon) * inv(RotZ(2π * et / P)) * r☉₀ for et in et_range],
     )
     
-    ##= Thermal properties =##
+    ## --- Thermal properties ---
     k  = 0.1     # Thermal conductivity [W/m/K]
     ρ  = 1270.0  # Density [kg/m³]
     Cₚ = 600.0   # Heat capacity [J/kg/K]
@@ -81,7 +81,7 @@ This test validates:
 
     thermo_params = AsteroidThermoPhysicalModels.ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 
-    ##= Setting of TPM =##
+    ## --- Setting of TPM ---
     stpm = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params;
         SELF_SHADOWING = true,
         SELF_HEATING   = true,
@@ -96,7 +96,7 @@ This test validates:
     
     result = run_TPM!(stpm, ephem, times_to_save, face_ID)
 
-    ##= Check the thermal radiation from the local terrain model =##
+    ## --- Check the thermal radiation from the local terrain model ---
     obs_above = SVector{3, Float64}(0, 0, 1000)  # Observer is just above the local terrain model
     obs_east  = RotY(+π/6) * obs_above           # Observed from 30° east
     obs_west  = RotY(-π/6) * obs_above           # Observed from 30° west

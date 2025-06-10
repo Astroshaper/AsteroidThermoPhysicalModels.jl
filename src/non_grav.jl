@@ -8,9 +8,9 @@ This file implements the thermal recoil effects:
 These effects arise from the recoil momentum of photons emitted from the surface.
 =#
 
-# ****************************************************************
-#                  Photon recoil force / torque
-# ****************************************************************
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                     Photon recoil force / torque                  ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     update_thermal_force!(stpm::SingleAsteroidTPM)

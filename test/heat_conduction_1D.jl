@@ -16,19 +16,19 @@ Tests for 1D heat conduction solvers:
     """
     println(msg)
 
-    ##= Shape model =##
+    ## --- Shape model ---
     path_obj = joinpath("shape", "single_face.obj")
     shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj)
     n_face = length(shape.faces)  # Number of faces
 
-    ##= Seeting of time step =##
+    ## --- Seeting of time step ---
     et_range = range(0.0, 1.0; step=1e-5)
 
     ephem = (
         time = collect(et_range),
     )
 
-    ##= Thermal properties =##
+    ## --- Thermal properties ---
     k  = 0.1     # Thermal conductivity [W/m/K]
     ρ  = 1270.0  # Density [kg/m³]
     Cₚ = 600.0   # Heat capacity [J/kg/K]
@@ -43,7 +43,7 @@ Tests for 1D heat conduction solvers:
 
     thermo_params = AsteroidThermoPhysicalModels.ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 
-    ##= TPMs with different solvers =##
+    ## --- TPMs with different solvers ---
     SELF_SHADOWING = false
     SELF_HEATING   = false
     BC_UPPER       = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(0)
@@ -53,7 +53,7 @@ Tests for 1D heat conduction solvers:
     stpm_IE = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.ImplicitEulerSolver(thermo_params))
     stpm_CN = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.CrankNicolsonSolver(thermo_params))
 
-    ##= Initial temperature =##
+    ## --- Initial temperature ---
     T₀(x) = x < 0.5 ? 2x : 2(1 - x)
     xs = [thermo_params.Δz * (i-1) for i in 1:thermo_params.n_depth]
     Ts = [T₀(x) for x in xs]
@@ -62,7 +62,7 @@ Tests for 1D heat conduction solvers:
     stpm_IE.temperature .= Ts
     stpm_CN.temperature .= Ts
 
-    ##= Run TPM =##
+    ## --- Run TPM ---
     for i_time in eachindex(ephem.time)
         i_time == length(et_range) && break  # Stop to update the temperature at the final step
         Δt = ephem.time[i_time+1] - ephem.time[i_time]

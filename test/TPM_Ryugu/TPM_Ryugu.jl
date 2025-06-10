@@ -21,7 +21,7 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for 
     """
     println(msg)
 
-    ##= Download Files =##
+    ## --- Download Files ---
     paths_kernel = [
         "lsk/naif0012.tls",
         "pck/hyb2_ryugu_shape_v20190328.tpc",
@@ -46,13 +46,13 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for 
         isfile(filepath) || Downloads.download(url_shape, filepath)
     end
 
-    ##= Load data with SPICE =##
+    ## --- Load data with SPICE ---
     for path_kernel in paths_kernel
         filepath = joinpath("kernel", path_kernel)
         SPICE.furnsh(filepath)
     end
 
-    ##= Ephemerides =##
+    ## --- Ephemerides ---
     P = SPICE.convrt(7.63262, "hours", "seconds")  # Rotation period of Ryugu
 
     n_cycle = 2  # Number of cycles to perform TPM
@@ -73,14 +73,14 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for 
 
     SPICE.kclear()
 
-    ##= Load obj file =##
+    ## --- Load obj file ---
     path_obj = joinpath("shape", "ryugu_test.obj")  # Small model for test
     # path_obj = joinpath("shape", "SHAPE_SFM_49k_v20180804.obj")
     
     shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj; scale=1000, find_visible_facets=true)
     n_face = length(shape.faces)  # Number of faces
 
-    ##= Thermal properties =##
+    ## --- Thermal properties ---
     k  = 0.1     # Thermal conductivity [W/m/K]
     ρ  = 1270.0  # Density [kg/m³]
     Cₚ = 600.0   # Heat capacity [J/kg/K]
@@ -98,7 +98,7 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for 
 
     thermo_params = AsteroidThermoPhysicalModels.ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 
-    ##= Setting of TPM =##
+    ## --- Setting of TPM ---
     stpm = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params;
         SELF_SHADOWING = true,
         SELF_HEATING   = true,
@@ -108,13 +108,13 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for 
     )
     AsteroidThermoPhysicalModels.init_temperature!(stpm, 200)
 
-    ##= Run TPM =##
+    ## --- Run TPM ---
     times_to_save = ephem.time[end-n_step_in_cycle:end]  # Save temperature during the final rotation
     face_ID = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature
 
     result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, times_to_save, face_ID)
     
-    ##= Save TPM result =##
+    ## --- Save TPM result ---
     @testset "Save TPM result" begin
         AsteroidThermoPhysicalModels.export_TPM_results(DIR_OUTPUT, result)
 

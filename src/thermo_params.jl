@@ -10,9 +10,9 @@ Also defines the `ThermoParams` structure for storing material properties
 and discretization parameters.
 =#
 
-# ****************************************************************
-#              Thermal skin depth & Thermal inertia
-# ****************************************************************
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║              Thermal skin depth & Thermal inertia                 ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     thermal_skin_depth(P, k, ρ, Cp) -> l_2π
@@ -102,9 +102,9 @@ Calculate the thermal diffusivity of a material.
 thermal_diffusivity(k, ρ, Cₚ) = @. k / (ρ * Cₚ)
 
 
-# ****************************************************************
-#               Struct for thermophysical parameters
-# ****************************************************************
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║               Struct for thermophysical parameters                ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 abstract type AbstractThermoParams end
 
