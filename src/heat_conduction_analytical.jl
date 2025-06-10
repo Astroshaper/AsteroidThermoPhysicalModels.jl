@@ -1,3 +1,10 @@
+#=
+heat_conduction_analytical.jl
+
+Analytical solutions for the 1D heat conduction equation.
+This file provides exact solutions for specific boundary and initial conditions,
+useful for validating numerical solvers and understanding thermal behavior.
+=#
 
 """
     analytical_solution_isothermal(x, t, L, α; n_max=100) -> T

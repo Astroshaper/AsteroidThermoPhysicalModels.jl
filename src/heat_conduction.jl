@@ -1,4 +1,15 @@
+#=
+heat_conduction.jl
 
+1D heat conduction solvers for thermophysical modeling.
+This file implements various numerical methods for solving the heat diffusion equation
+in the subsurface of asteroids, including:
+- Explicit Euler method (conditionally stable)
+- Implicit Euler method (unconditionally stable)
+- Crank-Nicolson method (second-order accurate)
+- Special handling for zero thermal conductivity
+- Various boundary conditions (radiation, insulation, isothermal)
+=#
 
 # ****************************************************************
 #                      1D heat conduction

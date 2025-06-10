@@ -1,5 +1,17 @@
 
 
+#=
+roughness.jl
+
+Surface roughness modeling for sub-facet scale features.
+This file contains functions for modeling surface roughness effects including:
+- Concave spherical segments (crater-like features)
+- Planned implementations in the future:
+    - Parallel sinusoidal trenches
+    - Random Gaussian surfaces
+    - Fractal surfaces
+=#
+
 ################################################################
 #                  Concave spherical segment
 ################################################################

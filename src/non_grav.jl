@@ -1,4 +1,12 @@
+#=
+non_grav.jl
 
+Non-gravitational force calculations for asteroids.
+This file implements the thermal recoil effects:
+- Yarkovsky effect: Orbital perturbation due to asymmetric thermal emission
+- YORP effect: Rotational perturbation due to asymmetric thermal emission
+These effects arise from the recoil momentum of photons emitted from the surface.
+=#
 
 # ****************************************************************
 #                  Photon recoil force / torque

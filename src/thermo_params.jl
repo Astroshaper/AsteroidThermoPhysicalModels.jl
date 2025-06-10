@@ -1,4 +1,14 @@
+#=
+thermo_params.jl
 
+Thermophysical parameter definitions and calculations.
+This file contains functions for computing key thermal properties:
+- Thermal skin depth
+- Thermal inertia
+- Thermal diffusivity
+Also defines the `ThermoParams` structure for storing material properties
+and discretization parameters.
+=#
 
 # ****************************************************************
 #              Thermal skin depth & Thermal inertia

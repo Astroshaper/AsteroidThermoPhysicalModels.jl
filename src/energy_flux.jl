@@ -1,3 +1,14 @@
+#=
+energy_flux.jl
+
+Energy flux calculations for asteroid thermophysical modeling.
+This file contains functions for computing various energy fluxes including:
+- Direct solar radiation
+- Scattered sunlight from other faces
+- Thermal radiation from surrounding surfaces
+- Total energy input/output balance
+- Mutual shadowing and heating effects for binary asteroids
+=#
 
 # ****************************************************************
 #                     Energy input/output

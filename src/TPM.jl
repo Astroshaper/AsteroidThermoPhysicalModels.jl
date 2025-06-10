@@ -1,3 +1,14 @@
+#=
+TPM.jl
+
+Core types and functions for thermophysical modeling of asteroids.
+This file defines the main data structures and simulation functions including:
+- Heat conduction solver types (Explicit/Implicit Euler, Crank-Nicolson)
+- Boundary condition types (Radiation, Insulation, Isothermal)
+- Single and binary asteroid thermophysical model structures
+- Temperature initialization and evolution functions
+- Result storage and export functionality
+=#
 
 # ****************************************************************
 #         Types of solvers for heat conduction equations

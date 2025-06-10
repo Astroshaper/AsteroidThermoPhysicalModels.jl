@@ -1,3 +1,11 @@
+#=
+thermal_radiation.jl
+
+Thermal radiation calculations based on Planck's law.
+This file contains functions for computing blackbody radiation spectra
+used in thermal modeling of asteroid surfaces.
+=#
+
 """
     blackbody_radiance(λ, T) -> L_λ
 

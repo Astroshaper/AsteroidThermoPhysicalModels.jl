@@ -1,3 +1,18 @@
+#=
+AsteroidThermoPhysicalModels.jl
+
+Main module file for the AsteroidThermoPhysicalModels package.
+This package provides comprehensive thermophysical modeling capabilities for asteroids,
+including temperature distribution calculations and non-gravitational effects
+(Yarkovsky and YORP effects).
+
+Key features:
+- 1D heat conduction with multiple numerical solvers
+- Self-shadowing and self-heating effects
+- Binary asteroid support with mutual effects
+- Non-gravitational force calculations
+=#
+
 module AsteroidThermoPhysicalModels
 
 using AsteroidShapeModels
