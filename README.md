@@ -1,24 +1,10 @@
-<div align="center">
-  <h1>AsteroidThermoPhysicalModels.jl</h1>
-</div>
+# AsteroidThermoPhysicalModels.jl
 
-<p align="center">
-  <a href="https://Astroshaper.github.io/AsteroidThermoPhysicalModels.jl/stable">
-    <img src="https://img.shields.io/badge/docs-stable-blue.svg" alt="Stable">
-  </a>
-  <a href="https://Astroshaper.github.io/AsteroidThermoPhysicalModels.jl/dev">
-    <img src="https://img.shields.io/badge/docs-dev-blue.svg" alt="Dev">
-  </a>
-  <a href="https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl/actions?query=workflow%3ACI+branch%3Amain">
-    <img src="https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl/workflows/CI/badge.svg" alt="Build Status">
-  </a>
-  <a href="https://codecov.io/gh/Astroshaper/AsteroidThermoPhysicalModels.jl">
-    <img src="https://codecov.io/gh/Astroshaper/AsteroidThermoPhysicalModels.jl/branch/main/graph/badge.svg?token=dJBiR91dCD" alt="codecov">
-  </a>
-  <a href="https://github.com/JuliaTesting/Aqua.jl">
-    <img src="https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg" alt="Aqua QA">
-  </a>
-</p>
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://Astroshaper.github.io/AsteroidThermoPhysicalModels.jl/stable)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://Astroshaper.github.io/AsteroidThermoPhysicalModels.jl/dev)
+[![Build Status](https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl/workflows/CI/badge.svg)](https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl/actions?query=workflow%3ACI+branch%3Amain)
+[![codecov](https://codecov.io/gh/Astroshaper/AsteroidThermoPhysicalModels.jl/branch/main/graph/badge.svg?token=dJBiR91dCD)](https://codecov.io/gh/Astroshaper/AsteroidThermoPhysicalModels.jl)
+[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 `AsteroidThermoPhysicalModels.jl` is a comprehensive Julia-based toolkit for thermophysical modeling (TPM) of asteroids. It allows you to simulate the temperature distribution of asteroids and predict non-gravitational perturbations on their dynamics (Yarkovsky and YORP effects).
 
