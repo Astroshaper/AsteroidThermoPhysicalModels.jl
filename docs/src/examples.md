@@ -9,6 +9,7 @@ For more detailed examples, please refer to the [Astroshaper-examples](https://g
 This example demonstrates how to set up and run a thermophysical model for asteroid Ryugu using SPICE kernels for ephemerides.
 
 ```julia
+using AsteroidShapeModels
 using AsteroidThermoPhysicalModels
 using Downloads
 using LinearAlgebra
@@ -71,7 +72,7 @@ SPICE.kclear()
 ##= Load obj file =##
 path_obj = joinpath("shape", "SHAPE_SFM_49k_v20180804.obj")
     
-shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj; scale=1000, find_visible_facets=true)
+shape = load_shape_obj(path_obj; scale=1000, find_visible_facets=true)
 n_face = length(shape.faces)  # Number of faces
 
 ##= Thermal properties =##
@@ -115,6 +116,7 @@ AsteroidThermoPhysicalModels.export_TPM_results("path/to/save", result)
 This example demonstrates how to set up and run a thermophysical model for the binary asteroid system Didymos-Dimorphos using SPICE kernels for ephemerides.
 
 ```julia
+using AsteroidShapeModels
 using AsteroidThermoPhysicalModels
 using Downloads
 using LinearAlgebra
@@ -194,8 +196,8 @@ SPICE.kclear()
 path_shape1_obj = joinpath("shape", "g_50677mm_rad_obj_didy_0000n00000_v001.obj")
 path_shape2_obj = joinpath("shape", "g_08438mm_lgt_obj_dimo_0000n00000_v002.obj")
     
-shape1 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape1_obj; scale=1000, find_visible_facets=true)
-shape2 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape2_obj; scale=1000, find_visible_facets=true)
+shape1 = load_shape_obj(path_shape1_obj; scale=1000, find_visible_facets=true)
+shape2 = load_shape_obj(path_shape2_obj; scale=1000, find_visible_facets=true)
 
 n_face_shape1 = length(shape1.faces)  # Number of faces of Didymos
 n_face_shape2 = length(shape2.faces)  # Number of faces of Dimorphos

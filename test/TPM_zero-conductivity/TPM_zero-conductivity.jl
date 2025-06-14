@@ -40,7 +40,7 @@ This test validates:
 
     ## --- Load obj file ---
     path_obj = joinpath("shape", "ryugu_test.obj")
-    shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj; scale=1000, find_visible_facets=true)
+    shape = load_shape_obj(path_obj; scale=1000, find_visible_facets=true)
     n_face = length(shape.faces)  # Number of faces
 
     ## --- Thermal properties: zero-conductivity case ---

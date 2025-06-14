@@ -19,13 +19,13 @@ This test verifies:
     ## --- Shape model of Ryugu ---
     filepath = joinpath("shape", "ryugu_test.obj")  # Small model for test
     println("========  $(filepath)  ========")
-    shape = AsteroidThermoPhysicalModels.load_shape_obj(filepath; scale=1000, find_visible_facets=true)
+    shape = load_shape_obj(filepath; scale=1000, find_visible_facets=true)
     println(shape)
 
     ## --- Icosahedron ---
     filepath = joinpath("shape", "icosahedron.obj")
     println("========  $(filepath)  ========")
-    shape = AsteroidThermoPhysicalModels.load_shape_obj(filepath; scale=1, find_visible_facets=true)
+    shape = load_shape_obj(filepath; scale=1, find_visible_facets=true)
     println(shape)
 
     println("Number of total visible facets: ", sum(length.(shape.visiblefacets)))  # This should be zero for an icosahedron.

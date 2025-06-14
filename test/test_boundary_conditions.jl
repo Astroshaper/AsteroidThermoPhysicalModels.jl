@@ -19,7 +19,7 @@ Validates both upper and lower boundary implementations.
     
     # Shape model (single face)
     path_obj = joinpath(@__DIR__, "shape", "single_face.obj")
-    shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj)
+    shape = load_shape_obj(path_obj)
     
     # Time settings
     et_range = range(0.0, 0.1; step=1e-4)
