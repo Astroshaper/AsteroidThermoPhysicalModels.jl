@@ -38,13 +38,6 @@ const au2m = 149597870700    # 1 astronomical unit [m]
                              # IAU 2012 definition (exact)
 const m2au = 1/au2m          # Conversion factor: meters to au
 
-# Re-export types and functions from AsteroidShapeModels.jl
-export ShapeModel, VisibleFacet
-export load_shape_obj, load_shape_grid
-export face_center, face_normal, face_area
-export polyhedron_volume, equivalent_radius, maximum_radius, minimum_radius
-export view_factor, raycast, find_visiblefacets!, isilluminated
-
 include("thermo_params.jl")
 include("TPM.jl")
 

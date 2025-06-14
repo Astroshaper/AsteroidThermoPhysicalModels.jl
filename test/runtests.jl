@@ -9,6 +9,7 @@ This file orchestrates all tests including:
 - Validation against analytical solutions
 =#
 
+using AsteroidShapeModels
 using AsteroidThermoPhysicalModels
 using Test
 using Aqua

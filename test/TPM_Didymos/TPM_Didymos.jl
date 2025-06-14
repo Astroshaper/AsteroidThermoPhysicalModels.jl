@@ -93,8 +93,8 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
     path_shape1_obj = joinpath("shape", "g_50677mm_rad_obj_didy_0000n00000_v001.obj")
     path_shape2_obj = joinpath("shape", "g_08438mm_lgt_obj_dimo_0000n00000_v002.obj")
     
-    shape1 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape1_obj; scale=1000, find_visible_facets=true)
-    shape2 = AsteroidThermoPhysicalModels.load_shape_obj(path_shape2_obj; scale=1000, find_visible_facets=true)
+    shape1 = load_shape_obj(path_shape1_obj; scale=1000, find_visible_facets=true)
+    shape2 = load_shape_obj(path_shape2_obj; scale=1000, find_visible_facets=true)
 
     n_face_shape1 = length(shape1.faces)  # Number of faces of Didymos
     n_face_shape2 = length(shape2.faces)  # Number of faces of Dimorphos

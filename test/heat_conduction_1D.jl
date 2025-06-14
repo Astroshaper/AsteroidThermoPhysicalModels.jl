@@ -18,7 +18,7 @@ Tests for 1D heat conduction solvers:
 
     ## --- Shape model ---
     path_obj = joinpath("shape", "single_face.obj")
-    shape = AsteroidThermoPhysicalModels.load_shape_obj(path_obj)
+    shape = load_shape_obj(path_obj)
     n_face = length(shape.faces)  # Number of faces
 
     ## --- Seeting of time step ---

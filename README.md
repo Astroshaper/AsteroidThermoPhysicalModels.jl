@@ -64,7 +64,9 @@ Temperature distribution of asteroid Didymos and its satellite Dimorphos:
 ## 📖 Basic Usage
 
 ```julia
+using AsteroidShapeModels
 using AsteroidThermoPhysicalModels
+
 
 # Load shape model
 shape = load_shape_obj("asteroid_shape.obj"; scale=1000, find_visible_facets=true)
