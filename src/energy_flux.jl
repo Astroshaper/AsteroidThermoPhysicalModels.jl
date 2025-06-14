@@ -424,7 +424,8 @@ function mutual_shadowing!(btpm::BinaryAsteroidTPM, r☉, rₛ, R₂₁)
                 
                     ## if △A₁B₁C₁ and △A₂B₂C₂ are facing each other
                     if d₁₂ ⋅ n̂₁ > 0 && d₁₂ ⋅ n̂₂ < 0
-                        if raycast(A₂, B₂, C₂, r̂☉, G₁)
+                        ray = Ray(G₁, r̂☉)
+                        if intersect_ray_triangle(ray, A₂, B₂, C₂).hit
                             btpm.pri.flux_sun[i] = 0
                             break
                         end
@@ -477,7 +478,8 @@ function mutual_shadowing!(btpm::BinaryAsteroidTPM, r☉, rₛ, R₂₁)
                 
                     ## if △A₁B₁C₁ and △A₂B₂C₂ are facing each other
                     if d₁₂ ⋅ n̂₁ > 0 && d₁₂ ⋅ n̂₂ < 0
-                        if raycast(A₁, B₁, C₁, r̂☉, G₂)
+                        ray = Ray(G₂, r̂☉)
+                        if intersect_ray_triangle(ray, A₁, B₁, C₁).hit
                             btpm.sec.flux_sun[j] = 0
                             break
                         end
