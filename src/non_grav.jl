@@ -83,13 +83,17 @@ function update_thermal_force!(stpm::SingleAsteroidTPM)
         # The factor 2/3 comes from Lambertian emission (isotropic in hemisphere)
         # For Lambertian surface: ∫cos(θ)dΩ = 2π/3 over hemisphere
         stpm.face_forces[i] = - 2/3 * Eᵢ * aᵢ / c₀ * n̂ᵢ  # Direct recoil force normal to face
-        for visiblefacet in stpm.shape.visiblefacets[i]
-            fᵢⱼ = visiblefacet.f
-            d̂ᵢⱼ = visiblefacet.d̂
-
-            # Self-heating contribution: photons re-absorbed by other faces
-            # No 2/3 factor here because the direction is already specified by d̂ᵢⱼ
-            stpm.face_forces[i] += Eᵢ * aᵢ / c₀ * fᵢⱼ * d̂ᵢⱼ  # Re-absorption recoil force
+        
+        if !isnothing(stpm.shape.face_visibility_graph)
+            # Face properties visible from `i`: View factors and directions
+            view_factors = get_view_factors(stpm.shape.face_visibility_graph, i)
+            directions = get_visible_face_directions(stpm.shape.face_visibility_graph, i)
+            
+            for (fᵢⱼ, d̂ᵢⱼ) in zip(view_factors, directions)
+                # Self-heating contribution: photons re-absorbed by other faces
+                # No 2/3 factor here because the direction is already specified by d̂ᵢⱼ
+                stpm.face_forces[i] += Eᵢ * aᵢ / c₀ * fᵢⱼ * d̂ᵢⱼ  # Re-absorption recoil force
+            end
         end
 
         ## Thermal force on the entire shape

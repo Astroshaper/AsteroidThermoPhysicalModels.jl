@@ -69,7 +69,7 @@ using AsteroidThermoPhysicalModels
 
 
 # Load shape model
-shape = load_shape_obj("asteroid_shape.obj"; scale=1000, find_visible_facets=true)
+shape = load_shape_obj("asteroid_shape.obj"; scale=1000, with_face_visibility=true)
 
 # Set thermal parameters
 thermo_params = ThermoParams(
