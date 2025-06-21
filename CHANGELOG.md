@@ -11,7 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TBD
 
 ### Changed
-- TBD
+- Updated `AsteroidShapeModels.jl` dependency from v0.2.0 to v0.3.0 (#173)
+  - **Breaking**: The visibility API from `AsteroidShapeModels.jl` has changed
+  - Direct access to `shape.visiblefacets[i]` is replaced with function calls:
+    - `get_visible_face_indices(shape.face_visibility_graph, i)`
+    - `get_view_factors(shape.face_visibility_graph, i)`
+    - `get_visible_face_directions(shape.face_visibility_graph, i)`
+  - Added null checks for `shape.face_visibility_graph` before accessing visibility data
 
 ### Fixed
 - TBD
