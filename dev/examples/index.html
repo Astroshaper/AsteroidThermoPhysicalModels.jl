@@ -62,7 +62,7 @@ SPICE.kclear()
 ##= Load obj file =##
 path_obj = joinpath(&quot;shape&quot;, &quot;SHAPE_SFM_49k_v20180804.obj&quot;)
     
-shape = load_shape_obj(path_obj; scale=1000, find_visible_facets=true)
+shape = load_shape_obj(path_obj; scale=1000, with_face_visibility=true)
 n_face = length(shape.faces)  # Number of faces
 
 ##= Thermal properties =##
@@ -178,8 +178,8 @@ SPICE.kclear()
 path_shape1_obj = joinpath(&quot;shape&quot;, &quot;g_50677mm_rad_obj_didy_0000n00000_v001.obj&quot;)
 path_shape2_obj = joinpath(&quot;shape&quot;, &quot;g_08438mm_lgt_obj_dimo_0000n00000_v002.obj&quot;)
     
-shape1 = load_shape_obj(path_shape1_obj; scale=1000, find_visible_facets=true)
-shape2 = load_shape_obj(path_shape2_obj; scale=1000, find_visible_facets=true)
+shape1 = load_shape_obj(path_shape1_obj; scale=1000, with_face_visibility=true)
+shape2 = load_shape_obj(path_shape2_obj; scale=1000, with_face_visibility=true)
 
 n_face_shape1 = length(shape1.faces)  # Number of faces of Didymos
 n_face_shape2 = length(shape2.faces)  # Number of faces of Dimorphos
@@ -251,4 +251,4 @@ result.surface_temperature
 # As a function of depth [m] and time [s], `Dict` with face ID as key and a matrix `(n_depth, n_time)` as an entry.
 # - `n_depth` : The number of the depth nodes
 # - `n_time`  : The number of time steps to save temperature
-result.subsurface_temperature[2]  # Subsurface temperature for face ID 2</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../physical_model/">« Physical model</a><a class="docs-footer-nextpage" href="../api/">API Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.12.0 on <span class="colophon-date" title="Saturday 14 June 2025 19:51">Saturday 14 June 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+result.subsurface_temperature[2]  # Subsurface temperature for face ID 2</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../physical_model/">« Physical model</a><a class="docs-footer-nextpage" href="../api/">API Reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.13.0 on <span class="colophon-date" title="Saturday 21 June 2025 15:19">Saturday 21 June 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
