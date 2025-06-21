@@ -265,12 +265,16 @@ Update flux of scattered sunlight, only considering single scattering.
 """
 function update_flux_scat_single!(stpm::SingleAsteroidTPM)
     stpm.SELF_HEATING == false && return
+    isnothing(stpm.shape.face_visibility_graph) && return
 
     for i_face in eachindex(stpm.shape.faces)
         stpm.flux_scat[i_face] = 0.
-        for visiblefacet in stpm.shape.visiblefacets[i_face]
-            j   = visiblefacet.id
-            fᵢⱼ = visiblefacet.f
+        
+        # Face properties visible from `i_face`: Face indices and view factors
+        visible_indices = get_visible_face_indices(stpm.shape.face_visibility_graph, i_face)
+        view_factors = get_view_factors(stpm.shape.face_visibility_graph, i_face)
+        
+        for (j, fᵢⱼ) in zip(visible_indices, view_factors)
             R_vis = stpm.thermo_params.reflectance_vis[j]
 
             stpm.flux_scat[i_face] += fᵢⱼ * R_vis * stpm.flux_sun[j]
@@ -318,12 +322,16 @@ Single radiation-absorption is only considered, assuming albedo is close to zero
 """
 function update_flux_rad_single!(stpm::SingleAsteroidTPM)
     stpm.SELF_HEATING == false && return
+    isnothing(stpm.shape.face_visibility_graph) && return
 
     for i in eachindex(stpm.shape.faces)
         stpm.flux_rad[i] = 0.
-        for visiblefacet in stpm.shape.visiblefacets[i]
-            j    = visiblefacet.id
-            fᵢⱼ  = visiblefacet.f
+        
+        # Face properties visible from `i_face`: Face indices and view factors
+        visible_indices = get_visible_face_indices(stpm.shape.face_visibility_graph, i)
+        view_factors = get_view_factors(stpm.shape.face_visibility_graph, i)
+        
+        for (j, fᵢⱼ) in zip(visible_indices, view_factors)
             ε    = stpm.thermo_params.emissivity[j]
             R_ir = stpm.thermo_params.reflectance_ir[j]
             Tⱼ   = stpm.temperature[begin, j]

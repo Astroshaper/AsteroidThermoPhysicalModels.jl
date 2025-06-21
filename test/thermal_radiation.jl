@@ -30,7 +30,7 @@ This test validates:
 
     ## --- Load shape model ---
     path_obj = joinpath("shape", "fractal_v2572_f5000.obj")
-    shape = load_shape_obj(path_obj; scale=1, find_visible_facets=true)
+    shape = load_shape_obj(path_obj; scale=1, with_face_visibility=true)
     n_face = length(shape.faces)  # Number of faces
 
     ## --- Ephemerides ---

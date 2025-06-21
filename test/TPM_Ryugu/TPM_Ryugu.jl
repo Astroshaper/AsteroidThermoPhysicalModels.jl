@@ -77,7 +77,7 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for 
     path_obj = joinpath("shape", "ryugu_test.obj")  # Small model for test
     # path_obj = joinpath("shape", "SHAPE_SFM_49k_v20180804.obj")
     
-    shape = load_shape_obj(path_obj; scale=1000, find_visible_facets=true)
+    shape = load_shape_obj(path_obj; scale=1000, with_face_visibility=true)
     n_face = length(shape.faces)  # Number of faces
 
     ## --- Thermal properties ---
