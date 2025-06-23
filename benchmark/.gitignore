@@ -1,0 +1,11 @@
+# Downloaded data
+kernel/
+shape/
+
+# Benchmark results
+results/
+
+# Temporary files
+*.tmp
+*~
+.DS_Store
