@@ -17,6 +17,7 @@ makedocs(;
         "Introduction" => "index.md",
         "Physical model" => "physical_model.md",
         "Usage Examples" => "examples.md",
+        "Performance" => "benchmarks.md",
         "API Reference" => "api.md",
     ],
 )
