@@ -23,7 +23,7 @@ Each benchmark run creates:
 
 ## Execution History
 
-### [Date] - [Git commit hash]
+### [Date] - v0.0.8-DEV - [Git commit hash]
 
 **Environment:**
 - Julia: [version]

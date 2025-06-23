@@ -82,14 +82,19 @@ The package supports multi-threading for some operations:
 
 ## Version Performance History
 
-### v0.2.0 (Current)
+### v0.0.8-DEV (Current)
+- Added comprehensive benchmark suite
+- Performance tracking infrastructure
 - Migrated to AsteroidShapeModels.jl v0.3.0
 - Improved visibility graph API
-- Memory optimizations in flux calculations
 
-### v0.1.0
-- Initial performance baseline
+### v0.0.7
+- Memory optimizations in flux calculations
 - Basic shadow and self-heating calculations
+
+### Earlier versions
+- Initial implementation
+- Basic thermophysical modeling
 
 ## Benchmarking Your Configuration
 
