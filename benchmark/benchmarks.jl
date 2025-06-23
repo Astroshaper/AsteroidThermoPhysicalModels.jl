@@ -3,6 +3,7 @@ using AsteroidThermoPhysicalModels
 using BenchmarkTools
 using Downloads
 using LinearAlgebra
+using Pkg
 using Rotations
 using SPICE
 using StaticArrays
@@ -380,9 +381,12 @@ function run_benchmarks(; save_results=true)
     results = run(SUITE, verbose=true)
     
     if save_results
-        # Save results with timestamp
+        # Get package version
+        pkg_version = Pkg.project().version
+        
+        # Save results with timestamp and version
         timestamp = Dates.format(now(), "yyyy-mm-dd_HHMMSS")
-        filename = "benchmark_results_$(timestamp).json"
+        filename = "benchmark_results_v$(pkg_version)_$(timestamp).json"
         BenchmarkTools.save(filename, results)
         @info "Benchmark results saved to $(filename)"
     end

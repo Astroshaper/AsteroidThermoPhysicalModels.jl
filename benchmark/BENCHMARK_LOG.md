@@ -46,7 +46,7 @@ Each benchmark run creates:
 ### Template for new entries
 
 ```markdown
-### YYYY-MM-DD - [commit hash]
+### YYYY-MM-DD - v[Package Version] - [commit hash]
 
 **Environment:**
 - Julia: 

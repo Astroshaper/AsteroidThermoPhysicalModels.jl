@@ -64,6 +64,9 @@ println("\nResults saved to: $results_file")
 # Print summary
 print_summary(results)
 
+# Get package version
+pkg_version = Pkg.project().version
+
 # Export human-readable report
 report_file = joinpath(@__DIR__, "results", "benchmark_report_$(timestamp).txt")
 open(report_file, "w") do io
@@ -72,6 +75,7 @@ open(report_file, "w") do io
     redirect_stdout(io)
     
     println("AsteroidThermoPhysicalModels.jl Benchmark Report")
+    println("Version: v$(pkg_version)")
     println("Generated: $(Dates.now())")
     println("="^60)
     
