@@ -30,6 +30,9 @@ end
 # Include benchmark definitions
 include("benchmarks.jl")
 
+# Import Dates for timestamp formatting
+using Dates
+
 # Run benchmarks
 println("\n" * "="^60)
 println("Running AsteroidThermoPhysicalModels.jl Benchmarks")

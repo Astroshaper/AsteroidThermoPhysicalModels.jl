@@ -4,19 +4,21 @@ This page provides performance expectations and optimization guidelines for Aste
 
 ## Expected Performance
 
-The following benchmarks were performed on a modern desktop CPU (e.g., Intel Core i7 or AMD Ryzen 7):
+The following benchmarks were performed on Apple M4 (macOS, single-threaded):
 
 ### Single Asteroid (Ryugu)
-- **Shape complexity**: ~49,000 faces
-- **1 rotation** (72 time steps): 30-60 seconds
-- **20 rotations** (1,440 time steps): 10-20 minutes
+- **Shape complexity**: 49,152 faces
+- **1 rotation** (72 time steps): ~73 seconds
+- **20 rotations** (1,440 time steps): ~295 seconds (4.9 minutes)
 - **With shadows and self-heating enabled**
 
 ### Binary System (Didymos-Dimorphos)
-- **Primary**: ~2,000 faces, **Secondary**: ~3,000 faces
-- **1 rotation**: 45-90 seconds
-- **20 rotations**: 15-30 minutes
+- **Primary**: 1,996 faces, **Secondary**: 3,072 faces
+- **1 rotation**: ~14 seconds
+- **20 rotations**: ~191 seconds (3.2 minutes)
 - **With mutual shadowing and heating enabled**
+
+*Note: Performance may vary depending on CPU architecture. Intel/AMD processors may show different characteristics.*
 
 ## Performance Considerations
 
