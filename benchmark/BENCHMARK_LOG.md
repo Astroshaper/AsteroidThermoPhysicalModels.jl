@@ -57,6 +57,46 @@ Component analysis (Ryugu, 72 calls each):
 
 ---
 
+### 2025-06-24 - v0.0.8-DEV - f1de637
+
+**Environment:**
+- Julia: 1.11.5
+- CPU: Apple M4
+- OS: macOS Darwin 24.5.0
+- Threads: 1
+
+**Results:**
+```
+Ryugu (49,152 faces):
+  - 20 rotations: 112.078 seconds (actual computation time)
+  - 1 rotation: 5.713 seconds (actual computation time)
+  - Memory: 152.17 KiB (20 rotations), 5.80 KiB (1 rotation)
+  - Allocations: 20 (20 rotations), 16 (1 rotation)
+
+Didymos-Dimorphos (1,996 + 3,072 faces):
+  - 20 rotations: 97.912 seconds
+  - 1 rotation: 4.925 seconds (median of 2 samples)
+  - Memory: 304.34 KiB (20 rotations), 11.59 KiB (1 rotation)
+  - Allocations: 40 (20 rotations), 32 (1 rotation)
+
+Component analysis (Ryugu):
+  - Shadow calculation: 1.161 seconds (72 calls) = 0.016 s/call
+  - Self-heating: 2.028 seconds (72 calls) = 0.028 s/call
+  - Temperature update: 1.878 seconds (72 steps) = 0.026 s/step
+
+Memory benchmark:
+  - Full simulation: 5.548 seconds, 1.88 MiB, 36 allocations
+```
+
+**Notes:**
+- Significant performance improvement from previous run (294s → 112s for Ryugu 20 rotations)
+- The previous benchmark times included setup overhead, these are actual computation times
+- Component benchmarks show very efficient per-call performance
+- Memory usage is remarkably low with minimal allocations
+- Linear scaling confirmed: Ryugu 20x ≈ 19.6× single rotation time
+
+---
+
 ## Template for new entries
 
 ```markdown

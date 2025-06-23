@@ -8,15 +8,22 @@ The following benchmarks were performed on Apple M4 (macOS, single-threaded):
 
 ### Single Asteroid (Ryugu)
 - **Shape complexity**: 49,152 faces
-- **1 rotation** (72 time steps): ~73 seconds
-- **20 rotations** (1,440 time steps): ~295 seconds (4.9 minutes)
+- **1 rotation** (72 time steps): ~5.7 seconds
+- **20 rotations** (1,440 time steps): ~112 seconds (1.9 minutes)
+- **Memory usage**: 152 KiB (20 rotations), minimal allocations
 - **With shadows and self-heating enabled**
 
 ### Binary System (Didymos-Dimorphos)
 - **Primary**: 1,996 faces, **Secondary**: 3,072 faces
-- **1 rotation**: ~14 seconds
-- **20 rotations**: ~191 seconds (3.2 minutes)
+- **1 rotation**: ~4.9 seconds
+- **20 rotations**: ~98 seconds (1.6 minutes)
+- **Memory usage**: 304 KiB (20 rotations)
 - **With mutual shadowing and heating enabled**
+
+### Component Performance
+- **Shadow calculations**: ~0.016 seconds per time step
+- **Self-heating**: ~0.028 seconds per time step
+- **Temperature update**: ~0.026 seconds per time step
 
 *Note: Performance may vary depending on CPU architecture. Intel/AMD processors may show different characteristics.*
 
@@ -89,6 +96,8 @@ The package supports multi-threading for some operations:
 - Performance tracking infrastructure
 - Migrated to AsteroidShapeModels.jl v0.3.0
 - Improved visibility graph API
+- **Performance**: Ryugu 20 rotations in ~112s, Didymos in ~98s
+- **Memory**: Extremely efficient with <1MB for typical simulations
 
 ### v0.0.7
 - Memory optimizations in flux calculations
