@@ -57,7 +57,10 @@ Component analysis (Ryugu, 72 calls each):
 
 ---
 
-### [Date] - v0.0.8-DEV - [Git commit hash]
+## Template for new entries
+
+```markdown
+### YYYY-MM-DD - v[Package Version] - [commit hash]
 
 **Environment:**
 - Julia: [version]
@@ -66,33 +69,12 @@ Component analysis (Ryugu, 72 calls each):
 - Threads: [number]
 
 **Results:**
-```
-[Paste benchmark output here]
-```
-
-**Notes:**
-- [Any relevant observations]
-- [Performance anomalies]
-- [Comparison with previous runs]
-
----
-
-### Template for new entries
-
-```markdown
-### YYYY-MM-DD - v[Package Version] - [commit hash]
-
-**Environment:**
-- Julia: 
-- CPU: 
-- OS: 
-- Threads: 
-
-**Results:**
 \```
 [Benchmark output]
 \```
 
 **Notes:**
-- 
+- [Any relevant observations]
+- [Performance anomalies]
+- [Comparison with previous runs]
 ```
