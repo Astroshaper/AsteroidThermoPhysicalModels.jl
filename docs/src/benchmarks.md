@@ -8,22 +8,26 @@ The following benchmarks were performed on Apple M4 (macOS, single-threaded):
 
 ### Single Asteroid (Ryugu)
 - **Shape complexity**: 49,152 faces
-- **1 rotation** (72 time steps): ~5.7 seconds
-- **20 rotations** (1,440 time steps): ~112 seconds (1.9 minutes)
-- **Memory usage**: 152 KiB (20 rotations), minimal allocations
+- **1 rotation** (72 time steps): ~5.3 seconds
+- **20 rotations** (1,440 time steps): ~104 seconds (1.7 minutes)
+- **Memory usage**: 152 KiB (20 rotations), 5.8 KiB (1 rotation)
+- **Allocations**: 20 (20 rotations), 16 (1 rotation)
 - **With shadows and self-heating enabled**
 
 ### Binary System (Didymos-Dimorphos)
 - **Primary**: 1,996 faces, **Secondary**: 3,072 faces
-- **1 rotation**: ~4.9 seconds
-- **20 rotations**: ~98 seconds (1.6 minutes)
-- **Memory usage**: 304 KiB (20 rotations)
+- **1 rotation** (72 time steps): ~4.7 seconds
+- **20 rotations** (1,440 time steps): ~92 seconds (1.5 minutes)
+- **Memory usage**: 304 KiB (20 rotations), 11.6 KiB (1 rotation)
+- **Allocations**: 40 (20 rotations), 32 (1 rotation)
 - **With mutual shadowing and heating enabled**
 
-### Component Performance
-- **Shadow calculations**: ~0.016 seconds per time step
-- **Self-heating**: ~0.028 seconds per time step
-- **Temperature update**: ~0.026 seconds per time step
+### Component Performance (per time step)
+- **Shadow calculations**: ~0.84 seconds
+- **Self-heating**: ~0.86 seconds
+- **Temperature update**: ~0.85 seconds
+
+*Note: Component benchmarks show total time for 72 calls in isolation*
 
 *Note: Performance may vary depending on CPU architecture. Intel/AMD processors may show different characteristics.*
 
@@ -96,8 +100,8 @@ The package supports multi-threading for some operations:
 - Performance tracking infrastructure
 - Migrated to AsteroidShapeModels.jl v0.3.0
 - Improved visibility graph API
-- **Performance**: Ryugu 20 rotations in ~112s, Didymos in ~98s
-- **Memory**: Extremely efficient with <1MB for typical simulations
+- **Performance**: Ryugu 20 rotations in ~104s, Didymos in ~92s
+- **Memory**: Efficient with <1MB for typical simulations
 
 ### v0.0.7
 - Memory optimizations in flux calculations

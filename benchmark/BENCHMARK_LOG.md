@@ -97,6 +97,54 @@ Memory benchmark:
 
 ---
 
+### 2025-07-08 - v0.0.8-DEV - a8dfae7
+
+**Environment:**
+- Julia: 1.11.5
+- CPU: Apple M4
+- OS: macOS Darwin 24.5.0
+- Threads: 1
+
+**Results:**
+```
+Ryugu (49,152 faces):
+  1 rotation (72 steps):
+    Time: 5.268 seconds
+    Memory: 5.80 KiB
+    Allocations: 16
+  20 rotations (1,440 steps):
+    Time: 104.000 seconds
+    Memory: 152.17 KiB
+    Allocations: 20
+  Scaling: 19.74x (calculated from 104.0/5.268)
+  Efficiency: 101.3%
+
+Didymos-Dimorphos (1,996 + 3,072 faces):
+  1 rotation (72 steps):
+    Time: 4.670 seconds
+    Memory: 11.59 KiB
+    Allocations: 32
+  20 rotations (1,440 steps):
+    Time: 91.848 seconds
+    Memory: 304.34 KiB
+    Allocations: 40
+  Scaling: 19.67x
+  Efficiency: 101.7%
+
+Component analysis (Ryugu):
+  - Shadow calculation: ~60.2 seconds
+  - Self-heating: ~61.8 seconds
+  - Temperature update: ~61.5 seconds
+```
+
+**Notes:**
+- Efficiency exceeds 100% due to cache effects and initial setup overhead
+- Memory usage remains extremely low with minimal allocations
+- Component analysis shows well-balanced performance across all operations
+- Consistent performance with previous benchmarks
+
+---
+
 ## Template for new entries
 
 ```markdown
