@@ -416,23 +416,43 @@ function print_summary(results)
     
     # Ryugu results
     if haskey(results, "ryugu")
-        println("\nRyugu Simulation:")
+        println("\nRyugu Simulation (49,152 faces):")
+        if haskey(results["ryugu"], "single_rotation")
+            r1 = results["ryugu"]["single_rotation"]
+            t1 = median(r1).time / 1e9  # Convert to seconds
+            println("  1 rotation (72 steps):")
+            println("    Time        : $(BenchmarkTools.prettytime(median(r1).time))")
+            println("    Memory      : $(BenchmarkTools.prettymemory(median(r1).memory))")
+            println("    Allocations : $(median(r1).allocs)")
+        end
         if haskey(results["ryugu"], "full_simulation_20_rotations")
-            r = results["ryugu"]["full_simulation_20_rotations"]
-            println("  20 rotations: $(BenchmarkTools.prettytime(median(r).time))")
-            println("  Memory: $(BenchmarkTools.prettymemory(median(r).memory))")
-            println("  Allocations: $(median(r).allocs)")
+            r20 = results["ryugu"]["full_simulation_20_rotations"]
+            t20 = median(r20).time / 1e9  # Convert to seconds
+            println("  - 20 rotations (1,440 steps):")
+            println("      - Time        : $(BenchmarkTools.prettytime(median(r20).time))")
+            println("      - Memory      : $(BenchmarkTools.prettymemory(median(r20).memory))")
+            println("      - Allocations : $(median(r20).allocs)")
         end
     end
     
     # Didymos results
     if haskey(results, "didymos")
-        println("\nDidymos-Dimorphos Binary Simulation:")
+        println("\nDidymos-Dimorphos Binary Simulation (1,996 + 3,072 faces):")
+        if haskey(results["didymos"], "single_rotation")
+            r1 = results["didymos"]["single_rotation"]
+            t1 = median(r1).time / 1e9  # Convert to seconds
+            println("  - 1 rotation (72 steps):")
+            println("      - Time        : $(BenchmarkTools.prettytime(median(r1).time))")
+            println("      - Memory      : $(BenchmarkTools.prettymemory(median(r1).memory))")
+            println("      - Allocations : $(median(r1).allocs)")
+        end
         if haskey(results["didymos"], "full_simulation_20_rotations")
-            r = results["didymos"]["full_simulation_20_rotations"]
-            println("  20 rotations: $(BenchmarkTools.prettytime(median(r).time))")
-            println("  Memory: $(BenchmarkTools.prettymemory(median(r).memory))")
-            println("  Allocations: $(median(r).allocs)")
+            r20 = results["didymos"]["full_simulation_20_rotations"]
+            t20 = median(r20).time / 1e9  # Convert to seconds
+            println("  - 20 rotations (1,440 steps):")
+            println("      - Time        : $(BenchmarkTools.prettytime(median(r20).time))")
+            println("      - Memory      : $(BenchmarkTools.prettymemory(median(r20).memory))")
+            println("      - Allocations : $(median(r20).allocs)")
         end
     end
     
