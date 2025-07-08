@@ -162,7 +162,7 @@ Update the direct solar irradiation flux on every face of the asteroid.
 
 # Arguments
 - `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
-- `r̂☉::StaticVector{3}` : Unit vector pointing toward the Sun in body-fixed frame
+- `r̂☉::StaticVector{3}` : Sun's direction vector in body-fixed frame (normalized) [m]
 - `F☉::Real` : Solar flux at the asteroid's location [W/m²]
 
 # Algorithm
@@ -179,25 +179,18 @@ checks whether each face is shadowed by other parts of the asteroid using ray-ca
 - The input solar direction `r̂☉` is normalized internally for safety
 """
 function update_flux_sun!(stpm::SingleAsteroidTPM, r̂☉::StaticVector{3}, F☉::Real)
-    r̂☉ = normalize(r̂☉)
-
     if stpm.SELF_SHADOWING
-        for i in eachindex(stpm.shape.faces)
-            if isilluminated(stpm.shape, r̂☉, i; with_self_shadowing=true)
-                n̂ = stpm.shape.face_normals[i]
-                stpm.flux_sun[i] = F☉ * (n̂ ⋅ r̂☉)
-            else
-                stpm.flux_sun[i] = 0
-            end
-        end
+        update_illumination!(stpm.illuminated_faces, stpm.shape, r̂☉; with_self_shadowing=true)
     else
-        for i in eachindex(stpm.shape.faces)
+        update_illumination!(stpm.illuminated_faces, stpm.shape, r̂☉; with_self_shadowing=false)
+    end
+
+    for i in eachindex(stpm.shape.faces)
+        if stpm.illuminated_faces[i]
             n̂ = stpm.shape.face_normals[i]
-            if n̂ ⋅ r̂☉ > 0
-                stpm.flux_sun[i] = F☉ * (n̂ ⋅ r̂☉)
-            else
-                stpm.flux_sun[i] = 0
-            end
+            stpm.flux_sun[i] = F☉ * (n̂ ⋅ r̂☉)
+        else
+            stpm.flux_sun[i] = 0.0
         end
     end
 end
@@ -223,7 +216,7 @@ Update solar irradiation flux on every face using the Sun's position vector.
 - This is a convenience function that handles flux calculation
 """
 function update_flux_sun!(stpm::SingleAsteroidTPM, r☉::StaticVector{3})
-    r̂☉ = SVector{3}(normalize(r☉))
+    r̂☉ = normalize(r☉)
     F☉ = SOLAR_CONST / (norm(r☉) * m2au)^2
 
     update_flux_sun!(stpm, r̂☉, F☉)

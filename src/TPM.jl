@@ -166,17 +166,18 @@ broadcast_thermo_params!(thermo_params::ThermoParams, shape::ShapeModel) = broad
     struct SingleAsteroidThermoPhysicalModel <: AbstractAsteroidThermoPhysicalModel
 
 # Fields
-- `shape`          : Shape model
-- `thermo_params`  : Thermophysical parameters
+- `shape`         : Shape model
+- `thermo_params` : Thermophysical parameters
 
-- `flux_sun`       : Flux of direct sunlight on each face [W/m²]
-- `flux_scat`      : Flux of scattered light on each face [W/m²]
-- `flux_rad`       : Flux of thermal emission from surrounding surface on each face [W/m²]
-- `temperature`    : Temperature matrix `(n_depth, n_face)` according to the number of depth cells `n_depth` and the number of faces `n_face`.
+- `illuminated_faces` : Boolean array indicating illumination state for each face (used for batch processing with AsteroidShapeModels.jl v0.4.0+)
+- `flux_sun`          : Flux of direct sunlight on each face [W/m²]
+- `flux_scat`         : Flux of scattered light on each face [W/m²]
+- `flux_rad`          : Flux of thermal emission from surrounding surface on each face [W/m²]
+- `temperature`       : Temperature matrix `(n_depth, n_face)` according to the number of depth cells `n_depth` and the number of faces `n_face`.
 
-- `face_forces`    : Thermal force on each face
-- `force`          : Thermal recoil force at body-fixed frame (Yarkovsky effect)
-- `torque`         : Thermal recoil torque at body-fixed frame (YORP effect)
+- `face_forces` : Thermal force on each face
+- `force`       : Thermal recoil force at body-fixed frame (Yarkovsky effect)
+- `torque`      : Thermal recoil torque at body-fixed frame (YORP effect)
 
 - `SELF_SHADOWING` : Flag to consider self-shadowing
 - `SELF_HEATING`   : Flag to consider self-heating
@@ -188,17 +189,18 @@ broadcast_thermo_params!(thermo_params::ThermoParams, shape::ShapeModel) = broad
 - roughness_maps   ::ShapeModel[]
 """
 struct SingleAsteroidThermoPhysicalModel{P<:AbstractThermoParams, S<:HeatConductionSolver, BU<:BoundaryCondition, BL<:BoundaryCondition} <: AbstractAsteroidThermoPhysicalModel
-    shape          ::ShapeModel
-    thermo_params  ::P
+    shape         ::ShapeModel
+    thermo_params ::P
 
-    flux_sun       ::Vector{Float64}  # Flux of direct sunlight
-    flux_scat      ::Vector{Float64}  # Flux of scattered light
-    flux_rad       ::Vector{Float64}  # Flux of thermal emission from surrounding surface
-    temperature    ::Matrix{Float64}  # (n_depth, n_face)
+    illuminated_faces ::Vector{Bool}     # Illumination state for each face (for batch processing)
+    flux_sun          ::Vector{Float64}  # Flux of direct sunlight
+    flux_scat         ::Vector{Float64}  # Flux of scattered light
+    flux_rad          ::Vector{Float64}  # Flux of thermal emission from surrounding surface
+    temperature       ::Matrix{Float64}  # (n_depth, n_face)
 
-    face_forces    ::Vector{SVector{3, Float64}}
-    force          ::MVector{3, Float64}
-    torque         ::MVector{3, Float64}
+    face_forces ::Vector{SVector{3, Float64}}
+    force       ::MVector{3, Float64}
+    torque      ::MVector{3, Float64}
 
     SELF_SHADOWING ::Bool
     SELF_HEATING   ::Bool
@@ -231,6 +233,7 @@ function SingleAsteroidThermoPhysicalModel(shape, thermo_params; SELF_SHADOWING,
     n_depth = thermo_params.n_depth
     n_face = length(shape.faces)
 
+    illuminated_faces = zeros(Bool, n_face)
     flux_sun = zeros(n_face)
     flux_scat = zeros(n_face)
     flux_rad = zeros(n_face)
@@ -240,7 +243,7 @@ function SingleAsteroidThermoPhysicalModel(shape, thermo_params; SELF_SHADOWING,
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
 
-    SingleAsteroidThermoPhysicalModel(shape, thermo_params, flux_sun, flux_scat, flux_rad, temperature, face_forces, force, torque, SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
+    SingleAsteroidThermoPhysicalModel(shape, thermo_params, illuminated_faces, flux_sun, flux_scat, flux_rad, temperature, face_forces, force, torque, SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
 end
 
 
