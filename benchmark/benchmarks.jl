@@ -126,7 +126,7 @@ function setup_ryugu_tpm(n_cycles::Int=20)
     
     # Load shape model
     path_obj = joinpath("benchmark/shape", "SHAPE_SFM_49k_v20180804.obj")
-    shape = load_shape_obj(path_obj; scale=1000, with_face_visibility=true)
+    shape = load_shape_obj(path_obj; scale=1000, with_face_visibility=true, with_bvh=true)
     
     # Thermal properties
     k = 0.1      # Thermal conductivity [W/m/K]
@@ -204,8 +204,8 @@ function setup_didymos_tpm(n_cycles::Int=20)
     path_shape1_obj = joinpath("benchmark/shape", "g_50677mm_rad_obj_didy_0000n00000_v001.obj")
     path_shape2_obj = joinpath("benchmark/shape", "g_08438mm_lgt_obj_dimo_0000n00000_v002.obj")
     
-    shape1 = load_shape_obj(path_shape1_obj; scale=1000, with_face_visibility=true)
-    shape2 = load_shape_obj(path_shape2_obj; scale=1000, with_face_visibility=true)
+    shape1 = load_shape_obj(path_shape1_obj; scale=1000, with_face_visibility=true, with_bvh=true)
+    shape2 = load_shape_obj(path_shape2_obj; scale=1000, with_face_visibility=true, with_bvh=true)
     
     # Thermal properties
     k = 0.125    # Thermal conductivity [W/m/K]

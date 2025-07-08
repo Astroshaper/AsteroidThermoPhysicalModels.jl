@@ -4,7 +4,7 @@ This document outlines the tasks and milestones required for the v0.1.0 release 
 
 ## Release Goals
 
-The v0.1.0 release marks a significant milestone with stabilized core APIs and improved performance tracking capabilities. This release includes breaking changes from the AsteroidShapeModels.jl v0.3.0 update.
+The v0.1.0 release marks a significant milestone with stabilized core APIs and improved performance tracking capabilities. This release includes updates to support AsteroidShapeModels.jl v0.4.0 with its latest improvements.
 
 ## Required Tasks
 
@@ -20,6 +20,7 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs and i
   - [ ] Ensure all breaking changes are clearly documented
   - [ ] Add migration guide for visibility API changes
 
+- [ ] **Update to AsteroidShapeModels.jl v0.4.0**
 - [x] **Merge pending PRs**
   - [x] #175 - Remove Format suggestions workflow (Merged)
 

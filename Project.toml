@@ -14,7 +14,7 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
 Aqua = "0.8"
-AsteroidShapeModels = "0.3.0"
+AsteroidShapeModels = "0.4.0"
 CSV = "0"
 DataFrames = "1"
 Downloads = "1"
@@ -25,7 +25,7 @@ SPICE = "0.2"
 StaticArrays = "1"
 Statistics = "1"
 Test = "1"
-julia = "1.6"
+julia = "1.10"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"

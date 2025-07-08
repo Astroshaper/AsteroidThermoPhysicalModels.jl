@@ -183,7 +183,7 @@ function update_flux_sun!(stpm::SingleAsteroidTPM, r̂☉::StaticVector{3}, F☉
 
     if stpm.SELF_SHADOWING
         for i in eachindex(stpm.shape.faces)
-            if isilluminated(stpm.shape, r̂☉, i)
+            if isilluminated(stpm.shape, r̂☉, i; with_self_shadowing=true)
                 n̂ = stpm.shape.face_normals[i]
                 stpm.flux_sun[i] = F☉ * (n̂ ⋅ r̂☉)
             else
