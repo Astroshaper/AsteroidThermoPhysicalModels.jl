@@ -243,6 +243,53 @@ function update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, r�
     update_flux_sun!(btpm.sec, r☉₂)
 end
 
+"""
+    update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3})
+
+Update solar irradiation flux on both components of a binary asteroid system with mutual shadowing.
+
+# Arguments
+- `btpm::BinaryAsteroidTPM` : Thermophysical model for a binary asteroid
+- `r☉₁::StaticVector{3}`    : Sun's position vector in the primary's body-fixed frame (Not normalized) [m]
+- `R₁₂::StaticMatrix{3,3}`  : Rotation matrix from primary to secondary frame
+- `t₁₂::StaticVector{3}`    : Translation vector from primary to secondary frame [m]
+
+# Notes
+- Uses the new `apply_eclipse_shadowing!` API from AsteroidShapeModels.jl v0.4.0
+- Requires BVH to be built for both shapes (should be done when loading with `with_bvh=true`)
+- Combines self-shadowing and mutual shadowing in a single call
+- The sun position in the secondary frame is computed as: r☉₂ = R₁₂ * r☉₁
+"""
+function update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3})
+    # Compute sun position in secondary frame
+    r☉₂ = R₁₂ * r☉₁
+    
+    # First, update illumination for both components considering self-shadowing
+    update_flux_sun!(btpm.pri, r☉₁)
+    update_flux_sun!(btpm.sec, r☉₂)
+    
+    # Only apply mutual shadowing if enabled
+    if btpm.MUTUAL_SHADOWING
+        # Apply eclipse shadowing from secondary onto "primary"
+        eclipse_status_pri = apply_eclipse_shadowing!(
+            btpm.pri.illuminated_faces, btpm.pri.shape, r☉₁, 
+            R₁₂, t₁₂, btpm.sec.shape
+        )
+        
+        # Apply eclipse shadowing from primary onto "secondary"
+        # Need R₂₁ = inv(R₁₂) and t₂₁ = -R₂₁ * t₁₂
+        R₂₁ = R₁₂'  # Transpose is inverse for rotation matrices
+        t₂₁ = -R₂₁ * t₁₂
+        eclipse_status_sec = apply_eclipse_shadowing!(
+            btpm.sec.illuminated_faces, btpm.sec.shape, r☉₂,
+            R₂₁, t₂₁, btpm.pri.shape
+        )
+        
+        # Update flux_sun based on the updated illumination states
+        btpm.pri.flux_sun[.!btpm.pri.illuminated_faces] .= 0.0
+        btpm.sec.flux_sun[.!btpm.sec.illuminated_faces] .= 0.0
+    end
+end
 
 # ╔═══════════════════════════════════════════════════════════════════╗
 # ║                 Energy flux: Scattering                           ║
