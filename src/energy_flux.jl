@@ -254,6 +254,11 @@ checks whether each face is shadowed by other parts of the asteroid using ray-ca
 """
 function update_flux_sun!(stpm::SingleAsteroidTPM, r̂☉::StaticVector{3}, F☉::Real)
     if stpm.SELF_SHADOWING
+        # Check face_visibility_graph availability for self-shadowing
+        if isnothing(stpm.shape.face_visibility_graph)
+            error("face_visibility_graph must be built when SELF_SHADOWING is enabled. " *
+                  "Use `build_face_visibility_graph!(shape)` or load shape with `with_face_visibility=true`.")
+        end
         update_illumination!(stpm.illuminated_faces, stpm.shape, r̂☉; with_self_shadowing=true)
     else
         update_illumination!(stpm.illuminated_faces, stpm.shape, r̂☉; with_self_shadowing=false)

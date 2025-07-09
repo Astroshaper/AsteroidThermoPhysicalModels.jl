@@ -225,8 +225,20 @@ Construct a thermophysical model for a single asteroid (`SingleAsteroidThermoPhy
 - `SOLVER`         : Solver of heat conduction equation
 - `BC_UPPER`       : Boundary condition at the upper boundary
 - `BC_LOWER`       : Boundary condition at the lower boundary
+
+# Notes
+- If `SELF_SHADOWING` is true and face_visibility_graph is not built, it will be automatically built
+- This may take some time for large shape models
+- To avoid automatic building, pre-build with `build_face_visibility_graph!` or load shape with `with_face_visibility=true`
 """
 function SingleAsteroidThermoPhysicalModel(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
+    # Automatically build face_visibility_graph if needed for self-shadowing
+    if SELF_SHADOWING
+        if isnothing(shape.face_visibility_graph)
+            @info "Building face_visibility_graph for self-shadowing..."
+            build_face_visibility_graph!(shape)
+        end
+    end
 
     broadcast_thermo_params!(thermo_params, shape)
 
