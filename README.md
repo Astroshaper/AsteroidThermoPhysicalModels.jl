@@ -71,9 +71,7 @@ using AsteroidThermoPhysicalModels
 # Load an asteroid shape model
 # - `path/to/shape.obj` is the path to your OBJ file (mandatory)
 # - `scale` : scale factor for the shape model (e.g., 1000 for km to m conversion)
-# - `with_face_visibility` : whether to build face-to-face visibility graph for illumination checking and thermophysical modeling
-# - `with_bvh` : whether to build BVH for ray tracing
-shape = load_shape_obj("path/to/shape.obj"; scale=1000, with_face_visibility=true, with_bvh=true)
+shape = load_shape_obj("path/to/shape.obj"; scale=1000)
 
 # Set thermal parameters
 thermo_params = ThermoParams(

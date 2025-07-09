@@ -35,7 +35,7 @@ using Dates
 
 # Run benchmarks
 println("\n" * "="^60)
-println("Running AsteroidThermoPhysicalModels.jl Benchmarks")
+println("  Running AsteroidThermoPhysicalModels.jl Benchmarks")
 println("="^60)
 
 # Download required data first

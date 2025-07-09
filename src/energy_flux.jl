@@ -11,6 +11,80 @@ This file contains functions for computing various energy fluxes including:
 =#
 
 # ╔═══════════════════════════════════════════════════════════════════╗
+# ║                  Coordinate transformations                       ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+"""
+    inverse_transformation(R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3}) -> (R₂₁, t₂₁)
+
+Compute the inverse coordinate transformation.
+
+Given a transformation from frame 1 to frame 2:
+    p₂ = R₁₂ * p₁ + t₁₂
+where p₁ and p₂ are points in frames 1 and 2, respectively,
+
+This function returns the inverse transformation from frame 2 to frame 1:
+    p₁ = R₂₁ * p₂ + t₂₁
+
+# Arguments
+- `R₁₂::StaticMatrix{3,3}` : Rotation matrix from frame 1 to frame 2
+- `t₁₂::StaticVector{3}`   : Translation vector from frame 1 to frame 2
+
+# Returns
+- `R₂₁::StaticMatrix{3,3}` : Rotation matrix from frame 2 to frame 1 (= R₁₂')
+- `t₂₁::StaticVector{3}`   : Translation vector from frame 2 to frame 1 (= -R₂₁ * t₁₂)
+
+# Notes
+- For rotation matrices, the inverse equals the transpose: R⁻¹ = R'
+
+# Performance considerations
+- The function is marked with `@inline` for optimization
+- This function may allocate memory (~112 bytes) when returning the tuple `(R₂₁, t₂₁)`.
+- If this becomes a performance bottleneck in the future, consider:
+    - Using separate output arguments (mutating version)
+    - Inlining the computation directly at the call site
+    - Returning a custom struct instead of a tuple
+
+# Example
+```julia
+R₁₂ = RotMatrix(     # 90° rotation around z-axis
+    1.0, 0.0,  0.0,
+    0.0, 0.0, -1.0,
+    0.0, 1.0,  0.0,
+)
+t₁₂ = SVector(1.0, 2.0, 3.0)
+
+R₂₁, t₂₁ = inverse_transformation(R₁₂, t₁₂)
+# Now: p₁ = R₂₁ * p₂ + t₂₁
+```
+"""
+@inline function inverse_transformation(R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3})
+    R₂₁ = R₁₂'  # For rotation matrices, R⁻¹ = R'
+    t₂₁ = -R₂₁ * t₁₂
+    return R₂₁, t₂₁
+end
+
+"""
+    transform(p₁::StaticVector{3}, R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3}) -> p₂
+
+Transform a point from frame 1 to frame 2.
+
+# Arguments
+- `p₁::StaticVector{3}`    : Point in frame 1
+- `R₁₂::StaticMatrix{3,3}` : Rotation matrix from frame 1 to frame 2
+- `t₁₂::StaticVector{3}`   : Translation vector from frame 1 to frame 2
+
+# Returns
+- `p₂::StaticVector{3}` : Point in frame 2
+
+# Notes
+The transformation is: p₂ = R₁₂ * p₁ + t₁₂
+"""
+@inline function transform(p₁::StaticVector{3}, R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3})
+    return R₁₂ * p₁ + t₁₂
+end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
 # ║                     Energy input/output                           ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
@@ -162,7 +236,7 @@ Update the direct solar irradiation flux on every face of the asteroid.
 
 # Arguments
 - `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
-- `r̂☉::StaticVector{3}` : Unit vector pointing toward the Sun in body-fixed frame
+- `r̂☉::StaticVector{3}` : Sun's direction vector in body-fixed frame (normalized) [m]
 - `F☉::Real` : Solar flux at the asteroid's location [W/m²]
 
 # Algorithm
@@ -179,25 +253,23 @@ checks whether each face is shadowed by other parts of the asteroid using ray-ca
 - The input solar direction `r̂☉` is normalized internally for safety
 """
 function update_flux_sun!(stpm::SingleAsteroidTPM, r̂☉::StaticVector{3}, F☉::Real)
-    r̂☉ = normalize(r̂☉)
-
     if stpm.SELF_SHADOWING
-        for i in eachindex(stpm.shape.faces)
-            if isilluminated(stpm.shape, r̂☉, i; with_self_shadowing=true)
-                n̂ = stpm.shape.face_normals[i]
-                stpm.flux_sun[i] = F☉ * (n̂ ⋅ r̂☉)
-            else
-                stpm.flux_sun[i] = 0
-            end
+        # Check face_visibility_graph availability for self-shadowing
+        if isnothing(stpm.shape.face_visibility_graph)
+            error("face_visibility_graph must be built when SELF_SHADOWING is enabled. " *
+                  "Use `build_face_visibility_graph!(shape)` or load shape with `with_face_visibility=true`.")
         end
+        update_illumination!(stpm.illuminated_faces, stpm.shape, r̂☉; with_self_shadowing=true)
     else
-        for i in eachindex(stpm.shape.faces)
+        update_illumination!(stpm.illuminated_faces, stpm.shape, r̂☉; with_self_shadowing=false)
+    end
+
+    for i in eachindex(stpm.shape.faces)
+        if stpm.illuminated_faces[i]
             n̂ = stpm.shape.face_normals[i]
-            if n̂ ⋅ r̂☉ > 0
-                stpm.flux_sun[i] = F☉ * (n̂ ⋅ r̂☉)
-            else
-                stpm.flux_sun[i] = 0
-            end
+            stpm.flux_sun[i] = F☉ * (n̂ ⋅ r̂☉)
+        else
+            stpm.flux_sun[i] = 0.0
         end
     end
 end
@@ -223,33 +295,62 @@ Update solar irradiation flux on every face using the Sun's position vector.
 - This is a convenience function that handles flux calculation
 """
 function update_flux_sun!(stpm::SingleAsteroidTPM, r☉::StaticVector{3})
-    r̂☉ = SVector{3}(normalize(r☉))
+    r̂☉ = normalize(r☉)
     F☉ = SOLAR_CONST / (norm(r☉) * m2au)^2
 
     update_flux_sun!(stpm, r̂☉, F☉)
 end
 
-
 """
-    update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, r☉₂::StaticVector{3})
+    update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3})
 
-Update solar irradiation flux on both components of a binary asteroid system.
+Update solar irradiation flux on both components of a binary asteroid system with mutual shadowing.
 
 # Arguments
 - `btpm::BinaryAsteroidTPM` : Thermophysical model for a binary asteroid
-- `r☉₁::StaticVector{3}` : Sun's position vector in the primary's body-fixed frame [m]
-- `r☉₂::StaticVector{3}` : Sun's position vector in the secondary's body-fixed frame [m]
+- `r☉₁::StaticVector{3}`    : Sun's position vector in the primary's body-fixed frame (Not normalized) [m]
+- `R₁₂::StaticMatrix{3,3}`  : Rotation matrix from primary to secondary frame
+- `t₁₂::StaticVector{3}`    : Translation vector from primary to secondary frame [m]
 
 # Notes
-- Each component's solar flux is calculated independently using its own Sun vector.
-- The vectors should account for the different orientations of the two bodies.
-- Mutual shadowing between components is handled separately by `mutual_shadowing!`.
+- Uses the new `apply_eclipse_shadowing!` API from AsteroidShapeModels.jl v0.4.0
+- Requires BVH to be built for both shapes (should be done when loading with `with_bvh=true`)
+- Combines self-shadowing and mutual shadowing in a single call
+- The sun position in the secondary frame is computed as: r☉₂ = R₁₂ * r☉₁ + t₁₂
 """
-function update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, r☉₂::StaticVector{3})
+function update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3})
+    # Compute sun position in secondary frame
+    r☉₂ = transform(r☉₁, R₁₂, t₁₂)
+    
+    # First, update illumination for both components considering self-shadowing
     update_flux_sun!(btpm.pri, r☉₁)
     update_flux_sun!(btpm.sec, r☉₂)
-end
+    
+    # Only apply mutual shadowing if enabled
+    if btpm.MUTUAL_SHADOWING
+        # Check BVH availability
+        if isnothing(btpm.pri.shape.bvh) || isnothing(btpm.sec.shape.bvh)
+            error("BVH must be built for both shapes when MUTUAL_SHADOWING is enabled. " *
+                  "Use `build_bvh!(shape)` or load shapes with `with_bvh=true`.")
+        end
 
+        shape1 = btpm.pri.shape
+        shape2 = btpm.sec.shape
+        illuminated_faces1 = btpm.pri.illuminated_faces
+        illuminated_faces2 = btpm.sec.illuminated_faces
+
+        # Inverse transformation from secondary to primary
+        R₂₁, t₂₁ = inverse_transformation(R₁₂, t₁₂)
+
+        # Apply eclipse shadowing from secondary onto primary, and vice versa
+        eclipse_status1 = apply_eclipse_shadowing!(illuminated_faces1, shape1, r☉₁, R₁₂, t₁₂, shape2)        
+        eclipse_status2 = apply_eclipse_shadowing!(illuminated_faces2, shape2, r☉₂, R₂₁, t₂₁, shape1)
+        
+        # Update flux_sun based on the updated illumination states
+        btpm.pri.flux_sun[.!illuminated_faces1] .= 0.0
+        btpm.sec.flux_sun[.!illuminated_faces2] .= 0.0
+    end
+end
 
 # ╔═══════════════════════════════════════════════════════════════════╗
 # ║                 Energy flux: Scattering                           ║
@@ -354,152 +455,6 @@ Single radiation-absorption is only considered, assuming albedo is close to zero
 function update_flux_rad_single!(btpm::BinaryAsteroidTPM)
     update_flux_rad_single!(btpm.pri)
     update_flux_rad_single!(btpm.sec)
-end
-
-
-# ╔═══════════════════════════════════════════════════════════════════╗
-# ║                Mutual shadowing of binary asteroid                ║
-# ╚═══════════════════════════════════════════════════════════════════╝
-
-
-"""
-    mutual_shadowing!(btpm::BinaryAsteroidTPM, r☉, rₛ, R₂₁)
-
-Detect eclipse events between the primary and secondary, and update the solar fluxes of the faces.
-
-# Arguments
-- `btpm` : Thermophysical model for a binary asteroid
-- `r☉`   : Position of the sun relative to the primary       (NOT normalized)
-- `rₛ`   : Position of the secondary relative to the primary (NOT normalized)
-- `R₂₁`  : Rotation matrix from secondary to primary
-"""
-function mutual_shadowing!(btpm::BinaryAsteroidTPM, r☉, rₛ, R₂₁)
-    btpm.MUTUAL_SHADOWING == false && return
-
-    shape1 = btpm.pri.shape
-    shape2 = btpm.sec.shape
-    r̂☉ = normalize(r☉)
-
-    θ = acos(clamp(normalize(r☉) ⋅ normalize(rₛ), -1.0, 1.0))  # Angle of Sun-Primary-Secondary
-
-    R₁ = maximum_radius(shape1)
-    R₂ = maximum_radius(shape2)
-    R₁ < R₂ && error("Error: The primary radius is smaller than the secondary.")
-
-    θ₊ = asin(clamp((R₁ + R₂) / norm(rₛ), -1.0, 1.0))  # Critical angle at which partial ecripse can occur
-    θ₋ = asin(clamp((R₁ - R₂) / norm(rₛ), -1.0, 1.0))  # Critical angle at which total ecripse can occur
-
-    #### Partital eclipse of the primary ####
-    if 0 ≤ θ < θ₊
-        r₂ = minimum_radius(shape2)
-
-        for i in eachindex(shape1.faces)
-            G₁ = shape1.face_centers[i]  # Center of △A₁B₁C₁ in primary
-            n̂₁ = shape1.face_normals[i]  # Normal vector of △A₁B₁C₁ in primary
-
-            ## if △A₁B₁C₁ is NOT facing the sun
-            if r̂☉ ⋅ n̂₁ < 0
-                btpm.pri.flux_sun[i] = 0
-                continue
-            end
-
-            d₁ₛ = rₛ - G₁                                     # Vector from △A₁B₁C₁ to secondary center
-            θ₁ = acos(clamp(r̂☉ ⋅ normalize(d₁ₛ), -1.0, 1.0))  # Angle of Sun-△A₁B₁C₁-Secondary
-            θ_R₂ = asin(clamp(R₂ / norm(d₁ₛ), -1.0, 1.0))     # Critical angle related to the maximum radius of the secondary
-            θ_r₂ = asin(clamp(r₂ / norm(d₁ₛ), -1.0, 1.0))     # Critical angle related to the minimum radius of the secondary
-
-            ## In the secondary shadow
-            if θ₁ < θ_r₂
-                btpm.pri.flux_sun[i] = 0
-                continue
-            ## Out of the secondary shadow
-            elseif θ₁ > θ_R₂
-                continue
-            else
-                for j in eachindex(shape2.faces)
-                    A₂, B₂, C₂ = shape2.nodes[shape2.faces[j]]  # △A₂B₂C₂ in secondary
-                    G₂ = shape2.face_centers[j]                 # Center of △A₂B₂C₂
-                    n̂₂ = shape2.face_normals[j]                 # Normal vector of △A₂B₂C₂
-            
-                    ## Transformation from secondary to primary frame
-                    A₂ = R₂₁ * A₂ + rₛ
-                    B₂ = R₂₁ * B₂ + rₛ
-                    C₂ = R₂₁ * C₂ + rₛ
-                    G₂ = R₂₁ * G₂ + rₛ
-                    n̂₂ = R₂₁ * n̂₂
-
-                    d₁₂ = G₂ - G₁  # Vector from primary face i to secondary face j
-                
-                    ## if △A₁B₁C₁ and △A₂B₂C₂ are facing each other
-                    if d₁₂ ⋅ n̂₁ > 0 && d₁₂ ⋅ n̂₂ < 0
-                        ray = Ray(G₁, r̂☉)
-                        if intersect_ray_triangle(ray, A₂, B₂, C₂).hit
-                            btpm.pri.flux_sun[i] = 0
-                            break
-                        end
-                    end
-                end
-            end
-        end
-    
-    #### No eclipse ####
-    # elseif θ₊ ≤ θ < π - θ₊
-    # Do nothing
-    
-    #### Partial eclipse of the secondary ####
-    elseif π - θ₊ ≤ θ < π - θ₋
-        r₁ = minimum_radius(shape1)
-
-        for j in eachindex(shape2.faces)
-            G₂ = shape2.face_centers[j]  # Center of △A₂B₂C₂ in secondary
-            n̂₂ = shape2.face_normals[j]  # Normal vector of △A₂B₂C₂ in secondary
-        
-            ## Transformation from secondary to primary frame
-            G₂ = R₂₁ * G₂ + rₛ
-            n̂₂ = R₂₁ * n̂₂
-
-            ## if △A₂B₂C₂ is NOT facing the sun
-            if r̂☉ ⋅ n̂₂ < 0
-                btpm.sec.flux_sun[j] = 0
-                continue
-            end
-
-            d₂ₚ = - G₂                                        # Vector from △A₂B₂C₂ to primary center (origin)
-            θ₂ = acos(clamp(r̂☉ ⋅ normalize(d₂ₚ), -1.0, 1.0))  # Angle of Sun-△A₂B₂C₂-Primary
-            θ_R₁ = asin(clamp(R₁ / norm(d₂ₚ), -1.0, 1.0))     # Critical angle related to the maximum radius of the primary
-            θ_r₁ = asin(clamp(r₁ / norm(d₂ₚ), -1.0, 1.0))     # Critical angle related to the minimum radius of the primary
-
-            ## In the primary shadow
-            if θ₂ < θ_r₁
-                btpm.sec.flux_sun[j] = 0
-                continue
-            ## Out of the primary shadow
-            elseif θ₂ > θ_R₁
-                continue
-            else
-                for i in eachindex(shape1.faces)
-                    A₁, B₁, C₁ = shape1.nodes[shape1.faces[i]]  # △A₁B₁C₁ in primary
-                    G₁ = shape1.face_centers[i]                 # Center of △A₁B₁C₁
-                    n̂₁ = shape1.face_normals[i]                 # Normal vector of △A₁B₁C₁
-
-                    d₁₂ = G₂ - G₁  # Vector from primary face i to secondary face j
-                
-                    ## if △A₁B₁C₁ and △A₂B₂C₂ are facing each other
-                    if d₁₂ ⋅ n̂₁ > 0 && d₁₂ ⋅ n̂₂ < 0
-                        ray = Ray(G₂, r̂☉)
-                        if intersect_ray_triangle(ray, A₁, B₁, C₁).hit
-                            btpm.sec.flux_sun[j] = 0
-                            break
-                        end
-                    end
-                end
-            end
-        end
-    
-    #### Total eclipse of the secondary ####
-    elseif π - θ₋ ≤ θ < π
-        btpm.sec.flux_sun .= 0
-    end
 end
 
 

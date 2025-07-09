@@ -166,17 +166,18 @@ broadcast_thermo_params!(thermo_params::ThermoParams, shape::ShapeModel) = broad
     struct SingleAsteroidThermoPhysicalModel <: AbstractAsteroidThermoPhysicalModel
 
 # Fields
-- `shape`          : Shape model
-- `thermo_params`  : Thermophysical parameters
+- `shape`         : Shape model
+- `thermo_params` : Thermophysical parameters
 
-- `flux_sun`       : Flux of direct sunlight on each face [W/m²]
-- `flux_scat`      : Flux of scattered light on each face [W/m²]
-- `flux_rad`       : Flux of thermal emission from surrounding surface on each face [W/m²]
-- `temperature`    : Temperature matrix `(n_depth, n_face)` according to the number of depth cells `n_depth` and the number of faces `n_face`.
+- `illuminated_faces` : Boolean array indicating illumination state for each face (used for batch processing with AsteroidShapeModels.jl v0.4.0+)
+- `flux_sun`          : Flux of direct sunlight on each face [W/m²]
+- `flux_scat`         : Flux of scattered light on each face [W/m²]
+- `flux_rad`          : Flux of thermal emission from surrounding surface on each face [W/m²]
+- `temperature`       : Temperature matrix `(n_depth, n_face)` according to the number of depth cells `n_depth` and the number of faces `n_face`.
 
-- `face_forces`    : Thermal force on each face
-- `force`          : Thermal recoil force at body-fixed frame (Yarkovsky effect)
-- `torque`         : Thermal recoil torque at body-fixed frame (YORP effect)
+- `face_forces` : Thermal force on each face
+- `force`       : Thermal recoil force at body-fixed frame (Yarkovsky effect)
+- `torque`      : Thermal recoil torque at body-fixed frame (YORP effect)
 
 - `SELF_SHADOWING` : Flag to consider self-shadowing
 - `SELF_HEATING`   : Flag to consider self-heating
@@ -188,17 +189,18 @@ broadcast_thermo_params!(thermo_params::ThermoParams, shape::ShapeModel) = broad
 - roughness_maps   ::ShapeModel[]
 """
 struct SingleAsteroidThermoPhysicalModel{P<:AbstractThermoParams, S<:HeatConductionSolver, BU<:BoundaryCondition, BL<:BoundaryCondition} <: AbstractAsteroidThermoPhysicalModel
-    shape          ::ShapeModel
-    thermo_params  ::P
+    shape         ::ShapeModel
+    thermo_params ::P
 
-    flux_sun       ::Vector{Float64}  # Flux of direct sunlight
-    flux_scat      ::Vector{Float64}  # Flux of scattered light
-    flux_rad       ::Vector{Float64}  # Flux of thermal emission from surrounding surface
-    temperature    ::Matrix{Float64}  # (n_depth, n_face)
+    illuminated_faces ::Vector{Bool}     # Illumination state for each face (for batch processing)
+    flux_sun          ::Vector{Float64}  # Flux of direct sunlight
+    flux_scat         ::Vector{Float64}  # Flux of scattered light
+    flux_rad          ::Vector{Float64}  # Flux of thermal emission from surrounding surface
+    temperature       ::Matrix{Float64}  # (n_depth, n_face)
 
-    face_forces    ::Vector{SVector{3, Float64}}
-    force          ::MVector{3, Float64}
-    torque         ::MVector{3, Float64}
+    face_forces ::Vector{SVector{3, Float64}}
+    force       ::MVector{3, Float64}
+    torque      ::MVector{3, Float64}
 
     SELF_SHADOWING ::Bool
     SELF_HEATING   ::Bool
@@ -223,14 +225,27 @@ Construct a thermophysical model for a single asteroid (`SingleAsteroidThermoPhy
 - `SOLVER`         : Solver of heat conduction equation
 - `BC_UPPER`       : Boundary condition at the upper boundary
 - `BC_LOWER`       : Boundary condition at the lower boundary
+
+# Notes
+- If `SELF_SHADOWING` is true and face_visibility_graph is not built, it will be automatically built
+- This may take some time for large shape models
+- To avoid automatic building, pre-build with `build_face_visibility_graph!` or load shape with `with_face_visibility=true`
 """
 function SingleAsteroidThermoPhysicalModel(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
+    # Automatically build face_visibility_graph if needed for self-shadowing
+    if SELF_SHADOWING
+        if isnothing(shape.face_visibility_graph)
+            @info "Building face_visibility_graph for self-shadowing..."
+            build_face_visibility_graph!(shape)
+        end
+    end
 
     broadcast_thermo_params!(thermo_params, shape)
 
     n_depth = thermo_params.n_depth
     n_face = length(shape.faces)
 
+    illuminated_faces = zeros(Bool, n_face)
     flux_sun = zeros(n_face)
     flux_scat = zeros(n_face)
     flux_rad = zeros(n_face)
@@ -240,7 +255,7 @@ function SingleAsteroidThermoPhysicalModel(shape, thermo_params; SELF_SHADOWING,
     force  = zero(MVector{3, Float64})
     torque = zero(MVector{3, Float64})
 
-    SingleAsteroidThermoPhysicalModel(shape, thermo_params, flux_sun, flux_scat, flux_rad, temperature, face_forces, force, torque, SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
+    SingleAsteroidThermoPhysicalModel(shape, thermo_params, illuminated_faces, flux_sun, flux_scat, flux_rad, temperature, face_forces, force, torque, SELF_SHADOWING, SELF_HEATING, SOLVER, BC_UPPER, BC_LOWER)
 end
 
 
@@ -263,11 +278,52 @@ end
 
 
 """
-    BinaryAsteroidThermoPhysicalModel(pri, sec; MUTUAL_SHADOWING=true, MUTUAL_HEATING=true) -> btpm
+    BinaryAsteroidThermoPhysicalModel(pri, sec; MUTUAL_SHADOWING, MUTUAL_HEATING) -> btpm
 
 Construct a thermophysical model for a binary asteroid (`BinaryAsteroidThermoPhysicalModel`).
+
+# Arguments
+- `pri` : TPM for the primary asteroid
+- `sec` : TPM for the secondary asteroid
+
+# Keyword Arguments
+- `MUTUAL_SHADOWING` : Flag to consider mutual shadowing (required)
+- `MUTUAL_HEATING`   : Flag to consider mutual heating (required)
+
+# Notes
+- Both `MUTUAL_SHADOWING` and `MUTUAL_HEATING` must be explicitly specified
+- If `MUTUAL_SHADOWING` is true and BVH is not built, it will be automatically built
+- This may take some time for large shape models
+- To avoid automatic BVH building, pre-build with `build_bvh!` or load shapes with `with_bvh=true`
+
+# Example
+```julia
+# Explicit specification required
+btpm = BinaryAsteroidThermoPhysicalModel(pri, sec; 
+    MUTUAL_SHADOWING = true,
+    MUTUAL_HEATING   = true,
+)
+
+# Or disable mutual effects
+btpm = BinaryAsteroidThermoPhysicalModel(pri, sec; 
+    MUTUAL_SHADOWING = false,
+    MUTUAL_HEATING   = false,
+)
+```
 """
 function BinaryAsteroidThermoPhysicalModel(pri, sec; MUTUAL_SHADOWING, MUTUAL_HEATING)
+    # Automatically build BVH if needed for mutual shadowing
+    if MUTUAL_SHADOWING
+        if isnothing(pri.shape.bvh)
+            @info "Building BVH for primary shape..."
+            build_bvh!(pri.shape)
+        end
+        if isnothing(sec.shape.bvh)
+            @info "Building BVH for secondary shape..."
+            build_bvh!(sec.shape)
+        end
+    end
+    
     BinaryAsteroidThermoPhysicalModel(pri, sec, MUTUAL_SHADOWING, MUTUAL_HEATING)
 end
 
@@ -738,9 +794,9 @@ function run_TPM!(stpm::SingleAsteroidThermoPhysicalModel, ephem, times_to_save:
     for i_time in eachindex(ephem.time)
         r☉ = ephem.sun[i_time]
 
-        update_flux_sun!(stpm, r☉)
-        update_flux_scat_single!(stpm)
-        update_flux_rad_single!(stpm)
+        update_flux_sun!(stpm, r☉)      # Update solar flux on the surface (self-shadowing)
+        update_flux_scat_single!(stpm)  # Scattered light flux (self-heating by visible light)
+        update_flux_rad_single!(stpm)   # Re-absorbed thermal radiation flux (self-heating by infrared)
         
         update_thermal_force!(stpm)
 
@@ -772,17 +828,22 @@ Run TPM for a binary asteroid.
 - `btpm`          : Thermophysical model for a binary asteroid
 - `ephem`         : Ephemerides
     - `time` : Ephemeris times
-    - `sun1` : Sun's position in the primary's frame
-    - `sun2` : Sun's position in the secondary's frame
+    - `sun`  : Sun's position in the primary's frame
     - `sec`  : Secondary's position in the primary's frame
     - `P2S`  : Rotation matrix from primary to secondary frames
-    - `S2P`  : Rotation matrix from secondary to primary frames
 - `times_to_save` : Timesteps to save temperature
 - `face_ID_pri`   : Face indices where to save subsurface termperature for the primary
 - `face_ID_sec`   : Face indices where to save subsurface termperature for the secondary
 
 # Keyword arguments
 - `show_progress` : Flag to show the progress meter
+
+# Notes
+- The rotation matrix from secondary to primary (R₂₁) is computed using `inverse_transformation`
+- This eliminates the need to store both P2S and S2P in ephemerides
+- The translation vector from primary to secondary frame (t₁₂) is computed as: t₁₂ = -R₁₂ * rₛ
+  - This follows from the coordinate transformation: p₂ = R₁₂ * p₁ + t₁₂
+  - For the secondary's center: 0 = R₁₂ * rₛ + t₁₂, hence t₁₂ = -R₁₂ * rₛ
 """
 function run_TPM!(btpm::BinaryAsteroidThermoPhysicalModel, ephem, times_to_save::Vector{Float64}, face_ID_pri::Vector{Int}, face_ID_sec::Vector{Int}; show_progress=true)
 
@@ -795,16 +856,17 @@ function run_TPM!(btpm::BinaryAsteroidThermoPhysicalModel, ephem, times_to_save:
     end
     
     for i_time in eachindex(ephem.time)
-        r☉₁ = ephem.sun1[i_time]  # Sun's position in the primary's frame
-        r☉₂ = ephem.sun2[i_time]  # Sun's position in the secondary's frame
-        rₛ  = ephem.sec[i_time]   # Secondary's position in the primary's frame
-        R₂₁ = ephem.S2P[i_time]   # Rotation matrix from secondary to primary frames
+        r☉₁ = ephem.sun[i_time]  # Sun's position in the primary's frame
+        rₛ  = ephem.sec[i_time]  # Secondary's position in the primary's frame
+        R₁₂ = ephem.P2S[i_time]  # Rotation matrix from primary to secondary frames
 
-        ## Update enegey flux
-        update_flux_sun!(btpm, r☉₁, r☉₂)
-        mutual_shadowing!(btpm, r☉₁, rₛ, R₂₁)  # Mutual-shadowing (eclipse)
-        update_flux_scat_single!(btpm)
-        update_flux_rad_single!(btpm)
+        t₁₂ = -R₁₂ * rₛ                              # Translation from primary to secondary frame
+        R₂₁, t₂₁ = inverse_transformation(R₁₂, t₁₂)  # Inverse transformation for mutual heating
+        
+        ## Update energy flux to surface
+        update_flux_sun!(btpm, r☉₁, R₁₂, t₁₂)  # New combined API including both self-shadowing and mutual-shadowing
+        update_flux_scat_single!(btpm)         # Scattered light flux (self-heating by visible light)
+        update_flux_rad_single!(btpm)          # Re-absorbed thermal radiation flux (self-heating by infrared)
         mutual_heating!(btpm, rₛ, R₂₁)         # Mutual-heating
 
         update_thermal_force!(btpm)

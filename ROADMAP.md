@@ -20,9 +20,19 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs and i
   - [ ] Ensure all breaking changes are clearly documented
   - [ ] Add migration guide for visibility API changes
 
-- [ ] **Update to AsteroidShapeModels.jl v0.4.0**
+- [x] **Update to AsteroidShapeModels.jl v0.4.0** (Completed in #178)
+  - [x] Updated dependency to v0.4.0
+  - [x] Added BVH support to all shape loading
+  - [x] Fixed isilluminated API compatibility
+  - [x] Updated minimum Julia version to 1.10
+
+- [x] **Refactor illumination API using `AsteroidShapeModels.jl` v0.4.0 new functions**
+  - [x] Use new API for self-shadowing: Replace current illumination calculations with `update_illumination!`
+  - [x] Use new API for mutual-shadowing: Replace current eclipse calculations with `apply_eclipse_shadowing!` for a binary asteroid
 - [x] **Merge pending PRs**
   - [x] #175 - Remove Format suggestions workflow (Merged)
+  - [x] #177 - Update benchmark documentation (Merged)
+  - [x] #178 - Update to AsteroidShapeModels.jl v0.4.0 (Merged)
 
 ### 🟡 Important (Should Have)
 
@@ -51,10 +61,17 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs and i
 
 ### From v0.0.7 to v0.1.0
 
-1. **Visibility API changes** (via AsteroidShapeModels.jl v0.3.0)
+1. **Visibility API changes** (via AsteroidShapeModels.jl v0.3.0 → v0.4.0)
    - `shape.visiblefacets[i]` → `get_visible_face_indices(shape.face_visibility_graph, i)`
    - Direct view factor access → `get_view_factors(shape.face_visibility_graph, i)`
    - Direct direction access → `get_visible_face_directions(shape.face_visibility_graph, i)`
+
+2. **Shape loading requirements** (via AsteroidShapeModels.jl v0.4.0)
+   - Must add `with_bvh=true` when loading shapes for illumination calculations
+   - `isilluminated` function now requires `with_self_shadowing` parameter
+
+3. **Minimum Julia version**
+   - Updated from Julia 1.6 to Julia 1.10
 
 ## Migration Guide
 
@@ -67,12 +84,6 @@ visible_faces = shape.visiblefacets[face_id]
 # New (v0.1.0)
 visible_faces = get_visible_face_indices(shape.face_visibility_graph, face_id)
 ```
-
-## Timeline
-
-- **Week 1**: Complete critical tasks and PR merges
-- **Week 2**: Documentation and testing updates
-- **Week 3**: Final review and release
 
 ## Future Versions
 
