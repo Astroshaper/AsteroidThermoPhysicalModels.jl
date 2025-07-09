@@ -8,24 +8,24 @@ The following benchmarks were performed on Apple M4 (macOS, single-threaded):
 
 ### Single Asteroid (Ryugu)
 - **Shape complexity**: 49,152 faces
-- **1 rotation** (72 time steps): ~5.3 seconds
-- **20 rotations** (1,440 time steps): ~104 seconds (1.7 minutes)
+- **1 rotation** (72 time steps): ~5.2 seconds
+- **20 rotations** (1,440 time steps): ~101 seconds (1.7 minutes)
 - **Memory usage**: 152 KiB (20 rotations), 5.8 KiB (1 rotation)
 - **Allocations**: 20 (20 rotations), 16 (1 rotation)
 - **With shadows and self-heating enabled**
 
 ### Binary System (Didymos-Dimorphos)
 - **Primary**: 1,996 faces, **Secondary**: 3,072 faces
-- **1 rotation** (72 time steps): ~4.7 seconds
+- **1 rotation** (72 time steps): ~4.6 seconds
 - **20 rotations** (1,440 time steps): ~92 seconds (1.5 minutes)
-- **Memory usage**: 304 KiB (20 rotations), 11.6 KiB (1 rotation)
-- **Allocations**: 40 (20 rotations), 32 (1 rotation)
+- **Memory usage**: 53.65 MiB (20 rotations), 1.70 MiB (1 rotation)
+- **Allocations**: 594,141 (20 rotations), 3,409 (1 rotation)
 - **With mutual shadowing and heating enabled**
 
 ### Component Performance (per time step)
-- **Shadow calculations**: ~0.84 seconds
-- **Self-heating**: ~0.86 seconds
-- **Temperature update**: ~0.85 seconds
+- **Shadow calculations**: ~0.38 seconds (27.3s for 72 steps)
+- **Self-heating**: ~0.41 seconds (29.4s for 72 steps)
+- **Temperature update**: ~0.40 seconds (28.5s for 72 steps)
 
 *Note: Component benchmarks show total time for 72 calls in isolation*
 
@@ -98,10 +98,11 @@ The package supports multi-threading for some operations:
 ### v0.0.8-DEV (Current)
 - Added comprehensive benchmark suite
 - Performance tracking infrastructure
-- Migrated to AsteroidShapeModels.jl v0.3.0
+- Migrated to AsteroidShapeModels.jl v0.4.0 with batch illumination processing
 - Improved visibility graph API
-- **Performance**: Ryugu 20 rotations in ~104s, Didymos in ~92s
-- **Memory**: Efficient with <1MB for typical simulations
+- **Performance**: Ryugu 20 rotations in ~101s, Didymos in ~92s
+- **Memory**: Ryugu uses 152 KiB, but Didymos binary system shows higher allocation count (594k allocations)
+- **Latest benchmark**: 2025-07-09 (Apple M4)
 
 ### v0.0.7
 - Memory optimizations in flux calculations

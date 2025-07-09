@@ -145,6 +145,53 @@ Component analysis (Ryugu):
 
 ---
 
+### 2025-07-09 - v0.0.8-DEV - a89cfe4
+
+**Environment:**
+- Julia: 1.11.5
+- CPU: Apple M4
+- OS: macOS Darwin 24.5.0
+- Threads: 1
+
+**Results:**
+```
+Ryugu (49,152 faces):
+  1 rotation (72 steps):
+    Time: 5.163 seconds
+    Memory: 5.80 KiB
+    Allocations: 16
+  20 rotations (1,440 steps):
+    Time: 101.240 seconds
+    Memory: 152.17 KiB
+    Allocations: 20
+
+Didymos-Dimorphos (1,996 + 3,072 faces):
+  1 rotation (72 steps):
+    Time: 4.570 seconds
+    Memory: 1.70 MiB
+    Allocations: 3,409
+  20 rotations (1,440 steps):
+    Time: 92.026 seconds
+    Memory: 53.65 MiB
+    Allocations: 594,141
+
+Component analysis (Ryugu):
+  - Shadow calculation: 27.279 seconds (72 calls) = 0.379 s/call
+  - Self-heating: 29.363 seconds (72 calls) = 0.408 s/call
+  - Temperature update: 28.456 seconds (72 steps) = 0.395 s/step
+```
+
+**Notes:**
+- First benchmark after PR #179 (Refactor illumination API with AsteroidShapeModels.jl v0.4.0)
+- Binary system shows dramatically higher allocation count (594k vs 40 in previous runs)
+- **Root cause identified**: `apply_eclipse_shadowing!` from `AsteroidShapeModels.jl` v0.4.0 calls `intersect_ray_shape` internally, which allocates ~200 times per call (for processing a single ray and intermediate computations)
+- For binary asteroids: 2 calls to `apply_eclipse_shadowing!` per time step × 1,440 steps × ~200 allocations ≈ 576k allocations
+- This is not truly batch processing - it's still per-face ray tracing with allocation overhead
+- Single asteroid performance remains excellent because it only uses `update_illumination!` which is properly batched
+- Future optimization: True batch ray tracing for mutual shadowing in `AsteroidShapeModels.jl` to reduce allocations
+
+---
+
 ## Template for new entries
 
 ```markdown
