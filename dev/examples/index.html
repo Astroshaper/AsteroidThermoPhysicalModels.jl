@@ -157,19 +157,15 @@ et_range = range(et_begin, et_end; length=n_step_in_cycle*n_cycle+1)
 
 &quot;&quot;&quot;
 - `time` : Ephemeris times
-- `sun1` : Sun&#39;s position in the primary&#39;s frame (DIDYMOS_FIXED)
-- `sun2` : Sun&#39;s position in the secondary&#39;s frame (DIMORPHOS_FIXED)
+- `sun`  : Sun&#39;s position in the primary&#39;s frame (DIDYMOS_FIXED)
 - `sec`  : Secondary&#39;s position in the primary&#39;s frame (DIDYMOS_FIXED)
 - `P2S`  : Rotation matrix from primary to secondary frames
-- `S2P`  : Rotation matrix from secondary to primary frames
 &quot;&quot;&quot;
 ephem = (
     time = collect(et_range),
-    sun1 = [SVector{3}(SPICE.spkpos(&quot;SUN&quot;      , et, &quot;DIDYMOS_FIXED&quot;  , &quot;None&quot;, &quot;DIDYMOS&quot;  )[1]) * 1000 for et in et_range],
-    sun2 = [SVector{3}(SPICE.spkpos(&quot;SUN&quot;      , et, &quot;DIMORPHOS_FIXED&quot;, &quot;None&quot;, &quot;DIMORPHOS&quot;)[1]) * 1000 for et in et_range],
+    sun  = [SVector{3}(SPICE.spkpos(&quot;SUN&quot;      , et, &quot;DIDYMOS_FIXED&quot;  , &quot;None&quot;, &quot;DIDYMOS&quot;  )[1]) * 1000 for et in et_range],
     sec  = [SVector{3}(SPICE.spkpos(&quot;DIMORPHOS&quot;, et, &quot;DIDYMOS_FIXED&quot;  , &quot;None&quot;, &quot;DIDYMOS&quot;  )[1]) * 1000 for et in et_range],
     P2S  = [RotMatrix{3}(SPICE.pxform(&quot;DIDYMOS_FIXED&quot;  , &quot;DIMORPHOS_FIXED&quot;, et)) for et in et_range],
-    S2P  = [RotMatrix{3}(SPICE.pxform(&quot;DIMORPHOS_FIXED&quot;, &quot;DIDYMOS_FIXED&quot;  , et)) for et in et_range],
 )
 
 SPICE.kclear()
@@ -251,4 +247,4 @@ result.surface_temperature
 # As a function of depth [m] and time [s], `Dict` with face ID as key and a matrix `(n_depth, n_time)` as an entry.
 # - `n_depth` : The number of the depth nodes
 # - `n_time`  : The number of time steps to save temperature
-result.subsurface_temperature[2]  # Subsurface temperature for face ID 2</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../physical_model/">« Physical model</a><a class="docs-footer-nextpage" href="../benchmarks/">Performance »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.13.0 on <span class="colophon-date" title="Tuesday 8 July 2025 14:01">Tuesday 8 July 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+result.subsurface_temperature[2]  # Subsurface temperature for face ID 2</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../physical_model/">« Physical model</a><a class="docs-footer-nextpage" href="../benchmarks/">Performance »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.0 on <span class="colophon-date" title="Wednesday 9 July 2025 13:13">Wednesday 9 July 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
