@@ -230,40 +230,48 @@ end
 
 
 """
-    update_flux_sun!(stpm::SingleAsteroidTPM, r̂☉::StaticVector{3}, F☉::Real)
+    update_flux_sun!(stpm::SingleAsteroidTPM, r☉::StaticVector{3})
 
 Update the direct solar irradiation flux on every face of the asteroid.
 
 # Arguments
 - `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
-- `r̂☉::StaticVector{3}` : Sun's direction vector in body-fixed frame (normalized) [m]
-- `F☉::Real` : Solar flux at the asteroid's location [W/m²]
+- `r☉::StaticVector{3}`     : Position vector from asteroid to Sun in body-fixed frame (NOT normalized) [m]
 
 # Algorithm
 For each face, the solar flux is calculated as:
-```
-F_sun = F☉ × max(0, n̂ · r̂☉)
-```
+1. Solar flux at asteroid's location: F☉ = SOLAR_CONST / distance²
+2. Normalize sun direction: r̂☉ = r☉ / |r☉|
+3. Face flux: F_sun = F☉ × max(0, n̂ · r̂☉)
+
 where n̂ is the face normal. If `SELF_SHADOWING` is enabled, the function also
-checks whether each face is shadowed by other parts of the asteroid using ray-casting.
+checks whether each face is shadowed by other parts of the asteroid.
 
 # Notes
+- The input vector `r☉` must not be normalized (used for distance calculation)
 - Faces with negative dot product (facing away from Sun) receive zero flux
 - Shadowed faces (when `SELF_SHADOWING = true`) also receive zero flux
-- The input solar direction `r̂☉` is normalized internally for safety
 """
-function update_flux_sun!(stpm::SingleAsteroidTPM, r̂☉::StaticVector{3}, F☉::Real)
+function update_flux_sun!(stpm::SingleAsteroidTPM, r☉::StaticVector{3})
+    # Calculate solar flux and direction
+    r̂☉ = normalize(r☉)
+    F☉ = SOLAR_CONST / (norm(r☉) * m2au)^2
+    
+    # Update illumination states
     if stpm.SELF_SHADOWING
         # Check face_visibility_graph availability for self-shadowing
         if isnothing(stpm.shape.face_visibility_graph)
-            error("face_visibility_graph must be built when SELF_SHADOWING is enabled. " *
-                  "Use `build_face_visibility_graph!(shape)` or load shape with `with_face_visibility=true`.")
+            error(
+                "face_visibility_graph must be built when SELF_SHADOWING is enabled. " *
+                "Use `build_face_visibility_graph!(shape)` or load shape with `with_face_visibility=true`."
+            )
         end
         update_illumination!(stpm.illuminated_faces, stpm.shape, r̂☉; with_self_shadowing=true)
     else
         update_illumination!(stpm.illuminated_faces, stpm.shape, r̂☉; with_self_shadowing=false)
     end
 
+    # Calculate flux for each face
     for i in eachindex(stpm.shape.faces)
         if stpm.illuminated_faces[i]
             n̂ = stpm.shape.face_normals[i]
@@ -272,33 +280,6 @@ function update_flux_sun!(stpm::SingleAsteroidTPM, r̂☉::StaticVector{3}, F☉
             stpm.flux_sun[i] = 0.0
         end
     end
-end
-
-
-"""
-    update_flux_sun!(stpm::SingleAsteroidTPM, r☉::StaticVector{3})
-
-Update solar irradiation flux on every face using the Sun's position vector.
-
-# Arguments
-- `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
-- `r☉::StaticVector{3}` : Position vector from asteroid to Sun in body-fixed frame [m]
-
-# Algorithm
-1. Calculates the solar flux using the inverse square law: 
-2. Normalizes the Sun direction vector
-3. Calls the main `update_flux_sun!` function with computed values
-
-# Notes
-- The input vector `r☉` should be in meters
-- Solar flux is automatically computed from the solar constant and distance
-- This is a convenience function that handles flux calculation
-"""
-function update_flux_sun!(stpm::SingleAsteroidTPM, r☉::StaticVector{3})
-    r̂☉ = normalize(r☉)
-    F☉ = SOLAR_CONST / (norm(r☉) * m2au)^2
-
-    update_flux_sun!(stpm, r̂☉, F☉)
 end
 
 """
@@ -330,8 +311,10 @@ function update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, R�
     if btpm.MUTUAL_SHADOWING
         # Check BVH availability
         if isnothing(btpm.pri.shape.bvh) || isnothing(btpm.sec.shape.bvh)
-            error("BVH must be built for both shapes when MUTUAL_SHADOWING is enabled. " *
-                  "Use `build_bvh!(shape)` or load shapes with `with_bvh=true`.")
+            error(
+                "BVH must be built for both shapes when MUTUAL_SHADOWING is enabled. " *
+                "Use `build_bvh!(shape)` or load shapes with `with_bvh=true`."
+            )
         end
 
         shape1 = btpm.pri.shape
