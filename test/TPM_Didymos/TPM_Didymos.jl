@@ -72,14 +72,14 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
 
     """
     - `time` : Ephemeris times
-    - `sun1` : Sun's position in the primary's frame (DIDYMOS_FIXED)
+    - `sun`  : Sun's position in the primary's frame (DIDYMOS_FIXED)
     - `sec`  : Secondary's position in the primary's frame (DIDYMOS_FIXED)
     - `P2S`  : Rotation matrix from primary to secondary frames
     - `S2P`  : Rotation matrix from secondary to primary frames
     """
     ephem = (
         time = collect(et_range),
-        sun1 = [SVector{3}(SPICE.spkpos("SUN"      , et, "DIDYMOS_FIXED"  , "None", "DIDYMOS"  )[1]) * 1000 for et in et_range],
+        sun = [SVector{3}(SPICE.spkpos("SUN"      , et, "DIDYMOS_FIXED"  , "None", "DIDYMOS"  )[1]) * 1000 for et in et_range],
         sec  = [SVector{3}(SPICE.spkpos("DIMORPHOS", et, "DIDYMOS_FIXED"  , "None", "DIDYMOS"  )[1]) * 1000 for et in et_range],
         P2S  = [RotMatrix{3}(SPICE.pxform("DIDYMOS_FIXED"  , "DIMORPHOS_FIXED", et)) for et in et_range],
         S2P  = [RotMatrix{3}(SPICE.pxform("DIMORPHOS_FIXED", "DIDYMOS_FIXED"  , et)) for et in et_range],

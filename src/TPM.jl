@@ -775,7 +775,7 @@ Run TPM for a binary asteroid.
 - `btpm`          : Thermophysical model for a binary asteroid
 - `ephem`         : Ephemerides
     - `time` : Ephemeris times
-    - `sun1` : Sun's position in the primary's frame
+    - `sun`  : Sun's position in the primary's frame
     - `sec`  : Secondary's position in the primary's frame
     - `P2S`  : Rotation matrix from primary to secondary frames
 - `times_to_save` : Timesteps to save temperature
@@ -803,9 +803,9 @@ function run_TPM!(btpm::BinaryAsteroidThermoPhysicalModel, ephem, times_to_save:
     end
     
     for i_time in eachindex(ephem.time)
-        r☉₁ = ephem.sun1[i_time]  # Sun's position in the primary's frame
-        rₛ  = ephem.sec[i_time]   # Secondary's position in the primary's frame
-        R₁₂ = ephem.P2S[i_time]   # Rotation matrix from primary to secondary frames
+        r☉₁ = ephem.sun[i_time]  # Sun's position in the primary's frame
+        rₛ  = ephem.sec[i_time]  # Secondary's position in the primary's frame
+        R₁₂ = ephem.P2S[i_time]  # Rotation matrix from primary to secondary frames
 
         t₁₂ = -R₁₂ * rₛ                              # Translation from primary to secondary frame
         R₂₁, t₂₁ = inverse_transformation(R₁₂, t₁₂)  # Inverse transformation for mutual heating
