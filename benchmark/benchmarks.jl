@@ -194,7 +194,6 @@ function setup_didymos_tpm(n_cycles::Int=20)
         sun = [SVector{3}(SPICE.spkpos("SUN", et, "DIDYMOS_FIXED", "None", "DIDYMOS")[1]) * 1000 for et in et_range],
         sec = [SVector{3}(SPICE.spkpos("DIMORPHOS", et, "DIDYMOS_FIXED", "None", "DIDYMOS")[1]) * 1000 for et in et_range],
         P2S = [RotMatrix{3}(SPICE.pxform("DIDYMOS_FIXED", "DIMORPHOS_FIXED", et)) for et in et_range],
-        S2P = [RotMatrix{3}(SPICE.pxform("DIMORPHOS_FIXED", "DIDYMOS_FIXED", et)) for et in et_range],
     )
     
     SPICE.kclear()
@@ -410,7 +409,7 @@ Print benchmark summary
 """
 function print_summary(results)
     println("\n" * "="^60)
-    println("BENCHMARK SUMMARY")
+    println("  BENCHMARK SUMMARY")
     println("="^60)
     
     # Ryugu results
@@ -419,10 +418,10 @@ function print_summary(results)
         if haskey(results["ryugu"], "single_rotation")
             r1 = results["ryugu"]["single_rotation"]
             t1 = median(r1).time / 1e9  # Convert to seconds
-            println("  1 rotation (72 steps):")
-            println("    Time        : $(BenchmarkTools.prettytime(median(r1).time))")
-            println("    Memory      : $(BenchmarkTools.prettymemory(median(r1).memory))")
-            println("    Allocations : $(median(r1).allocs)")
+            println("  - 1 rotation (72 steps):")
+            println("      - Time        : $(BenchmarkTools.prettytime(median(r1).time))")
+            println("      - Memory      : $(BenchmarkTools.prettymemory(median(r1).memory))")
+            println("      - Allocations : $(median(r1).allocs)")
         end
         if haskey(results["ryugu"], "full_simulation_20_rotations")
             r20 = results["ryugu"]["full_simulation_20_rotations"]
