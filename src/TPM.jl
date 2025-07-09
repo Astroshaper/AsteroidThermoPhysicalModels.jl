@@ -776,16 +776,21 @@ Run TPM for a binary asteroid.
 - `ephem`         : Ephemerides
     - `time` : Ephemeris times
     - `sun1` : Sun's position in the primary's frame
-    - `sun2` : Sun's position in the secondary's frame
     - `sec`  : Secondary's position in the primary's frame
     - `P2S`  : Rotation matrix from primary to secondary frames
-    - `S2P`  : Rotation matrix from secondary to primary frames
 - `times_to_save` : Timesteps to save temperature
 - `face_ID_pri`   : Face indices where to save subsurface termperature for the primary
 - `face_ID_sec`   : Face indices where to save subsurface termperature for the secondary
 
 # Keyword arguments
 - `show_progress` : Flag to show the progress meter
+
+# Notes
+- The rotation matrix from secondary to primary (R₂₁) is computed using `inverse_transformation`
+- This eliminates the need to store both P2S and S2P in ephemerides
+- The translation vector from primary to secondary frame (t₁₂) is computed as: t₁₂ = -R₁₂ * rₛ
+  - This follows from the coordinate transformation: p₂ = R₁₂ * p₁ + t₁₂
+  - For the secondary's center: 0 = R₁₂ * rₛ + t₁₂, hence t₁₂ = -R₁₂ * rₛ
 """
 function run_TPM!(btpm::BinaryAsteroidThermoPhysicalModel, ephem, times_to_save::Vector{Float64}, face_ID_pri::Vector{Int}, face_ID_sec::Vector{Int}; show_progress=true)
 
@@ -799,13 +804,11 @@ function run_TPM!(btpm::BinaryAsteroidThermoPhysicalModel, ephem, times_to_save:
     
     for i_time in eachindex(ephem.time)
         r☉₁ = ephem.sun1[i_time]  # Sun's position in the primary's frame
-        r☉₂ = ephem.sun2[i_time]  # Sun's position in the secondary's frame
         rₛ  = ephem.sec[i_time]   # Secondary's position in the primary's frame
         R₁₂ = ephem.P2S[i_time]   # Rotation matrix from primary to secondary frames
-        R₂₁ = ephem.S2P[i_time]   # Rotation matrix from secondary to primary frames
 
-        # Translation from primary to secondary frame
-        t₁₂ = R₁₂ * (-rₛ)
+        t₁₂ = -R₁₂ * rₛ                              # Translation from primary to secondary frame
+        R₂₁, t₂₁ = inverse_transformation(R₁₂, t₁₂)  # Inverse transformation for mutual heating
         
         ## Update energy flux to surface
         update_flux_sun!(btpm, r☉₁, R₁₂, t₁₂)  # New combined API including both self-shadowing and mutual-shadowing

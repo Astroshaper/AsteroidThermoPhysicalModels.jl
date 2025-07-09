@@ -20,10 +20,11 @@ This file contains functions for computing various energy fluxes including:
 Compute the inverse coordinate transformation.
 
 Given a transformation from frame 1 to frame 2:
-- `p₂ = R₁₂ * p₁ + t₁₂`
+    p₂ = R₁₂ * p₁ + t₁₂
+where p₁ and p₂ are points in frames 1 and 2, respectively,
 
 This function returns the inverse transformation from frame 2 to frame 1:
-- `p₁ = R₂₁ * p₂ + t₂₁`
+    p₁ = R₂₁ * p₂ + t₂₁
 
 # Arguments
 - `R₁₂::StaticMatrix{3,3}` : Rotation matrix from frame 1 to frame 2
@@ -57,7 +58,7 @@ R₂₁, t₂₁ = inverse_transformation(R₁₂, t₁₂)
 # Now: p₁ = R₂₁ * p₂ + t₂₁
 ```
 """
-@inline function inverse_transformation(R₁₂::SMatrix{3,3,T,9}, t₁₂::SVector{3,T}) where T
+@inline function inverse_transformation(R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3})
     R₂₁ = R₁₂'  # For rotation matrices, R⁻¹ = R'
     t₂₁ = -R₂₁ * t₁₂
     return R₂₁, t₂₁
