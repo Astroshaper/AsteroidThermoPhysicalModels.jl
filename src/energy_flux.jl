@@ -344,22 +344,21 @@ function update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, R�
     
     # Only apply mutual shadowing if enabled
     if btpm.MUTUAL_SHADOWING
-        # Apply eclipse shadowing from secondary onto "primary"
-        eclipse_status_pri = apply_eclipse_shadowing!(
-            btpm.pri.illuminated_faces, btpm.pri.shape, r☉₁, 
-            R₁₂, t₁₂, btpm.sec.shape
-        )
-        
-        # Apply eclipse shadowing from primary onto "secondary"
-        R₂₁, t₂₁ = inverse_transformation(R₁₂, t₁₂)  # Inverse transformation from secondary to primary
-        eclipse_status_sec = apply_eclipse_shadowing!(
-            btpm.sec.illuminated_faces, btpm.sec.shape, r☉₂,
-            R₂₁, t₂₁, btpm.pri.shape
-        )
+        shape1 = btpm.pri.shape
+        shape2 = btpm.sec.shape
+        illuminated_faces1 = btpm.pri.illuminated_faces
+        illuminated_faces2 = btpm.sec.illuminated_faces
+
+        # Inverse transformation from secondary to primary
+        R₂₁, t₂₁ = inverse_transformation(R₁₂, t₁₂)
+
+        # Apply eclipse shadowing from secondary onto primary, and vice versa
+        eclipse_status1 = apply_eclipse_shadowing!(illuminated_faces1, shape1, r☉₁, R₁₂, t₁₂, shape2)        
+        eclipse_status2 = apply_eclipse_shadowing!(illuminated_faces2, shape2, r☉₂, R₂₁, t₂₁, shape1)
         
         # Update flux_sun based on the updated illumination states
-        btpm.pri.flux_sun[.!btpm.pri.illuminated_faces] .= 0.0
-        btpm.sec.flux_sun[.!btpm.sec.illuminated_faces] .= 0.0
+        btpm.pri.flux_sun[.!illuminated_faces1] .= 0.0
+        btpm.sec.flux_sun[.!illuminated_faces2] .= 0.0
     end
 end
 
