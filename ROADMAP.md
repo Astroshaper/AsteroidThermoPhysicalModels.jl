@@ -26,11 +26,9 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs and i
   - [x] Fixed isilluminated API compatibility
   - [x] Updated minimum Julia version to 1.10
 
-- [ ] **Refactor illumination API using `AsteroidShapeModels.jl` v0.4.0 new functions**
-  - [ ] Replace current illumination calculations with `update_illumination!`
-  - [ ] Implement `apply_eclipse_shadowing!` for binary asteroid systems
-  - [ ] Update energy flux calculations to use new APIs
-  - [ ] Update tests to verify new implementation
+- [x] **Refactor illumination API using `AsteroidShapeModels.jl` v0.4.0 new functions**
+  - [x] Use new API for self-shadowing: Replace current illumination calculations with `update_illumination!`
+  - [x] Use new API for mutual-shadowing: Replace current eclipse calculations with `apply_eclipse_shadowing!` for a binary asteroid
 - [x] **Merge pending PRs**
   - [x] #175 - Remove Format suggestions workflow (Merged)
   - [x] #177 - Update benchmark documentation (Merged)
@@ -86,12 +84,6 @@ visible_faces = shape.visiblefacets[face_id]
 # New (v0.1.0)
 visible_faces = get_visible_face_indices(shape.face_visibility_graph, face_id)
 ```
-
-## Timeline
-
-- **Week 1**: Complete critical tasks and PR merges
-- **Week 2**: Documentation and testing updates
-- **Week 3**: Final review and release
 
 ## Future Versions
 

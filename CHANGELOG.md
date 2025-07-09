@@ -8,7 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- TBD
+- `illuminated_faces` field to `SingleAsteroidThermoPhysicalModel` for batch illumination processing
+- `inverse_transformation` and `transform` functions for coordinate transformations
+- Automatic BVH building in `BinaryAsteroidThermoPhysicalModel` constructor when `MUTUAL_SHADOWING` is enabled
+- Automatic face_visibility_graph building in `SingleAsteroidThermoPhysicalModel` constructor when `SELF_SHADOWING` is enabled
+- Error checking for required data structures (BVH, face_visibility_graph) in illumination functions
 
 ### Changed
 - Updated `AsteroidShapeModels.jl` dependency from v0.2.0 to v0.3.0 (#173)
@@ -18,9 +22,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `get_view_factors(shape.face_visibility_graph, i)`
     - `get_visible_face_directions(shape.face_visibility_graph, i)`
   - Added null checks for `shape.face_visibility_graph` before accessing visibility data
+- Refactored illumination calculations to use new batch processing APIs from AsteroidShapeModels.jl v0.4.0
+  - `update_flux_sun!` now uses `update_illumination!` for self-shadowing calculations
+  - Binary asteroid mutual shadowing now uses `apply_eclipse_shadowing!` API
+- Simplified binary asteroid ephemerides structure
+  - Removed `sun2` field (secondary's sun position is now computed internally)
+  - Removed `S2P` field (inverse transformation is now computed using `inverse_transformation`)
+  - Renamed `sun1` to `sun` for consistency
+- Updated to AsteroidShapeModels.jl v0.4.0 (#178)
+  - Now requires `with_bvh=true` when loading shapes for mutual shadowing
+  - Shape loading functions now support BVH building
 
 ### Fixed
 - TBD
+
+### Removed
+- Deprecated `update_flux_sun!(btpm, r☉₁, r☉₂)` function (replaced by new API)
+- `mutual_shadowing!` function (functionality integrated into `update_flux_sun!`)
 
 ## [0.0.7] - 2025-01-06
 
