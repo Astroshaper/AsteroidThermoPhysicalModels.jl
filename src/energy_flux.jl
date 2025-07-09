@@ -64,6 +64,26 @@ R₂₁, t₂₁ = inverse_transformation(R₁₂, t₁₂)
     return R₂₁, t₂₁
 end
 
+"""
+    transform(p₁::StaticVector{3}, R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3}) -> p₂
+
+Transform a point from frame 1 to frame 2.
+
+# Arguments
+- `p₁::StaticVector{3}`    : Point in frame 1
+- `R₁₂::StaticMatrix{3,3}` : Rotation matrix from frame 1 to frame 2
+- `t₁₂::StaticVector{3}`   : Translation vector from frame 1 to frame 2
+
+# Returns
+- `p₂::StaticVector{3}` : Point in frame 2
+
+# Notes
+The transformation is: p₂ = R₁₂ * p₁ + t₁₂
+"""
+@inline function transform(p₁::StaticVector{3}, R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3})
+    return R₁₂ * p₁ + t₁₂
+end
+
 # ╔═══════════════════════════════════════════════════════════════════╗
 # ║                     Energy input/output                           ║
 # ╚═══════════════════════════════════════════════════════════════════╝
@@ -312,11 +332,11 @@ Update solar irradiation flux on both components of a binary asteroid system wit
 - Uses the new `apply_eclipse_shadowing!` API from AsteroidShapeModels.jl v0.4.0
 - Requires BVH to be built for both shapes (should be done when loading with `with_bvh=true`)
 - Combines self-shadowing and mutual shadowing in a single call
-- The sun position in the secondary frame is computed as: r☉₂ = R₁₂ * r☉₁
+- The sun position in the secondary frame is computed as: r☉₂ = R₁₂ * r☉₁ + t₁₂
 """
 function update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3})
     # Compute sun position in secondary frame
-    r☉₂ = R₁₂ * r☉₁
+    r☉₂ = transform(r☉₁, R₁₂, t₁₂)
     
     # First, update illumination for both components considering self-shadowing
     update_flux_sun!(btpm.pri, r☉₁)
