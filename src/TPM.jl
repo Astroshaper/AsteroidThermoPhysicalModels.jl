@@ -266,11 +266,52 @@ end
 
 
 """
-    BinaryAsteroidThermoPhysicalModel(pri, sec; MUTUAL_SHADOWING=true, MUTUAL_HEATING=true) -> btpm
+    BinaryAsteroidThermoPhysicalModel(pri, sec; MUTUAL_SHADOWING, MUTUAL_HEATING) -> btpm
 
 Construct a thermophysical model for a binary asteroid (`BinaryAsteroidThermoPhysicalModel`).
+
+# Arguments
+- `pri` : TPM for the primary asteroid
+- `sec` : TPM for the secondary asteroid
+
+# Keyword Arguments
+- `MUTUAL_SHADOWING` : Flag to consider mutual shadowing (required)
+- `MUTUAL_HEATING`   : Flag to consider mutual heating (required)
+
+# Notes
+- Both `MUTUAL_SHADOWING` and `MUTUAL_HEATING` must be explicitly specified
+- If `MUTUAL_SHADOWING` is true and BVH is not built, it will be automatically built
+- This may take some time for large shape models
+- To avoid automatic BVH building, pre-build with `build_bvh!` or load shapes with `with_bvh=true`
+
+# Example
+```julia
+# Explicit specification required
+btpm = BinaryAsteroidThermoPhysicalModel(pri, sec; 
+    MUTUAL_SHADOWING = true,
+    MUTUAL_HEATING   = true,
+)
+
+# Or disable mutual effects
+btpm = BinaryAsteroidThermoPhysicalModel(pri, sec; 
+    MUTUAL_SHADOWING = false,
+    MUTUAL_HEATING   = false,
+)
+```
 """
 function BinaryAsteroidThermoPhysicalModel(pri, sec; MUTUAL_SHADOWING, MUTUAL_HEATING)
+    # Automatically build BVH if needed for mutual shadowing
+    if MUTUAL_SHADOWING
+        if isnothing(pri.shape.bvh)
+            @info "Building BVH for primary shape..."
+            build_bvh!(pri.shape)
+        end
+        if isnothing(sec.shape.bvh)
+            @info "Building BVH for secondary shape..."
+            build_bvh!(sec.shape)
+        end
+    end
+    
     BinaryAsteroidThermoPhysicalModel(pri, sec, MUTUAL_SHADOWING, MUTUAL_HEATING)
 end
 

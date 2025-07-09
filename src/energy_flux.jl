@@ -323,6 +323,12 @@ function update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, R�
     
     # Only apply mutual shadowing if enabled
     if btpm.MUTUAL_SHADOWING
+        # Check BVH availability
+        if isnothing(btpm.pri.shape.bvh) || isnothing(btpm.sec.shape.bvh)
+            error("BVH must be built for both shapes when MUTUAL_SHADOWING is enabled." *
+                  "Use `build_bvh!(shape)` or load shapes with `with_bvh=true`.")
+        end
+
         shape1 = btpm.pri.shape
         shape2 = btpm.sec.shape
         illuminated_faces1 = btpm.pri.illuminated_faces
