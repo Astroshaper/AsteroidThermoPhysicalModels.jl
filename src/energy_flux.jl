@@ -11,6 +11,59 @@ This file contains functions for computing various energy fluxes including:
 =#
 
 # ╔═══════════════════════════════════════════════════════════════════╗
+# ║                  Coordinate transformations                       ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+"""
+    inverse_transformation(R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3}) -> (R₂₁, t₂₁)
+
+Compute the inverse coordinate transformation.
+
+Given a transformation from frame 1 to frame 2:
+- `p₂ = R₁₂ * p₁ + t₁₂`
+
+This function returns the inverse transformation from frame 2 to frame 1:
+- `p₁ = R₂₁ * p₂ + t₂₁`
+
+# Arguments
+- `R₁₂::StaticMatrix{3,3}` : Rotation matrix from frame 1 to frame 2
+- `t₁₂::StaticVector{3}`   : Translation vector from frame 1 to frame 2
+
+# Returns
+- `R₂₁::StaticMatrix{3,3}` : Rotation matrix from frame 2 to frame 1 (= R₁₂')
+- `t₂₁::StaticVector{3}`   : Translation vector from frame 2 to frame 1 (= -R₂₁ * t₁₂)
+
+# Notes
+- For rotation matrices, the inverse equals the transpose: R⁻¹ = R'
+
+# Performance considerations
+- The function is marked with `@inline` for optimization
+- This function may allocate memory (~112 bytes) when returning the tuple `(R₂₁, t₂₁)`.
+- If this becomes a performance bottleneck in the future, consider:
+    - Using separate output arguments (mutating version)
+    - Inlining the computation directly at the call site
+    - Returning a custom struct instead of a tuple
+
+# Example
+```julia
+R₁₂ = RotMatrix(     # 90° rotation around z-axis
+    1.0, 0.0,  0.0,
+    0.0, 0.0, -1.0,
+    0.0, 1.0,  0.0,
+)
+t₁₂ = SVector(1.0, 2.0, 3.0)
+
+R₂₁, t₂₁ = inverse_transformation(R₁₂, t₁₂)
+# Now: p₁ = R₂₁ * p₂ + t₂₁
+```
+"""
+@inline function inverse_transformation(R₁₂::SMatrix{3,3,T,9}, t₁₂::SVector{3,T}) where T
+    R₂₁ = R₁₂'  # For rotation matrices, R⁻¹ = R'
+    t₂₁ = -R₂₁ * t₁₂
+    return R₂₁, t₂₁
+end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
 # ║                     Energy input/output                           ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
@@ -277,9 +330,7 @@ function update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, R�
         )
         
         # Apply eclipse shadowing from primary onto "secondary"
-        # Need R₂₁ = inv(R₁₂) and t₂₁ = -R₂₁ * t₁₂
-        R₂₁ = R₁₂'  # Transpose is inverse for rotation matrices
-        t₂₁ = -R₂₁ * t₁₂
+        R₂₁, t₂₁ = inverse_transformation(R₁₂, t₁₂)  # Inverse transformation from secondary to primary
         eclipse_status_sec = apply_eclipse_shadowing!(
             btpm.sec.illuminated_faces, btpm.sec.shape, r☉₂,
             R₂₁, t₂₁, btpm.pri.shape
