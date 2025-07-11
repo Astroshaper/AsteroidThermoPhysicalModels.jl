@@ -11,83 +11,8 @@ This file contains functions for computing various energy fluxes including:
 =#
 
 # ╔═══════════════════════════════════════════════════════════════════╗
-# ║                  Coordinate transformations                       ║
-# ╚═══════════════════════════════════════════════════════════════════╝
-
-"""
-    inverse_transformation(R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3}) -> (R₂₁, t₂₁)
-
-Compute the inverse coordinate transformation.
-
-Given a transformation from frame 1 to frame 2:
-    p₂ = R₁₂ * p₁ + t₁₂
-where p₁ and p₂ are points in frames 1 and 2, respectively,
-
-This function returns the inverse transformation from frame 2 to frame 1:
-    p₁ = R₂₁ * p₂ + t₂₁
-
-# Arguments
-- `R₁₂::StaticMatrix{3,3}` : Rotation matrix from frame 1 to frame 2
-- `t₁₂::StaticVector{3}`   : Translation vector from frame 1 to frame 2
-
-# Returns
-- `R₂₁::StaticMatrix{3,3}` : Rotation matrix from frame 2 to frame 1 (= R₁₂')
-- `t₂₁::StaticVector{3}`   : Translation vector from frame 2 to frame 1 (= -R₂₁ * t₁₂)
-
-# Notes
-- For rotation matrices, the inverse equals the transpose: R⁻¹ = R'
-
-# Performance considerations
-- The function is marked with `@inline` for optimization
-- This function may allocate memory (~112 bytes) when returning the tuple `(R₂₁, t₂₁)`.
-- If this becomes a performance bottleneck in the future, consider:
-    - Using separate output arguments (mutating version)
-    - Inlining the computation directly at the call site
-    - Returning a custom struct instead of a tuple
-
-# Example
-```julia
-R₁₂ = RotMatrix(     # 90° rotation around z-axis
-    1.0, 0.0,  0.0,
-    0.0, 0.0, -1.0,
-    0.0, 1.0,  0.0,
-)
-t₁₂ = SVector(1.0, 2.0, 3.0)
-
-R₂₁, t₂₁ = inverse_transformation(R₁₂, t₁₂)
-# Now: p₁ = R₂₁ * p₂ + t₂₁
-```
-"""
-@inline function inverse_transformation(R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3})
-    R₂₁ = R₁₂'  # For rotation matrices, R⁻¹ = R'
-    t₂₁ = -R₂₁ * t₁₂
-    return R₂₁, t₂₁
-end
-
-"""
-    transform(p₁::StaticVector{3}, R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3}) -> p₂
-
-Transform a point from frame 1 to frame 2.
-
-# Arguments
-- `p₁::StaticVector{3}`    : Point in frame 1
-- `R₁₂::StaticMatrix{3,3}` : Rotation matrix from frame 1 to frame 2
-- `t₁₂::StaticVector{3}`   : Translation vector from frame 1 to frame 2
-
-# Returns
-- `p₂::StaticVector{3}` : Point in frame 2
-
-# Notes
-The transformation is: p₂ = R₁₂ * p₁ + t₁₂
-"""
-@inline function transform(p₁::StaticVector{3}, R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3})
-    return R₁₂ * p₁ + t₁₂
-end
-
-# ╔═══════════════════════════════════════════════════════════════════╗
 # ║                     Energy input/output                           ║
 # ╚═══════════════════════════════════════════════════════════════════╝
-
 
 """
     absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad) -> F_abs
@@ -225,6 +150,71 @@ end
 
 
 # ╔═══════════════════════════════════════════════════════════════════╗
+# ║                     Unified flux update API                       ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+"""
+    update_flux_all!(stpm::SingleAsteroidTPM, r☉::StaticVector{3})
+
+Update all energy fluxes (solar, scattered, thermal radiation) to the surface for a single asteroid.
+
+# Arguments
+- `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
+- `r☉::StaticVector{3}`     : Sun's position in the asteroid-fixed frame (NOT normalized) [m]
+
+# Algorithm
+1. Updates direct solar flux on all faces considering self-shadowing
+2. Updates scattered sunlight flux from other faces (self-heating)
+3. Updates thermal radiation flux from other faces (self-heating)
+
+# Notes
+- This is a convenience function that calls all individual flux update functions
+- Automatically respects SELF_SHADOWING and SELF_HEATING flags
+"""
+function update_flux_all!(stpm::SingleAsteroidTPM, r☉::StaticVector{3})
+    update_flux_sun!(stpm, r☉)
+    update_flux_scat_single!(stpm)
+    update_flux_rad_single!(stpm)
+end
+
+"""
+    update_flux_all!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, r₁₂::StaticVector{3}, R₁₂::StaticMatrix{3,3})
+
+Update all energy fluxes (solar, scattered, thermal radiation) to the surface for a binary asteroid.
+This is a convenience function that computes necessary coordinate transformations and
+calls individual flux update functions.
+
+# Arguments
+- `btpm::BinaryAsteroidTPM` : Thermophysical model for a binary asteroid
+- `r☉₁::StaticVector{3}`    : Sun's position in the primary's body-fixed frame (NOT normalized) [m]
+- `r₁₂::StaticVector{3}`    : Position vector of secondary's center in primary's frame [m]
+- `R₁₂::StaticMatrix{3,3}`  : Rotation matrix from primary to secondary frame
+
+# Algorithm
+1. Computes all necessary coordinate transformations
+2. Updates solar flux considering eclipse (mutual shadowing)
+3. Updates scattered light flux (self-heating)
+4. Updates thermal radiation flux (self-heating)
+5. Applies mutual heating between components
+
+# Notes
+- This function internally handles all coordinate transformations
+- Automatically respects SELF_SHADOWING, SELF_HEATING, MUTUAL_SHADOWING, and MUTUAL_HEATING flags
+"""
+function update_flux_all!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, r₁₂::StaticVector{3}, R₁₂::StaticMatrix{3,3})
+    # Pre-compute all coordinate transformations
+    r☉₂ = R₁₂ * (r☉₁ - r₁₂)  # Sun's position in the secondary's frame
+    R₂₁ = R₁₂'               # Rotation matrix from secondary to primary
+    r₂₁ = -R₂₁ * r₁₂         # Primary's position in the secondary's frame
+    
+    # Update all fluxes
+    update_flux_sun!(btpm, r☉₁, r☉₂, r₁₂, r₂₁, R₁₂, R₂₁)
+    update_flux_scat_single!(btpm)
+    update_flux_rad_single!(btpm)
+    mutual_heating!(btpm, r₁₂, R₂₁)
+end
+
+# ╔═══════════════════════════════════════════════════════════════════╗
 # ║                  Energy flux: Sunlight                            ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
@@ -283,26 +273,36 @@ function update_flux_sun!(stpm::SingleAsteroidTPM, r☉::StaticVector{3})
 end
 
 """
-    update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3})
+    update_flux_sun!(
+        btpm::BinaryAsteroidTPM,
+        r☉₁::StaticVector{3},   r☉₂::StaticVector{3}, 
+        r₁₂::StaticVector{3},   r₂₁::StaticVector{3},
+        R₁₂::StaticMatrix{3,3}, R₂₁::StaticMatrix{3,3},
+    )
 
 Update solar irradiation flux on both components of a binary asteroid system with mutual shadowing.
 
 # Arguments
 - `btpm::BinaryAsteroidTPM` : Thermophysical model for a binary asteroid
-- `r☉₁::StaticVector{3}`    : Sun's position vector in the primary's body-fixed frame (Not normalized) [m]
+- `r☉₁::StaticVector{3}`    : Sun's position vector in the primary's body-fixed frame (NOT normalized) [m]
+- `r☉₂::StaticVector{3}`    : Sun's position vector in the secondary's body-fixed frame (NOT normalized) [m]
+- `r₁₂::StaticVector{3}`    : Position vector of secondary's center in primary's frame [m]
+- `r₂₁::StaticVector{3}`    : Position vector of primary's center in secondary's frame [m]
 - `R₁₂::StaticMatrix{3,3}`  : Rotation matrix from primary to secondary frame
-- `t₁₂::StaticVector{3}`    : Translation vector from primary to secondary frame [m]
+- `R₂₁::StaticMatrix{3,3}`  : Rotation matrix from secondary to primary frame
 
 # Notes
-- Uses the new `apply_eclipse_shadowing!` API from AsteroidShapeModels.jl v0.4.0
+- All coordinate transformations should be pre-computed by the caller
+- Uses the new `apply_eclipse_shadowing!` API from AsteroidShapeModels.jl v0.4.1
 - Requires BVH to be built for both shapes (should be done when loading with `with_bvh=true`)
 - Combines self-shadowing and mutual shadowing in a single call
-- The sun position in the secondary frame is computed as: r☉₂ = R₁₂ * r☉₁ + t₁₂
 """
-function update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3})
-    # Compute sun position in secondary frame
-    r☉₂ = transform(r☉₁, R₁₂, t₁₂)
-    
+function update_flux_sun!(
+    btpm::BinaryAsteroidTPM,
+    r☉₁::StaticVector{3},   r☉₂::StaticVector{3}, 
+    r₁₂::StaticVector{3},   r₂₁::StaticVector{3},
+    R₁₂::StaticMatrix{3,3}, R₂₁::StaticMatrix{3,3},
+)
     # First, update illumination for both components considering self-shadowing
     update_flux_sun!(btpm.pri, r☉₁)
     update_flux_sun!(btpm.sec, r☉₂)
@@ -322,12 +322,10 @@ function update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, R�
         illuminated_faces1 = btpm.pri.illuminated_faces
         illuminated_faces2 = btpm.sec.illuminated_faces
 
-        # Inverse transformation from secondary to primary
-        R₂₁, t₂₁ = inverse_transformation(R₁₂, t₁₂)
-
-        # Apply eclipse shadowing from secondary onto primary, and vice versa
-        eclipse_status1 = apply_eclipse_shadowing!(illuminated_faces1, shape1, r☉₁, R₁₂, t₁₂, shape2)        
-        eclipse_status2 = apply_eclipse_shadowing!(illuminated_faces2, shape2, r☉₂, R₂₁, t₂₁, shape1)
+        # Apply eclipse shadowing using the new API from v0.4.1
+        # Note: The new API takes the position vector directly instead of translation
+        eclipse_status1 = apply_eclipse_shadowing!(illuminated_faces1, shape1, shape2, r☉₁, r₁₂, R₁₂)        
+        eclipse_status2 = apply_eclipse_shadowing!(illuminated_faces2, shape2, shape1, r☉₂, r₂₁, R₂₁)
         
         # Update flux_sun based on the updated illumination states
         btpm.pri.flux_sun[.!illuminated_faces1] .= 0.0
@@ -366,7 +364,6 @@ function update_flux_scat_single!(stpm::SingleAsteroidTPM)
     end
 end
 
-
 """
     update_flux_scat_single!(btpm::BinaryAsteroidTPM)
 
@@ -380,7 +377,6 @@ function update_flux_scat_single!(btpm::BinaryAsteroidTPM)
     update_flux_scat_single!(btpm.sec)
 end
 
-
 ##= TODO: Implement update_flux_scat_mult! =##
 
 # """
@@ -389,7 +385,6 @@ end
 
 # Update flux of scattered sunlight, considering multiple scattering.
 # """
-
 
 # ╔═══════════════════════════════════════════════════════════════════╗
 # ║                Energy flux: Thermal radiation                     ║
@@ -425,7 +420,6 @@ function update_flux_rad_single!(stpm::SingleAsteroidTPM)
     end
 end
 
-
 """
     update_flux_rad_single!(btpm::BinaryAsteroidTPM)
 
@@ -440,26 +434,25 @@ function update_flux_rad_single!(btpm::BinaryAsteroidTPM)
     update_flux_rad_single!(btpm.sec)
 end
 
-
 # ╔═══════════════════════════════════════════════════════════════════╗
 # ║                Mutual heating of binary asteroid                  ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 
 """
-    mutual_heating!(btpm::BinaryAsteroidTPM, rₛ, R₂₁)
+    mutual_heating!(btpm::BinaryAsteroidTPM, r₁₂, R₂₁)
 
 Calculate the mutual heating between the primary and secondary asteroids.
 
 # Arguments
-- `btpm` : Thermophysical model for a binary asteroid
-- `rₛ`   : Position of the secondary relative to the primary (NOT normalized)
-- `R₂₁`  : Rotation matrix from secondary to primary
+- `btpm::BinaryAsteroidTPM` : Thermophysical model for a binary asteroid
+- `r₁₂::StaticVector{3}`    : Position vector of secondary's center in primary's frame [m]
+- `R₂₁::StaticMatrix{3,3}`  : Rotation matrix from secondary to primary frame
 
 # TODO
 - Need to consider local horizon?
 """
-function mutual_heating!(btpm::BinaryAsteroidTPM, rₛ, R₂₁)
+function mutual_heating!(btpm::BinaryAsteroidTPM, r₁₂, R₂₁)
     btpm.MUTUAL_HEATING == false && return
 
     shape1 = btpm.pri.shape
@@ -478,7 +471,7 @@ function mutual_heating!(btpm::BinaryAsteroidTPM, rₛ, R₂₁)
             a₂ = shape2.face_areas[j]     # Area of △A₂B₂C₂
         
             ## Transformation from secondary to primary frame
-            c₂ = R₂₁ * c₂ + rₛ
+            c₂ = R₂₁ * c₂ + r₁₂
             n̂₂ = R₂₁ * n̂₂
 
             f₁₂, d₁₂, d̂₁₂ = view_factor(c₁, c₂, n̂₁, n̂₂, a₂)  # View factor from △A₁B₁C₁ to △A₂B₂C₂

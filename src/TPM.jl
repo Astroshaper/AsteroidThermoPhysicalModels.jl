@@ -730,7 +730,7 @@ Execute the thermophysical model simulation for a single asteroid over the speci
 # Arguments
 - `stpm::SingleAsteroidThermoPhysicalModel` : Thermophysical model containing shape, thermal parameters, and state
 - `ephem` : Ephemerides data structure containing:
-    - `time::Vector{Float64}` : Time points for the simulation [s]
+    - `time::Vector{Float64}`   : Time points for the simulation [s]
     - `sun::Vector{SVector{3}}` : Sun's position vectors in the asteroid-fixed frame (not normalized) [m]
 - `times_to_save::Vector{Float64}` : Specific time points at which to save detailed temperature data [s]
 - `face_ID::Vector{Int}` : Face indices for which to save subsurface temperature profiles
@@ -774,7 +774,6 @@ println("Final E_out/E_in ratio: ", result.E_out[end]/result.E_in[end])
 # Performance Notes
 - Computation time scales with number of faces and time steps
 - Self-shadowing and self-heating calculations add significant overhead
-- Consider using larger time steps if thermal inertia is low
 
 # See Also
 - `init_temperature!` to set initial conditions
@@ -794,12 +793,8 @@ function run_TPM!(stpm::SingleAsteroidThermoPhysicalModel, ephem, times_to_save:
     for i_time in eachindex(ephem.time)
         r☉ = ephem.sun[i_time]
 
-        update_flux_sun!(stpm, r☉)      # Update solar flux on the surface (self-shadowing)
-        update_flux_scat_single!(stpm)  # Scattered light flux (self-heating by visible light)
-        update_flux_rad_single!(stpm)   # Re-absorbed thermal radiation flux (self-heating by infrared)
-        
-        update_thermal_force!(stpm)
-
+        update_flux_all!(stpm, r☉)                # Update all energy fluxes to the surface
+        update_thermal_force!(stpm)               # Calculate thermal forces and torques
         update_TPM_result!(result, stpm, i_time)  # Save data
         
         ## Update the progress meter
@@ -820,30 +815,43 @@ function run_TPM!(stpm::SingleAsteroidThermoPhysicalModel, ephem, times_to_save:
 end
 
 """
-    run_TPM!(btpm::BinaryAsteroidThermoPhysicalModel, ephem, savepath)
+    run_TPM!(btpm::BinaryAsteroidThermoPhysicalModel, ephem, times_to_save, face_ID_pri, face_ID_sec; show_progress=true) -> result
 
-Run TPM for a binary asteroid.
+Execute the thermophysical model simulation for a binary asteroid system over the specified time period.
 
 # Arguments
-- `btpm`          : Thermophysical model for a binary asteroid
-- `ephem`         : Ephemerides
-    - `time` : Ephemeris times
-    - `sun`  : Sun's position in the primary's frame
-    - `sec`  : Secondary's position in the primary's frame
-    - `P2S`  : Rotation matrix from primary to secondary frames
-- `times_to_save` : Timesteps to save temperature
-- `face_ID_pri`   : Face indices where to save subsurface termperature for the primary
-- `face_ID_sec`   : Face indices where to save subsurface termperature for the secondary
+- `btpm::BinaryAsteroidThermoPhysicalModel` : Thermophysical model for a binary asteroid
+- `ephem` : Ephemerides data structure containing:
+    - `time::Vector{Float64}`     : Time points for the simulation [s]
+    - `sun::Vector{SVector{3}}`   : Sun's position vectors in the primary's frame (NOT normalized) [m]
+    - `sec::Vector{SVector{3}}`   : Secondary's position vectors in the primary's frame [m]
+    - `P2S::Vector{SMatrix{3,3}}` : Rotation matrices from primary to secondary frames
+- `times_to_save::Vector{Float64}` : Specific time points at which to save detailed temperature data [s]
+- `face_ID_pri::Vector{Int}` : Face indices for which to save subsurface temperature profiles for the primary
+- `face_ID_sec::Vector{Int}` : Face indices for which to save subsurface temperature profiles for the secondary
 
-# Keyword arguments
-- `show_progress` : Flag to show the progress meter
+# Keyword Arguments
+- `show_progress::Bool=true` : Display progress meter during simulation
+
+# Returns
+- `result::BinaryAsteroidThermoPhysicalModelResult` : Structure containing results for both components
+
+# Algorithm
+1. For each time step:
+   - Update all energy fluxes using the unified API (solar+eclipse, scattered, thermal radiation, mutual heating)
+   - Compute thermal forces and torques for both components
+   - Save results if at a save point
+   - Update temperature distribution for next time step
 
 # Notes
-- The rotation matrix from secondary to primary (R₂₁) is computed using `inverse_transformation`
-- This eliminates the need to store both P2S and S2P in ephemerides
-- The translation vector from primary to secondary frame (t₁₂) is computed as: t₁₂ = -R₁₂ * rₛ
-  - This follows from the coordinate transformation: p₂ = R₁₂ * p₁ + t₁₂
-  - For the secondary's center: 0 = R₁₂ * rₛ + t₁₂, hence t₁₂ = -R₁₂ * rₛ
+- Uses the unified `update_flux_all!` API which internally handles all coordinate transformations
+- Automatically respects all shadowing and heating flags (SELF_SHADOWING, SELF_HEATING, MUTUAL_SHADOWING, MUTUAL_HEATING)
+- Compatible with AsteroidShapeModels.jl v0.4.1 which fixes critical eclipse shadowing bugs
+
+# See Also
+- `init_temperature!` to set initial conditions
+- `export_TPM_results` to save results to files
+- `update_flux_all!` for the unified flux update API
 """
 function run_TPM!(btpm::BinaryAsteroidThermoPhysicalModel, ephem, times_to_save::Vector{Float64}, face_ID_pri::Vector{Int}, face_ID_sec::Vector{Int}; show_progress=true)
 
@@ -857,20 +865,11 @@ function run_TPM!(btpm::BinaryAsteroidThermoPhysicalModel, ephem, times_to_save:
     
     for i_time in eachindex(ephem.time)
         r☉₁ = ephem.sun[i_time]  # Sun's position in the primary's frame
-        rₛ  = ephem.sec[i_time]  # Secondary's position in the primary's frame
+        r₁₂ = ephem.sec[i_time]  # Secondary's position in the primary's frame
         R₁₂ = ephem.P2S[i_time]  # Rotation matrix from primary to secondary frames
-
-        t₁₂ = -R₁₂ * rₛ                              # Translation from primary to secondary frame
-        R₂₁, t₂₁ = inverse_transformation(R₁₂, t₁₂)  # Inverse transformation for mutual heating
         
-        ## Update energy flux to surface
-        update_flux_sun!(btpm, r☉₁, R₁₂, t₁₂)  # New combined API including both self-shadowing and mutual-shadowing
-        update_flux_scat_single!(btpm)         # Scattered light flux (self-heating by visible light)
-        update_flux_rad_single!(btpm)          # Re-absorbed thermal radiation flux (self-heating by infrared)
-        mutual_heating!(btpm, rₛ, R₂₁)         # Mutual-heating
-
-        update_thermal_force!(btpm)
-
+        update_flux_all!(btpm, r☉₁, r₁₂, R₁₂)     # Update all energy fluxes to surface
+        update_thermal_force!(btpm)               # Calculate thermal forces and torques
         update_TPM_result!(result, btpm, i_time)  # Save data
 
         ## Update the progress meter
