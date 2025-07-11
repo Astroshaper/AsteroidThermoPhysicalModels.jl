@@ -11,83 +11,8 @@ This file contains functions for computing various energy fluxes including:
 =#
 
 # ╔═══════════════════════════════════════════════════════════════════╗
-# ║                  Coordinate transformations                       ║
-# ╚═══════════════════════════════════════════════════════════════════╝
-
-"""
-    inverse_transformation(R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3}) -> (R₂₁, t₂₁)
-
-Compute the inverse coordinate transformation.
-
-Given a transformation from frame 1 to frame 2:
-    p₂ = R₁₂ * p₁ + t₁₂
-where p₁ and p₂ are points in frames 1 and 2, respectively,
-
-This function returns the inverse transformation from frame 2 to frame 1:
-    p₁ = R₂₁ * p₂ + t₂₁
-
-# Arguments
-- `R₁₂::StaticMatrix{3,3}` : Rotation matrix from frame 1 to frame 2
-- `t₁₂::StaticVector{3}`   : Translation vector from frame 1 to frame 2
-
-# Returns
-- `R₂₁::StaticMatrix{3,3}` : Rotation matrix from frame 2 to frame 1 (= R₁₂')
-- `t₂₁::StaticVector{3}`   : Translation vector from frame 2 to frame 1 (= -R₂₁ * t₁₂)
-
-# Notes
-- For rotation matrices, the inverse equals the transpose: R⁻¹ = R'
-
-# Performance considerations
-- The function is marked with `@inline` for optimization
-- This function may allocate memory (~112 bytes) when returning the tuple `(R₂₁, t₂₁)`.
-- If this becomes a performance bottleneck in the future, consider:
-    - Using separate output arguments (mutating version)
-    - Inlining the computation directly at the call site
-    - Returning a custom struct instead of a tuple
-
-# Example
-```julia
-R₁₂ = RotMatrix(     # 90° rotation around z-axis
-    1.0, 0.0,  0.0,
-    0.0, 0.0, -1.0,
-    0.0, 1.0,  0.0,
-)
-t₁₂ = SVector(1.0, 2.0, 3.0)
-
-R₂₁, t₂₁ = inverse_transformation(R₁₂, t₁₂)
-# Now: p₁ = R₂₁ * p₂ + t₂₁
-```
-"""
-@inline function inverse_transformation(R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3})
-    R₂₁ = R₁₂'  # For rotation matrices, R⁻¹ = R'
-    t₂₁ = -R₂₁ * t₁₂
-    return R₂₁, t₂₁
-end
-
-"""
-    transform(p₁::StaticVector{3}, R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3}) -> p₂
-
-Transform a point from frame 1 to frame 2.
-
-# Arguments
-- `p₁::StaticVector{3}`    : Point in frame 1
-- `R₁₂::StaticMatrix{3,3}` : Rotation matrix from frame 1 to frame 2
-- `t₁₂::StaticVector{3}`   : Translation vector from frame 1 to frame 2
-
-# Returns
-- `p₂::StaticVector{3}` : Point in frame 2
-
-# Notes
-The transformation is: p₂ = R₁₂ * p₁ + t₁₂
-"""
-@inline function transform(p₁::StaticVector{3}, R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3})
-    return R₁₂ * p₁ + t₁₂
-end
-
-# ╔═══════════════════════════════════════════════════════════════════╗
 # ║                     Energy input/output                           ║
 # ╚═══════════════════════════════════════════════════════════════════╝
-
 
 """
     absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad) -> F_abs
