@@ -451,19 +451,19 @@ end
 
 
 """
-    mutual_heating!(btpm::BinaryAsteroidTPM, rₛ, R₂₁)
+    mutual_heating!(btpm::BinaryAsteroidTPM, r₁₂, R₂₁)
 
 Calculate the mutual heating between the primary and secondary asteroids.
 
 # Arguments
-- `btpm` : Thermophysical model for a binary asteroid
-- `rₛ`   : Position of the secondary relative to the primary (NOT normalized)
-- `R₂₁`  : Rotation matrix from secondary to primary
+- `btpm::BinaryAsteroidTPM` : Thermophysical model for a binary asteroid
+- `r₁₂::StaticVector{3}`    : Position vector of secondary's center in primary's frame [m]
+- `R₂₁::StaticMatrix{3,3}`  : Rotation matrix from secondary to primary frame
 
 # TODO
 - Need to consider local horizon?
 """
-function mutual_heating!(btpm::BinaryAsteroidTPM, rₛ, R₂₁)
+function mutual_heating!(btpm::BinaryAsteroidTPM, r₁₂, R₂₁)
     btpm.MUTUAL_HEATING == false && return
 
     shape1 = btpm.pri.shape
@@ -482,7 +482,7 @@ function mutual_heating!(btpm::BinaryAsteroidTPM, rₛ, R₂₁)
             a₂ = shape2.face_areas[j]     # Area of △A₂B₂C₂
         
             ## Transformation from secondary to primary frame
-            c₂ = R₂₁ * c₂ + rₛ
+            c₂ = R₂₁ * c₂ + r₁₂
             n̂₂ = R₂₁ * n̂₂
 
             f₁₂, d₁₂, d̂₁₂ = view_factor(c₁, c₂, n̂₁, n̂₂, a₂)  # View factor from △A₁B₁C₁ to △A₂B₂C₂
