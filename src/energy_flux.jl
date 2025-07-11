@@ -283,25 +283,27 @@ function update_flux_sun!(stpm::SingleAsteroidTPM, r☉::StaticVector{3})
 end
 
 """
-    update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3})
+    update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, r₁₂::StaticVector{3}, R₁₂::StaticMatrix{3,3})
 
 Update solar irradiation flux on both components of a binary asteroid system with mutual shadowing.
 
 # Arguments
 - `btpm::BinaryAsteroidTPM` : Thermophysical model for a binary asteroid
 - `r☉₁::StaticVector{3}`    : Sun's position vector in the primary's body-fixed frame (Not normalized) [m]
+- `r₁₂::StaticVector{3}`    : Position vector of secondary's center in primary's frame [m]
 - `R₁₂::StaticMatrix{3,3}`  : Rotation matrix from primary to secondary frame
-- `t₁₂::StaticVector{3}`    : Translation vector from primary to secondary frame [m]
 
 # Notes
-- Uses the new `apply_eclipse_shadowing!` API from AsteroidShapeModels.jl v0.4.0
+- Uses the new `apply_eclipse_shadowing!` API from AsteroidShapeModels.jl v0.4.1
 - Requires BVH to be built for both shapes (should be done when loading with `with_bvh=true`)
 - Combines self-shadowing and mutual shadowing in a single call
-- The sun position in the secondary frame is computed as: r☉₂ = R₁₂ * r☉₁ + t₁₂
+- The sun position in the secondary frame is computed as: r☉₂ = R₁₂ * (r☉₁ - r₁₂)
 """
-function update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, R₁₂::StaticMatrix{3,3}, t₁₂::StaticVector{3})
+function update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, r₁₂::StaticVector{3}, R₁₂::StaticMatrix{3,3})
     # Compute sun position in secondary frame
-    r☉₂ = transform(r☉₁, R₁₂, t₁₂)
+    # r☉₂ = R₁₂ * (r☉₁ - r₁₂) since the sun's position relative to secondary is
+    # the sun's position relative to primary minus the secondary's position
+    r☉₂ = R₁₂ * (r☉₁ - r₁₂)
     
     # First, update illumination for both components considering self-shadowing
     update_flux_sun!(btpm.pri, r☉₁)
@@ -322,12 +324,14 @@ function update_flux_sun!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, R�
         illuminated_faces1 = btpm.pri.illuminated_faces
         illuminated_faces2 = btpm.sec.illuminated_faces
 
-        # Inverse transformation from secondary to primary
-        R₂₁, t₂₁ = inverse_transformation(R₁₂, t₁₂)
+        # Compute transformation for mutual shadowing
+        R₂₁ = R₁₂'        # Inverse rotation (from secondary to primary frame)
+        r₂₁ = -R₂₁ * r₁₂  # Primary's position in secondary's frame
 
-        # Apply eclipse shadowing from secondary onto primary, and vice versa
-        eclipse_status1 = apply_eclipse_shadowing!(illuminated_faces1, shape1, r☉₁, R₁₂, t₁₂, shape2)        
-        eclipse_status2 = apply_eclipse_shadowing!(illuminated_faces2, shape2, r☉₂, R₂₁, t₂₁, shape1)
+        # Apply eclipse shadowing using the new API from v0.4.1
+        # Note: The new API takes the position vector directly instead of translation
+        eclipse_status1 = apply_eclipse_shadowing!(illuminated_faces1, shape1, shape2, r☉₁, r₁₂, R₁₂)        
+        eclipse_status2 = apply_eclipse_shadowing!(illuminated_faces2, shape2, shape1, r☉₂, r₂₁, R₂₁)
         
         # Update flux_sun based on the updated illumination states
         btpm.pri.flux_sun[.!illuminated_faces1] .= 0.0

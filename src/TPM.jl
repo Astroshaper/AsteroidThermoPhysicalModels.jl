@@ -820,30 +820,28 @@ function run_TPM!(stpm::SingleAsteroidThermoPhysicalModel, ephem, times_to_save:
 end
 
 """
-    run_TPM!(btpm::BinaryAsteroidThermoPhysicalModel, ephem, savepath)
+    run_TPM!(btpm::BinaryAsteroidThermoPhysicalModel, ephem, times_to_save, face_ID_pri, face_ID_sec; show_progress=true)
 
 Run TPM for a binary asteroid.
 
 # Arguments
 - `btpm`          : Thermophysical model for a binary asteroid
 - `ephem`         : Ephemerides
-    - `time` : Ephemeris times
-    - `sun`  : Sun's position in the primary's frame
-    - `sec`  : Secondary's position in the primary's frame
+    - `time` : Ephemeris times [s]
+    - `sun`  : Sun's position in the primary's frame (not normalized) [m]
+    - `sec`  : Secondary's position in the primary's frame [m]
     - `P2S`  : Rotation matrix from primary to secondary frames
-- `times_to_save` : Timesteps to save temperature
-- `face_ID_pri`   : Face indices where to save subsurface termperature for the primary
-- `face_ID_sec`   : Face indices where to save subsurface termperature for the secondary
+- `times_to_save` : Timesteps to save temperature [s]
+- `face_ID_pri`   : Face indices where to save subsurface temperature for the primary
+- `face_ID_sec`   : Face indices where to save subsurface temperature for the secondary
 
 # Keyword arguments
 - `show_progress` : Flag to show the progress meter
 
 # Notes
-- The rotation matrix from secondary to primary (R₂₁) is computed using `inverse_transformation`
-- This eliminates the need to store both P2S and S2P in ephemerides
-- The translation vector from primary to secondary frame (t₁₂) is computed as: t₁₂ = -R₁₂ * rₛ
-  - This follows from the coordinate transformation: p₂ = R₁₂ * p₁ + t₁₂
-  - For the secondary's center: 0 = R₁₂ * rₛ + t₁₂, hence t₁₂ = -R₁₂ * rₛ
+- Uses the new `update_flux_sun!` API from AsteroidShapeModels.jl v0.4.1 which takes position vectors directly
+- The rotation matrix from secondary to primary (R₂₁) is computed as the transpose of R₁₂
+- Mutual heating requires only the position vector r₁₂ and rotation matrix R₂₁
 """
 function run_TPM!(btpm::BinaryAsteroidThermoPhysicalModel, ephem, times_to_save::Vector{Float64}, face_ID_pri::Vector{Int}, face_ID_sec::Vector{Int}; show_progress=true)
 
@@ -857,17 +855,16 @@ function run_TPM!(btpm::BinaryAsteroidThermoPhysicalModel, ephem, times_to_save:
     
     for i_time in eachindex(ephem.time)
         r☉₁ = ephem.sun[i_time]  # Sun's position in the primary's frame
-        rₛ  = ephem.sec[i_time]  # Secondary's position in the primary's frame
+        r₁₂ = ephem.sec[i_time]  # Secondary's position in the primary's frame
         R₁₂ = ephem.P2S[i_time]  # Rotation matrix from primary to secondary frames
-
-        t₁₂ = -R₁₂ * rₛ                              # Translation from primary to secondary frame
-        R₂₁, t₂₁ = inverse_transformation(R₁₂, t₁₂)  # Inverse transformation for mutual heating
         
         ## Update energy flux to surface
-        update_flux_sun!(btpm, r☉₁, R₁₂, t₁₂)  # New combined API including both self-shadowing and mutual-shadowing
+        update_flux_sun!(btpm, r☉₁, R₁₂, r₁₂)  # New combined API including both self-shadowing and mutual-shadowing
         update_flux_scat_single!(btpm)         # Scattered light flux (self-heating by visible light)
         update_flux_rad_single!(btpm)          # Re-absorbed thermal radiation flux (self-heating by infrared)
-        mutual_heating!(btpm, rₛ, R₂₁)         # Mutual-heating
+        
+        R₂₁ = R₁₂'                       # Rotation matrix from secondary to primary
+        mutual_heating!(btpm, r₁₂, R₂₁)  # Mutual-heating
 
         update_thermal_force!(btpm)
 
