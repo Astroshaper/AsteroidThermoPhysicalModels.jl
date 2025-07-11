@@ -859,7 +859,7 @@ function run_TPM!(btpm::BinaryAsteroidThermoPhysicalModel, ephem, times_to_save:
         R₁₂ = ephem.P2S[i_time]  # Rotation matrix from primary to secondary frames
         
         ## Update energy flux to surface
-        update_flux_sun!(btpm, r☉₁, R₁₂, r₁₂)  # New combined API including both self-shadowing and mutual-shadowing
+        update_flux_sun!(btpm, r☉₁, r₁₂, R₁₂)  # New combined API including both self-shadowing and mutual-shadowing
         update_flux_scat_single!(btpm)         # Scattered light flux (self-heating by visible light)
         update_flux_rad_single!(btpm)          # Re-absorbed thermal radiation flux (self-heating by infrared)
         
