@@ -205,7 +205,7 @@ function update_flux_all!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, r�
     # Pre-compute all coordinate transformations
     r☉₂ = R₁₂ * (r☉₁ - r₁₂)  # Sun's position in the secondary's frame
     R₂₁ = R₁₂'               # Rotation matrix from secondary to primary
-    r₂₁ = -R₂₁ * r₁₂         # Primary's position in the secondary's frame
+    r₂₁ = -R₁₂ * r₁₂         # Primary's position in the secondary's frame
     
     # Update all fluxes
     update_flux_sun!(btpm, r☉₁, r☉₂, r₁₂, r₂₁, R₁₂, R₂₁)
