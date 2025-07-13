@@ -68,13 +68,11 @@ println("\nResults saved to: $results_file")
 print_summary(results)
 
 # Get package version
-try
-    pkg_version = Pkg.project().version
-    if isnothing(pkg_version)
-        pkg_version = "dev"
-    end
+pkg_version = try
+    ver = Pkg.project().version
+    isnothing(ver) ? "dev" : ver
 catch
-    pkg_version = "unknown"
+    "unknown"
 end
 
 # Export human-readable report
