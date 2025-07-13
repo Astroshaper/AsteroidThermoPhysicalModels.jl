@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.0] - 2025-01-13
 
 ### Added
 - `illuminated_faces` field to `SingleAsteroidThermoPhysicalModel` for batch illumination processing
@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Eclipse shadowing in binary asteroid systems now works correctly with AsteroidShapeModels.jl v0.4.1
+- Coordinate transformation bug in binary systems where `r₂₁` was incorrectly calculated (#183)
 
 ### Removed
 - Deprecated `update_flux_sun!(btpm, r☉₁, r☉₂)` function (replaced by new API)

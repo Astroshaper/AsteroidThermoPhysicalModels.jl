@@ -20,25 +20,21 @@ Sample notebooks are available in [Astroshaper-examples](https://github.com/Astr
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl")
+Pkg.add("AsteroidThermoPhysicalModels")
 using AsteroidThermoPhysicalModels
 ```
 
-You can update the package and run tests as follows:
-
-```julia
-Pkg.update("AsteroidThermoPhysicalModels")
-Pkg.test("AsteroidThermoPhysicalModels")
+Or in the Julia REPL package mode:
+```
+julia> ]  # Press ] to enter package mode
+pkg> add AsteroidThermoPhysicalModels
 ```
 
 ## 🔍 Features
 
 ### Thermophysical Processes
 - **Heat Conduction**: 1-dimensional heat diffusion in depth direction
-  - Multiple numerical solvers available:
-    - Explicit Euler method (conditionally stable, fast for small time steps)
-    - Implicit Euler method (unconditionally stable, first-order accurate)
-    - Crank-Nicolson method (unconditionally stable, second-order accurate)
+  - Multiple numerical solvers available (explicit Euler, implicit Euler, and Crank-Nicolson methods)
 - **Self-Shadowing**: Local shadows cast by topography
 - **Self-Heating**: Re-absorption of scattered and radiated photons by surrounding facets
 - **Binary Systems**: Support for mutual shadowing (eclipses) and mutual heating between primary and secondary bodies
@@ -50,8 +46,9 @@ Pkg.test("AsteroidThermoPhysicalModels")
 - **Yarkovsky Effect**: Orbital perturbation due to asymmetric thermal emission
 - **YORP Effect**: Rotational perturbation due to asymmetric thermal emission
 
-### Coming Soon
-- Surface roughness modeling (at scales smaller than facets of the shape model)
+### Coming Soon (v0.2.0)
+- Surface roughness modeling integration with `AsteroidShapeModels.jl`
+- Enhanced heat conduction solver validation and benchmarks
 
 ## 🌟 Example
 
@@ -87,14 +84,12 @@ thermo_params = ThermoParams(
 )
 
 # Create TPM model with solver selection
-stpm = SingleAsteroidTPM(
-    shape,
-    thermo_params;
+stpm = SingleAsteroidTPM(shape, thermo_params;
     SELF_SHADOWING = true,
-    SELF_HEATING = true,
-    SOLVER = CrankNicolsonSolver(thermo_params),  # Choose solver
-    BC_UPPER = RadiationBoundaryCondition(),
-    BC_LOWER = InsulationBoundaryCondition()
+    SELF_HEATING   = true,
+    SOLVER         = CrankNicolsonSolver(thermo_params),  # Choose solver
+    BC_UPPER       = RadiationBoundaryCondition(),
+    BC_LOWER       = InsulationBoundaryCondition()
 )
 
 # Available solvers:
