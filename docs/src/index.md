@@ -84,12 +84,12 @@ n_depth = 41     # Number of depth steps
 thermo_params = ThermoParams(P, l, Γ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 
 # Create TPM model
-stpm = SingleAsteroidThermoPhysicalModel(shape, thermo_params;
+stpm = SingleAsteroidTPM(shape, thermo_params;
     SELF_SHADOWING = true,
-    SELF_HEATING = true,
-    SOLVER = ForwardEulerSolver(thermo_params),
-    BC_UPPER = RadiationBoundaryCondition(),
-    BC_LOWER = InsulationBoundaryCondition()
+    SELF_HEATING   = true,
+    SOLVER         = CrankNicolsonSolver(thermo_params),
+    BC_UPPER       = RadiationBoundaryCondition(),
+    BC_LOWER       = InsulationBoundaryCondition()
 )
 
 # Initialize temperature
@@ -141,13 +141,13 @@ Example setup for a binary asteroid system:
 
 ```julia
 # Create TPM models for primary and secondary
-primary_tpm = SingleAsteroidThermoPhysicalModel(shape_primary, thermo_params_primary; ...)
-secondary_tpm = SingleAsteroidThermoPhysicalModel(shape_secondary, thermo_params_secondary; ...)
+stpm1 = SingleAsteroidTPM(shape1, thermo_params1; ...)
+stpm2 = SingleAsteroidTPM(shape2, thermo_params2; ...)
 
 # Create binary TPM model
-btpm = BinaryAsteroidThermoPhysicalModel(primary_tpm, secondary_tpm;
+btpm = BinaryAsteroidTPM(stpm1, stpm2;
     MUTUAL_SHADOWING = true,
-    MUTUAL_HEATING = true
+    MUTUAL_HEATING   = true,
 )
 
 # Run TPM for binary system
