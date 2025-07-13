@@ -12,6 +12,31 @@ The thermophysical model (TPM) considers the following physical processes:
 4. **Mutual Shadowing**: For a binary asteroid, accounts for eclipses between the primary and secondary bodies.
 5. **Mutual Heating**: For a binary asteroid, considers thermal exchange between the primary and secondary bodies.
 
+## Symbols
+
+The following symbols are used throughout the package to represent various physical quantities:
+
+| Symbol | Unit | Description |
+| :----- | :--- | :---------- |
+| ``t``                | ``[\mathrm{s}]``                 | Time |
+| ``T``                | ``[\mathrm{K}]``                 | Temperature |
+| ``R_\text{vis}``     | ``[\text{-}]``                   | Reflectance for visible light |
+| ``R_\text{ir}``      | ``[\text{-}]``                   | Reflectance for thermal infrared |
+| ``F_\text{sun}``     | ``[\mathrm{W/m^2}]``             | Flux of direct sunlight |
+| ``F_\text{scat}``    | ``[\mathrm{W/m^2}]``             | Flux of scattered light |
+| ``F_\text{rad}``     | ``[\mathrm{W/m^2}]``             | Flux of thermal radiation from surrounding surface |
+| ``\rho``             | ``[\mathrm{kg/m^3}]``            | Density |
+| ``C_p``              | ``[\mathrm{J/K}]``               | Heat capacity at constant pressure |
+| ``P``                | ``[\mathrm{s}]``                 | Rotation period |
+| ``l``                | ``[\mathrm{m}]``                 | Thermal skin depth |
+| ``k``                | ``[\mathrm{W/(m \cdot K)}]``     | Thermal conductivity |
+| ``z``                | ``[\mathrm{m}]``                 | Depth |
+| ``E``                | ``[\mathrm{J}]``                 | Emittance energy |
+| ``\Gamma``           | ``[\mathrm{tiu}] = [\mathrm{J \cdot m^{-2} \cdot K^{-1} \cdot s^{-1/2}}]`` | Thermal inertia (cf. [Thermal inertia SI unit proposal](https://nathaniel.putzig.com/research/tiu.html))    |
+| ``\varepsilon``      | ``[\text{-}]``                   | Emissivity |
+| ``\Phi``             | ``[\mathrm{W/m^2}]``             | Solar energy flux |
+| ``\sigma_\text{SB}`` | ``[\mathrm{W/(m^2 \cdot K^4)}]`` | Stefan-Boltzmann constant |
+
 ## Heat Conduction Equation
 
 Heat conduction within the asteroid is modeled by the following one-dimensional heat diffusion equation:
@@ -113,25 +138,29 @@ The Yarkovsky effect is an orbital perturbation caused by the asymmetric thermal
 
 The YORP effect (Yarkovsky-O'Keefe-Radzievskii-Paddack effect) is a rotational perturbation resulting from thermal emission due to the asymmetric shape of the asteroid. This effect influences the rotation rate and the orientation of the asteroid's spin axis.
 
-## Symbols
+## Binary Asteroid Systems
 
-| Symbol | Unit | Description |
-| :----- | :--- | :---------- |
-| ``t``                | ``[\mathrm{s}]``                 | Time |
-| ``T``                | ``[\mathrm{K}]``                 | Temperature |
-| ``R_\text{vis}``     | ``[\text{-}]``                   | Reflectance for visible light |
-| ``R_\text{ir}``      | ``[\text{-}]``                   | Reflectance for thermal infrared |
-| ``F_\text{sun}``     | ``[\mathrm{W/m^2}]``             | Flux of direct sunlight |
-| ``F_\text{scat}``    | ``[\mathrm{W/m^2}]``             | Flux of scattered light |
-| ``F_\text{rad}``     | ``[\mathrm{W/m^2}]``             | Flux of thermal radiation from surrounding surface |
-| ``\rho``             | ``[\mathrm{kg/m^3}]``            | Density |
-| ``C_p``              | ``[\mathrm{J/K}]``               | Heat capacity at constant pressure |
-| ``P``                | ``[\mathrm{s}]``                 | Rotation period |
-| ``l``                | ``[\mathrm{m}]``                 | Thermal skin depth |
-| ``k``                | ``[\mathrm{W/(m \cdot K)}]``     | Thermal conductivity |
-| ``z``                | ``[\mathrm{m}]``                 | Depth |
-| ``E``                | ``[\mathrm{J}]``                 | Emittance energy |
-| ``\Gamma``           | ``[\mathrm{tiu}] = [\mathrm{J \cdot m^{-2} \cdot K^{-1} \cdot s^{-1/2}}]`` | Thermal inertia (cf. [Thermal inertia SI unit proposal](https://nathaniel.putzig.com/research/tiu.html))    |
-| ``\varepsilon``      | ``[\text{-}]``                   | Emissivity |
-| ``\Phi``             | ``[\mathrm{W/m^2}]``             | Solar energy flux |
-| ``\sigma_\text{SB}`` | ``[\mathrm{W/(m^2 \cdot K^4)}]`` | Stefan-Boltzmann constant |
+For binary asteroid systems, `AsteroidThermoPhysicalModels.jl` provides comprehensive modeling of thermal interactions between the primary and secondary bodies.
+
+### Coordinate Systems
+
+The package uses the following coordinate conventions:
+- **Primary-fixed frame**: The reference frame fixed to the primary body
+- **Secondary-fixed frame**: The reference frame fixed to the secondary body
+- **r₁₂**: Position vector from primary to secondary in the primary-fixed frame
+- **R₁₂**: Rotation matrix from primary to secondary frame
+- **R₂₁ = R₁₂ᵀ**: Rotation matrix from secondary to primary frame
+
+### Coordinate Transformations
+
+For binary systems, coordinate transformations are handled automatically by the unified API:
+```julia
+# The unified API handles all transformations internally
+update_flux_all!(btpm, r☉₁, r₁₂, R₁₂)
+```
+
+The package internally computes:
+- Sun position in secondary frame: `r☉₂ = R₁₂ * (r☉₁ - r₁₂)`
+- Primary position in secondary frame: `r₂₁ = -R₁₂ * r₁₂`
+
+These transformations ensure accurate calculation of mutual shadowing and heating effects.

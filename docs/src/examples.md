@@ -275,3 +275,35 @@ result.surface_temperature
 # - `n_time`  : The number of time steps to save temperature
 result.subsurface_temperature[2]  # Subsurface temperature for face ID 2
 ```
+
+## Using the Unified Flux API
+
+The v0.1.0 release introduces a unified flux update API that simplifies the interface and improves performance.
+
+### Single Asteroid
+
+```julia
+# Traditional approach (still supported)
+AsteroidThermoPhysicalModels.update_flux_sun!(stpm, r_sun)
+AsteroidThermoPhysicalModels.update_flux_scat_single!(stpm)
+AsteroidThermoPhysicalModels.update_flux_rad_single!(stpm)
+
+# New unified API (recommended)
+AsteroidThermoPhysicalModels.update_flux_all!(stpm, r_sun)
+```
+
+### Binary Asteroid
+
+```julia
+# Traditional approach (still supported)
+AsteroidThermoPhysicalModels.update_flux_sun!(btpm, r☉₁, r₁₂, R₁₂)
+AsteroidThermoPhysicalModels.update_flux_scat_single!(btpm)
+AsteroidThermoPhysicalModels.update_flux_rad_single!(btpm)
+AsteroidThermoPhysicalModels.mutual_heating!(btpm, r₁₂, R₂₁)
+
+# New unified API (recommended)
+# All coordinate transformations are handled internally
+AsteroidThermoPhysicalModels.update_flux_all!(btpm, r☉₁, r₁₂, R₁₂)
+```
+
+The unified API automatically handles all flux calculations and coordinate transformations, making the code cleaner and more efficient.
