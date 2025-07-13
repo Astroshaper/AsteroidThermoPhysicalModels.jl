@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Usage Examples · AsteroidThermoPhysicalModels.jl</title><meta name="title" content="Usage Examples · AsteroidThermoPhysicalModels.jl"/><meta property="og:title" content="Usage Examples · AsteroidThermoPhysicalModels.jl"/><meta property="twitter:title" content="Usage Examples · AsteroidThermoPhysicalModels.jl"/><meta name="description" content="Documentation for AsteroidThermoPhysicalModels.jl."/><meta property="og:description" content="Documentation for AsteroidThermoPhysicalModels.jl."/><meta property="twitter:description" content="Documentation for AsteroidThermoPhysicalModels.jl."/><meta property="og:url" content="https://Astroshaper.github.io/AsteroidThermoPhysicalModels.jl/examples/"/><meta property="twitter:url" content="https://Astroshaper.github.io/AsteroidThermoPhysicalModels.jl/examples/"/><link rel="canonical" href="https://Astroshaper.github.io/AsteroidThermoPhysicalModels.jl/examples/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script><link href="../assets/favicon.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">AsteroidThermoPhysicalModels.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Introduction</a></li><li><a class="tocitem" href="../physical_model/">Physical model</a></li><li class="is-active"><a class="tocitem" href>Usage Examples</a><ul class="internal"><li><a class="tocitem" href="#Single-Asteroid-Example-(Ryugu)"><span>Single Asteroid Example (Ryugu)</span></a></li><li><a class="tocitem" href="#Binary-Asteroid-Example-(Didymos-Dimorphos)"><span>Binary Asteroid Example (Didymos-Dimorphos)</span></a></li><li><a class="tocitem" href="#Analyzing-Results"><span>Analyzing Results</span></a></li><li><a class="tocitem" href="#Using-the-Unified-Flux-API"><span>Using the Unified Flux API</span></a></li></ul></li><li><a class="tocitem" href="../benchmarks/">Performance</a></li><li><a class="tocitem" href="../api/">API Reference</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Usage Examples</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Usage Examples</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl/blob/main/docs/src/examples.md#" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Usage-Examples"><a class="docs-heading-anchor" href="#Usage-Examples">Usage Examples</a><a id="Usage-Examples-1"></a><a class="docs-heading-anchor-permalink" href="#Usage-Examples" title="Permalink"></a></h1><p>This section provides detailed examples of how to use <code>AsteroidThermoPhysicalModels.jl</code> for various scenarios. For more detailed examples, please refer to the <a href="https://github.com/Astroshaper/Astroshaper-examples">Astroshaper-examples</a> repository.</p><h2 id="Single-Asteroid-Example-(Ryugu)"><a class="docs-heading-anchor" href="#Single-Asteroid-Example-(Ryugu)">Single Asteroid Example (Ryugu)</a><a id="Single-Asteroid-Example-(Ryugu)-1"></a><a class="docs-heading-anchor-permalink" href="#Single-Asteroid-Example-(Ryugu)" title="Permalink"></a></h2><p>This example demonstrates how to set up and run a thermophysical model for asteroid Ryugu using SPICE kernels for ephemerides.</p><pre><code class="language-julia hljs">using AsteroidShapeModels
+using AsteroidThermoPhysicalModels
+using Downloads
+using LinearAlgebra
+using Rotations
+using SPICE
+using StaticArrays
+
+##= Download Files =##
+paths_kernel = [
+    &quot;lsk/naif0012.tls&quot;,
+    &quot;pck/hyb2_ryugu_shape_v20190328.tpc&quot;,
+    &quot;fk/hyb2_ryugu_v01.tf&quot;,
+    &quot;spk/2162173_Ryugu.bsp&quot;,
+]
+paths_shape = [
+    &quot;SHAPE_SFM_49k_v20180804.obj&quot;,
+]
+
+for path_kernel in paths_kernel
+    url_kernel = &quot;https://data.darts.isas.jaxa.jp/pub/hayabusa2/old/2020/spice_bundle/spice_kernels/$(path_kernel)&quot;
+    filepath = joinpath(&quot;kernel&quot;, path_kernel)
+    mkpath(dirname(filepath))
+    isfile(filepath) || Downloads.download(url_kernel, filepath)
+end
+
+for path_shape in paths_shape
+    url_shape = &quot;https://data.darts.isas.jaxa.jp/pub/hayabusa2/paper/Watanabe_2019/$(path_shape)&quot;
+    filepath = joinpath(&quot;shape&quot;, path_shape)
+    mkpath(dirname(filepath))
+    isfile(filepath) || Downloads.download(url_shape, filepath)
+end
+
+##= Load data with SPICE =##
+for path_kernel in paths_kernel
+    filepath = joinpath(&quot;kernel&quot;, path_kernel)
+    SPICE.furnsh(filepath)
+end
+
+##= Ephemerides =##
+P = SPICE.convrt(7.63262, &quot;hours&quot;, &quot;seconds&quot;)  # Rotation period of Ryugu
+
+n_cycle = 2  # Number of cycles to perform TPM
+n_step_in_cycle = 72  # Number of time steps in one rotation period
+
+et_begin = SPICE.utc2et(&quot;2018-07-01T00:00:00&quot;)  # Start time of TPM
+et_end   = et_begin + P * n_cycle  # End time of TPM
+et_range = range(et_begin, et_end; length=n_step_in_cycle*n_cycle+1)
+
+&quot;&quot;&quot;
+- `time` : Ephemeris times
+- `sun`  : Sun&#39;s position in the RYUGU_FIXED frame
+&quot;&quot;&quot;
+ephem = (
+    time = collect(et_range),
+    sun  = [SVector{3}(SPICE.spkpos(&quot;SUN&quot;, et, &quot;RYUGU_FIXED&quot;, &quot;None&quot;, &quot;RYUGU&quot;)[1]) * 1000 for et in et_range],
+)
+
+SPICE.kclear()
+
+##= Load obj file =##
+path_obj = joinpath(&quot;shape&quot;, &quot;SHAPE_SFM_49k_v20180804.obj&quot;)
+    
+shape = load_shape_obj(path_obj; scale=1000, with_face_visibility=true, with_bvh=true)
+n_face = length(shape.faces)  # Number of faces
+
+##= Thermal properties =##
+k  = 0.1     # Thermal conductivity [W/m/K]
+ρ  = 1270.0  # Density [kg/m³]
+Cₚ = 600.0   # Heat capacity [J/kg/K]
+    
+l = AsteroidThermoPhysicalModels.thermal_skin_depth(P, k, ρ, Cₚ)  # Thermal skin depth [m]
+Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)        # Thermal inertia [tiu]
+
+R_vis = 0.04  # Reflectance in visible light [-]
+R_ir  = 0.0   # Reflectance in thermal infrared [-]
+ε     = 1.0   # Emissivity [-]
+
+z_max = 0.6   # Depth of the lower boundary of a heat conduction equation [m]
+n_depth = 41  # Number of depth steps
+Δz = z_max / (n_depth - 1)  # Depth step width [m]
+
+thermo_params = AsteroidThermoPhysicalModels.ThermoParams(P, l, Γ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+
+##= Setting of TPM =##
+stpm = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params;
+    SELF_SHADOWING = true,
+    SELF_HEATING   = true,
+    SOLVER         = AsteroidThermoPhysicalModels.CrankNicolsonSolver(thermo_params),
+    BC_UPPER       = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
+    BC_LOWER       = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
+)
+AsteroidThermoPhysicalModels.init_temperature!(stpm, 200)
+
+##= Run TPM =##
+times_to_save = ephem.time[end-n_step_in_cycle:end]  # Save temperature during the final rotation
+face_ID = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature
+
+result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, times_to_save, face_ID)
+AsteroidThermoPhysicalModels.export_TPM_results(&quot;path/to/save&quot;, result)</code></pre><h2 id="Binary-Asteroid-Example-(Didymos-Dimorphos)"><a class="docs-heading-anchor" href="#Binary-Asteroid-Example-(Didymos-Dimorphos)">Binary Asteroid Example (Didymos-Dimorphos)</a><a id="Binary-Asteroid-Example-(Didymos-Dimorphos)-1"></a><a class="docs-heading-anchor-permalink" href="#Binary-Asteroid-Example-(Didymos-Dimorphos)" title="Permalink"></a></h2><p>This example demonstrates how to set up and run a thermophysical model for the binary asteroid system Didymos-Dimorphos using SPICE kernels for ephemerides.</p><pre><code class="language-julia hljs">using AsteroidShapeModels
+using AsteroidThermoPhysicalModels
+using Downloads
+using LinearAlgebra
+using Rotations
+using SPICE
+using StaticArrays
+
+##= SPICE kernels =##
+paths_kernel = [
+    &quot;fk/hera_v10.tf&quot;,
+    &quot;lsk/naif0012.tls&quot;,
+    &quot;pck/hera_didymos_v06.tpc&quot;,
+    &quot;spk/de432s.bsp&quot;,
+    &quot;spk/didymos_hor_000101_500101_v01.bsp&quot;,
+    &quot;spk/didymos_gmv_260901_311001_v01.bsp&quot;,
+]
+
+##= Shape models =##
+paths_shape = [
+    &quot;g_50677mm_rad_obj_didy_0000n00000_v001.obj&quot;,
+    &quot;g_08438mm_lgt_obj_dimo_0000n00000_v002.obj&quot;,
+]
+
+##= Download SPICE kernels =##
+for path_kernel in paths_kernel
+    url_kernel = &quot;https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/$(path_kernel)?at=refs%2Ftags%2Fv161_20230929_001&quot;
+    filepath = joinpath(&quot;kernel&quot;, path_kernel)
+    mkpath(dirname(filepath))
+    isfile(filepath) || Downloads.download(url_kernel, filepath)
+end
+
+##= Download shape models =##
+for path_shape in paths_shape
+    url_kernel = &quot;https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/dsk/$(path_shape)?at=refs%2Ftags%2Fv161_20230929_001&quot;
+    filepath = joinpath(&quot;shape&quot;, path_shape)
+    mkpath(dirname(filepath))
+    isfile(filepath) || Downloads.download(url_kernel, filepath)
+end
+
+##= Load the SPICE kernels =##
+for path_kernel in paths_kernel
+    filepath = joinpath(&quot;kernel&quot;, path_kernel)
+    SPICE.furnsh(filepath)
+end
+
+##= Ephemerides =##
+P₁ = SPICE.convrt(2.2593, &quot;hours&quot;, &quot;seconds&quot;)  # Rotation period of Didymos
+P₂ = SPICE.convrt(11.93 , &quot;hours&quot;, &quot;seconds&quot;)  # Rotation period of Dimorphos
+
+n_cycle = 2  # Number of cycles to perform TPM
+n_step_in_cycle = 72  # Number of time steps in one rotation period
+
+et_begin = SPICE.utc2et(&quot;2027-02-18T00:00:00&quot;)  # Start time of TPM
+et_end   = et_begin + P₂ * n_cycle  # End time of TPM
+et_range = range(et_begin, et_end; length=n_step_in_cycle*n_cycle+1)
+
+&quot;&quot;&quot;
+- `time` : Ephemeris times
+- `sun`  : Sun&#39;s position in the primary&#39;s frame (DIDYMOS_FIXED)
+- `sec`  : Secondary&#39;s position in the primary&#39;s frame (DIDYMOS_FIXED)
+- `P2S`  : Rotation matrix from primary to secondary frames
+&quot;&quot;&quot;
+ephem = (
+    time = collect(et_range),
+    sun  = [SVector{3}(SPICE.spkpos(&quot;SUN&quot;      , et, &quot;DIDYMOS_FIXED&quot;  , &quot;None&quot;, &quot;DIDYMOS&quot;  )[1]) * 1000 for et in et_range],
+    sec  = [SVector{3}(SPICE.spkpos(&quot;DIMORPHOS&quot;, et, &quot;DIDYMOS_FIXED&quot;  , &quot;None&quot;, &quot;DIDYMOS&quot;  )[1]) * 1000 for et in et_range],
+    P2S  = [RotMatrix{3}(SPICE.pxform(&quot;DIDYMOS_FIXED&quot;  , &quot;DIMORPHOS_FIXED&quot;, et)) for et in et_range],
+)
+
+SPICE.kclear()
+
+##= Load the shape models =##
+path_shape1_obj = joinpath(&quot;shape&quot;, &quot;g_50677mm_rad_obj_didy_0000n00000_v001.obj&quot;)
+path_shape2_obj = joinpath(&quot;shape&quot;, &quot;g_08438mm_lgt_obj_dimo_0000n00000_v002.obj&quot;)
+    
+shape1 = load_shape_obj(path_shape1_obj; scale=1000, with_face_visibility=true, with_bvh=true)
+shape2 = load_shape_obj(path_shape2_obj; scale=1000, with_face_visibility=true, with_bvh=true)
+
+n_face_shape1 = length(shape1.faces)  # Number of faces of Didymos
+n_face_shape2 = length(shape2.faces)  # Number of faces of Dimorphos
+    
+##= Thermal properties of Didymos &amp; Dimorphos [cf. Michel+2016; Naidu+2020] =##
+k  = 0.125   # Thermal conductivity [W/m/K]
+ρ  = 2170.0  # Density [kg/m³]
+Cₚ = 600.0   # Heat capacity [J/kg/K]
+
+l₁ = AsteroidThermoPhysicalModels.thermal_skin_depth(P₁, k, ρ, Cₚ)  # Thermal skin depth for Didymos
+l₂ = AsteroidThermoPhysicalModels.thermal_skin_depth(P₂, k, ρ, Cₚ)  # Thermal skin depth for Dimorphos
+Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)          # Thermal inertia for Didymos and Dimorphos [tiu]
+
+R_vis = 0.059  # Reflectance in visible light [-]
+R_ir  = 0.0    # Reflectance in thermal infrared [-]
+ε     = 0.9    # Emissivity [-]
+
+z_max = 0.6   # Depth of the lower boundary of a heat conduction equation [m]
+n_depth = 41  # Number of depth steps
+Δz = z_max / (n_depth - 1)  # Depth step width [m]
+
+thermo_params1 = AsteroidThermoPhysicalModels.ThermoParams(P₁, l₁, Γ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+thermo_params2 = AsteroidThermoPhysicalModels.ThermoParams(P₂, l₂, Γ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+
+##= Setting of TPM =##
+stpm1 = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape1, thermo_params1;
+    SELF_SHADOWING = true,
+    SELF_HEATING   = true,
+    SOLVER         = AsteroidThermoPhysicalModels.CrankNicolsonSolver(thermo_params1),
+    BC_UPPER       = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
+    BC_LOWER       = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
+)
+
+stpm2 = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape2, thermo_params2;
+    SELF_SHADOWING = true,
+    SELF_HEATING   = true,
+    SOLVER         = AsteroidThermoPhysicalModels.CrankNicolsonSolver(thermo_params2),
+    BC_UPPER       = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
+    BC_LOWER       = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
+)
+
+btpm  = AsteroidThermoPhysicalModels.BinaryAsteroidTPM(stpm1, stpm2; MUTUAL_SHADOWING=true, MUTUAL_HEATING=true)
+AsteroidThermoPhysicalModels.init_temperature!(btpm, 200.)
+    
+##= Run TPM =##
+times_to_save = ephem.time[end-n_step_in_cycle:end]  # Save temperature during the final rotation
+face_ID_pri = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature of the primary
+face_ID_sec = [1, 2, 3, 4, 20]  # Face indices to save subsurface temperature of the secondary
+
+result = AsteroidThermoPhysicalModels.run_TPM!(btpm, ephem, times_to_save, face_ID_pri, face_ID_sec)
+AsteroidThermoPhysicalModels.export_TPM_results(&quot;path/to/save&quot;, result)</code></pre><h2 id="Analyzing-Results"><a class="docs-heading-anchor" href="#Analyzing-Results">Analyzing Results</a><a id="Analyzing-Results-1"></a><a class="docs-heading-anchor-permalink" href="#Analyzing-Results" title="Permalink"></a></h2><p>After running the TPM, you can analyze the results to understand the thermal behavior of the asteroid and its non-gravitational effects.</p><pre><code class="language-julia hljs"># Access physical quantities
+result.times  # Time steps for thermophysical modeling [s]
+result.E_in   # Input energy per second on the whole surface [W]
+result.E_out  # Output energy per second from the whole surface [W]
+result.force  # Thermal force on the asteroid at the body-fixed frame [N]
+result.torque # Thermal torque on the asteroid at the body-fixed frame [N ⋅ m]
+
+# For a binary asteroid, you can access the results of the primary and secondary as follows:
+result.pri.force  # Thermal force on the primary body at the body-fixed frame [N]
+result.sec.force  # Thermal force on the secondary body at the body-fixed frame [N]
+
+# Access surface temperature [K]
+# A matrix in size of `(n_face, n_time)`
+# - `n_face` : Number of faces of the shape model
+# - `n_time` : Number of time steps to save surface temperature
+result.surface_temperature
+
+# Access subsurface temperatures [K]
+# As a function of depth [m] and time [s], `Dict` with face ID as key and a matrix `(n_depth, n_time)` as an entry.
+# - `n_depth` : The number of the depth nodes
+# - `n_time`  : The number of time steps to save temperature
+result.subsurface_temperature[2]  # Subsurface temperature for face ID 2</code></pre><h2 id="Using-the-Unified-Flux-API"><a class="docs-heading-anchor" href="#Using-the-Unified-Flux-API">Using the Unified Flux API</a><a id="Using-the-Unified-Flux-API-1"></a><a class="docs-heading-anchor-permalink" href="#Using-the-Unified-Flux-API" title="Permalink"></a></h2><p>The v0.1.0 release introduces a unified flux update API that simplifies the interface and improves performance.</p><h3 id="Single-Asteroid"><a class="docs-heading-anchor" href="#Single-Asteroid">Single Asteroid</a><a id="Single-Asteroid-1"></a><a class="docs-heading-anchor-permalink" href="#Single-Asteroid" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Traditional approach (still supported)
+AsteroidThermoPhysicalModels.update_flux_sun!(stpm, r_sun)
+AsteroidThermoPhysicalModels.update_flux_scat_single!(stpm)
+AsteroidThermoPhysicalModels.update_flux_rad_single!(stpm)
+
+# New unified API (recommended)
+AsteroidThermoPhysicalModels.update_flux_all!(stpm, r_sun)</code></pre><h3 id="Binary-Asteroid"><a class="docs-heading-anchor" href="#Binary-Asteroid">Binary Asteroid</a><a id="Binary-Asteroid-1"></a><a class="docs-heading-anchor-permalink" href="#Binary-Asteroid" title="Permalink"></a></h3><pre><code class="language-julia hljs"># Traditional approach (still supported)
+AsteroidThermoPhysicalModels.update_flux_sun!(btpm, r☉₁, r₁₂, R₁₂)
+AsteroidThermoPhysicalModels.update_flux_scat_single!(btpm)
+AsteroidThermoPhysicalModels.update_flux_rad_single!(btpm)
+AsteroidThermoPhysicalModels.mutual_heating!(btpm, r₁₂, R₂₁)
+
+# New unified API (recommended)
+# All coordinate transformations are handled internally
+AsteroidThermoPhysicalModels.update_flux_all!(btpm, r☉₁, r₁₂, R₁₂)</code></pre><p>The unified API automatically handles all flux calculations and coordinate transformations, making the code cleaner and more efficient.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../physical_model/">« Physical model</a><a class="docs-footer-nextpage" href="../benchmarks/">Performance »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Sunday 13 July 2025 22:54">Sunday 13 July 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
