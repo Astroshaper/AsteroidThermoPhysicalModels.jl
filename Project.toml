@@ -1,7 +1,7 @@
 name = "AsteroidThermoPhysicalModels"
 uuid = "ab46f4a3-3c83-4d86-98d6-41a8b1a2e76e"
 authors = ["Masanori Kanamaru"]
-version = "0.0.8-DEV"
+version = "0.1.0"
 
 [deps]
 AsteroidShapeModels = "a7943d8e-5d65-4248-ae23-0082f5115a05"
