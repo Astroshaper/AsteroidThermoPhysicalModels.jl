@@ -1,6 +1,7 @@
 using AsteroidShapeModels
 using AsteroidThermoPhysicalModels
 using BenchmarkTools
+using Dates
 using Downloads
 using LinearAlgebra
 using Pkg
@@ -10,7 +11,7 @@ using StaticArrays
 using Statistics
 
 # Import required functions from AsteroidThermoPhysicalModels
-using AsteroidThermoPhysicalModels: run_TPM!, update_flux_sun!, update_flux_scat_single!, update_flux_rad_single!, update_temperature!, energy_in, energy_out
+using AsteroidThermoPhysicalModels: run_TPM!, update_flux_all!, update_flux_sun!, update_flux_scat_single!, update_flux_rad_single!, update_temperature!, energy_in, energy_out
 
 # Create benchmark suite
 const SUITE = BenchmarkGroup()
@@ -316,7 +317,16 @@ end
 
 SUITE["components"] = BenchmarkGroup()
 
-# Shadow calculation overhead
+# Flux calculation overhead (using unified API)
+SUITE["components"]["ryugu_flux_calculation"] = @benchmarkable begin
+    for i in 1:length(ephem.time)
+        update_flux_all!(stpm, ephem.sun[i])
+    end
+end setup = begin
+    stpm, ephem = setup_ryugu_tpm(1)
+end
+
+# Shadow calculation overhead (individual)
 SUITE["components"]["ryugu_shadow_overhead"] = @benchmarkable begin
     for i in 1:length(ephem.time)
         update_flux_sun!(stpm, ephem.sun[i])
@@ -364,6 +374,18 @@ end setup = begin
     face_ID = [1, 100, 1000]
 end
 
+# Binary asteroid flux calculation
+SUITE["components"]["didymos_flux_calculation"] = @benchmarkable begin
+    for i in 1:length(ephem.time)
+        r☉₁ = ephem.sun[i]
+        r₁₂ = ephem.sec[i]
+        R₁₂ = ephem.P2S[i]
+        update_flux_all!(btpm, r☉₁, r₁₂, R₁₂)
+    end
+end setup = begin
+    btpm, ephem = setup_didymos_tpm(1)
+end
+
 # =====================================
 # Utility functions
 # =====================================
@@ -380,7 +402,14 @@ function run_benchmarks(; save_results=true)
     
     if save_results
         # Get package version
-        pkg_version = Pkg.project().version
+        try
+            pkg_version = Pkg.project().version
+            if isnothing(pkg_version)
+                pkg_version = "dev"
+            end
+        catch
+            pkg_version = "unknown"
+        end
         
         # Save results with timestamp and version
         timestamp = Dates.format(now(), "yyyy-mm-dd_HHMMSS")
