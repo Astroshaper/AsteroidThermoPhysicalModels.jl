@@ -8,24 +8,27 @@ The following benchmarks were performed on Apple M4 (macOS, single-threaded):
 
 ### Single Asteroid (Ryugu)
 - **Shape complexity**: 49,152 faces
-- **1 rotation** (72 time steps): ~5.2 seconds
-- **20 rotations** (1,440 time steps): ~101 seconds (1.7 minutes)
+- **1 rotation** (72 time steps): ~5.1 seconds
+- **20 rotations** (1,440 time steps): ~103 seconds (1.7 minutes)
 - **Memory usage**: 152 KiB (20 rotations), 5.8 KiB (1 rotation)
 - **Allocations**: 20 (20 rotations), 16 (1 rotation)
 - **With shadows and self-heating enabled**
 
 ### Binary System (Didymos-Dimorphos)
-- **Primary**: 1,996 faces, **Secondary**: 3,072 faces
-- **1 rotation** (72 time steps): ~4.6 seconds
-- **20 rotations** (1,440 time steps): ~92 seconds (1.5 minutes)
-- **Memory usage**: 53.65 MiB (20 rotations), 1.70 MiB (1 rotation)
-- **Allocations**: 594,141 (20 rotations), 3,409 (1 rotation)
+- **Primary**: 1,996 faces, **Secondary**: 3,072 faces (5,068 total)
+- **1 rotation** (72 time steps): ~4.7 seconds (based on Dimorphos' rotation period)
+- **20 rotations** (1,440 time steps): ~89 seconds (1.5 minutes)
+- **Memory usage**: 531 MiB (20 rotations), 28.1 MiB (1 rotation)
+- **Allocations**: 13.4M (20 rotations), 747k (1 rotation)
 - **With mutual shadowing and heating enabled**
+- **Note**: Rotation counts refer to Dimorphos (secondary) rotation periods
 
 ### Component Performance (per time step)
-- **Shadow calculations**: ~0.38 seconds (27.3s for 72 steps)
-- **Self-heating**: ~0.41 seconds (29.4s for 72 steps)
-- **Temperature update**: ~0.40 seconds (28.5s for 72 steps)
+- **Shadow calculations**: ~0.014 seconds (1.0s for 72 steps) - **27x faster with v0.4.1**
+- **Self-heating**: ~0.025 seconds (1.8s for 72 steps)
+- **Temperature update**: ~0.023 seconds (1.6s for 72 steps)
+- **Unified flux calculation**: ~0.040 seconds (2.9s for 72 steps) for Ryugu
+- **Unified flux calculation**: ~0.062 seconds (4.5s for 72 steps) for Didymos
 
 *Note: Component benchmarks show total time for 72 calls in isolation*
 
@@ -67,7 +70,7 @@ For Ryugu (49k faces, 41 depth layers):
 # Fastest configuration (no shadows or self-heating)
 stpm = SingleAsteroidTPM(shape, thermo_params;
     SELF_SHADOWING = false,
-    SELF_HEATING = false
+    SELF_HEATING   = false
 )
 ```
 
@@ -83,26 +86,17 @@ Larger time steps can be used for initial calculations:
 n_step_in_cycle = 36  # Instead of 72
 ```
 
-### 4. Parallel Execution
-
-The package supports multi-threading for some operations:
-```julia
-# Start Julia with multiple threads
-# $ julia -t 8
-
-# The visibility graph computation will use available threads
-```
-
 ## Version Performance History
 
-### v0.0.8-DEV (Current)
-- Added comprehensive benchmark suite
-- Performance tracking infrastructure
-- Migrated to AsteroidShapeModels.jl v0.4.0 with batch illumination processing
-- Improved visibility graph API
-- **Performance**: Ryugu 20 rotations in ~101s, Didymos in ~92s
-- **Memory**: Ryugu uses 152 KiB, but Didymos binary system shows higher allocation count (594k allocations)
-- **Latest benchmark**: 2025-07-09 (Apple M4)
+### v0.1.0 (Current)
+- Updated to `AsteroidShapeModels.jl` v0.4.1 with critical bug fixes
+- Implemented unified flux update API (`update_flux_all!`)
+- Fixed coordinate transformation bug in binary systems
+- **Performance**: Ryugu 20 rotations in ~103s, Didymos in ~89s
+- **Memory**: Ryugu uses 152 KiB with minimal allocations (20)
+- **Allocations**: Binary system shows high allocation count (13.4M) due to `apply_eclipse_shadowing!` implementation
+- **Shadow calculations**: 27x faster (0.379 → 0.014 s/call)
+- **Latest benchmark**: 2025-07-13 (Apple M4)
 
 ### v0.0.7
 - Memory optimizations in flux calculations
