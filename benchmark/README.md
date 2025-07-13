@@ -46,7 +46,8 @@ The benchmark suite includes:
 - Mutual shadowing and heating enabled
 
 ### 3. **Component Analysis**
-- Shadow calculation overhead
+- Unified flux calculation (update_flux_all!)
+- Shadow calculation overhead (individual)
 - Self-heating calculations
 - Temperature update performance
 - Memory allocation patterns
@@ -85,7 +86,7 @@ To track performance over time:
 ## Optimization Targets
 
 Key areas for optimization based on profiling:
-1. **Shadow calculations** (isilluminated function) - O(N²) complexity
-2. **Visibility graph queries** - Frequent allocations
-3. **Heat conduction solvers** - Lack of SIMD optimizations
-4. **Memory allocations** - Unnecessary array copies
+1. **Shadow calculations** - Now using batch processing with AsteroidShapeModels.jl v0.4.1
+2. **Coordinate transformations** - Centralized in update_flux_all!
+3. **Heat conduction solvers** - Potential for SIMD optimizations
+4. **Memory allocations** - Reduced with unified API

@@ -68,7 +68,12 @@ println("\nResults saved to: $results_file")
 print_summary(results)
 
 # Get package version
-pkg_version = Pkg.project().version
+pkg_version = try
+    ver = Pkg.project().version
+    isnothing(ver) ? "dev" : ver
+catch
+    "unknown"
+end
 
 # Export human-readable report
 report_file = joinpath(@__DIR__, "results", "benchmark_report_$(timestamp).txt")
