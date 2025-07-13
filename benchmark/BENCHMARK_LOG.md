@@ -192,6 +192,61 @@ Component analysis (Ryugu):
 
 ---
 
+### 2025-07-13 - v0.0.8-DEV - 7dc6cbb
+
+**Environment:**
+- Julia: 1.11.6
+- CPU: Apple M4
+- OS: macOS Darwin 24.5.0
+- Threads: 1
+
+**Results:**
+```
+Ryugu (49,152 faces):
+  1 rotation (72 steps):
+    Time: 5.086 seconds
+    Memory: 5.80 KiB
+    Allocations: 16
+  20 rotations (1,440 steps):
+    Time: 103.099 seconds
+    Memory: 152.17 KiB
+    Allocations: 20
+
+Didymos-Dimorphos (1,996 + 3,072 faces = 5,068 total):
+  1 rotation (72 steps):
+    Time: 4.663 seconds (median of 2 samples)
+    Memory: 28.11 MiB
+    Allocations: 747,283
+  20 rotations (1,440 steps):
+    Time: 89.279 seconds
+    Memory: 530.65 MiB
+    Allocations: 13,376,385
+
+Component analysis (Ryugu):
+  - Shadow calculation: 1.040 seconds (72 calls) = 0.014 s/call
+  - Self-heating: 1.833 seconds (72 calls) = 0.025 s/call
+  - Flux calculation (unified API): 2.890 seconds (72 calls) = 0.040 s/call
+  - Temperature update: 1.633 seconds (72 steps) = 0.023 s/step
+
+Component analysis (Didymos):
+  - Flux calculation (unified API): 4.468 seconds (median, 72 calls) = 0.062 s/call
+    Memory: 28.09 MiB, Allocations: 747,251
+
+Memory benchmark:
+  - Ryugu full simulation: 5.120 seconds, 1.88 MiB, 36 allocations
+```
+
+**Notes:**
+- First benchmark after updating to AsteroidShapeModels.jl v0.4.1 with unified flux API
+- Unified API (`update_flux_all!`) shows excellent performance for both single and binary asteroids
+- Binary system allocations remain high due to `apply_eclipse_shadowing!` implementation
+- Shadow calculation performance improved significantly: 0.379 s/call → 0.014 s/call for Ryugu
+- Overall performance improvement for Ryugu: component benchmarks ~20x faster than v0.0.8-DEV-a89cfe4
+- Binary system shows improved time performance despite high allocations
+- The unified API successfully encapsulates complex coordinate transformations without performance penalty
+
+---
+
 ## Template for new entries
 
 ```markdown
