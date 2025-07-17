@@ -6,23 +6,16 @@
 
 ### Installation
 
-To install `AsteroidThermoPhysicalModels.jl`, use Julia's package manager:
-
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl")
-```
-
-If you'd like to install a specific version, you can add the version number:
-
-```julia
-using Pkg
-Pkg.add(url="https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl#0.0.6") 
-```
-
-Then, load the package:
-```julia
+Pkg.add("AsteroidThermoPhysicalModels")
 using AsteroidThermoPhysicalModels
+```
+
+Or in the Julia REPL package mode:
+```
+julia> ]  # Press ] to enter package mode
+pkg> add AsteroidThermoPhysicalModels
 ```
 
 ### Update and Test
