@@ -4,13 +4,13 @@ This document outlines the development roadmap for `AsteroidThermoPhysicalModels
 
 ## Release Process
 
-### For v0.1.0:
+### For v0.1.1:
 
-1. Update `Project.toml` version to `0.1.0`
-2. Update CHANGELOG.md with release date
+1. Update `Project.toml` version to `0.1.1`
+2. Update `CHANGELOG.md` with release date
 3. Ensure all tests pass
-4. Create git tag: `git tag -a v0.1.0 -m "Release v0.1.0"`
-5. Push tag: `git push origin v0.1.0`
+4. Create git tag: `git tag -a v0.1.1 -m "Release v0.1.1"`
+5. Push tag: `git push origin v0.1.1`
 6. Create GitHub release with detailed notes
 7. Register in Julia General Registry
    - Create an issue in the repository with:
@@ -21,10 +21,10 @@ This document outlines the development roadmap for `AsteroidThermoPhysicalModels
 ### Post-release:
 
 1. Update `Project.toml` version to `0.2.0-DEV`
-2. Start new "Unreleased" section in CHANGELOG.md
-3. Update this ROADMAP for next version
+2. Start new "Unreleased" section in `CHANGELOG.md`
+3. Update this `ROADMAP.md` for next version
 
-## v0.1.0 Release (Ready for Release)
+## v0.1.0 - Transplantation of geometry processing to `AsteroidShapeModels.jl` (Released 2025-07-13)
 
 The v0.1.0 release marks a significant milestone with stabilized core APIs, critical bug fixes, and improved performance. This release includes full support for `AsteroidShapeModels.jl` v0.4.1 with its eclipse shadowing bug fixes and new unified flux API.
 
@@ -52,23 +52,24 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs, crit
   - [x] Added comprehensive migration guide in `CHANGELOG.md`
   - [x] Updated benchmark documentation
 
-## Breaking Changes in v0.1.0
-
-### From v0.0.7 to v0.1.0
+### Breaking Changes in from v0.0.7 to v0.1.0
 
 1. **Visibility API changes** (via AsteroidShapeModels.jl v0.3.0 → v0.4.1)
-   - Direct access to `shape.visiblefacets[i]` replaced with function calls
-   - See migration guide in `CHANGELOG.md` for details
+- Direct access to `shape.visiblefacets[i]` replaced with function calls
+- See migration guide in `CHANGELOG.md` for details
 
 2. **Minimum Julia version**: 1.6 → 1.10
 
 3. **New unified flux API**
-   - Binary asteroid flux updates now use `update_flux_all!`
-   - Coordinate transformations centralized
+- Binary asteroid flux updates now use `update_flux_all!`
+- Coordinate transformations centralized
 
-## Future Versions
+---
 
-### v0.1.1 (Near-term Improvements)
+## v0.1.1 - Performance and Test Improvements (Target: August 2025)
+
+- [ ] **Update to `AsteroidShapeModels.jl` v0.4.2**
+  - Illumination evaluation was optimized in v0.4.2, which will lead to ~2.5x faster shadow calculations.
 
 - [ ] **Code organization and refactoring**
   - [ ] Split long files into smaller, more manageable modules
@@ -88,7 +89,7 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs, crit
   - [ ] Test edge cases and error conditions
   - [ ] Remove geometric operation tests that duplicate `AsteroidShapeModels.jl` tests
 
-### v0.2.0 (Planned Features)
+## v0.2.0 - Planned Features (Target: September 2025)
 
 - [ ] **Heat Conduction Solver Enhancements**
   - [ ] Validate numerical methods against analytical solutions
@@ -101,7 +102,7 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs, crit
   - [ ] Adapt thermal calculations for sub-facet scale effects
   - [ ] Validate against observations with rough surfaces
 
-### v0.3.0 (API Redesign)
+## v0.3.0 - API Redesign (Target: October 2025)
 
 - [ ] **Problem-Solver Architecture**
   - [ ] Implement `AbstractThermoPhysicalProblem` interface
@@ -114,7 +115,7 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs, crit
   - [ ] Flexible output system for user-specified quantities
   - [ ] Coordinate transformation support for forces and torques
 
-### v0.4.0 (Performance Optimizations)
+## v0.4.0 - Performance Optimizations (Target: November 2025)
 
 - [ ] **Computational Enhancements**
   - [ ] Multi-threading support
@@ -126,7 +127,7 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs, crit
   - [ ] Illumination state caching for full rotation
   - [ ] Temperature convergence criteria
 
-### v0.5.0 (Extended Features)
+## v0.5.0 - Extended Features (Target: December 2025)
 
 - [ ] **Extended Physics**
   - [ ] Coupled binary asteroid dynamics
@@ -134,7 +135,7 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs, crit
   - [ ] Sublimation modeling for cometary bodies
   - [ ] Temperature-dependent material properties
 
-### v1.0.0 (Long-term Goals)
+## v1.0.0 - Stable Release (Target: January 2026)
 
 - [ ] **API stability**
   - [ ] Finalized and stable public API
