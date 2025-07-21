@@ -8,31 +8,43 @@ The following benchmarks were performed on Apple M4 (macOS, single-threaded):
 
 ### Single Asteroid (Ryugu)
 - **Shape complexity**: 49,152 faces
-- **1 rotation** (72 time steps): ~5.1 seconds
-- **20 rotations** (1,440 time steps): ~103 seconds (1.7 minutes)
+- **1 rotation** (72 time steps): ~4.8 seconds
+- **20 rotations** (1,440 time steps): ~89 seconds (1.5 minutes)
 - **Memory usage**: 152 KiB (20 rotations), 5.8 KiB (1 rotation)
 - **Allocations**: 20 (20 rotations), 16 (1 rotation)
 - **With shadows and self-heating enabled**
 
 ### Binary System (Didymos-Dimorphos)
 - **Primary**: 1,996 faces, **Secondary**: 3,072 faces (5,068 total)
-- **1 rotation** (72 time steps): ~4.7 seconds (based on Dimorphos' rotation period)
-- **20 rotations** (1,440 time steps): ~89 seconds (1.5 minutes)
-- **Memory usage**: 531 MiB (20 rotations), 28.1 MiB (1 rotation)
-- **Allocations**: 13.4M (20 rotations), 747k (1 rotation)
+- **1 rotation** (72 time steps): ~4.6 seconds (based on Dimorphos' rotation period)
+- **20 rotations** (1,440 time steps): ~94 seconds (1.6 minutes)
+- **Memory usage**: 612 MiB (20 rotations), 30.5 MiB (1 rotation)
+- **Allocations**: 15.6M (20 rotations), 814k (1 rotation)
 - **With mutual shadowing and heating enabled**
 - **Note**: Rotation counts refer to Dimorphos (secondary) rotation periods
 
-### Component Performance (per time step)
-- **Shadow calculations**: ~0.014 seconds (1.0s for 72 steps) - **27x faster with v0.4.1**
-- **Self-heating**: ~0.025 seconds (1.8s for 72 steps)
-- **Temperature update**: ~0.023 seconds (1.6s for 72 steps)
-- **Unified flux calculation**: ~0.040 seconds (2.9s for 72 steps) for Ryugu
-- **Unified flux calculation**: ~0.062 seconds (4.5s for 72 steps) for Didymos
+### Component Performance (72 time steps)
+- **Shadow calculations**: ~0.39 seconds - **2.7x faster with v0.4.2**
+- **Self-heating**: ~1.9 seconds
+- **Temperature update**: ~1.7 seconds
+- **Unified flux calculation**: ~2.3 seconds for Ryugu
+- **Unified flux calculation**: ~4.5 seconds for Didymos
 
-*Note: Component benchmarks show total time for 72 calls in isolation*
+### Time Distribution (Single Asteroid)
+For a typical single rotation simulation:
+- **Flux calculation**: 48.9%
+  - **Shadow overhead**: 8.3%
+  - **Self-heating**: 39.1%
+- **Temperature update**: 36.3%
 
-*Note: Performance may vary depending on CPU architecture. Intel/AMD processors may show different characteristics.*
+
+*Note: Percentages sum to more than 100% as components are measured independently*
+
+### Performance History
+- **v0.4.1 → v0.4.2**: Shadow calculations improved by 2.7x due to face maximum elevation optimization
+- **v0.3.0 → v0.4.1**: Shadow calculations improved by 27x with new illumination API
+
+*Note: Benchmarks performed on 2025-07-21 with AsteroidShapeModels.jl v0.4.2*
 
 ## Performance Considerations
 
