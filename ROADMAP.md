@@ -24,7 +24,7 @@ This document outlines the development roadmap for `AsteroidThermoPhysicalModels
 2. Start new "Unreleased" section in `CHANGELOG.md`
 3. Update this `ROADMAP.md` for next version
 
-## v0.1.0 - Transplantation of geometry processing to `AsteroidShapeModels.jl` (Released 2025-07-13)
+## v0.1.0 - Moved geometry processing to `AsteroidShapeModels.jl` (Released 2025-07-13)
 
 The v0.1.0 release marks a significant milestone with stabilized core APIs, critical bug fixes, and improved performance. This release includes full support for `AsteroidShapeModels.jl` v0.4.1 with its eclipse shadowing bug fixes and new unified flux API.
 
@@ -65,7 +65,7 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs, crit
 - Coordinate transformations centralized
 
 ---
-    **↓ Planned Releases ↓**
+**↓ Planned Releases ↓**
 ---
 
 ## v0.1.1 - Performance and Test Improvements (Target: August 2025)
