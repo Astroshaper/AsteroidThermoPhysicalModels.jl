@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Updated `AsteroidShapeModels.jl` dependency from v0.4.1 to v0.4.2
-  - Benefit from ~2.5x faster illumination calculations due to face maximum elevation optimization
+  - Shadow calculations are now 2.7x faster (1.04s → 0.39s for 72 time steps and 49k Ryugu shape)
+  - Overall simulation performance improved by 13.6% for single asteroids (Ryugu: 103s → 89s for 20 rotations, 1440 time steps)
+  - Face maximum elevation optimization automatically applied when using `with_face_visibility=true`
   - No code changes required due to backward compatibility
 
 ## [0.1.0] - 2025-07-13
