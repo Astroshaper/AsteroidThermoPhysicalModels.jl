@@ -47,15 +47,15 @@ version = "1.11.0"
 
 [[deps.AsteroidShapeModels]]
 deps = ["FileIO", "GeometryBasics", "ImplicitBVH", "LinearAlgebra", "MeshIO", "StaticArrays"]
-git-tree-sha1 = "33d07e1e3171642b41147a42ccedb08c488d188b"
+git-tree-sha1 = "4416a34fa0c419c0a9b40dc15b95f89a309fe557"
 uuid = "a7943d8e-5d65-4248-ae23-0082f5115a05"
-version = "0.4.1"
+version = "0.4.2"
 
 [[deps.AsteroidThermoPhysicalModels]]
 deps = ["AsteroidShapeModels", "CSV", "DataFrames", "LinearAlgebra", "ProgressMeter", "StaticArrays", "Statistics"]
 path = ".."
 uuid = "ab46f4a3-3c83-4d86-98d6-41a8b1a2e76e"
-version = "0.0.8-DEV"
+version = "0.1.0"
 
 [[deps.Atomix]]
 deps = ["UnsafeAtomics"]
@@ -534,9 +534,9 @@ version = "1.2.1"
 
 [[deps.StaticArrays]]
 deps = ["LinearAlgebra", "PrecompileTools", "Random", "StaticArraysCore"]
-git-tree-sha1 = "0feb6b9031bd5c51f9072393eb5ab3efd31bf9e4"
+git-tree-sha1 = "cbea8a6bd7bed51b1619658dec70035e07b8502f"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.9.13"
+version = "1.9.14"
 
     [deps.StaticArrays.extensions]
     StaticArraysChainRulesCoreExt = "ChainRulesCore"
