@@ -65,10 +65,12 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs, crit
 - Coordinate transformations centralized
 
 ---
+    **↓ Planned Releases ↓**
+---
 
 ## v0.1.1 - Performance and Test Improvements (Target: August 2025)
 
-- [ ] **Update to `AsteroidShapeModels.jl` v0.4.2**
+- [x] **Update to `AsteroidShapeModels.jl` v0.4.2**
   - Illumination evaluation was optimized in v0.4.2, which will lead to ~2.5x faster shadow calculations.
 
 - [ ] **Code organization and refactoring**
