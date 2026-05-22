@@ -39,7 +39,7 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
 
     ## --- Download SPICE kernels ---
     for path_kernel in paths_kernel
-        url_kernel = "https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/$(path_kernel)?at=refs%2Ftags%2Fv161_20230929_001"
+        url_kernel = "https://spiftp.esac.esa.int/data/SPICE/HERA/kernels/$(path_kernel)"
         filepath = joinpath("kernel", path_kernel)
         mkpath(dirname(filepath))
         isfile(filepath) || Downloads.download(url_kernel, filepath)
@@ -47,10 +47,10 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
 
     ## --- Download shape models ---
     for path_shape in paths_shape
-        url_kernel = "https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/dsk/$(path_shape)?at=refs%2Ftags%2Fv161_20230929_001"
+        url_shape = "https://spiftp.esac.esa.int/data/SPICE/HERA/kernels/dsk/$(path_shape)"
         filepath = joinpath("shape", path_shape)
         mkpath(dirname(filepath))
-        isfile(filepath) || Downloads.download(url_kernel, filepath)
+        isfile(filepath) || Downloads.download(url_shape, filepath)
     end
 
     ## --- Load the SPICE kernels ---
