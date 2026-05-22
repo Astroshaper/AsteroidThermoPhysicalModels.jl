@@ -68,7 +68,7 @@ function download_benchmark_data()
     ]
     
     for path_kernel in didymos_kernels
-        url_kernel = "https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/$(path_kernel)?at=refs%2Ftags%2Fv161_20230929_001"
+        url_kernel = "https://spiftp.esac.esa.int/data/SPICE/HERA/kernels/$(path_kernel)"
         filepath = joinpath("benchmark/kernel", path_kernel)
         mkpath(dirname(filepath))
         if !isfile(filepath)
@@ -76,19 +76,19 @@ function download_benchmark_data()
             Downloads.download(url_kernel, filepath)
         end
     end
-    
+
     # Didymos shape models
     didymos_shapes = [
         "g_50677mm_rad_obj_didy_0000n00000_v001.obj",
         "g_08438mm_lgt_obj_dimo_0000n00000_v002.obj",
     ]
-    
+
     for path_shape in didymos_shapes
-        url_kernel = "https://s2e2.cosmos.esa.int/bitbucket/projects/SPICE_KERNELS/repos/hera/raw/kernels/dsk/$(path_shape)?at=refs%2Ftags%2Fv161_20230929_001"
+        url_shape = "https://spiftp.esac.esa.int/data/SPICE/HERA/kernels/dsk/$(path_shape)"
         filepath = joinpath("benchmark/shape", path_shape)
         if !isfile(filepath)
             @info "Downloading $(path_shape)..."
-            Downloads.download(url_kernel, filepath)
+            Downloads.download(url_shape, filepath)
         end
     end
 end
