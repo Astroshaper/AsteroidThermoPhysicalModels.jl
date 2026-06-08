@@ -42,10 +42,6 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs, crit
 - Binary asteroid flux updates now use `update_flux_all!`
 - Coordinate transformations centralized
 
----
-**↓ Planned Releases ↓**
----
-
 ## v0.1.1 - Performance and Test Improvements (Released: 2026-06-08)
 
 - [x] **Update to `AsteroidShapeModels.jl` v0.4.2**
@@ -63,6 +59,10 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs, crit
 - [x] **Code organization**
   - [x] Split `src/TPM.jl` into focused files: `solver_types.jl`, `tpm_types.jl`, `tpm_result.jl`, `tpm_run.jl`
   - [x] Remove geometric operation tests that duplicate `AsteroidShapeModels.jl` tests
+
+---
+**↓ Planned Releases ↓**
+---
 
 ## v0.2.0 - Surface Roughness Support (Target: 2026)
 
