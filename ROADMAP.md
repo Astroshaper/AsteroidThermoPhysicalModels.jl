@@ -115,16 +115,22 @@ Introduce thermophysical modeling of surface roughness using `HierarchicalShapeM
 
 ## v0.3.0 - API Redesign (Target: October 2025)
 
+Redesign the API around a Problem-Solver pattern inspired by `DifferentialEquations.jl`. The v0.2.0 roughness implementation (`RoughSingleAsteroidTPM`) will be integrated into this new workflow. Implementation order within this release: Problem-Solver architecture first, then I/O format, then configuration file support (each layer depends on the previous one).
+
 - [ ] **Problem-Solver Architecture**
   - [ ] Implement `AbstractThermoPhysicalProblem` interface
-  - [ ] Create problem types for single and binary asteroids
+  - [ ] Create problem types for single asteroid, binary asteroid, and rough surface
   - [ ] Adopt `DifferentialEquations.jl`-style workflow: define problem → specify solver → solve
+  - [ ] Integrate `RoughSingleAsteroidTPM` into the new problem type system
 
 - [ ] **Input/Output System Overhaul**
   - [ ] Structured input data organization (geometry, thermal, computation parameters)
-  - [ ] Configuration file support (TOML/YAML) for parameter surveys
   - [ ] Flexible output system for user-specified quantities
   - [ ] Coordinate transformation support for forces and torques
+
+- [ ] **Configuration File Support**
+  - [ ] TOML/YAML configuration file support for parameter surveys
+  - [ ] Run simulations from the command line via a configuration file
 
 ## v0.4.0 - Performance Optimizations (Target: November 2025)
 
