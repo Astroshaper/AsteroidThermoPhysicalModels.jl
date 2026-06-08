@@ -58,6 +58,4 @@ include("non_grav.jl")
 include("thermal_radiation.jl")
 export thermal_skin_depth, thermal_inertia, init_temperature!, run_TPM!
 
-include("roughness.jl")
-
 end # module AsteroidThermoPhysicalModels
