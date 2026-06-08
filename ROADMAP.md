@@ -76,6 +76,7 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs, crit
 - [ ] **Update to `AsteroidShapeModels.jl` v0.5.x**
   - v0.5.x adds `HierarchicalShapeModel` for surface roughness support and `create_shape_crater`
   - No breaking changes affect this package
+  - Update compat to `"0.4.2, 0.5"` to support both v0.4.x and v0.5.x (v0.4.x support will be dropped in v0.2.0 when `HierarchicalShapeModel` becomes a hard requirement)
   - Remove duplicate geometry functions from `src/roughness.jl` that are now provided by `AsteroidShapeModels.jl`
 
 - [ ] **Code organization and refactoring**
