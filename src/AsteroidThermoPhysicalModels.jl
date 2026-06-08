@@ -39,10 +39,12 @@ const au2m = 149597870700    # 1 astronomical unit [m]
 const m2au = 1/au2m          # Conversion factor: meters to au
 
 include("thermo_params.jl")
-include("TPM.jl")
+include("solver_types.jl")
+include("tpm_types.jl")
+include("tpm_result.jl")
+include("tpm_run.jl")
 
-# Alias for the types defined in `TPM.jl`
-# `TPM` is a abbreviation for a "thermophysical model".
+# Aliases for thermophysical model types. `TPM` abbreviates "thermophysical model".
 const AbstractAsteroidTPM     = AbstractAsteroidThermoPhysicalModel
 const SingleAsteroidTPM       = SingleAsteroidThermoPhysicalModel
 const BinaryAsteroidTPM       = BinaryAsteroidThermoPhysicalModel
