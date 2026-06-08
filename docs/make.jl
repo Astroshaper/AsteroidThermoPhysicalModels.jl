@@ -19,6 +19,7 @@ makedocs(;
         "Usage Examples" => "examples.md",
         "Performance" => "benchmarks.md",
         "API Reference" => "api.md",
+        "Migration Guide" => "migration.md",
     ],
 )
 

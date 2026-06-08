@@ -7,12 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-06-08
+
+No migration required from v0.1.0. There are no breaking changes in this release.
+
+### Fixed
+- Updated HERA SPICE kernel download URLs to ESAC FTP server in `test/TPM_Didymos/TPM_Didymos.jl` and `benchmark/benchmarks.jl` (#191)
+  - The ESA BitBucket server now requires authentication, which caused CI to fail when downloading kernels
+
 ### Changed
 - Updated `AsteroidShapeModels.jl` dependency from v0.4.1 to v0.4.2
   - Shadow calculations are now 2.7x faster (1.04s → 0.39s for 72 time steps and 49k Ryugu shape)
   - Overall simulation performance improved by 13.6% for single asteroids (Ryugu: 103s → 89s for 20 rotations, 1440 time steps)
   - Face maximum elevation optimization automatically applied when using `with_face_visibility=true`
   - No code changes required due to backward compatibility
+- Extended `AsteroidShapeModels.jl` compat to `"0.4.2, 0.5"` to support v0.5.x (#194)
+  - v0.5.x adds `HierarchicalShapeModel` and `create_shape_crater`, which are prerequisites for surface roughness support planned in v0.2.0
+  - Compatibility with v0.4.x is maintained; v0.4.x support will be dropped in v0.2.0
+
+### Removed
+- Removed `crater_curvature_radius` and `concave_spherical_segment` from `src/roughness.jl`; these functions are now provided by `AsteroidShapeModels.jl` v0.5.0+ (#192)
+- Removed `test/find_visiblefacets.jl`; the test duplicated coverage already provided by `AsteroidShapeModels.jl` (#195)
+
+### Internal
+- Split `src/TPM.jl` (892 lines) into focused files: `solver_types.jl`, `tpm_types.jl`, `tpm_result.jl`, `tpm_run.jl` (#195)
 
 ## [0.1.0] - 2025-07-13
 

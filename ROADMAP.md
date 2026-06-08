@@ -68,19 +68,22 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs, crit
 **↓ Planned Releases ↓**
 ---
 
-## v0.1.1 - Performance and Test Improvements (Target: August 2025)
+## v0.1.1 - Performance and Test Improvements (Released: 2026-06-08)
 
 - [x] **Update to `AsteroidShapeModels.jl` v0.4.2**
   - Illumination evaluation was optimized in v0.4.2, which will lead to ~2.5x faster shadow calculations.
 
-- [ ] **Update to `AsteroidShapeModels.jl` v0.5.x**
+- [x] **Update to `AsteroidShapeModels.jl` v0.5.x**
   - v0.5.x adds `HierarchicalShapeModel` for surface roughness support and `create_shape_crater`
   - No breaking changes affect this package
-  - Update compat to `"0.4.2, 0.5"` to support both v0.4.x and v0.5.x (v0.4.x support will be dropped in v0.2.0 when `HierarchicalShapeModel` becomes a hard requirement)
-  - Remove duplicate geometry functions from `src/roughness.jl` that are now provided by `AsteroidShapeModels.jl`
+  - Updated compat to `"0.4.2, 0.5"` to support both v0.4.x and v0.5.x (v0.4.x support will be dropped in v0.2.0 when `HierarchicalShapeModel` becomes a hard requirement)
+  - Removed duplicate geometry functions from `src/roughness.jl` that are now provided by `AsteroidShapeModels.jl`
 
-- [ ] **Code organization and refactoring**
-  - [ ] Split long files into smaller, more manageable modules
+- [x] **Fix HERA SPICE kernel download URLs**
+  - Updated ESA BitBucket URLs to ESAC FTP server (authentication now required on BitBucket)
+
+- [x] **Code organization**
+  - [x] Split `src/TPM.jl` into focused files: `solver_types.jl`, `tpm_types.jl`, `tpm_result.jl`, `tpm_run.jl`
   - [ ] Refactor long functions for better maintainability (e.g., `implicit_euler!`, `crank_nicolson!`)
 
 - [ ] **mutual_heating! optimization**
@@ -95,7 +98,7 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs, crit
   - [ ] Add comprehensive unit tests for all public functions
   - [ ] Create integration tests for complex workflows
   - [ ] Test edge cases and error conditions
-  - [ ] Remove geometric operation tests that duplicate `AsteroidShapeModels.jl` tests
+  - [x] Remove geometric operation tests that duplicate `AsteroidShapeModels.jl` tests
 
 ## v0.2.0 - Surface Roughness Support (Target: September 2025)
 

@@ -46,9 +46,16 @@ pkg> add AsteroidThermoPhysicalModels
 - **Yarkovsky Effect**: Orbital perturbation due to asymmetric thermal emission
 - **YORP Effect**: Rotational perturbation due to asymmetric thermal emission
 
-### Coming Soon (v0.2.0)
-- Surface roughness modeling integration with `AsteroidShapeModels.jl`
+### Coming in v0.2.0
+- Surface roughness modeling using `HierarchicalShapeModel` from `AsteroidShapeModels.jl`
 - Enhanced heat conduction solver validation and benchmarks
+
+## 🆕 What's New in v0.1.x
+
+### v0.1.1
+- **Performance**: Shadow calculations are ~2.7x faster via `AsteroidShapeModels.jl` v0.4.2
+- **Compatibility**: Now supports `AsteroidShapeModels.jl` v0.5.x, which introduces `HierarchicalShapeModel` for future surface roughness support
+- **Bug fix**: Updated HERA SPICE kernel download URLs (ESA BitBucket now requires authentication)
 
 ## 🌟 Example
 
