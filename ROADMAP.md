@@ -2,28 +2,6 @@
 
 This document outlines the development roadmap for `AsteroidThermoPhysicalModels.jl`.
 
-## Release Process
-
-### For v0.1.1:
-
-1. Update `Project.toml` version to `0.1.1`
-2. Update `CHANGELOG.md` with release date
-3. Ensure all tests pass
-4. Create git tag: `git tag -a v0.1.1 -m "Release v0.1.1"`
-5. Push tag: `git push origin v0.1.1`
-6. Create GitHub release with detailed notes
-7. Register in Julia General Registry
-   - Create an issue in the repository with:
-     - `@JuliaRegistrator register` command
-     - Release notes summarizing key changes
-     - If there are breaking changes, clearly document them with "Breaking changes" (not "Breaking Changes") and include migration guide
-
-### Post-release:
-
-1. Update `Project.toml` version to `0.2.0-DEV`
-2. Start new "Unreleased" section in `CHANGELOG.md`
-3. Update this `ROADMAP.md` for next version
-
 ## v0.1.0 - Moved geometry processing to `AsteroidShapeModels.jl` (Released 2025-07-13)
 
 The v0.1.0 release marks a significant milestone with stabilized core APIs, critical bug fixes, and improved performance. This release includes full support for `AsteroidShapeModels.jl` v0.4.1 with its eclipse shadowing bug fixes and new unified flux API.
@@ -84,23 +62,9 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs, crit
 
 - [x] **Code organization**
   - [x] Split `src/TPM.jl` into focused files: `solver_types.jl`, `tpm_types.jl`, `tpm_result.jl`, `tpm_run.jl`
-  - [ ] Refactor long functions for better maintainability (e.g., `implicit_euler!`, `crank_nicolson!`)
-
-- [ ] **mutual_heating! optimization**
-  - [ ] Refactor `mutual_heating!` function for clarity
-  - [ ] Add approximation methods for faster computation
-
-- [ ] **Enhanced eclipse information**
-  - [ ] Modify binary `update_flux_sun!` to return eclipse status
-  - [ ] Return `(eclipse_status1, eclipse_status2)` for primary and secondary
-
-- [ ] **Test coverage expansion**
-  - [ ] Add comprehensive unit tests for all public functions
-  - [ ] Create integration tests for complex workflows
-  - [ ] Test edge cases and error conditions
   - [x] Remove geometric operation tests that duplicate `AsteroidShapeModels.jl` tests
 
-## v0.2.0 - Surface Roughness Support (Target: September 2025)
+## v0.2.0 - Surface Roughness Support (Target: 2026)
 
 Introduce thermophysical modeling of surface roughness using `HierarchicalShapeModel` from `AsteroidShapeModels.jl`. Each global face can optionally carry a roughness model, and an independent mini-TPM is run on its sub-faces (Full Sub-facet TPM). This is the most physically accurate approach and provides a basis for validating simpler approximations in the future.
 
@@ -110,13 +74,29 @@ Introduce thermophysical modeling of surface roughness using `HierarchicalShapeM
 
 - [ ] **Global aggregation**: transform sub-face thermal forces to the global frame and accumulate into body-level force and torque
 
+- [ ] **Code refactoring**
+  - [ ] Refactor long functions for better maintainability (e.g., `implicit_euler!`, `crank_nicolson!`)
+
+- [ ] **Enhanced eclipse information**
+  - [ ] Modify binary `update_flux_sun!` to return eclipse status
+  - [ ] Return `(eclipse_status1, eclipse_status2)` for primary and secondary
+
+- [ ] **mutual_heating! optimization**
+  - [ ] Refactor `mutual_heating!` function for clarity
+  - [ ] Add approximation methods for faster computation
+
+- [ ] **Test coverage expansion**
+  - [ ] Add comprehensive unit tests for all public functions
+  - [ ] Create integration tests for complex workflows
+  - [ ] Test edge cases and error conditions
+
 - [ ] **Heat Conduction Solver Enhancements**
   - [ ] Validate numerical methods against analytical solutions
   - [ ] Add accuracy tests for different solvers and boundary conditions
   - [ ] Optimize implicit solver matrix operations
   - [ ] Implement periodic heating benchmarks
 
-## v0.3.0 - API Redesign (Target: October 2025)
+## v0.3.0 - API Redesign (Target: 2026)
 
 Redesign the API around a Problem-Solver pattern inspired by `DifferentialEquations.jl`. The v0.2.0 roughness implementation (`RoughSingleAsteroidTPM`) will be integrated into this new workflow. Implementation order within this release: Problem-Solver architecture first, then I/O format, then configuration file support (each layer depends on the previous one).
 
@@ -135,7 +115,7 @@ Redesign the API around a Problem-Solver pattern inspired by `DifferentialEquati
   - [ ] TOML/YAML configuration file support for parameter surveys
   - [ ] Run simulations from the command line via a configuration file
 
-## v0.4.0 - Performance Optimizations (Target: November 2025)
+## v0.4.0 - Performance Optimizations (Target: 2026)
 
 - [ ] **Computational Enhancements**
   - [ ] Multi-threading support
@@ -147,7 +127,7 @@ Redesign the API around a Problem-Solver pattern inspired by `DifferentialEquati
   - [ ] Illumination state caching for full rotation
   - [ ] Temperature convergence criteria
 
-## v0.5.0 - Extended Features (Target: December 2025)
+## v0.5.0 - Extended Features (Target: 2027)
 
 - [ ] **Extended Physics**
   - [ ] Coupled binary asteroid dynamics
@@ -155,7 +135,7 @@ Redesign the API around a Problem-Solver pattern inspired by `DifferentialEquati
   - [ ] Sublimation modeling for cometary bodies
   - [ ] Temperature-dependent material properties
 
-## v1.0.0 - Stable Release (Target: January 2026)
+## v1.0.0 - Stable Release (Target: 2027)
 
 - [ ] **API stability**
   - [ ] Finalized and stable public API
