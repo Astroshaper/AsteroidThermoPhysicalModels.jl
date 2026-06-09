@@ -252,6 +252,7 @@ SUITE["ryugu"]["full_simulation_20_rotations"] = @benchmarkable begin
         ephem         = ephem,
         times_to_save = times_to_save,
         face_ID       = face_ID,
+        T₀            = 200.0,
         show_progress = false,
     )
 end setup = begin
@@ -267,6 +268,7 @@ SUITE["ryugu"]["single_rotation"] = @benchmarkable begin
         ephem         = ephem,
         times_to_save = times_to_save,
         face_ID       = face_ID,
+        T₀            = 200.0,
         show_progress = false,
     )
 end setup = begin
@@ -290,6 +292,8 @@ SUITE["didymos"]["full_simulation_20_rotations"] = @benchmarkable begin
         times_to_save = times_to_save,
         face_ID_pri   = face_ID_pri,
         face_ID_sec   = face_ID_sec,
+        T₀_primary    = 200.0,
+        T₀_secondary  = 200.0,
         show_progress = false,
     )
 end setup = begin
@@ -307,6 +311,8 @@ SUITE["didymos"]["single_rotation"] = @benchmarkable begin
         times_to_save = times_to_save,
         face_ID_pri   = face_ID_pri,
         face_ID_sec   = face_ID_sec,
+        T₀_primary    = 200.0,
+        T₀_secondary  = 200.0,
         show_progress = false,
     )
 end setup = begin
@@ -404,6 +410,7 @@ SUITE["memory"]["ryugu_full_simulation"] = @benchmarkable begin
         ephem         = ephem,
         times_to_save = times_to_save,
         face_ID       = face_ID,
+        T₀            = 200.0,
         show_progress = false,
     )
 end setup = begin

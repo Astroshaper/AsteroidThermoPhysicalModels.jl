@@ -141,7 +141,8 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
         times_to_save = times_to_save,
         face_ID_pri   = face_ID_pri,
         face_ID_sec   = face_ID_sec,
-        T₀            = 200.0,
+        T₀_primary    = 200.0,
+        T₀_secondary  = 200.0,
     )
 
     ## --- Save TPM result ---
