@@ -59,20 +59,23 @@ This test validates:
     thermo_params = AsteroidThermoPhysicalModels.ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 
     ## --- Setting of TPM ---
-    stpm = AsteroidThermoPhysicalModels.SingleAsteroidThermoPhysicalModel(shape, thermo_params;
-        SELF_SHADOWING = true,
-        SELF_HEATING   = false,
-        SOLVER         = AsteroidThermoPhysicalModels.ExplicitEulerCache(thermo_params),
-        BC_UPPER       = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
-        BC_LOWER       = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
+    problem = AsteroidThermoPhysicalModels.SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+        with_self_shadowing      = true,
+        with_self_heating        = false,
+        upper_boundary_condition = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
+        lower_boundary_condition = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
     )
-    AsteroidThermoPhysicalModels.init_temperature!(stpm, 0)
 
     ## --- Run TPM ---
     times_to_save = ephem.time[end-n_step_in_cycle:end]  # Save temperature during the final rotation
     face_ID = [1, 2]  # Face indices to save subsurface temperature
 
-    result = AsteroidThermoPhysicalModels.run_TPM!(stpm, ephem, times_to_save, face_ID)
+    result = solve(problem, ExplicitEuler();
+        ephem         = ephem,
+        times_to_save = times_to_save,
+        face_ID       = face_ID,
+        T₀            = 0.0,
+    )
     
     ## --- Save TPM result ---
     @testset "Save TPM result" begin
