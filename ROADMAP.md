@@ -64,15 +64,24 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs, crit
 **↓ Planned Releases ↓**
 ---
 
-## v0.2.0 - Surface Roughness Support (Target: 2026)
+## v0.2.0 - API Redesign (Target: 2026)
 
-Introduce thermophysical modeling of surface roughness using `HierarchicalShapeModel` from `AsteroidShapeModels.jl`. Each global face can optionally carry a roughness model, and an independent mini-TPM is run on its sub-faces (Full Sub-facet TPM). This is the most physically accurate approach and provides a basis for validating simpler approximations in the future.
+Redesign the API around a Problem-Solver pattern inspired by `DifferentialEquations.jl`. Separating problem definition from simulation state provides the clean internal architecture needed to implement surface roughness support in v0.3.0. Implementation order within this release: Problem-Solver architecture first, then I/O format, then configuration file support (each layer depends on the previous one).
 
-- [ ] **`RoughSingleAsteroidTPM` type**: new TPM type that wraps `HierarchicalShapeModel` and holds independent sub-face state (illumination, flux, temperature, thermal force) for each face
+- [ ] **Problem-Solver Architecture**
+  - [ ] Separate problem definition (shape, thermal parameters, flags) from simulation state (temperatures, fluxes)
+  - [ ] Implement `AbstractThermoPhysicalProblem` interface
+  - [ ] Create problem types for single and binary asteroids
+  - [ ] Adopt `DifferentialEquations.jl`-style workflow: define problem → specify solver → solve
 
-- [ ] **Sub-face flux and temperature calculations**: compute solar flux, self-heating, and 1D heat conduction on sub-faces in their local coordinate frames
+- [ ] **Input/Output System Overhaul**
+  - [ ] Structured input data organization (geometry, thermal, computation parameters)
+  - [ ] Flexible output system for user-specified quantities
+  - [ ] Coordinate transformation support for forces and torques
 
-- [ ] **Global aggregation**: transform sub-face thermal forces to the global frame and accumulate into body-level force and torque
+- [ ] **Configuration File Support**
+  - [ ] TOML/YAML configuration file support for parameter surveys
+  - [ ] Run simulations from the command line via a configuration file
 
 - [ ] **Code refactoring**
   - [ ] Refactor long functions for better maintainability (e.g., `implicit_euler!`, `crank_nicolson!`)
@@ -96,24 +105,15 @@ Introduce thermophysical modeling of surface roughness using `HierarchicalShapeM
   - [ ] Optimize implicit solver matrix operations
   - [ ] Implement periodic heating benchmarks
 
-## v0.3.0 - API Redesign (Target: 2026)
+## v0.3.0 - Surface Roughness Support (Target: 2026)
 
-Redesign the API around a Problem-Solver pattern inspired by `DifferentialEquations.jl`. The v0.2.0 roughness implementation (`RoughSingleAsteroidTPM`) will be integrated into this new workflow. Implementation order within this release: Problem-Solver architecture first, then I/O format, then configuration file support (each layer depends on the previous one).
+Introduce thermophysical modeling of surface roughness using `HierarchicalShapeModel` from `AsteroidShapeModels.jl`, built on the clean Problem-Solver architecture established in v0.2.0. Each global face can optionally carry a roughness model, and an independent mini-TPM is run on its sub-faces (Full Sub-facet TPM). This is the most physically accurate approach and provides a basis for validating simpler approximations in the future.
 
-- [ ] **Problem-Solver Architecture**
-  - [ ] Implement `AbstractThermoPhysicalProblem` interface
-  - [ ] Create problem types for single asteroid, binary asteroid, and rough surface
-  - [ ] Adopt `DifferentialEquations.jl`-style workflow: define problem → specify solver → solve
-  - [ ] Integrate `RoughSingleAsteroidTPM` into the new problem type system
+- [ ] **Roughness-aware problem type**: extend the problem type to accept `HierarchicalShapeModel` and hold independent sub-face state (illumination, flux, temperature, thermal force) for each face
 
-- [ ] **Input/Output System Overhaul**
-  - [ ] Structured input data organization (geometry, thermal, computation parameters)
-  - [ ] Flexible output system for user-specified quantities
-  - [ ] Coordinate transformation support for forces and torques
+- [ ] **Sub-face flux and temperature calculations**: compute solar flux, self-heating, and 1D heat conduction on sub-faces in their local coordinate frames
 
-- [ ] **Configuration File Support**
-  - [ ] TOML/YAML configuration file support for parameter surveys
-  - [ ] Run simulations from the command line via a configuration file
+- [ ] **Global aggregation**: transform sub-face thermal forces to the global frame and accumulate into body-level force and torque
 
 ## v0.4.0 - Performance Optimizations (Target: 2026)
 
