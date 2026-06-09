@@ -41,6 +41,7 @@ const m2au = 1/au2m          # Conversion factor: meters to au
 
 include("thermo_params.jl")
 include("solver_types.jl")
+include("tpm_problem.jl")
 include("tpm_types.jl")
 include("tpm_result.jl")
 include("tpm_run.jl")
@@ -51,6 +52,7 @@ const SingleAsteroidTPM       = SingleAsteroidThermoPhysicalModel
 const BinaryAsteroidTPM       = BinaryAsteroidThermoPhysicalModel
 const SingleAsteroidTPMResult = SingleAsteroidThermoPhysicalModelResult
 const BinaryAsteroidTPMResult = BinaryAsteroidThermoPhysicalModelResult
+export SingleAsteroidThermoPhysicalProblem, BinaryAsteroidThermoPhysicalProblem
 export AbstractAsteroidThermoPhysicalModel, SingleAsteroidThermoPhysicalModel, BinaryAsteroidThermoPhysicalModel
 export AbstractAsteroidTPM, SingleAsteroidTPM, BinaryAsteroidTPM
 
