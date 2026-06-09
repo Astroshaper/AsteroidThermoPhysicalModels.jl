@@ -1,64 +1,86 @@
 #=
 solver_types.jl
 
-Types for heat conduction solvers and boundary conditions.
+Algorithm types for thermophysical model solving, and
+cache types for internal heat conduction computations.
 =#
 
 # ╔═══════════════════════════════════════════════════════════════════╗
-# ║          Types of solvers for heat conduction equations           ║
+# ║         Algorithm types for thermophysical model solving          ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-Abstract type of a solver for a heat conduction equation
+Abstract type for thermophysical model solving algorithms.
+
+Concrete subtypes are passed as the second argument to `solve`:
+```julia
+solve(problem, CrankNicolson(); kwargs...)
+```
 """
-abstract type HeatConductionSolver end
+abstract type AbstractThermoPhysicalAlgorithm end
 
 
 """
-Type of the explicit (forward) Euler method:
-- Explicit in time
+    ExplicitEuler()
+
+Explicit (forward) Euler method for heat conduction:
 - First order in time
-
-The `ExplicitEulerSolver` type includes a vector for the temperature at the next time step.
+- Conditionally stable (requires Fourier number λ < 0.5)
 """
-struct ExplicitEulerSolver <: HeatConductionSolver
-    x::Vector{Float64}  # Temperature vector for the next time step
-end
-
-ExplicitEulerSolver(thermo_params::AbstractThermoParams) = ExplicitEulerSolver(thermo_params.n_depth)
-ExplicitEulerSolver(N::Integer) = ExplicitEulerSolver(zeros(N))
+struct ExplicitEuler <: AbstractThermoPhysicalAlgorithm end
 
 
 """
-Type of the implicit (backward) Euler method:
-- Implicit in time (Unconditionally stable in the heat conduction equation)
+    ImplicitEuler()
+
+Implicit (backward) Euler method for heat conduction:
 - First order in time
-
-The `ImplicitEulerSolver` type has vectors for the tridiagonal matrix algorithm.
+- Unconditionally stable
 """
-struct ImplicitEulerSolver <: HeatConductionSolver
-    a::Vector{Float64}
-    b::Vector{Float64}
-    c::Vector{Float64}
-    d::Vector{Float64}
-    x::Vector{Float64}
-end
-
-ImplicitEulerSolver(thermo_params::AbstractThermoParams) = ImplicitEulerSolver(thermo_params.n_depth)
-ImplicitEulerSolver(N::Integer) = ImplicitEulerSolver(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
+struct ImplicitEuler <: AbstractThermoPhysicalAlgorithm end
 
 
 """
-Type of the Crank-Nicolson method:
-- Implicit in time (Unconditionally stable in the heat conduction equation)
+    CrankNicolson()
+
+Crank-Nicolson method for heat conduction:
 - Second order in time
-
-The `CrankNicolsonSolver` type has vectors for the tridiagonal matrix algorithm.
+- Unconditionally stable
 
 # References
 - https://en.wikipedia.org/wiki/Crank–Nicolson_method
 """
-struct CrankNicolsonSolver <: HeatConductionSolver
+struct CrankNicolson <: AbstractThermoPhysicalAlgorithm end
+
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║       Cache types for internal heat conduction computations       ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+"""
+Abstract type for internal pre-allocated caches used in heat conduction computations.
+These types are not part of the public API.
+"""
+abstract type HeatConductionCache end
+
+
+"""
+Internal cache for the explicit (forward) Euler method.
+Holds a pre-allocated vector for the temperature at the next time step.
+"""
+struct ExplicitEulerCache <: HeatConductionCache
+    x::Vector{Float64}
+end
+
+ExplicitEulerCache(thermo_params::AbstractThermoParams) = ExplicitEulerCache(thermo_params.n_depth)
+ExplicitEulerCache(N::Integer) = ExplicitEulerCache(zeros(N))
+
+
+"""
+Internal cache for the implicit (backward) Euler method.
+Holds pre-allocated vectors for the tridiagonal matrix algorithm.
+"""
+struct ImplicitEulerCache <: HeatConductionCache
     a::Vector{Float64}
     b::Vector{Float64}
     c::Vector{Float64}
@@ -66,8 +88,27 @@ struct CrankNicolsonSolver <: HeatConductionSolver
     x::Vector{Float64}
 end
 
-CrankNicolsonSolver(thermo_params::AbstractThermoParams) = CrankNicolsonSolver(thermo_params.n_depth)
-CrankNicolsonSolver(N::Integer) = CrankNicolsonSolver(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
+ImplicitEulerCache(thermo_params::AbstractThermoParams) = ImplicitEulerCache(thermo_params.n_depth)
+ImplicitEulerCache(N::Integer) = ImplicitEulerCache(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
+
+
+"""
+Internal cache for the Crank-Nicolson method.
+Holds pre-allocated vectors for the tridiagonal matrix algorithm.
+
+# References
+- https://en.wikipedia.org/wiki/Crank–Nicolson_method
+"""
+struct CrankNicolsonCache <: HeatConductionCache
+    a::Vector{Float64}
+    b::Vector{Float64}
+    c::Vector{Float64}
+    d::Vector{Float64}
+    x::Vector{Float64}
+end
+
+CrankNicolsonCache(thermo_params::AbstractThermoParams) = CrankNicolsonCache(thermo_params.n_depth)
+CrankNicolsonCache(N::Integer) = CrankNicolsonCache(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
 
 
 # ╔═══════════════════════════════════════════════════════════════════╗
@@ -77,24 +118,24 @@ CrankNicolsonSolver(N::Integer) = CrankNicolsonSolver(zeros(N), zeros(N), zeros(
 """
 Abstract type of a boundary condition for a heat conduction equation
 """
-abstract type BoundaryCondition end
+abstract type AbstractBoundaryCondition end
 
 
 """
 Singleton type of radiation boundary condition
 """
-struct RadiationBoundaryCondition <: BoundaryCondition end
+struct RadiationBoundaryCondition <: AbstractBoundaryCondition end
 
 
 """
 Singleton type of insulation boundary condition
 """
-struct InsulationBoundaryCondition <: BoundaryCondition end
+struct InsulationBoundaryCondition <: AbstractBoundaryCondition end
 
 
 """
 Type of isothermal boundary condition
 """
-struct IsothermalBoundaryCondition <: BoundaryCondition
+struct IsothermalBoundaryCondition <: AbstractBoundaryCondition
     T_iso::Float64
 end

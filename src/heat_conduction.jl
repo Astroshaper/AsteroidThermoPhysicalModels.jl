@@ -72,9 +72,9 @@ The solver method is determined by `stpm.SOLVER`, and special handling is applie
 
 # Solver Selection
 The function automatically selects the appropriate solver based on `stpm.SOLVER`:
-- `ExplicitEulerSolver`: Forward Euler method (conditionally stable, requires λ < 0.5)
-- `ImplicitEulerSolver`: Backward Euler method (unconditionally stable)
-- `CrankNicolsonSolver`: Crank-Nicolson method (unconditionally stable, second-order accurate)
+- `ExplicitEulerCache`: Forward Euler method (conditionally stable, requires λ < 0.5)
+- `ImplicitEulerCache`: Backward Euler method (unconditionally stable)
+- `CrankNicolsonCache`: Crank-Nicolson method (unconditionally stable, second-order accurate)
 
 # Special Cases
 - If thermal conductivity is zero, calls `update_temperature_zero_conductivity!` instead
@@ -99,14 +99,14 @@ function update_temperature!(stpm::SingleAsteroidTPM, Δt)
     end
     
     # Non-zero conductivity: use selected solver
-    if stpm.SOLVER isa ExplicitEulerSolver
+    if stpm.SOLVER isa ExplicitEulerCache
         explicit_euler!(stpm, Δt)
-    elseif stpm.SOLVER isa ImplicitEulerSolver
+    elseif stpm.SOLVER isa ImplicitEulerCache
         implicit_euler!(stpm, Δt)
-    elseif stpm.SOLVER isa CrankNicolsonSolver
+    elseif stpm.SOLVER isa CrankNicolsonCache
         crank_nicolson!(stpm, Δt)
     else
-        error("Unknown solver type: $(typeof(stpm.SOLVER)). Expected ExplicitEulerSolver, ImplicitEulerSolver, or CrankNicolsonSolver.")
+        error("Unknown solver type: $(typeof(stpm.SOLVER)). Expected ExplicitEulerCache, ImplicitEulerCache, or CrankNicolsonCache.")
     end
 end
 

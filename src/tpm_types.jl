@@ -83,7 +83,7 @@ broadcast_thermo_params!(thermo_params::ThermoParams, shape::ShapeModel) = broad
 - `BC_UPPER`       : Boundary condition at the upper boundary
 - `BC_LOWER`       : Boundary condition at the lower boundary
 """
-struct SingleAsteroidThermoPhysicalModel{P<:AbstractThermoParams, S<:HeatConductionSolver, BU<:BoundaryCondition, BL<:BoundaryCondition} <: AbstractAsteroidThermoPhysicalModel
+struct SingleAsteroidThermoPhysicalModel{P<:AbstractThermoParams, S<:HeatConductionCache, BU<:AbstractBoundaryCondition, BL<:AbstractBoundaryCondition} <: AbstractAsteroidThermoPhysicalModel
     shape         ::ShapeModel
     thermo_params ::P
 
