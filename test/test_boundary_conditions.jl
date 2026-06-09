@@ -49,7 +49,7 @@ Validates both upper and lower boundary implementations.
             SELF_HEATING=false,
             BC_UPPER=BC_UPPER,
             BC_LOWER=BC_LOWER,
-            SOLVER=AsteroidThermoPhysicalModels.ImplicitEulerSolver(thermo_params)
+            SOLVER=AsteroidThermoPhysicalModels.ImplicitEulerCache(thermo_params)
         )
         
         # Initial uniform temperature
@@ -80,7 +80,7 @@ Validates both upper and lower boundary implementations.
             SELF_HEATING=false,
             BC_UPPER=BC_UPPER,
             BC_LOWER=BC_LOWER,
-            SOLVER=AsteroidThermoPhysicalModels.ImplicitEulerSolver(thermo_params)
+            SOLVER=AsteroidThermoPhysicalModels.ImplicitEulerCache(thermo_params)
         )
         
         # Initial uniform temperature
