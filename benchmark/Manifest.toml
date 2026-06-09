@@ -46,10 +46,10 @@ uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 version = "1.11.0"
 
 [[deps.AsteroidShapeModels]]
-deps = ["FileIO", "GeometryBasics", "ImplicitBVH", "LinearAlgebra", "MeshIO", "StaticArrays"]
-git-tree-sha1 = "4416a34fa0c419c0a9b40dc15b95f89a309fe557"
+deps = ["CoordinateTransformations", "FileIO", "GeometryBasics", "ImplicitBVH", "LinearAlgebra", "MeshIO", "StaticArrays"]
+git-tree-sha1 = "563d3cefc16629d37a5f1b94ca1245f15434470e"
 uuid = "a7943d8e-5d65-4248-ae23-0082f5115a05"
-version = "0.4.2"
+version = "0.5.1"
 
 [[deps.AsteroidThermoPhysicalModels]]
 deps = ["AsteroidShapeModels", "CSV", "CommonSolve", "DataFrames", "LinearAlgebra", "ProgressMeter", "StaticArrays", "Statistics"]
@@ -138,6 +138,12 @@ weakdeps = ["Dates", "LinearAlgebra"]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 version = "1.3.0+1"
+
+[[deps.CoordinateTransformations]]
+deps = ["LinearAlgebra", "StaticArrays"]
+git-tree-sha1 = "a692f5e257d332de1e554e4566a4e5a8a72de2b2"
+uuid = "150eb455-5306-5404-9cee-2592286d6298"
+version = "0.6.4"
 
 [[deps.Crayons]]
 git-tree-sha1 = "249fe38abf76d48563e2f4556bebd215aa317e15"
