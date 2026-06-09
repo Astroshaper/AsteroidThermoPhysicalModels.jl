@@ -16,7 +16,7 @@ Key features:
 module AsteroidThermoPhysicalModels
 
 using AsteroidShapeModels
-using CommonSolve: solve
+import CommonSolve: solve
 using CSV
 using DataFrames
 using LinearAlgebra
@@ -40,29 +40,40 @@ const au2m = 149597870700    # 1 astronomical unit [m]
 const m2au = 1/au2m          # Conversion factor: meters to au
 
 include("thermo_params.jl")
-include("solver_types.jl")
-include("tpm_problem.jl")
-include("tpm_types.jl")
-include("tpm_result.jl")
-include("tpm_run.jl")
+export thermal_skin_depth, thermal_inertia
 
-# Aliases for thermophysical model types. `TPM` abbreviates "thermophysical model".
-const AbstractAsteroidTPM     = AbstractAsteroidThermoPhysicalModel
-const SingleAsteroidTPM       = SingleAsteroidThermoPhysicalModel
-const BinaryAsteroidTPM       = BinaryAsteroidThermoPhysicalModel
-const SingleAsteroidTPMResult = SingleAsteroidThermoPhysicalModelResult
-const BinaryAsteroidTPMResult = BinaryAsteroidThermoPhysicalModelResult
+include("solver_types.jl")
+export ExplicitEuler, ImplicitEuler, CrankNicolson
+export RadiationBoundaryCondition, InsulationBoundaryCondition, IsothermalBoundaryCondition
+
+include("tpm_problem.jl")
 export SingleAsteroidThermoPhysicalProblem, BinaryAsteroidThermoPhysicalProblem
+
+include("tpm_types.jl")
+# Aliases for TPM model types. `TPM` abbreviates "thermophysical model".
+const AbstractAsteroidTPM = AbstractAsteroidThermoPhysicalModel
+const SingleAsteroidTPM   = SingleAsteroidThermoPhysicalModel
+const BinaryAsteroidTPM   = BinaryAsteroidThermoPhysicalModel
 export AbstractAsteroidThermoPhysicalModel, SingleAsteroidThermoPhysicalModel, BinaryAsteroidThermoPhysicalModel
 export AbstractAsteroidTPM, SingleAsteroidTPM, BinaryAsteroidTPM
 
+include("tpm_result.jl")
+# Aliases for TPM result types.
+const SingleAsteroidTPMResult = SingleAsteroidThermoPhysicalModelResult
+const BinaryAsteroidTPMResult = BinaryAsteroidThermoPhysicalModelResult
+
+include("tpm_run.jl")
+export init_temperature!
+
+include("tpm_solve.jl")
+export solve
+
 include("heat_conduction.jl")
+
 include("heat_conduction_analytical.jl")
+
 include("energy_flux.jl")
 include("non_grav.jl")
 include("thermal_radiation.jl")
-export ExplicitEuler, ImplicitEuler, CrankNicolson
-export RadiationBoundaryCondition, InsulationBoundaryCondition, IsothermalBoundaryCondition
-export thermal_skin_depth, thermal_inertia, init_temperature!, run_TPM!
 
 end # module AsteroidThermoPhysicalModels
