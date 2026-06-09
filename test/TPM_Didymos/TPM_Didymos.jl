@@ -115,7 +115,7 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
     stpm1 = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape1, thermo_params1;
         SELF_SHADOWING = true,
         SELF_HEATING   = true,
-        SOLVER         = AsteroidThermoPhysicalModels.ExplicitEulerSolver(thermo_params1),
+        SOLVER         = AsteroidThermoPhysicalModels.ExplicitEulerCache(thermo_params1),
         BC_UPPER       = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
         BC_LOWER       = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
     )
@@ -123,7 +123,7 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
     stpm2 = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape2, thermo_params2;
         SELF_SHADOWING = true,
         SELF_HEATING   = true,
-        SOLVER         = AsteroidThermoPhysicalModels.ExplicitEulerSolver(thermo_params2),
+        SOLVER         = AsteroidThermoPhysicalModels.ExplicitEulerCache(thermo_params2),
         BC_UPPER       = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
         BC_LOWER       = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
     )

@@ -49,9 +49,9 @@ Tests for 1D heat conduction solvers:
     BC_UPPER       = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(0)
     BC_LOWER       = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(0)
 
-    stpm_EE = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.ExplicitEulerSolver(thermo_params))
-    stpm_IE = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.ImplicitEulerSolver(thermo_params))
-    stpm_CN = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.CrankNicolsonSolver(thermo_params))
+    stpm_EE = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.ExplicitEulerCache(thermo_params))
+    stpm_IE = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.ImplicitEulerCache(thermo_params))
+    stpm_CN = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.CrankNicolsonCache(thermo_params))
 
     ## --- Initial temperature ---
     T₀(x) = x < 0.5 ? 2x : 2(1 - x)

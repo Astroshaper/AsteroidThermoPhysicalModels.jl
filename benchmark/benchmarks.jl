@@ -151,7 +151,7 @@ function setup_ryugu_tpm(n_cycles::Int=20)
     stpm = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params;
         SELF_SHADOWING = true,   # Enable shadow calculations
         SELF_HEATING = true,     # Enable self-heating
-        SOLVER = AsteroidThermoPhysicalModels.CrankNicolsonSolver(thermo_params),
+        SOLVER = AsteroidThermoPhysicalModels.CrankNicolsonCache(thermo_params),
         BC_UPPER = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
         BC_LOWER = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
     )
@@ -230,7 +230,7 @@ function setup_didymos_tpm(n_cycles::Int=20)
     stpm1 = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape1, thermo_params1;
         SELF_SHADOWING = true,
         SELF_HEATING = true,
-        SOLVER = AsteroidThermoPhysicalModels.CrankNicolsonSolver(thermo_params1),
+        SOLVER = AsteroidThermoPhysicalModels.CrankNicolsonCache(thermo_params1),
         BC_UPPER = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
         BC_LOWER = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
     )
@@ -238,7 +238,7 @@ function setup_didymos_tpm(n_cycles::Int=20)
     stpm2 = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape2, thermo_params2;
         SELF_SHADOWING = true,
         SELF_HEATING = true,
-        SOLVER = AsteroidThermoPhysicalModels.CrankNicolsonSolver(thermo_params2),
+        SOLVER = AsteroidThermoPhysicalModels.CrankNicolsonCache(thermo_params2),
         BC_UPPER = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
         BC_LOWER = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
     )
