@@ -16,6 +16,7 @@ Key features:
 module AsteroidThermoPhysicalModels
 
 using AsteroidShapeModels
+using CommonSolve: solve
 using CSV
 using DataFrames
 using LinearAlgebra
@@ -58,6 +59,8 @@ include("heat_conduction_analytical.jl")
 include("energy_flux.jl")
 include("non_grav.jl")
 include("thermal_radiation.jl")
+export ExplicitEuler, ImplicitEuler, CrankNicolson
+export RadiationBoundaryCondition, InsulationBoundaryCondition, IsothermalBoundaryCondition
 export thermal_skin_depth, thermal_inertia, init_temperature!, run_TPM!
 
 end # module AsteroidThermoPhysicalModels
