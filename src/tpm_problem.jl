@@ -75,10 +75,10 @@ Construct a thermophysical problem for a single asteroid.
 - Thermophysical parameters are broadcast to all faces via `broadcast_thermo_params!`.
 """
 function SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
-    with_self_shadowing = true,
-    with_self_heating   = true,
-    upper_boundary_condition = RadiationBoundaryCondition(),
-    lower_boundary_condition = InsulationBoundaryCondition(),
+    with_self_shadowing ::Bool = true,
+    with_self_heating   ::Bool = true,
+    upper_boundary_condition   = RadiationBoundaryCondition(),
+    lower_boundary_condition   = InsulationBoundaryCondition(),
 )
     if with_self_shadowing && isnothing(shape.face_visibility_graph)
         @info "Building face_visibility_graph for self-shadowing..."
@@ -104,9 +104,9 @@ Defines the thermophysical problem for a binary asteroid system.
 
 # Usage
 ```julia
-prob_primary   = SingleAsteroidThermoPhysicalProblem(shape1, params1; ...)
-prob_secondary = SingleAsteroidThermoPhysicalProblem(shape2, params2; ...)
-problem = BinaryAsteroidThermoPhysicalProblem(prob_primary, prob_secondary;
+prob1 = SingleAsteroidThermoPhysicalProblem(shape1, thermo_params1; ...)
+prob2 = SingleAsteroidThermoPhysicalProblem(shape2, thermo_params2; ...)
+problem = BinaryAsteroidThermoPhysicalProblem(prob1, prob2;
     with_mutual_shadowing = true,
     with_mutual_heating   = true,
 )
@@ -141,9 +141,11 @@ Construct a thermophysical problem for a binary asteroid system.
 - If `with_mutual_shadowing = true` and BVH is not yet built for either shape, it is built automatically.
   To avoid this, pre-build with `build_bvh!` or pass `with_bvh=true` when loading shapes.
 """
-function BinaryAsteroidThermoPhysicalProblem(primary, secondary;
-    with_mutual_shadowing = true,
-    with_mutual_heating   = true,
+function BinaryAsteroidThermoPhysicalProblem(
+    primary   ::SingleAsteroidThermoPhysicalProblem,
+    secondary ::SingleAsteroidThermoPhysicalProblem;
+    with_mutual_shadowing ::Bool = true,
+    with_mutual_heating   ::Bool = true,
 )
     if with_mutual_shadowing
         if isnothing(primary.shape.bvh)
@@ -157,4 +159,69 @@ function BinaryAsteroidThermoPhysicalProblem(primary, secondary;
     end
 
     BinaryAsteroidThermoPhysicalProblem(primary, secondary, with_mutual_shadowing, with_mutual_heating)
+end
+
+
+"""
+    BinaryAsteroidThermoPhysicalProblem(shape, thermo_params; kwargs...) -> problem
+
+Convenience constructor: build both single-body problems from raw shapes and parameters.
+
+# Arguments
+- `shape`         : Tuple `(shape1, shape2)` of shape models
+- `thermo_params` : Tuple `(thermo_params1, thermo_params2)` of thermophysical parameters
+
+# Keyword Arguments
+Single-body kwargs (applied identically to both bodies):
+- `with_self_shadowing      = true`
+- `with_self_heating        = true`
+- `upper_boundary_condition = RadiationBoundaryCondition()`
+- `lower_boundary_condition = InsulationBoundaryCondition()`
+
+Binary-system kwargs:
+- `with_mutual_shadowing = true`
+- `with_mutual_heating   = true`
+
+# Notes
+For per-body control of single-body kwargs, use `SingleAsteroidThermoPhysicalProblem`
+separately and pass the results to `BinaryAsteroidThermoPhysicalProblem(primary, secondary; ...)`.
+
+# Example
+```julia
+problem = BinaryAsteroidThermoPhysicalProblem(
+    (shape1, shape2),
+    (thermo_params1, thermo_params2);
+    with_mutual_shadowing = true,
+    with_mutual_heating   = true,
+)
+```
+"""
+function BinaryAsteroidThermoPhysicalProblem(
+    shape         ::Tuple,
+    thermo_params ::Tuple;
+    with_self_shadowing ::Bool   = true,
+    with_self_heating   ::Bool   = true,
+    upper_boundary_condition     = RadiationBoundaryCondition(),
+    lower_boundary_condition     = InsulationBoundaryCondition(),
+    with_mutual_shadowing ::Bool = true,
+    with_mutual_heating   ::Bool = true,
+)
+    prob1 = SingleAsteroidThermoPhysicalProblem(shape[1], thermo_params[1];
+        with_self_shadowing,
+        with_self_heating,
+        upper_boundary_condition,
+        lower_boundary_condition,
+    )
+
+    prob2 = SingleAsteroidThermoPhysicalProblem(shape[2], thermo_params[2];
+        with_self_shadowing,
+        with_self_heating,
+        upper_boundary_condition,
+        lower_boundary_condition,
+    )
+    
+    BinaryAsteroidThermoPhysicalProblem(prob1, prob2;
+        with_mutual_shadowing,
+        with_mutual_heating,
+    )
 end
