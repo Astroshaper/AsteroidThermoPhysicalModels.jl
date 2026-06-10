@@ -202,6 +202,11 @@ Calculate the subsolar equilibrium temperature at a given heliocentric distance.
 Assumes instantaneous radiative equilibrium (zero thermal inertia). Useful as an
 upper bound for surface temperatures and as an initial guess for `T₀`.
 
+!!! warning "TODO"
+    The `params` overload silently uses `params.reflectance_vis[begin]` and
+    `params.emissivity[begin]`, which is inconsistent for non-uniform `ThermoParams`.
+    This overload will be removed in a future release; use `subsolar_temperature(r☉, R_vis, ε)` directly.
+
 # Mathematical Formula
 ```math
 T_{ss} = \\left[\\frac{(1 - A) \\Phi_\\odot}{\\varepsilon \\sigma}\\right]^{1/4}
