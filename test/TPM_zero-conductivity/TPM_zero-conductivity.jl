@@ -79,7 +79,7 @@ This test validates:
 
     ## --- Save TPM result ---
     @testset "Save TPM result" begin
-        AsteroidThermoPhysicalModels.export_TPM_results(DIR_OUTPUT, solution)
+        AsteroidThermoPhysicalModels.export_solution(DIR_OUTPUT, solution)
 
         @test isfile(joinpath(DIR_OUTPUT, "physical_quantities.csv"))
         @test isfile(joinpath(DIR_OUTPUT, "subsurface_temperature.csv"))

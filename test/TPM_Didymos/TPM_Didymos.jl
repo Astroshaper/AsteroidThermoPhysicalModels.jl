@@ -147,7 +147,7 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
 
     ## --- Save TPM result ---
     @testset "Save TPM result" begin
-        AsteroidThermoPhysicalModels.export_TPM_results(DIR_OUTPUT, solution)
+        AsteroidThermoPhysicalModels.export_solution(DIR_OUTPUT, solution)
 
         @test isfile(joinpath(DIR_OUTPUT, "primary", "physical_quantities.csv"))
         @test isfile(joinpath(DIR_OUTPUT, "primary", "subsurface_temperature.csv"))
