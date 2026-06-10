@@ -44,17 +44,29 @@ solution = solve(problem, CrankNicolson();
 - **Boundary condition types** (previously flags in `run_TPM!`)
   - `RadiationBoundaryCondition()`, `InsulationBoundaryCondition()`, `IsothermalBoundaryCondition()`
 
-- `init_temperature!(stpm, T₀::AbstractMatrix)`: initialize temperatures from a full `(n_depth, n_face)` matrix (e.g., warm-start from a previous result)
-- `init_temperature!(btpm, T₀_primary, T₀_secondary)`: initialize each body at a different temperature
+- **Solution types**
+  - `SingleAsteroidThermoPhysicalSolution`: holds simulation output for a single asteroid
+  - `BinaryAsteroidThermoPhysicalSolution`: holds simulation output for a binary asteroid system
+
+- `export_solution(dirpath, solution)`: export simulation results to CSV files; replaces `export_TPM_results`
 - `subsolar_temperature(r☉, params)` is now publicly exported
 - `ThermoParams` is now publicly exported (previously required `AsteroidThermoPhysicalModels.ThermoParams`)
+
+### Changed
+
+- Binary asteroid output directory names changed from `pri`/`sec` to `primary`/`secondary`
 
 ### Removed
 
 - `run_TPM!`: replaced by `solve(problem, algorithm; kwargs...)`
+- `export_TPM_results`: replaced by `export_solution`
 
 ### Internal
 
+- Introduced `SingleAsteroidThermoPhysicalState` / `BinaryAsteroidThermoPhysicalState` as internal simulation state types (separate from problem definition; not exported)
+- `init_temperature!` is no longer exported; use the `T₀` keyword argument of `solve` to set the initial temperature
+- Renamed `src/tpm_types.jl` → `src/tpm_state.jl`
+- Renamed `src/tpm_result.jl` → `src/tpm_solution.jl`
 - Renamed `src/tpm_run.jl` → `src/tpm_init.jl` (file now contains only `init_temperature!`)
 - Moved `subsolar_temperature` from `tpm_run.jl` to `thermo_params.jl`
 - Dropped `AsteroidShapeModels.jl` v0.4.x compat; v0.5+ is now required
