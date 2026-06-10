@@ -13,13 +13,13 @@ These effects arise from the recoil momentum of photons emitted from the surface
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    update_thermal_force!(stpm::SingleAsteroidTPM)
+    update_thermal_force!(state::SingleAsteroidThermoPhysicalState)
 
 Calculate the thermal recoil force (Yarkovsky effect) and torque (YORP effect) on the asteroid
 by integrating photon momentum from thermal emission and reflection over all surface facets.
 
 # Arguments
-- `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
+- `state::SingleAsteroidThermoPhysicalState` : Thermophysical simulation state for a single asteroid
 
 # Physics
 The function calculates non-gravitational effects caused by anisotropic photon emission:
@@ -42,10 +42,10 @@ where:
 The first term represents direct photon recoil normal to the surface.
 The second term accounts for photons intercepted by other facets (self-heating contribution).
 
-# Outputs (stored in stpm)
-- `stpm.face_forces` : Thermal force vector on each facet [N]
-- `stpm.force` : Total thermal force in body-fixed frame [N]
-- `stpm.torque` : Total thermal torque in body-fixed frame [N⋅m]
+# Outputs (stored in state)
+- `state.face_forces` : Thermal force vector on each facet [N]
+- `state.force` : Total thermal force in body-fixed frame [N]
+- `state.torque` : Total thermal torque in body-fixed frame [N⋅m]
 
 # Physical Significance
 - The force causes orbital drift (Yarkovsky effect)
@@ -56,63 +56,63 @@ The second term accounts for photons intercepted by other facets (self-heating c
 - Bottke Jr, W. F., et al. (2006). The Yarkovsky and YORP effects
 - Rozitis, B., & Green, S. F. (2012). The influence of rough surface thermal-infrared beaming
 """
-function update_thermal_force!(stpm::SingleAsteroidTPM)
-    stpm.force  .= 0.
-    stpm.torque .= 0.
+function update_thermal_force!(state::SingleAsteroidThermoPhysicalState)
+    state.force  .= 0.
+    state.torque .= 0.
 
-    for i in eachindex(stpm.shape.faces)
-        rᵢ = stpm.shape.face_centers[i]
+    for i in eachindex(state.problem.shape.faces)
+        rᵢ = state.problem.shape.face_centers[i]
         r̂ᵢ = normalize(rᵢ)
-        n̂ᵢ = stpm.shape.face_normals[i]
-        aᵢ = stpm.shape.face_areas[i]
+        n̂ᵢ = state.problem.shape.face_normals[i]
+        aᵢ = state.problem.shape.face_areas[i]
 
-        F_sun  = stpm.flux_sun[i]
-        F_scat = stpm.flux_scat[i]
-        F_rad  = stpm.flux_rad[i]
-        Tᵢ = stpm.temperature[begin, i]
+        F_sun  = state.flux_sun[i]
+        F_scat = state.flux_scat[i]
+        F_rad  = state.flux_rad[i]
+        Tᵢ = state.temperature[begin, i]
 
         ## Total emittance from face i , Eᵢ [W/m²].
         ## Note that both scattered light and thermal radiation are assumed to be isotropic.
-        R_vis = stpm.thermo_params.reflectance_vis[i]
-        R_ir  = stpm.thermo_params.reflectance_ir[i]
-        ε     = stpm.thermo_params.emissivity[i]
+        R_vis = state.problem.thermo_params.reflectance_vis[i]
+        R_ir  = state.problem.thermo_params.reflectance_ir[i]
+        ε     = state.problem.thermo_params.emissivity[i]
         Eᵢ    = R_vis * F_sun + R_vis * F_scat + R_ir * F_rad + ε * σ_SB * Tᵢ^4
 
         ## Thermal force on each face
         # Photon recoil force: F = -momentum flux = -Energy flux / c
         # The factor 2/3 comes from Lambertian emission (isotropic in hemisphere)
         # For Lambertian surface: ∫cos(θ)dΩ = 2π/3 over hemisphere
-        stpm.face_forces[i] = - 2/3 * Eᵢ * aᵢ / c₀ * n̂ᵢ  # Direct recoil force normal to face
+        state.face_forces[i] = - 2/3 * Eᵢ * aᵢ / c₀ * n̂ᵢ  # Direct recoil force normal to face
         
-        if !isnothing(stpm.shape.face_visibility_graph)
+        if !isnothing(state.problem.shape.face_visibility_graph)
             # Face properties visible from `i`: View factors and directions
-            view_factors = get_view_factors(stpm.shape.face_visibility_graph, i)
-            directions = get_visible_face_directions(stpm.shape.face_visibility_graph, i)
+            view_factors = get_view_factors(state.problem.shape.face_visibility_graph, i)
+            directions = get_visible_face_directions(state.problem.shape.face_visibility_graph, i)
             
             for (fᵢⱼ, d̂ᵢⱼ) in zip(view_factors, directions)
                 # Self-heating contribution: photons re-absorbed by other faces
                 # No 2/3 factor here because the direction is already specified by d̂ᵢⱼ
-                stpm.face_forces[i] += Eᵢ * aᵢ / c₀ * fᵢⱼ * d̂ᵢⱼ  # Re-absorption recoil force
+                state.face_forces[i] += Eᵢ * aᵢ / c₀ * fᵢⱼ * d̂ᵢⱼ  # Re-absorption recoil force
             end
         end
 
         ## Thermal force on the entire shape
-        dfᵢ = stpm.face_forces[i]
-        stpm.force  .+= (r̂ᵢ ⋅ dfᵢ) * r̂ᵢ  # Thermal force
-        stpm.torque .+= rᵢ × dfᵢ         # Thermal torque
+        dfᵢ = state.face_forces[i]
+        state.force  .+= (r̂ᵢ ⋅ dfᵢ) * r̂ᵢ  # Thermal force
+        state.torque .+= rᵢ × dfᵢ         # Thermal torque
     end
 end
 
 
 """
-    update_thermal_force!(btpm::BinaryAsteroidTPM)
+    update_thermal_force!(state::BinaryAsteroidThermoPhysicalState)
 
 Calculate the thermal force and torque on every face and integrate them over all faces.
 
 # Arguments
-- `btpm` : Thermophysical model for a binary asteroid
+- `state` : Thermophysical simulation state for a binary asteroid
 """
-function update_thermal_force!(btpm::BinaryAsteroidTPM)
-    update_thermal_force!(btpm.pri)
-    update_thermal_force!(btpm.sec)
+function update_thermal_force!(state::BinaryAsteroidThermoPhysicalState)
+    update_thermal_force!(state.primary)
+    update_thermal_force!(state.secondary)
 end

@@ -11,9 +11,9 @@ _build_cache(::ImplicitEuler, thermo_params) = ImplicitEulerCache(thermo_params)
 _build_cache(::CrankNicolson, thermo_params) = CrankNicolsonCache(thermo_params)
 
 
-# Internal helper: build SingleAsteroidThermoPhysicalModel from a problem + algorithm,
-# bypassing broadcast_thermo_params! (already called in the problem constructor).
-function _build_single_tpm(
+# Internal helper: build SingleAsteroidThermoPhysicalState from a problem + algorithm.
+# broadcast_thermo_params! has already been called in the problem constructor.
+function _build_single_state(
     problem   ::SingleAsteroidThermoPhysicalProblem,
     algorithm ::AbstractThermoPhysicalAlgorithm,
 )
@@ -21,9 +21,9 @@ function _build_single_tpm(
     n_depth = problem.thermo_params.n_depth
     n_face  = length(problem.shape.faces)
 
-    SingleAsteroidThermoPhysicalModel(
-        problem.shape,
-        problem.thermo_params,
+    SingleAsteroidThermoPhysicalState(
+        problem,
+        cache,
         zeros(Bool, n_face),
         zeros(n_face),
         zeros(n_face),
@@ -32,12 +32,19 @@ function _build_single_tpm(
         zeros(SVector{3, Float64}, n_face),
         zero(MVector{3, Float64}),
         zero(MVector{3, Float64}),
-        problem.with_self_shadowing,
-        problem.with_self_heating,
-        cache,
-        problem.upper_boundary_condition,
-        problem.lower_boundary_condition,
     )
+end
+
+
+# Internal helper: build BinaryAsteroidThermoPhysicalState from a problem + algorithm.
+# Both bodies always share the same algorithm and time step.
+function _build_binary_state(
+    problem   ::BinaryAsteroidThermoPhysicalProblem,
+    algorithm ::AbstractThermoPhysicalAlgorithm,
+)
+    state1 = _build_single_state(problem.primary,   algorithm)
+    state2 = _build_single_state(problem.secondary, algorithm)
+    BinaryAsteroidThermoPhysicalState(problem, state1, state2)
 end
 
 
@@ -58,7 +65,7 @@ Run a thermophysical simulation for a single asteroid.
 - `show_progress = true` : Display progress meter during simulation
 
 # Returns
-- `SingleAsteroidThermoPhysicalModelResult`
+- `SingleAsteroidThermoPhysicalSolution`
 
 # Example
 ```julia
@@ -83,10 +90,10 @@ function solve(
     T₀,
     show_progress ::Bool = true,
 )
-    stpm = _build_single_tpm(problem, algorithm)
-    init_temperature!(stpm, T₀)
+    state = _build_single_state(problem, algorithm)
+    init_temperature!(state, T₀)
 
-    solution = SingleAsteroidThermoPhysicalModelResult(stpm, ephem, times_to_save, face_ID)
+    solution = SingleAsteroidThermoPhysicalSolution(state, ephem, times_to_save, face_ID)
 
     if show_progress
         p = Progress(length(ephem.time); dt=1, desc="Running TPM...", showspeed=true)
@@ -96,9 +103,9 @@ function solve(
     for i_time in eachindex(ephem.time)
         r☉ = ephem.sun[i_time]
 
-        update_flux_all!(stpm, r☉)
-        update_thermal_force!(stpm)
-        update_TPM_result!(solution, stpm, i_time)
+        update_flux_all!(state, r☉)
+        update_thermal_force!(state)
+        record_timestep!(solution, state, i_time)
 
         if show_progress
             showvalues = [
@@ -110,7 +117,7 @@ function solve(
 
         i_time == length(ephem.time) && break
         Δt = ephem.time[i_time+1] - ephem.time[i_time]
-        update_temperature!(stpm, Δt)
+        update_temperature!(state, Δt)
     end
 
     return solution
@@ -136,7 +143,7 @@ Run a thermophysical simulation for a binary asteroid system.
 - `show_progress = true`   : Display progress meter during simulation
 
 # Returns
-- `BinaryAsteroidThermoPhysicalModelResult`
+- `BinaryAsteroidThermoPhysicalSolution`
 
 # Example
 ```julia
@@ -163,17 +170,10 @@ function solve(
     T₀_secondary,
     show_progress ::Bool = true,
 )
-    stpm1 = _build_single_tpm(problem.primary,   algorithm)
-    stpm2 = _build_single_tpm(problem.secondary, algorithm)
+    state = _build_binary_state(problem, algorithm)
+    init_temperature!(state, T₀_primary, T₀_secondary)
 
-    btpm = BinaryAsteroidThermoPhysicalModel(
-        stpm1, stpm2,
-        problem.with_mutual_shadowing,
-        problem.with_mutual_heating,
-    )
-    init_temperature!(btpm, T₀_primary, T₀_secondary)
-
-    solution = BinaryAsteroidThermoPhysicalModelResult(btpm, ephem, times_to_save, face_ID_pri, face_ID_sec)
+    solution = BinaryAsteroidThermoPhysicalSolution(state, ephem, times_to_save, face_ID_pri, face_ID_sec)
 
     if show_progress
         p = Progress(length(ephem.time); dt=1, desc="Running TPM...", showspeed=true)
@@ -185,22 +185,22 @@ function solve(
         r₁₂ = ephem.sec[i_time]
         R₁₂ = ephem.P2S[i_time]
 
-        update_flux_all!(btpm, r☉₁, r₁₂, R₁₂)
-        update_thermal_force!(btpm)
-        update_TPM_result!(solution, btpm, i_time)
+        update_flux_all!(state, r☉₁, r₁₂, R₁₂)
+        update_thermal_force!(state)
+        record_timestep!(solution, state, i_time)
 
         if show_progress
             showvalues = [
                 ("Timestep                   ", i_time),
-                ("E_out / E_in for primary   ", solution.pri.E_out[i_time] / solution.pri.E_in[i_time]),
-                ("E_out / E_in for secondary ", solution.sec.E_out[i_time] / solution.sec.E_in[i_time]),
+                ("E_out / E_in for primary   ", solution.primary.E_out[i_time] / solution.primary.E_in[i_time]),
+                ("E_out / E_in for secondary ", solution.secondary.E_out[i_time] / solution.secondary.E_in[i_time]),
             ]
             ProgressMeter.next!(p; showvalues)
         end
 
         i_time == length(ephem.time) && break
         Δt = ephem.time[i_time+1] - ephem.time[i_time]
-        update_temperature!(btpm, Δt)
+        update_temperature!(state, Δt)
     end
 
     return solution

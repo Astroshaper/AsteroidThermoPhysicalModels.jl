@@ -56,12 +56,12 @@ absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad) = (1 - R_vis) * F_sun + 
 
 
 """
-    energy_in(stpm::SingleAsteroidTPM) -> E_in
+    energy_in(state::SingleAsteroidThermoPhysicalState) -> E_in
 
 Calculate the total energy input rate (power) absorbed by the entire asteroid surface.
 
 # Arguments
-- `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
+- `state::SingleAsteroidThermoPhysicalState` : Thermophysical simulation state for a single asteroid
 
 # Returns
 - `E_in::Float64` : Total absorbed power [W]
@@ -89,15 +89,15 @@ comparing with `energy_out`.
 - `energy_out` for the total emitted power
 - `absorbed_energy_flux` for the flux calculation
 """
-function energy_in(stpm::SingleAsteroidTPM)
+function energy_in(state::SingleAsteroidThermoPhysicalState)
     E_in = 0.
-    for i in eachindex(stpm.shape.faces)
-        R_vis  = stpm.thermo_params.reflectance_vis[i]
-        R_ir   = stpm.thermo_params.reflectance_ir[i]
-        F_sun  = stpm.flux_sun[i]
-        F_scat = stpm.flux_scat[i]
-        F_rad  = stpm.flux_rad[i]
-        a      = stpm.shape.face_areas[i]
+    for i in eachindex(state.problem.shape.faces)
+        R_vis  = state.problem.thermo_params.reflectance_vis[i]
+        R_ir   = state.problem.thermo_params.reflectance_ir[i]
+        F_sun  = state.flux_sun[i]
+        F_scat = state.flux_scat[i]
+        F_rad  = state.flux_rad[i]
+        a      = state.problem.shape.face_areas[i]
         
         E_in += absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad) * a
     end
@@ -106,13 +106,13 @@ end
 
 
 """
-    energy_out(stpm::SingleAsteroidTPM) -> E_out
+    energy_out(state::SingleAsteroidThermoPhysicalState) -> E_out
 
 Calculate the total energy output rate (power) emitted by the entire asteroid surface
 through thermal radiation.
 
 # Arguments
-- `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
+- `state::SingleAsteroidThermoPhysicalState` : Thermophysical simulation state for a single asteroid
 
 # Returns
 - `E_out::Float64` : Total emitted power [W]
@@ -136,12 +136,12 @@ The ratio E_out/E_in is often used as a convergence criterion in thermophysical 
 - `energy_in` for the total absorbed power
 - `update_thermal_force!` for thermal recoil effects from this emission
 """
-function energy_out(stpm::SingleAsteroidTPM)
+function energy_out(state::SingleAsteroidThermoPhysicalState)
     E_out = 0.
-    for i in eachindex(stpm.shape.faces)
-        ε = stpm.thermo_params.emissivity[i]
-        T = stpm.temperature[begin, i]  # Surface temperature
-        a = stpm.shape.face_areas[i]
+    for i in eachindex(state.problem.shape.faces)
+        ε = state.problem.thermo_params.emissivity[i]
+        T = state.temperature[begin, i]  # Surface temperature
+        a = state.problem.shape.face_areas[i]
 
         E_out += ε * σ_SB * T^4 * a
     end
@@ -154,12 +154,12 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    update_flux_all!(stpm::SingleAsteroidTPM, r☉::StaticVector{3})
+    update_flux_all!(state::SingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
 
 Update all energy fluxes (solar, scattered, thermal radiation) to the surface for a single asteroid.
 
 # Arguments
-- `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
+- `state::SingleAsteroidThermoPhysicalState` : Thermophysical simulation state for a single asteroid
 - `r☉::StaticVector{3}`     : Sun's position in the asteroid-fixed frame (NOT normalized) [m]
 
 # Algorithm
@@ -171,21 +171,21 @@ Update all energy fluxes (solar, scattered, thermal radiation) to the surface fo
 - This is a convenience function that calls all individual flux update functions
 - Automatically respects SELF_SHADOWING and SELF_HEATING flags
 """
-function update_flux_all!(stpm::SingleAsteroidTPM, r☉::StaticVector{3})
-    update_flux_sun!(stpm, r☉)
-    update_flux_scat_single!(stpm)
-    update_flux_rad_single!(stpm)
+function update_flux_all!(state::SingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
+    update_flux_sun!(state, r☉)
+    update_flux_scat_single!(state)
+    update_flux_rad_single!(state)
 end
 
 """
-    update_flux_all!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, r₁₂::StaticVector{3}, R₁₂::StaticMatrix{3,3})
+    update_flux_all!(state::BinaryAsteroidThermoPhysicalState, r☉₁::StaticVector{3}, r₁₂::StaticVector{3}, R₁₂::StaticMatrix{3,3})
 
 Update all energy fluxes (solar, scattered, thermal radiation) to the surface for a binary asteroid.
 This is a convenience function that computes necessary coordinate transformations and
 calls individual flux update functions.
 
 # Arguments
-- `btpm::BinaryAsteroidTPM` : Thermophysical model for a binary asteroid
+- `state::BinaryAsteroidThermoPhysicalState` : Thermophysical simulation state for a binary asteroid
 - `r☉₁::StaticVector{3}`    : Sun's position in the primary's body-fixed frame (NOT normalized) [m]
 - `r₁₂::StaticVector{3}`    : Position vector of secondary's center in primary's frame [m]
 - `R₁₂::StaticMatrix{3,3}`  : Rotation matrix from primary to secondary frame
@@ -201,17 +201,17 @@ calls individual flux update functions.
 - This function internally handles all coordinate transformations
 - Automatically respects SELF_SHADOWING, SELF_HEATING, MUTUAL_SHADOWING, and MUTUAL_HEATING flags
 """
-function update_flux_all!(btpm::BinaryAsteroidTPM, r☉₁::StaticVector{3}, r₁₂::StaticVector{3}, R₁₂::StaticMatrix{3,3})
+function update_flux_all!(state::BinaryAsteroidThermoPhysicalState, r☉₁::StaticVector{3}, r₁₂::StaticVector{3}, R₁₂::StaticMatrix{3,3})
     # Pre-compute all coordinate transformations
     r☉₂ = R₁₂ * (r☉₁ - r₁₂)  # Sun's position in the secondary's frame
     R₂₁ = R₁₂'               # Rotation matrix from secondary to primary
     r₂₁ = -R₁₂ * r₁₂         # Primary's position in the secondary's frame
     
     # Update all fluxes
-    update_flux_sun!(btpm, r☉₁, r☉₂, r₁₂, r₂₁, R₁₂, R₂₁)
-    update_flux_scat_single!(btpm)
-    update_flux_rad_single!(btpm)
-    mutual_heating!(btpm, r₁₂, R₂₁)
+    update_flux_sun!(state, r☉₁, r☉₂, r₁₂, r₂₁, R₁₂, R₂₁)
+    update_flux_scat_single!(state)
+    update_flux_rad_single!(state)
+    mutual_heating!(state, r₁₂, R₂₁)
 end
 
 # ╔═══════════════════════════════════════════════════════════════════╗
@@ -220,12 +220,12 @@ end
 
 
 """
-    update_flux_sun!(stpm::SingleAsteroidTPM, r☉::StaticVector{3})
+    update_flux_sun!(state::SingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
 
 Update the direct solar irradiation flux on every face of the asteroid.
 
 # Arguments
-- `stpm::SingleAsteroidTPM` : Thermophysical model for a single asteroid
+- `state::SingleAsteroidThermoPhysicalState` : Thermophysical simulation state for a single asteroid
 - `r☉::StaticVector{3}`     : Position vector from asteroid to Sun in body-fixed frame (NOT normalized) [m]
 
 # Algorithm
@@ -242,39 +242,39 @@ checks whether each face is shadowed by other parts of the asteroid.
 - Faces with negative dot product (facing away from Sun) receive zero flux
 - Shadowed faces (when `SELF_SHADOWING = true`) also receive zero flux
 """
-function update_flux_sun!(stpm::SingleAsteroidTPM, r☉::StaticVector{3})
+function update_flux_sun!(state::SingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
     # Calculate solar flux and direction
     r̂☉ = normalize(r☉)
     F☉ = SOLAR_CONST / (norm(r☉) * m2au)^2
     
     # Update illumination states
-    if stpm.SELF_SHADOWING
+    if state.problem.with_self_shadowing
         # Check face_visibility_graph availability for self-shadowing
-        if isnothing(stpm.shape.face_visibility_graph)
+        if isnothing(state.problem.shape.face_visibility_graph)
             error(
                 "face_visibility_graph must be built when SELF_SHADOWING is enabled. " *
                 "Use `build_face_visibility_graph!(shape)` or load shape with `with_face_visibility=true`."
             )
         end
-        update_illumination!(stpm.illuminated_faces, stpm.shape, r̂☉; with_self_shadowing=true)
+        update_illumination!(state.illuminated_faces, state.problem.shape, r̂☉; with_self_shadowing=true)
     else
-        update_illumination!(stpm.illuminated_faces, stpm.shape, r̂☉; with_self_shadowing=false)
+        update_illumination!(state.illuminated_faces, state.problem.shape, r̂☉; with_self_shadowing=false)
     end
 
     # Calculate flux for each face
-    for i in eachindex(stpm.shape.faces)
-        if stpm.illuminated_faces[i]
-            n̂ = stpm.shape.face_normals[i]
-            stpm.flux_sun[i] = F☉ * (n̂ ⋅ r̂☉)
+    for i in eachindex(state.problem.shape.faces)
+        if state.illuminated_faces[i]
+            n̂ = state.problem.shape.face_normals[i]
+            state.flux_sun[i] = F☉ * (n̂ ⋅ r̂☉)
         else
-            stpm.flux_sun[i] = 0.0
+            state.flux_sun[i] = 0.0
         end
     end
 end
 
 """
     update_flux_sun!(
-        btpm::BinaryAsteroidTPM,
+        state::BinaryAsteroidThermoPhysicalState,
         r☉₁::StaticVector{3},   r☉₂::StaticVector{3}, 
         r₁₂::StaticVector{3},   r₂₁::StaticVector{3},
         R₁₂::StaticMatrix{3,3}, R₂₁::StaticMatrix{3,3},
@@ -283,7 +283,7 @@ end
 Update solar irradiation flux on both components of a binary asteroid system with mutual shadowing.
 
 # Arguments
-- `btpm::BinaryAsteroidTPM` : Thermophysical model for a binary asteroid
+- `state::BinaryAsteroidThermoPhysicalState` : Thermophysical simulation state for a binary asteroid
 - `r☉₁::StaticVector{3}`    : Sun's position vector in the primary's body-fixed frame (NOT normalized) [m]
 - `r☉₂::StaticVector{3}`    : Sun's position vector in the secondary's body-fixed frame (NOT normalized) [m]
 - `r₁₂::StaticVector{3}`    : Position vector of secondary's center in primary's frame [m]
@@ -298,29 +298,29 @@ Update solar irradiation flux on both components of a binary asteroid system wit
 - Combines self-shadowing and mutual shadowing in a single call
 """
 function update_flux_sun!(
-    btpm::BinaryAsteroidTPM,
+    state::BinaryAsteroidThermoPhysicalState,
     r☉₁::StaticVector{3},   r☉₂::StaticVector{3}, 
     r₁₂::StaticVector{3},   r₂₁::StaticVector{3},
     R₁₂::StaticMatrix{3,3}, R₂₁::StaticMatrix{3,3},
 )
     # First, update illumination for both components considering self-shadowing
-    update_flux_sun!(btpm.pri, r☉₁)
-    update_flux_sun!(btpm.sec, r☉₂)
+    update_flux_sun!(state.primary, r☉₁)
+    update_flux_sun!(state.secondary, r☉₂)
     
     # Only apply mutual shadowing if enabled
-    if btpm.MUTUAL_SHADOWING
+    if state.problem.with_mutual_shadowing
         # Check BVH availability
-        if isnothing(btpm.pri.shape.bvh) || isnothing(btpm.sec.shape.bvh)
+        if isnothing(state.primary.problem.shape.bvh) || isnothing(state.secondary.problem.shape.bvh)
             error(
                 "BVH must be built for both shapes when MUTUAL_SHADOWING is enabled. " *
                 "Use `build_bvh!(shape)` or load shapes with `with_bvh=true`."
             )
         end
 
-        shape1 = btpm.pri.shape
-        shape2 = btpm.sec.shape
-        illuminated_faces1 = btpm.pri.illuminated_faces
-        illuminated_faces2 = btpm.sec.illuminated_faces
+        shape1 = state.primary.problem.shape
+        shape2 = state.secondary.problem.shape
+        illuminated_faces1 = state.primary.illuminated_faces
+        illuminated_faces2 = state.secondary.illuminated_faces
 
         # Apply eclipse shadowing using the new API from v0.4.1
         # Note: The new API takes the position vector directly instead of translation
@@ -328,8 +328,8 @@ function update_flux_sun!(
         eclipse_status2 = apply_eclipse_shadowing!(illuminated_faces2, shape2, shape1, r☉₂, r₂₁, R₂₁)
         
         # Update flux_sun based on the updated illumination states
-        btpm.pri.flux_sun[.!illuminated_faces1] .= 0.0
-        btpm.sec.flux_sun[.!illuminated_faces2] .= 0.0
+        state.primary.flux_sun[.!illuminated_faces1] .= 0.0
+        state.secondary.flux_sun[.!illuminated_faces2] .= 0.0
     end
 end
 
@@ -338,43 +338,43 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    update_flux_scat_single!(stpm::SingleAsteroidTPM)
+    update_flux_scat_single!(state::SingleAsteroidThermoPhysicalState)
 
 Update flux of scattered sunlight, only considering single scattering.
 
 # Arguments
-- `stpm` : Thermophysical model for a single asteroid
+- `state` : Thermophysical simulation state for a single asteroid
 """
-function update_flux_scat_single!(stpm::SingleAsteroidTPM)
-    stpm.SELF_HEATING == false && return
-    isnothing(stpm.shape.face_visibility_graph) && return
+function update_flux_scat_single!(state::SingleAsteroidThermoPhysicalState)
+    state.problem.with_self_heating == false && return
+    isnothing(state.problem.shape.face_visibility_graph) && return
 
-    for i_face in eachindex(stpm.shape.faces)
-        stpm.flux_scat[i_face] = 0.
+    for i_face in eachindex(state.problem.shape.faces)
+        state.flux_scat[i_face] = 0.
         
         # Face properties visible from `i_face`: Face indices and view factors
-        visible_indices = get_visible_face_indices(stpm.shape.face_visibility_graph, i_face)
-        view_factors = get_view_factors(stpm.shape.face_visibility_graph, i_face)
+        visible_indices = get_visible_face_indices(state.problem.shape.face_visibility_graph, i_face)
+        view_factors = get_view_factors(state.problem.shape.face_visibility_graph, i_face)
         
         for (j, fᵢⱼ) in zip(visible_indices, view_factors)
-            R_vis = stpm.thermo_params.reflectance_vis[j]
+            R_vis = state.problem.thermo_params.reflectance_vis[j]
 
-            stpm.flux_scat[i_face] += fᵢⱼ * R_vis * stpm.flux_sun[j]
+            state.flux_scat[i_face] += fᵢⱼ * R_vis * state.flux_sun[j]
         end
     end
 end
 
 """
-    update_flux_scat_single!(btpm::BinaryAsteroidTPM)
+    update_flux_scat_single!(state::BinaryAsteroidThermoPhysicalState)
 
 Update flux of scattered sunlight, only considering single scattering.
 
 # Arguments
-- `btpm` : Thermophysical model for a binary asteroid
+- `state` : Thermophysical simulation state for a binary asteroid
 """
-function update_flux_scat_single!(btpm::BinaryAsteroidTPM)
-    update_flux_scat_single!(btpm.pri)
-    update_flux_scat_single!(btpm.sec)
+function update_flux_scat_single!(state::BinaryAsteroidThermoPhysicalState)
+    update_flux_scat_single!(state.primary)
+    update_flux_scat_single!(state.secondary)
 end
 
 ##= TODO: Implement update_flux_scat_mult! =##
@@ -391,47 +391,47 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    update_flux_rad_single!(stpm::SingleAsteroidTPM)
+    update_flux_rad_single!(state::SingleAsteroidThermoPhysicalState)
 
 Update flux of absorption of thermal radiation from surrounding surface.
 Single radiation-absorption is only considered, assuming albedo is close to zero at thermal infrared wavelength.
 
 # Arguments
-- `stpm` : Thermophysical model for a single asteroid
+- `state` : Thermophysical simulation state for a single asteroid
 """
-function update_flux_rad_single!(stpm::SingleAsteroidTPM)
-    stpm.SELF_HEATING == false && return
-    isnothing(stpm.shape.face_visibility_graph) && return
+function update_flux_rad_single!(state::SingleAsteroidThermoPhysicalState)
+    state.problem.with_self_heating == false && return
+    isnothing(state.problem.shape.face_visibility_graph) && return
 
-    for i in eachindex(stpm.shape.faces)
-        stpm.flux_rad[i] = 0.
+    for i in eachindex(state.problem.shape.faces)
+        state.flux_rad[i] = 0.
         
         # Face properties visible from `i_face`: Face indices and view factors
-        visible_indices = get_visible_face_indices(stpm.shape.face_visibility_graph, i)
-        view_factors = get_view_factors(stpm.shape.face_visibility_graph, i)
+        visible_indices = get_visible_face_indices(state.problem.shape.face_visibility_graph, i)
+        view_factors = get_view_factors(state.problem.shape.face_visibility_graph, i)
         
         for (j, fᵢⱼ) in zip(visible_indices, view_factors)
-            ε    = stpm.thermo_params.emissivity[j]
-            R_ir = stpm.thermo_params.reflectance_ir[j]
-            Tⱼ   = stpm.temperature[begin, j]
+            ε    = state.problem.thermo_params.emissivity[j]
+            R_ir = state.problem.thermo_params.reflectance_ir[j]
+            Tⱼ   = state.temperature[begin, j]
             
-            stpm.flux_rad[i] += ε * σ_SB * (1 - R_ir) * fᵢⱼ * Tⱼ^4
+            state.flux_rad[i] += ε * σ_SB * (1 - R_ir) * fᵢⱼ * Tⱼ^4
         end
     end
 end
 
 """
-    update_flux_rad_single!(btpm::BinaryAsteroidTPM)
+    update_flux_rad_single!(state::BinaryAsteroidThermoPhysicalState)
 
 Update flux of absorption of thermal radiation from surrounding surface.
 Single radiation-absorption is only considered, assuming albedo is close to zero at thermal infrared wavelength.
 
 # Arguments
-- `btpm` : Thermophysical model for a binary asteroid
+- `state` : Thermophysical simulation state for a binary asteroid
 """
-function update_flux_rad_single!(btpm::BinaryAsteroidTPM)
-    update_flux_rad_single!(btpm.pri)
-    update_flux_rad_single!(btpm.sec)
+function update_flux_rad_single!(state::BinaryAsteroidThermoPhysicalState)
+    update_flux_rad_single!(state.primary)
+    update_flux_rad_single!(state.secondary)
 end
 
 # ╔═══════════════════════════════════════════════════════════════════╗
@@ -440,25 +440,25 @@ end
 
 
 """
-    mutual_heating!(btpm::BinaryAsteroidTPM, r₁₂, R₂₁)
+    mutual_heating!(state::BinaryAsteroidThermoPhysicalState, r₁₂, R₂₁)
 
 Calculate the mutual heating between the primary and secondary asteroids.
 
 # Arguments
-- `btpm::BinaryAsteroidTPM` : Thermophysical model for a binary asteroid
+- `state::BinaryAsteroidThermoPhysicalState` : Thermophysical simulation state for a binary asteroid
 - `r₁₂::StaticVector{3}`    : Position vector of secondary's center in primary's frame [m]
 - `R₂₁::StaticMatrix{3,3}`  : Rotation matrix from secondary to primary frame
 
 # TODO
 - Need to consider local horizon?
 """
-function mutual_heating!(btpm::BinaryAsteroidTPM, r₁₂, R₂₁)
-    btpm.MUTUAL_HEATING == false && return
+function mutual_heating!(state::BinaryAsteroidThermoPhysicalState, r₁₂, R₂₁)
+    state.problem.with_mutual_heating == false && return
 
-    shape1 = btpm.pri.shape
-    shape2 = btpm.sec.shape
-    thermo_params1 = btpm.pri.thermo_params
-    thermo_params2 = btpm.sec.thermo_params
+    shape1 = state.primary.problem.shape
+    shape2 = state.secondary.problem.shape
+    thermo_params1 = state.primary.problem.thermo_params
+    thermo_params2 = state.secondary.problem.thermo_params
 
     for i in eachindex(shape1.faces)  # △A₁B₁C₁ in primary
         c₁ = shape1.face_centers[i]   # Center of △A₁B₁C₁
@@ -479,8 +479,8 @@ function mutual_heating!(btpm::BinaryAsteroidTPM, r₁₂, R₂₁)
 
             ## if △A₁B₁C₁ and △A₂B₂C₂ are facing each other
             if d̂₁₂ ⋅ n̂₁ > 0 && d̂₁₂ ⋅ n̂₂ < 0
-                T₁ = btpm.pri.temperature[begin, i]
-                T₂ = btpm.sec.temperature[begin, j]
+                T₁ = state.primary.temperature[begin, i]
+                T₂ = state.secondary.temperature[begin, j]
 
                 ε₁     = thermo_params1.emissivity[i]
                 ε₂     = thermo_params2.emissivity[j]
@@ -490,12 +490,12 @@ function mutual_heating!(btpm::BinaryAsteroidTPM, r₁₂, R₂₁)
                 R_ir₂  = thermo_params2.reflectance_ir[j]
 
                 ## Mutual heating by scattered light
-                btpm.pri.flux_scat[i] += f₁₂ * R_vis₂ * btpm.sec.flux_sun[j]
-                btpm.sec.flux_scat[j] += f₂₁ * R_vis₁ * btpm.pri.flux_sun[i]
+                state.primary.flux_scat[i] += f₁₂ * R_vis₂ * state.secondary.flux_sun[j]
+                state.secondary.flux_scat[j] += f₂₁ * R_vis₁ * state.primary.flux_sun[i]
 
                 ## Mutual heating by thermal radiation
-                btpm.pri.flux_rad[i] += ε₂ * σ_SB * (1 - R_ir₂) * f₁₂ * T₂^4
-                btpm.sec.flux_rad[j] += ε₁ * σ_SB * (1 - R_ir₁) * f₂₁ * T₁^4
+                state.primary.flux_rad[i] += ε₂ * σ_SB * (1 - R_ir₂) * f₁₂ * T₂^4
+                state.secondary.flux_rad[j] += ε₁ * σ_SB * (1 - R_ir₁) * f₂₁ * T₁^4
             end
         end
     end

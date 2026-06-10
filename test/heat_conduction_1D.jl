@@ -43,33 +43,38 @@ Tests for 1D heat conduction solvers:
 
     thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 
-    ## --- TPMs with different solvers ---
-    SELF_SHADOWING = false
-    SELF_HEATING   = false
-    BC_UPPER       = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(0)
-    BC_LOWER       = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(0)
+    ## --- Build states with different solvers ---
+    BC_UPPER = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(0)
+    BC_LOWER = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(0)
 
-    stpm_EE = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.ExplicitEulerCache(thermo_params))
-    stpm_IE = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.ImplicitEulerCache(thermo_params))
-    stpm_CN = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params; SELF_SHADOWING, SELF_HEATING, BC_UPPER, BC_LOWER, SOLVER=AsteroidThermoPhysicalModels.CrankNicolsonCache(thermo_params))
+    problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+        with_self_shadowing      = false,
+        with_self_heating        = false,
+        upper_boundary_condition = BC_UPPER,
+        lower_boundary_condition = BC_LOWER,
+    )
+
+    state_EE = AsteroidThermoPhysicalModels._build_single_state(problem, ExplicitEuler())
+    state_IE = AsteroidThermoPhysicalModels._build_single_state(problem, ImplicitEuler())
+    state_CN = AsteroidThermoPhysicalModels._build_single_state(problem, CrankNicolson())
 
     ## --- Initial temperature ---
     T₀(x) = x < 0.5 ? 2x : 2(1 - x)
     xs = [thermo_params.Δz * (i-1) for i in 1:thermo_params.n_depth]
     Ts = [T₀(x) for x in xs]
 
-    stpm_EE.temperature .= Ts
-    stpm_IE.temperature .= Ts
-    stpm_CN.temperature .= Ts
+    state_EE.temperature .= Ts
+    state_IE.temperature .= Ts
+    state_CN.temperature .= Ts
 
-    ## --- Run TPM ---
+    ## --- Run heat conduction solvers ---
     for i_time in eachindex(ephem.time)
         i_time == length(et_range) && break  # Stop to update the temperature at the final step
         Δt = ephem.time[i_time+1] - ephem.time[i_time]
-        
-        AsteroidThermoPhysicalModels.explicit_euler!(stpm_EE, Δt)
-        AsteroidThermoPhysicalModels.implicit_euler!(stpm_IE, Δt)
-        AsteroidThermoPhysicalModels.crank_nicolson!(stpm_CN, Δt)
+
+        AsteroidThermoPhysicalModels.explicit_euler!(state_EE, Δt)
+        AsteroidThermoPhysicalModels.implicit_euler!(state_IE, Δt)
+        AsteroidThermoPhysicalModels.crank_nicolson!(state_CN, Δt)
     end
 
     """
@@ -93,15 +98,15 @@ Tests for 1D heat conduction solvers:
 
     @testset "Solver comparison" begin
         ## Maximum relative error between solvers
-        δ_max_EE_IE = maximum(relative_error.(stpm_EE.temperature, stpm_IE.temperature))
-        δ_max_EE_CN = maximum(relative_error.(stpm_EE.temperature, stpm_CN.temperature))
-        δ_max_IE_CN = maximum(relative_error.(stpm_IE.temperature, stpm_CN.temperature))
-        
+        δ_max_EE_IE = maximum(relative_error.(state_EE.temperature, state_IE.temperature))
+        δ_max_EE_CN = maximum(relative_error.(state_EE.temperature, state_CN.temperature))
+        δ_max_IE_CN = maximum(relative_error.(state_IE.temperature, state_CN.temperature))
+
         ## Allowable relative error
         @test δ_max_EE_IE < 0.01
         @test δ_max_EE_CN < 0.01
         @test δ_max_IE_CN < 0.01
-        
+
         println("Maximum relative errors:")
         println("    - Explicit Euler vs. Implicit Euler : ", δ_max_EE_IE)
         println("    - Explicit Euler vs. Crank-Nicolson : ", δ_max_EE_CN)
@@ -116,9 +121,9 @@ Tests for 1D heat conduction solvers:
         end
 
         # Maximum relative error between numerical and analytical solutions
-        δ_max_EE = maximum(relative_error.(stpm_EE.temperature[:, 1], T_analytical))
-        δ_max_IE = maximum(relative_error.(stpm_IE.temperature[:, 1], T_analytical))
-        δ_max_CN = maximum(relative_error.(stpm_CN.temperature[:, 1], T_analytical))
+        δ_max_EE = maximum(relative_error.(state_EE.temperature[:, 1], T_analytical))
+        δ_max_IE = maximum(relative_error.(state_IE.temperature[:, 1], T_analytical))
+        δ_max_CN = maximum(relative_error.(state_CN.temperature[:, 1], T_analytical))
 
         ## Allowable relative error
         @test δ_max_EE < 0.01
