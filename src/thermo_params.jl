@@ -182,3 +182,40 @@ function ThermoParams(
 
     return ThermoParams([thermal_conductivity], [density], [heat_capacity], [reflectance_vis], [reflectance_ir], [emissivity], z_max, Δz, n_depth)
 end
+
+
+"""
+    subsolar_temperature(r☉, R_vis, ε) -> Tₛₛ
+    subsolar_temperature(r☉, params::AbstractThermoParams) -> Tₛₛ
+
+Calculate the subsolar equilibrium temperature at a given heliocentric distance.
+
+# Arguments
+- `r☉`    : Sun's position vector in the asteroid-fixed frame [m]
+- `R_vis` : Visible-light reflectance (Bond albedo) [-]
+- `ε`     : Emissivity [-]
+
+# Returns
+- `Tₛₛ::Float64` : Subsolar point temperature [K]
+
+# Notes
+Assumes instantaneous radiative equilibrium (zero thermal inertia). Useful as an
+upper bound for surface temperatures and as an initial guess for `T₀`.
+
+!!! warning "TODO"
+    The `params` overload silently uses `params.reflectance_vis[begin]` and
+    `params.emissivity[begin]`, which is inconsistent for non-uniform `ThermoParams`.
+    This overload will be removed in a future release; use `subsolar_temperature(r☉, R_vis, ε)` directly.
+
+# Mathematical Formula
+```math
+T_{ss} = \\left[\\frac{(1 - A) \\Phi_\\odot}{\\varepsilon \\sigma}\\right]^{1/4}
+```
+where ``\\Phi_\\odot = \\Phi_0 / r^2`` is the solar flux at heliocentric distance ``r``.
+"""
+subsolar_temperature(r☉, params::AbstractThermoParams) = subsolar_temperature(r☉, params.reflectance_vis[begin], params.emissivity[begin])
+
+function subsolar_temperature(r☉, R_vis, ε)
+    Φ = SOLAR_CONST / (norm(r☉) * m2au)^2
+    return ((1 - R_vis) * Φ / (ε * σ_SB))^(1/4)
+end

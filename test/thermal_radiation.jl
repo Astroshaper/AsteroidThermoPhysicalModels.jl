@@ -79,22 +79,25 @@ This test validates:
     n_depth = 41  # Number of depth steps
     Δz = z_max / (n_depth - 1)  # Depth step width [m]
 
-    thermo_params = AsteroidThermoPhysicalModels.ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+    thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 
     ## --- Setting of TPM ---
-    stpm = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape, thermo_params;
-        SELF_SHADOWING = true,
-        SELF_HEATING   = true,
-        SOLVER         = AsteroidThermoPhysicalModels.ExplicitEulerCache(thermo_params),
-        BC_UPPER       = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
-        BC_LOWER       = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
+    problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+        with_self_shadowing      = true,
+        with_self_heating        = true,
+        upper_boundary_condition = RadiationBoundaryCondition(),
+        lower_boundary_condition = InsulationBoundaryCondition(),
     )
-    AsteroidThermoPhysicalModels.init_temperature!(stpm, 200)
 
     times_to_save = ephem.time[end-nsteps_in_cycle:end]  # Save temperature during the final rotation
     face_ID = [49, 340, 648]  # Face indices to save subsurface temperature
-    
-    result = run_TPM!(stpm, ephem, times_to_save, face_ID)
+
+    solution = solve(problem, ExplicitEuler();
+        ephem         = ephem,
+        times_to_save = times_to_save,
+        face_ID       = face_ID,
+        T₀            = 200.0,
+    )
 
     ## --- Check the thermal radiation from the local terrain model ---
     obs_above = SVector{3, Float64}(0, 0, 1000)  # Observer is just above the local terrain model
@@ -102,7 +105,7 @@ This test validates:
     obs_west  = RotY(-π/6) * obs_above           # Observed from 30° west
 
     emissivities = fill(1.0, length(shape.faces))
-    temperatures = result.surface_temperature[:, 181]
+    temperatures = solution.surface_temperature[:, 181]
 
     ## Expected values of the thermal radiation
     ## - Observation from 30° east   : 19.89394442347112  [W/m²]

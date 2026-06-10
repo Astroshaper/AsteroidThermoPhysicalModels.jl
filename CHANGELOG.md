@@ -7,6 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - TBD
+
+This release introduces a Problem-Solver API redesign inspired by `DifferentialEquations.jl`.
+The old `run_TPM!` function is replaced by `solve(problem, algorithm; kwargs...)`.
+
+### Migration Guide
+
+```julia
+# v0.1.x
+stpm = SingleAsteroidThermoPhysicalModel(shape, thermo_params; ...)
+result = run_TPM!(stpm, ephem, times_to_save, face_ID)
+
+# v0.2.0
+problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params; ...)
+solution = solve(problem, CrankNicolson();
+    ephem         = ephem,
+    times_to_save = times_to_save,
+    face_ID       = face_ID,
+    T₀            = 200.0,
+)
+```
+
+### Added
+
+- **Problem-Solver API** via `CommonSolve.jl`
+  - `SingleAsteroidThermoPhysicalProblem(shape, thermo_params; kwargs...)`: encapsulates the physical problem definition for a single asteroid
+  - `BinaryAsteroidThermoPhysicalProblem(primary, secondary; kwargs...)`: encapsulates the physical problem for a binary asteroid system
+  - `BinaryAsteroidThermoPhysicalProblem(shape, thermo_params; kwargs...)`: convenience constructor accepting tuples `(shape1, shape2)` and `(thermo_params1, thermo_params2)`; single-body kwargs are applied identically to both bodies
+  - `solve(problem, algorithm; ephem, times_to_save, face_ID, T₀, ...)`: run a simulation for a single asteroid
+  - `solve(problem, algorithm; ephem, times_to_save, face_ID_pri, face_ID_sec, T₀_primary, T₀_secondary, ...)`: run a simulation for a binary system
+
+- **Algorithm types** (previously flags in `run_TPM!`)
+  - `ExplicitEuler()`, `ImplicitEuler()`, `CrankNicolson()`
+
+- **Boundary condition types** (previously flags in `run_TPM!`)
+  - `RadiationBoundaryCondition()`, `InsulationBoundaryCondition()`, `IsothermalBoundaryCondition()`
+
+- `init_temperature!(stpm, T₀::AbstractMatrix)`: initialize temperatures from a full `(n_depth, n_face)` matrix (e.g., warm-start from a previous result)
+- `init_temperature!(btpm, T₀_primary, T₀_secondary)`: initialize each body at a different temperature
+- `subsolar_temperature(r☉, params)` is now publicly exported
+- `ThermoParams` is now publicly exported (previously required `AsteroidThermoPhysicalModels.ThermoParams`)
+
+### Removed
+
+- `run_TPM!`: replaced by `solve(problem, algorithm; kwargs...)`
+
+### Internal
+
+- Renamed `src/tpm_run.jl` → `src/tpm_init.jl` (file now contains only `init_temperature!`)
+- Moved `subsolar_temperature` from `tpm_run.jl` to `thermo_params.jl`
+- Dropped `AsteroidShapeModels.jl` v0.4.x compat; v0.5+ is now required
+
 ## [0.1.1] - 2026-06-08
 
 No migration required from v0.1.0. There are no breaking changes in this release.

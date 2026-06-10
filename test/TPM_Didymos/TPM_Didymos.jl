@@ -108,39 +108,46 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
     n_depth = 41  # Number of depth steps
     Δz = z_max / (n_depth - 1)  # Depth step width [m]
 
-    thermo_params1 = AsteroidThermoPhysicalModels.ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
-    thermo_params2 = AsteroidThermoPhysicalModels.ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+    thermo_params1 = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+    thermo_params2 = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 
     ## --- Setting of TPM ---
-    stpm1 = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape1, thermo_params1;
-        SELF_SHADOWING = true,
-        SELF_HEATING   = true,
-        SOLVER         = AsteroidThermoPhysicalModels.ExplicitEulerCache(thermo_params1),
-        BC_UPPER       = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
-        BC_LOWER       = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
+    prob1 = AsteroidThermoPhysicalModels.SingleAsteroidThermoPhysicalProblem(shape1, thermo_params1;
+        with_self_shadowing      = true,
+        with_self_heating        = true,
+        upper_boundary_condition = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
+        lower_boundary_condition = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
     )
 
-    stpm2 = AsteroidThermoPhysicalModels.SingleAsteroidTPM(shape2, thermo_params2;
-        SELF_SHADOWING = true,
-        SELF_HEATING   = true,
-        SOLVER         = AsteroidThermoPhysicalModels.ExplicitEulerCache(thermo_params2),
-        BC_UPPER       = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
-        BC_LOWER       = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
+    prob2 = AsteroidThermoPhysicalModels.SingleAsteroidThermoPhysicalProblem(shape2, thermo_params2;
+        with_self_shadowing      = true,
+        with_self_heating        = true,
+        upper_boundary_condition = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
+        lower_boundary_condition = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
     )
 
-    btpm  = AsteroidThermoPhysicalModels.BinaryAsteroidTPM(stpm1, stpm2; MUTUAL_SHADOWING=true, MUTUAL_HEATING=true)
-    AsteroidThermoPhysicalModels.init_temperature!(btpm, 200.)
-    
+    problem = AsteroidThermoPhysicalModels.BinaryAsteroidThermoPhysicalProblem(prob1, prob2;
+        with_mutual_shadowing = true,
+        with_mutual_heating   = true,
+    )
+
     ## --- Run TPM ---
     times_to_save = ephem.time[end-n_step_in_cycle:end]  # Save temperature during the final rotation
     face_ID_pri = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature of the primary
     face_ID_sec = [1, 2, 3, 4, 20]  # Face indices to save subsurface temperature of the secondary
 
-    result = AsteroidThermoPhysicalModels.run_TPM!(btpm, ephem, times_to_save, face_ID_pri, face_ID_sec)
+    solution = solve(problem, ExplicitEuler();
+        ephem         = ephem,
+        times_to_save = times_to_save,
+        face_ID_pri   = face_ID_pri,
+        face_ID_sec   = face_ID_sec,
+        T₀_primary    = 200.0,
+        T₀_secondary  = 200.0,
+    )
 
     ## --- Save TPM result ---
     @testset "Save TPM result" begin
-        AsteroidThermoPhysicalModels.export_TPM_results(DIR_OUTPUT, result)
+        AsteroidThermoPhysicalModels.export_TPM_results(DIR_OUTPUT, solution)
 
         @test isfile(joinpath(DIR_OUTPUT, "pri", "physical_quantities.csv"))
         @test isfile(joinpath(DIR_OUTPUT, "pri", "subsurface_temperature.csv"))
