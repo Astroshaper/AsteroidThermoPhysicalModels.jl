@@ -11,7 +11,7 @@ Solution types and export functions for thermophysical simulations.
 """
     struct SingleAsteroidThermoPhysicalSolution
 
-Output data format for `SingleAsteroidThermoPhysicalState`
+Solution data for a single asteroid thermophysical simulation.
 
 # Fields
 ## Saved at all time steps
@@ -93,7 +93,7 @@ end
 """
     struct BinaryAsteroidThermoPhysicalSolution
 
-Output data format for `BinaryAsteroidThermoPhysicalState`
+Solution data for a binary asteroid thermophysical simulation.
 
 # Fields
 - `primary`   : Solution for the primary
@@ -126,7 +126,7 @@ end
 """
     record_timestep!(solution::SingleAsteroidThermoPhysicalSolution, state::SingleAsteroidThermoPhysicalState, i_time::Integer)
 
-Save the results of TPM at the time step `i_time` to `solution`.
+Record the simulation state at time step `i_time` into `solution`.
 
 # Arguments
 - `solution` : Solution object for a single asteroid
@@ -158,7 +158,7 @@ end
 """
     record_timestep!(solution::BinaryAsteroidThermoPhysicalSolution, state::BinaryAsteroidThermoPhysicalState, i_time::Integer)
 
-Save the results of TPM at the time step `i_time` to `solution`.
+Record the simulation state at time step `i_time` into `solution`.
 
 # Arguments
 - `solution` : Solution object for a binary asteroid
@@ -185,7 +185,7 @@ The output files are saved in the following directory structure:
 
 # Arguments
 - `dirpath` : Path to the directory to save CSV files.
-- `result`  : Output data format for `SingleAsteroidThermoPhysicalState`
+- `solution` : Solution object for a single asteroid
 """
 function export_solution(dirpath, result::SingleAsteroidThermoPhysicalSolution)
 
