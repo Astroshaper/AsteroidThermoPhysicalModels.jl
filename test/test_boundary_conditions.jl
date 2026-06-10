@@ -52,7 +52,7 @@ Validates both upper and lower boundary implementations.
         state = AsteroidThermoPhysicalModels._build_single_state(problem, ImplicitEuler())
 
         # Initial uniform temperature
-        init_temperature!(state, 75.0)
+        AsteroidThermoPhysicalModels.init_temperature!(state, 75.0)
 
         # Run simulation
         for i_time in 1:(length(ephem.time)-1)
@@ -82,7 +82,7 @@ Validates both upper and lower boundary implementations.
         state = AsteroidThermoPhysicalModels._build_single_state(problem, ImplicitEuler())
 
         # Initial uniform temperature
-        init_temperature!(state, 50.0)
+        AsteroidThermoPhysicalModels.init_temperature!(state, 50.0)
 
         # Run simulation
         for i_time in 1:(length(ephem.time)-1)

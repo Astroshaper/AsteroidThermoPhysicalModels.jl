@@ -70,7 +70,7 @@ Unit tests for the Problem-Solver API introduced in v0.2.0:
         n_depth  = thermo_params1.n_depth
         n_face   = length(shape1.faces)
         T_matrix = fill(350.0, n_depth, n_face)
-        init_temperature!(state, T_matrix)
+        AsteroidThermoPhysicalModels.init_temperature!(state, T_matrix)
 
         @test state.temperature ≈ T_matrix
     end
@@ -86,12 +86,12 @@ Unit tests for the Problem-Solver API introduced in v0.2.0:
         )
         state = AsteroidThermoPhysicalModels._build_binary_state(prob, CrankNicolson())
 
-        init_temperature!(state, 200.0, 250.0)
+        AsteroidThermoPhysicalModels.init_temperature!(state, 200.0, 250.0)
 
         @test all(state.primary.temperature   .== 200.0)
         @test all(state.secondary.temperature .== 250.0)
 
-        init_temperature!(state, 300.0)
+        AsteroidThermoPhysicalModels.init_temperature!(state, 300.0)
 
         @test all(state.primary.temperature   .== 300.0)
         @test all(state.secondary.temperature .== 300.0)
