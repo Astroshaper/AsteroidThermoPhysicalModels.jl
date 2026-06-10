@@ -1,7 +1,7 @@
 #=
-tpm_result.jl
+tpm_solution.jl
 
-Result types and export functions for thermophysical model simulations.
+Solution types and export functions for thermophysical simulations.
 =#
 
 # ╔═══════════════════════════════════════════════════════════════════╗
@@ -9,9 +9,9 @@ Result types and export functions for thermophysical model simulations.
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    struct SingleAsteroidThermoPhysicalModelResult
+    struct SingleAsteroidThermoPhysicalSolution
 
-Output data format for `SingleAsteroidThermoPhysicalModel`
+Output data format for `SingleAsteroidThermoPhysicalState`
 
 # Fields
 ## Saved at all time steps
@@ -34,7 +34,7 @@ Output data format for `SingleAsteroidThermoPhysicalModel`
     - `n_face` : Number of faces
     - `n_time` : Number of time steps to save surface temperature
 """
-struct SingleAsteroidThermoPhysicalModelResult
+struct SingleAsteroidThermoPhysicalSolution
     times  ::Vector{Float64}
     E_in   ::Vector{Float64}
     E_out  ::Vector{Float64}
@@ -50,32 +50,32 @@ end
 
 
 """
-Outer constructor of `SingleAsteroidThermoPhysicalModelResult`
+Outer constructor of `SingleAsteroidThermoPhysicalSolution`
 
 # Arguments
-- `stpm`          : Thermophysical model for a single asteroid
+- `state`         : Thermophysical simulation state for a single asteroid
 - `ephem`         : Ephemerides
 - `times_to_save` : Timesteps to save temperature
 - `face_ID`       : Face indices to save subsurface temperature
 """
-function SingleAsteroidThermoPhysicalModelResult(stpm::SingleAsteroidThermoPhysicalModel, ephem, times_to_save::Vector{Float64}, face_ID::Vector{Int})
+function SingleAsteroidThermoPhysicalSolution(state::SingleAsteroidThermoPhysicalState, ephem, times_to_save::Vector{Float64}, face_ID::Vector{Int})
     n_step = length(ephem.time)             # Number of time steps
     n_step_to_save = length(times_to_save)  # Number of time steps to save temperature
-    n_face = length(stpm.shape.faces)       # Number of faces of the shape model
+    n_face = length(state.problem.shape.faces)       # Number of faces of the shape model
 
     E_in   = zeros(n_step)
     E_out  = zeros(n_step)
     force  = zeros(SVector{3, Float64}, n_step)
     torque = zeros(SVector{3, Float64}, n_step)
 
-    depth_nodes = stpm.thermo_params.Δz * (0:stpm.thermo_params.n_depth-1)
+    depth_nodes = state.problem.thermo_params.Δz * (0:state.problem.thermo_params.n_depth-1)
     surface_temperature = zeros(n_face, n_step_to_save)
     subsurface_temperature = Dict{Int,Matrix{Float64}}(
-        i => zeros(stpm.thermo_params.n_depth, n_step_to_save) for i in face_ID
+        i => zeros(state.problem.thermo_params.n_depth, n_step_to_save) for i in face_ID
     )
     face_forces = zeros(SVector{3, Float64}, n_face, n_step_to_save)
 
-    return SingleAsteroidThermoPhysicalModelResult(
+    return SingleAsteroidThermoPhysicalSolution(
         ephem.time,
         E_in,
         E_out,
@@ -91,90 +91,90 @@ end
 
 
 """
-    struct BinaryAsteroidThermoPhysicalModelResult
+    struct BinaryAsteroidThermoPhysicalSolution
 
-Output data format for `BinaryAsteroidThermoPhysicalModel`
+Output data format for `BinaryAsteroidThermoPhysicalState`
 
 # Fields
-- `pri` : TPM result for the primary
-- `sec` : TPM result for the secondary
+- `primary`   : Solution for the primary
+- `secondary` : Solution for the secondary
 """
-struct BinaryAsteroidThermoPhysicalModelResult
-    pri::SingleAsteroidThermoPhysicalModelResult
-    sec::SingleAsteroidThermoPhysicalModelResult
+struct BinaryAsteroidThermoPhysicalSolution
+    primary  ::SingleAsteroidThermoPhysicalSolution
+    secondary::SingleAsteroidThermoPhysicalSolution
 end
 
 
 """
-Outer constructor of `BinaryAsteroidThermoPhysicalModelResult`
+Outer constructor of `BinaryAsteroidThermoPhysicalSolution`
 
 # Arguments
-- `btpm`          : Thermophysical model for a binary asteroid
+- `state`         : Thermophysical simulation state for a binary asteroid
 - `ephem`         : Ephemerides
 - `times_to_save` : Timesteps to save temperature (Common to both the primary and the secondary)
 - `face_ID_pri`   : Face indices to save subsurface temperature of the primary
 - `face_ID_sec`   : Face indices to save subsurface temperature of the secondary
 """
-function BinaryAsteroidThermoPhysicalModelResult(btpm::BinaryAsteroidThermoPhysicalModel, ephem, times_to_save::Vector{Float64}, face_ID_pri::Vector{Int}, face_ID_sec::Vector{Int})
-    result_pri = SingleAsteroidThermoPhysicalModelResult(btpm.pri, ephem, times_to_save, face_ID_pri)
-    result_sec = SingleAsteroidThermoPhysicalModelResult(btpm.sec, ephem, times_to_save, face_ID_sec)
+function BinaryAsteroidThermoPhysicalSolution(state::BinaryAsteroidThermoPhysicalState, ephem, times_to_save::Vector{Float64}, face_ID_pri::Vector{Int}, face_ID_sec::Vector{Int})
+    result_primary   = SingleAsteroidThermoPhysicalSolution(state.primary,   ephem, times_to_save, face_ID_pri)
+    result_secondary = SingleAsteroidThermoPhysicalSolution(state.secondary, ephem, times_to_save, face_ID_sec)
 
-    return BinaryAsteroidThermoPhysicalModelResult(result_pri, result_sec)
+    return BinaryAsteroidThermoPhysicalSolution(result_primary, result_secondary)
 end
 
 
 """
-    update_TPM_result!(result::SingleAsteroidThermoPhysicalModelResult, stpm::SingleAsteroidThermoPhysicalModel, i_time::Integer)
+    update_TPM_result!(solution::SingleAsteroidThermoPhysicalSolution, state::SingleAsteroidThermoPhysicalState, i_time::Integer)
 
-Save the results of TPM at the time step `i_time` to `result`.
+Save the results of TPM at the time step `i_time` to `solution`.
 
 # Arguments
-- `result` : Output data format for `SingleAsteroidThermoPhysicalModel`
-- `stpm`   : Thermophysical model for a single asteroid
-- `i_time` : Time step to save data
+- `solution` : Solution object for a single asteroid
+- `state`    : Simulation state for a single asteroid
+- `i_time`   : Time step to save data
 """
-function update_TPM_result!(result::SingleAsteroidThermoPhysicalModelResult, stpm::SingleAsteroidThermoPhysicalModel, i_time::Integer)
-    result.E_in[i_time]   = energy_in(stpm)
-    result.E_out[i_time]  = energy_out(stpm)
-    result.force[i_time]  = stpm.force
-    result.torque[i_time] = stpm.torque
+function update_TPM_result!(solution::SingleAsteroidThermoPhysicalSolution, state::SingleAsteroidThermoPhysicalState, i_time::Integer)
+    solution.E_in[i_time]   = energy_in(state)
+    solution.E_out[i_time]  = energy_out(state)
+    solution.force[i_time]  = state.force
+    solution.torque[i_time] = state.torque
 
-    t  = result.times[i_time]  # Current time
+    t = solution.times[i_time]
 
-    if t in result.times_to_save  # In the step of saving temperature
-        i_time_save = findfirst(isequal(t), result.times_to_save)
+    if t in solution.times_to_save
+        i_time_save = findfirst(isequal(t), solution.times_to_save)
 
-        result.surface_temperature[:, i_time_save] .= surface_temperature(stpm)
+        solution.surface_temperature[:, i_time_save] .= surface_temperature(state)
 
-        for (i, temperature) in result.subsurface_temperature
-            temperature[:, i_time_save] .= stpm.temperature[:, i]
+        for (i, temperature) in solution.subsurface_temperature
+            temperature[:, i_time_save] .= state.temperature[:, i]
         end
 
-        result.face_forces[:, i_time_save] .= stpm.face_forces
+        solution.face_forces[:, i_time_save] .= state.face_forces
     end
 end
 
 
 """
-    update_TPM_result!(result::BinaryAsteroidThermoPhysicalModelResult, btpm::BinaryAsteroidThermoPhysicalModel, i_time::Integer)
+    update_TPM_result!(solution::BinaryAsteroidThermoPhysicalSolution, state::BinaryAsteroidThermoPhysicalState, i_time::Integer)
 
-Save the results of TPM at the time step `i_time` to `result`.
+Save the results of TPM at the time step `i_time` to `solution`.
 
 # Arguments
-- `result` : Output data format for `BinaryAsteroidThermoPhysicalModel`
-- `btpm`   : Thermophysical model for a binary asteroid
-- `i_time`     : Time step
+- `solution` : Solution object for a binary asteroid
+- `state`    : Simulation state for a binary asteroid
+- `i_time`   : Time step
 """
-function update_TPM_result!(result::BinaryAsteroidThermoPhysicalModelResult, btpm::BinaryAsteroidThermoPhysicalModel, i_time::Integer)
-    update_TPM_result!(result.pri, btpm.pri, i_time)
-    update_TPM_result!(result.sec, btpm.sec, i_time)
+function update_TPM_result!(solution::BinaryAsteroidThermoPhysicalSolution, state::BinaryAsteroidThermoPhysicalState, i_time::Integer)
+    update_TPM_result!(solution.primary,   state.primary,   i_time)
+    update_TPM_result!(solution.secondary, state.secondary, i_time)
 end
 
 
 """
-    export_TPM_results(dirpath, result::SingleAsteroidThermoPhysicalModelResult)
+    export_TPM_results(dirpath, result::SingleAsteroidThermoPhysicalSolution)
 
-Export the result of `SingleAsteroidThermoPhysicalModel` to CSV files.
+Export the result of `SingleAsteroidThermoPhysicalState` to CSV files.
 The output files are saved in the following directory structure:
 
     dirpath
@@ -185,9 +185,9 @@ The output files are saved in the following directory structure:
 
 # Arguments
 - `dirpath` : Path to the directory to save CSV files.
-- `result`  : Output data format for `SingleAsteroidThermoPhysicalModel`
+- `result`  : Output data format for `SingleAsteroidThermoPhysicalState`
 """
-function export_TPM_results(dirpath, result::SingleAsteroidThermoPhysicalModelResult)
+function export_TPM_results(dirpath, result::SingleAsteroidThermoPhysicalSolution)
 
     df = DataFrame()
     df.time     = result.times
@@ -255,34 +255,34 @@ end
 
 
 """
-    export_TPM_results(dirpath, result::BinaryAsteroidThermoPhysicalModelResult)
+    export_TPM_results(dirpath, result::BinaryAsteroidThermoPhysicalSolution)
 
-Export the result of `BinaryAsteroidThermoPhysicalModel` to CSV files.
+Export the result of `BinaryAsteroidThermoPhysicalState` to CSV files.
 The output files are saved in the following directory structure:
 
     dirpath
-    ├── pri
+    ├── primary
     │   ├── physical_quantities.csv
     │   ├── subsurface_temperature.csv
     │   ├── surface_temperature.csv
     │   └── thermal_force.csv
-    └── sec
+    └── secondary
         ├── physical_quantities.csv
         ├── subsurface_temperature.csv
         ├── surface_temperature.csv
         └── thermal_force.csv
 
 # Arguments
-- `dirpath` : Path to the directory to save CSV files.
-- `result`  : Output data format for `BinaryAsteroidThermoPhysicalModel`
+- `dirpath`  : Path to the directory to save CSV files.
+- `solution` : Solution object for a binary asteroid
 """
-function export_TPM_results(dirpath, result::BinaryAsteroidThermoPhysicalModelResult)
-    dirpath_pri = joinpath(dirpath, "pri")
-    dirpath_sec = joinpath(dirpath, "sec")
+function export_TPM_results(dirpath, solution::BinaryAsteroidThermoPhysicalSolution)
+    dirpath_primary   = joinpath(dirpath, "primary")
+    dirpath_secondary = joinpath(dirpath, "secondary")
 
-    mkpath(dirpath_pri)
-    mkpath(dirpath_sec)
+    mkpath(dirpath_primary)
+    mkpath(dirpath_secondary)
 
-    export_TPM_results(dirpath_pri, result.pri)
-    export_TPM_results(dirpath_sec, result.sec)
+    export_TPM_results(dirpath_primary,   solution.primary)
+    export_TPM_results(dirpath_secondary, solution.secondary)
 end

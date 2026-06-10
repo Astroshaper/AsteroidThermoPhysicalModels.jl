@@ -50,29 +50,16 @@ export RadiationBoundaryCondition, InsulationBoundaryCondition, IsothermalBounda
 include("tpm_problem.jl")
 export SingleAsteroidThermoPhysicalProblem, BinaryAsteroidThermoPhysicalProblem
 
-include("tpm_types.jl")
-# Aliases for TPM model types. `TPM` abbreviates "thermophysical model".
-const AbstractAsteroidTPM = AbstractAsteroidThermoPhysicalModel
-const SingleAsteroidTPM   = SingleAsteroidThermoPhysicalModel
-const BinaryAsteroidTPM   = BinaryAsteroidThermoPhysicalModel
-export AbstractAsteroidThermoPhysicalModel, SingleAsteroidThermoPhysicalModel, BinaryAsteroidThermoPhysicalModel
-export AbstractAsteroidTPM, SingleAsteroidTPM, BinaryAsteroidTPM
-
-include("tpm_result.jl")
-# Aliases for TPM result types.
-const SingleAsteroidTPMResult = SingleAsteroidThermoPhysicalModelResult
-const BinaryAsteroidTPMResult = BinaryAsteroidThermoPhysicalModelResult
-
+include("tpm_state.jl")
 include("tpm_init.jl")
 export init_temperature!
 
+include("tpm_solution.jl")
 include("tpm_solve.jl")
 export solve
 
 include("heat_conduction.jl")
-
 include("heat_conduction_analytical.jl")
-
 include("energy_flux.jl")
 include("non_grav.jl")
 include("thermal_radiation.jl")
