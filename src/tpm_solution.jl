@@ -124,7 +124,7 @@ end
 
 
 """
-    update_TPM_result!(solution::SingleAsteroidThermoPhysicalSolution, state::SingleAsteroidThermoPhysicalState, i_time::Integer)
+    record_timestep!(solution::SingleAsteroidThermoPhysicalSolution, state::SingleAsteroidThermoPhysicalState, i_time::Integer)
 
 Save the results of TPM at the time step `i_time` to `solution`.
 
@@ -133,7 +133,7 @@ Save the results of TPM at the time step `i_time` to `solution`.
 - `state`    : Simulation state for a single asteroid
 - `i_time`   : Time step to save data
 """
-function update_TPM_result!(solution::SingleAsteroidThermoPhysicalSolution, state::SingleAsteroidThermoPhysicalState, i_time::Integer)
+function record_timestep!(solution::SingleAsteroidThermoPhysicalSolution, state::SingleAsteroidThermoPhysicalState, i_time::Integer)
     solution.E_in[i_time]   = energy_in(state)
     solution.E_out[i_time]  = energy_out(state)
     solution.force[i_time]  = state.force
@@ -156,7 +156,7 @@ end
 
 
 """
-    update_TPM_result!(solution::BinaryAsteroidThermoPhysicalSolution, state::BinaryAsteroidThermoPhysicalState, i_time::Integer)
+    record_timestep!(solution::BinaryAsteroidThermoPhysicalSolution, state::BinaryAsteroidThermoPhysicalState, i_time::Integer)
 
 Save the results of TPM at the time step `i_time` to `solution`.
 
@@ -165,14 +165,14 @@ Save the results of TPM at the time step `i_time` to `solution`.
 - `state`    : Simulation state for a binary asteroid
 - `i_time`   : Time step
 """
-function update_TPM_result!(solution::BinaryAsteroidThermoPhysicalSolution, state::BinaryAsteroidThermoPhysicalState, i_time::Integer)
-    update_TPM_result!(solution.primary,   state.primary,   i_time)
-    update_TPM_result!(solution.secondary, state.secondary, i_time)
+function record_timestep!(solution::BinaryAsteroidThermoPhysicalSolution, state::BinaryAsteroidThermoPhysicalState, i_time::Integer)
+    record_timestep!(solution.primary,   state.primary,   i_time)
+    record_timestep!(solution.secondary, state.secondary, i_time)
 end
 
 
 """
-    export_TPM_results(dirpath, result::SingleAsteroidThermoPhysicalSolution)
+    export_solution(dirpath, result::SingleAsteroidThermoPhysicalSolution)
 
 Export the result of `SingleAsteroidThermoPhysicalState` to CSV files.
 The output files are saved in the following directory structure:
@@ -187,7 +187,7 @@ The output files are saved in the following directory structure:
 - `dirpath` : Path to the directory to save CSV files.
 - `result`  : Output data format for `SingleAsteroidThermoPhysicalState`
 """
-function export_TPM_results(dirpath, result::SingleAsteroidThermoPhysicalSolution)
+function export_solution(dirpath, result::SingleAsteroidThermoPhysicalSolution)
 
     df = DataFrame()
     df.time     = result.times
@@ -255,7 +255,7 @@ end
 
 
 """
-    export_TPM_results(dirpath, result::BinaryAsteroidThermoPhysicalSolution)
+    export_solution(dirpath, result::BinaryAsteroidThermoPhysicalSolution)
 
 Export the result of `BinaryAsteroidThermoPhysicalState` to CSV files.
 The output files are saved in the following directory structure:
@@ -276,13 +276,13 @@ The output files are saved in the following directory structure:
 - `dirpath`  : Path to the directory to save CSV files.
 - `solution` : Solution object for a binary asteroid
 """
-function export_TPM_results(dirpath, solution::BinaryAsteroidThermoPhysicalSolution)
-    dirpath_primary   = joinpath(dirpath, "primary")
-    dirpath_secondary = joinpath(dirpath, "secondary")
+function export_solution(dirpath, solution::BinaryAsteroidThermoPhysicalSolution)
+    dirpath1 = joinpath(dirpath, "primary")
+    dirpath2 = joinpath(dirpath, "secondary")
 
-    mkpath(dirpath_primary)
-    mkpath(dirpath_secondary)
+    mkpath(dirpath1)
+    mkpath(dirpath2)
 
-    export_TPM_results(dirpath_primary,   solution.primary)
-    export_TPM_results(dirpath_secondary, solution.secondary)
+    export_solution(dirpath1, solution.primary)
+    export_solution(dirpath2, solution.secondary)
 end

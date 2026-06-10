@@ -93,7 +93,7 @@ function solve(
 
         update_flux_all!(state, r☉)
         update_thermal_force!(state)
-        update_TPM_result!(solution, state, i_time)
+        record_timestep!(solution, state, i_time)
 
         if show_progress
             showvalues = [
@@ -178,7 +178,7 @@ function solve(
 
         update_flux_all!(state, r☉₁, r₁₂, R₁₂)
         update_thermal_force!(state)
-        update_TPM_result!(solution, state, i_time)
+        record_timestep!(solution, state, i_time)
 
         if show_progress
             showvalues = [
