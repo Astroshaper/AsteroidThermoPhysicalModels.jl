@@ -66,44 +66,40 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs, crit
 
 ## v0.2.0 - API Redesign (Target: 2026)
 
-Redesign the API around a Problem-Solver pattern inspired by `DifferentialEquations.jl`. Separating problem definition from simulation state provides the clean internal architecture needed to implement surface roughness support in v0.3.0. Implementation order within this release: Problem-Solver architecture first, then I/O format, then configuration file support (each layer depends on the previous one).
+Redesign the API around a Problem-Solver pattern inspired by `DifferentialEquations.jl`. Separating problem definition from simulation state provides the clean internal architecture needed to implement surface roughness support in v0.3.0.
 
-- [ ] **Problem-Solver Architecture**
-  - [ ] Separate problem definition (shape, thermal parameters, flags) from simulation state (temperatures, fluxes)
-  - [ ] Implement `AbstractThermoPhysicalProblem` interface
-  - [ ] Create problem types for single and binary asteroids
-  - [ ] Adopt `DifferentialEquations.jl`-style workflow: define problem → specify solver → solve
+- [x] **Problem-Solver Architecture**
+  - [x] Separate problem definition (shape, thermal parameters, flags) from simulation state (temperatures, fluxes)
+  - [x] Implement problem types for single and binary asteroids
+  - [x] Adopt `DifferentialEquations.jl`-style workflow: define problem → specify solver → solve
 
 - [ ] **Input/Output System Overhaul**
-  - [ ] Structured input data organization (geometry, thermal, computation parameters)
-  - [ ] Flexible output system for user-specified quantities
-  - [ ] Coordinate transformation support for forces and torques
+  - [ ] Formal ephemerides types with validated fields (replaces informal `NamedTuple`)
+  - [ ] Optional force and torque output in the inertial frame; requires orientation data in the ephemerides
+  - [ ] Skipping force/torque computation when orientation data is not provided
+  - [ ] `OutputSpec` type to encapsulate output settings (`times_to_save`, `face_ID`); replaces individual keyword arguments in `solve`
 
-- [ ] **Configuration File Support**
-  - [ ] TOML/YAML configuration file support for parameter surveys
-  - [ ] Run simulations from the command line via a configuration file
+- [ ] **API Cleanup**
+  - [ ] Remove `subsolar_temperature(r☉, params)` overload; use the explicit scalar form `subsolar_temperature(r☉, R_vis, ε)` instead
 
-- [ ] **Code refactoring**
-  - [ ] Refactor long functions for better maintainability (e.g., `implicit_euler!`, `crank_nicolson!`)
+## v0.2.1 - Configuration File Support (Target: 2026)
 
-- [ ] **Enhanced eclipse information**
-  - [ ] Modify binary `update_flux_sun!` to return eclipse status
-  - [ ] Return `(eclipse_status1, eclipse_status2)` for primary and secondary
+- [ ] **TOML configuration file support** for running parameter surveys without writing Julia code; external data files (shape models, pre-computed ephemerides) are referenced by path within the config
+- [ ] **CLI runner**: run simulations from the command line via a configuration file
 
-- [ ] **mutual_heating! optimization**
-  - [ ] Refactor `mutual_heating!` function for clarity
-  - [ ] Add approximation methods for faster computation
+## v0.2.2 - Solver Quality and Polish (Target: 2026)
 
-- [ ] **Test coverage expansion**
-  - [ ] Add comprehensive unit tests for all public functions
-  - [ ] Create integration tests for complex workflows
-  - [ ] Test edge cases and error conditions
-
-- [ ] **Heat Conduction Solver Enhancements**
+- [ ] **Heat conduction solver improvements**
   - [ ] Validate numerical methods against analytical solutions
-  - [ ] Add accuracy tests for different solvers and boundary conditions
   - [ ] Optimize implicit solver matrix operations
-  - [ ] Implement periodic heating benchmarks
+
+- [ ] **Binary simulation improvements**
+  - [ ] Report eclipse status for each body in binary simulations
+  - [ ] Add approximation methods for `mutual_heating!` to reduce computation time
+
+- [ ] **Code quality**
+  - [ ] Refactor long heat conduction solver functions
+  - [ ] Expand unit test coverage for public functions
 
 ## v0.3.0 - Surface Roughness Support (Target: 2026)
 
