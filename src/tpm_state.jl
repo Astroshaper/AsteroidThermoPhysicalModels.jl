@@ -101,6 +101,14 @@ Internal simulation state for a binary-asteroid thermophysical model.
 - `problem`   : Binary problem definition (mutual shadowing/heating flags)
 - `primary`   : Simulation state for the primary body
 - `secondary` : Simulation state for the secondary body
+
+# Invariant
+The inner constructor enforces:
+```
+state.primary.problem   === state.problem.primary
+state.secondary.problem === state.problem.secondary
+```
+Use `_build_binary_state` rather than constructing directly to guarantee consistency.
 """
 struct BinaryAsteroidThermoPhysicalState{
     S1 <: SingleAsteroidThermoPhysicalState,
@@ -109,6 +117,16 @@ struct BinaryAsteroidThermoPhysicalState{
     problem   ::BinaryAsteroidThermoPhysicalProblem
     primary   ::S1
     secondary ::S2
+
+    function BinaryAsteroidThermoPhysicalState(
+        problem   ::BinaryAsteroidThermoPhysicalProblem,
+        primary   ::S1,
+        secondary ::S2,
+    ) where {S1 <: SingleAsteroidThermoPhysicalState, S2 <: SingleAsteroidThermoPhysicalState}
+        primary.problem   === problem.primary   || error("primary.problem ≢ problem.primary: use _build_binary_state to construct")
+        secondary.problem === problem.secondary || error("secondary.problem ≢ problem.secondary: use _build_binary_state to construct")
+        new{S1, S2}(problem, primary, secondary)
+    end
 end
 
 
