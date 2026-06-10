@@ -92,5 +92,10 @@ Unit tests for the Problem-Solver API introduced in v0.2.0:
 
         @test all(btpm.pri.temperature .== 200.0)
         @test all(btpm.sec.temperature .== 250.0)
+
+        init_temperature!(btpm, 300.0)
+
+        @test all(btpm.pri.temperature .== 300.0)
+        @test all(btpm.sec.temperature .== 300.0)
     end
 end
