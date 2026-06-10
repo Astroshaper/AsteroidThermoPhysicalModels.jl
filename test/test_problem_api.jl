@@ -65,37 +65,37 @@ Unit tests for the Problem-Solver API introduced in v0.2.0:
             with_self_shadowing = false,
             with_self_heating   = false,
         )
-        stpm = AsteroidThermoPhysicalModels._build_single_tpm(problem, CrankNicolson())
+        state = AsteroidThermoPhysicalModels._build_single_state(problem, CrankNicolson())
 
         n_depth  = thermo_params1.n_depth
         n_face   = length(shape1.faces)
         T_matrix = fill(350.0, n_depth, n_face)
-        init_temperature!(stpm, T_matrix)
+        init_temperature!(state, T_matrix)
 
-        @test stpm.temperature ≈ T_matrix
+        @test state.temperature ≈ T_matrix
     end
 
     @testset "init_temperature! binary per-body" begin
-        prob1 = SingleAsteroidThermoPhysicalProblem(shape1, thermo_params1;
-            with_self_shadowing = false,
-            with_self_heating   = false,
+        prob = BinaryAsteroidThermoPhysicalProblem(
+            (shape1, shape2),
+            (thermo_params1, thermo_params2);
+            with_self_shadowing   = false,
+            with_self_heating     = false,
+            with_mutual_shadowing = false,
+            with_mutual_heating   = false,
         )
-        prob2 = SingleAsteroidThermoPhysicalProblem(shape2, thermo_params2;
-            with_self_shadowing = false,
-            with_self_heating   = false,
-        )
-        stpm1 = AsteroidThermoPhysicalModels._build_single_tpm(prob1, CrankNicolson())
-        stpm2 = AsteroidThermoPhysicalModels._build_single_tpm(prob2, CrankNicolson())
-        btpm  = BinaryAsteroidThermoPhysicalModel(stpm1, stpm2, false, false)
+        state1 = AsteroidThermoPhysicalModels._build_single_state(prob.primary,   CrankNicolson())
+        state2 = AsteroidThermoPhysicalModels._build_single_state(prob.secondary, CrankNicolson())
+        state  = AsteroidThermoPhysicalModels.BinaryAsteroidThermoPhysicalState(prob, state1, state2)
 
-        init_temperature!(btpm, 200.0, 250.0)
+        init_temperature!(state, 200.0, 250.0)
 
-        @test all(btpm.pri.temperature .== 200.0)
-        @test all(btpm.sec.temperature .== 250.0)
+        @test all(state.primary.temperature   .== 200.0)
+        @test all(state.secondary.temperature .== 250.0)
 
-        init_temperature!(btpm, 300.0)
+        init_temperature!(state, 300.0)
 
-        @test all(btpm.pri.temperature .== 300.0)
-        @test all(btpm.sec.temperature .== 300.0)
+        @test all(state.primary.temperature   .== 300.0)
+        @test all(state.secondary.temperature .== 300.0)
     end
 end
