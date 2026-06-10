@@ -47,6 +47,7 @@ solution = solve(problem, CrankNicolson();
 - `init_temperature!(stpm, T₀::AbstractMatrix)`: initialize temperatures from a full `(n_depth, n_face)` matrix (e.g., warm-start from a previous result)
 - `init_temperature!(btpm, T₀_primary, T₀_secondary)`: initialize each body at a different temperature
 - `subsolar_temperature(r☉, params)` is now publicly exported
+- `ThermoParams` is now publicly exported (previously required `AsteroidThermoPhysicalModels.ThermoParams`)
 
 ### Removed
 

@@ -40,6 +40,7 @@ const au2m = 149597870700    # 1 astronomical unit [m]
 const m2au = 1/au2m          # Conversion factor: meters to au
 
 include("thermo_params.jl")
+export ThermoParams
 export thermal_skin_depth, thermal_inertia, subsolar_temperature
 
 include("solver_types.jl")
