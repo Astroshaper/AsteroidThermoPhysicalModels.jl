@@ -84,9 +84,7 @@ Unit tests for the Problem-Solver API introduced in v0.2.0:
             with_mutual_shadowing = false,
             with_mutual_heating   = false,
         )
-        state1 = AsteroidThermoPhysicalModels._build_single_state(prob.primary,   CrankNicolson())
-        state2 = AsteroidThermoPhysicalModels._build_single_state(prob.secondary, CrankNicolson())
-        state  = AsteroidThermoPhysicalModels.BinaryAsteroidThermoPhysicalState(prob, state1, state2)
+        state = AsteroidThermoPhysicalModels._build_binary_state(prob, CrankNicolson())
 
         init_temperature!(state, 200.0, 250.0)
 

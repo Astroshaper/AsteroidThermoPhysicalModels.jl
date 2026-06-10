@@ -36,6 +36,18 @@ function _build_single_state(
 end
 
 
+# Internal helper: build BinaryAsteroidThermoPhysicalState from a problem + algorithm.
+# Both bodies always share the same algorithm and time step.
+function _build_binary_state(
+    problem   ::BinaryAsteroidThermoPhysicalProblem,
+    algorithm ::AbstractThermoPhysicalAlgorithm,
+)
+    state1 = _build_single_state(problem.primary,   algorithm)
+    state2 = _build_single_state(problem.secondary, algorithm)
+    BinaryAsteroidThermoPhysicalState(problem, state1, state2)
+end
+
+
 """
     solve(problem, algorithm; ephem, times_to_save, face_ID, T₀, show_progress=true) -> solution
 
@@ -158,10 +170,7 @@ function solve(
     T₀_secondary,
     show_progress ::Bool = true,
 )
-    state1 = _build_single_state(problem.primary,   algorithm)
-    state2 = _build_single_state(problem.secondary, algorithm)
-
-    state = BinaryAsteroidThermoPhysicalState(problem, state1, state2)
+    state = _build_binary_state(problem, algorithm)
     init_temperature!(state, T₀_primary, T₀_secondary)
 
     solution = BinaryAsteroidThermoPhysicalSolution(state, ephem, times_to_save, face_ID_pri, face_ID_sec)
