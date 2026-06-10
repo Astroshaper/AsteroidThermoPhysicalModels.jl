@@ -92,7 +92,7 @@ This test validates:
     times_to_save = ephem.time[end-nsteps_in_cycle:end]  # Save temperature during the final rotation
     face_ID = [49, 340, 648]  # Face indices to save subsurface temperature
 
-    result = solve(problem, ExplicitEuler();
+    solution = solve(problem, ExplicitEuler();
         ephem         = ephem,
         times_to_save = times_to_save,
         face_ID       = face_ID,
@@ -105,7 +105,7 @@ This test validates:
     obs_west  = RotY(-π/6) * obs_above           # Observed from 30° west
 
     emissivities = fill(1.0, length(shape.faces))
-    temperatures = result.surface_temperature[:, 181]
+    temperatures = solution.surface_temperature[:, 181]
 
     ## Expected values of the thermal radiation
     ## - Observation from 30° east   : 19.89394442347112  [W/m²]

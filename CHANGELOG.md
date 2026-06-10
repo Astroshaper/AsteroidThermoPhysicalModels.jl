@@ -21,7 +21,7 @@ result = run_TPM!(stpm, ephem, times_to_save, face_ID)
 
 # v0.2.0
 problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params; ...)
-result = solve(problem, CrankNicolson();
+solution = solve(problem, CrankNicolson();
     ephem         = ephem,
     times_to_save = times_to_save,
     face_ID       = face_ID,

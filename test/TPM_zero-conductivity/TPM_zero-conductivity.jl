@@ -70,16 +70,16 @@ This test validates:
     times_to_save = ephem.time[end-n_step_in_cycle:end]  # Save temperature during the final rotation
     face_ID = [1, 2]  # Face indices to save subsurface temperature
 
-    result = solve(problem, ExplicitEuler();
+    solution = solve(problem, ExplicitEuler();
         ephem         = ephem,
         times_to_save = times_to_save,
         face_ID       = face_ID,
         T₀            = 0.0,
     )
-    
+
     ## --- Save TPM result ---
     @testset "Save TPM result" begin
-        AsteroidThermoPhysicalModels.export_TPM_results(DIR_OUTPUT, result)
+        AsteroidThermoPhysicalModels.export_TPM_results(DIR_OUTPUT, solution)
 
         @test isfile(joinpath(DIR_OUTPUT, "physical_quantities.csv"))
         @test isfile(joinpath(DIR_OUTPUT, "subsurface_temperature.csv"))

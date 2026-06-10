@@ -136,7 +136,7 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
     face_ID_pri = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature of the primary
     face_ID_sec = [1, 2, 3, 4, 20]  # Face indices to save subsurface temperature of the secondary
 
-    result = solve(problem, ExplicitEuler();
+    solution = solve(problem, ExplicitEuler();
         ephem         = ephem,
         times_to_save = times_to_save,
         face_ID_pri   = face_ID_pri,
@@ -147,7 +147,7 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
 
     ## --- Save TPM result ---
     @testset "Save TPM result" begin
-        AsteroidThermoPhysicalModels.export_TPM_results(DIR_OUTPUT, result)
+        AsteroidThermoPhysicalModels.export_TPM_results(DIR_OUTPUT, solution)
 
         @test isfile(joinpath(DIR_OUTPUT, "pri", "physical_quantities.csv"))
         @test isfile(joinpath(DIR_OUTPUT, "pri", "subsurface_temperature.csv"))

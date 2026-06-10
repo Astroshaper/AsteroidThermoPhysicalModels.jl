@@ -248,7 +248,7 @@ SUITE["ryugu"] = BenchmarkGroup()
 
 # Full 20-rotation simulation
 SUITE["ryugu"]["full_simulation_20_rotations"] = @benchmarkable begin
-    result = solve(problem, CrankNicolson();
+    solution = solve(problem, CrankNicolson();
         ephem         = ephem,
         times_to_save = times_to_save,
         face_ID       = face_ID,
@@ -264,7 +264,7 @@ end teardown = begin end
 
 # Single rotation for comparison
 SUITE["ryugu"]["single_rotation"] = @benchmarkable begin
-    result = solve(problem, CrankNicolson();
+    solution = solve(problem, CrankNicolson();
         ephem         = ephem,
         times_to_save = times_to_save,
         face_ID       = face_ID,
@@ -287,7 +287,7 @@ SUITE["didymos"] = BenchmarkGroup()
 
 # Full 20-rotation simulation
 SUITE["didymos"]["full_simulation_20_rotations"] = @benchmarkable begin
-    result = solve(problem, CrankNicolson();
+    solution = solve(problem, CrankNicolson();
         ephem         = ephem,
         times_to_save = times_to_save,
         face_ID_pri   = face_ID_pri,
@@ -306,7 +306,7 @@ end teardown = begin end
 
 # Single rotation for comparison
 SUITE["didymos"]["single_rotation"] = @benchmarkable begin
-    result = solve(problem, CrankNicolson();
+    solution = solve(problem, CrankNicolson();
         ephem         = ephem,
         times_to_save = times_to_save,
         face_ID_pri   = face_ID_pri,
@@ -406,7 +406,7 @@ SUITE["memory"] = BenchmarkGroup()
 
 # Memory allocation in full simulation
 SUITE["memory"]["ryugu_full_simulation"] = @benchmarkable begin
-    result = solve(problem, CrankNicolson();
+    solution = solve(problem, CrankNicolson();
         ephem         = ephem,
         times_to_save = times_to_save,
         face_ID       = face_ID,
