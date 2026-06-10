@@ -108,8 +108,8 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
     n_depth = 41  # Number of depth steps
     Δz = z_max / (n_depth - 1)  # Depth step width [m]
 
-    thermo_params1 = AsteroidThermoPhysicalModels.ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
-    thermo_params2 = AsteroidThermoPhysicalModels.ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+    thermo_params1 = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+    thermo_params2 = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 
     ## --- Setting of TPM ---
     prob1 = AsteroidThermoPhysicalModels.SingleAsteroidThermoPhysicalProblem(shape1, thermo_params1;

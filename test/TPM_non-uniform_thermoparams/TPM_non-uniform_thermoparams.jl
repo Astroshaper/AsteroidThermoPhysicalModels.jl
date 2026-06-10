@@ -106,7 +106,7 @@ Based on TPM_Ryugu test but with varying thermophysical properties.
     n_depth = 41  # Number of depth steps
     Δz = z_max / (n_depth - 1)  # Depth step width [m]
 
-    thermo_params = AsteroidThermoPhysicalModels.ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+    thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 
     ## --- Setting of TPM ---
     problem = AsteroidThermoPhysicalModels.SingleAsteroidThermoPhysicalProblem(shape, thermo_params;

@@ -36,7 +36,7 @@ Validates both upper and lower boundary implementations.
     n_depth = 21                # Number of depth steps
     Δz = z_max / (n_depth - 1)  # Depth step width [m]
     
-    thermo_params = AsteroidThermoPhysicalModels.ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+    thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
     
     @testset "Isothermal BC with non-zero temperatures" begin
         # Test with T_upper = 100, T_lower = 50
