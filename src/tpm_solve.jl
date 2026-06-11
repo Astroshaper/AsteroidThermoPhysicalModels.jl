@@ -173,11 +173,11 @@ function _solve(
     solution = SingleAsteroidThermoPhysicalSolution(state, ephem, times_to_save, face_ID)
 
     if show_progress
-        p = Progress(length(ephem.time); dt=1, desc="Running TPM...", showspeed=true)
+        p = Progress(length(ephem.times); dt=1, desc="Running TPM...", showspeed=true)
         ProgressMeter.ijulia_behavior(:clear)
     end
 
-    for i_time in eachindex(ephem.time)
+    for i_time in eachindex(ephem.times)
         r☉ = ephem.r_sun[i_time]
 
         update_flux_all!(state, r☉)
@@ -192,8 +192,8 @@ function _solve(
             ProgressMeter.next!(p; showvalues)
         end
 
-        i_time == length(ephem.time) && break
-        Δt = ephem.time[i_time+1] - ephem.time[i_time]
+        i_time == length(ephem.times) && break
+        Δt = ephem.times[i_time+1] - ephem.times[i_time]
         update_temperature!(state, Δt)
     end
 
@@ -228,11 +228,11 @@ function _solve(
     solution = BinaryAsteroidThermoPhysicalSolution(state, ephem, times_to_save, face_ID_pri, face_ID_sec)
 
     if show_progress
-        p = Progress(length(ephem.time); dt=1, desc="Running TPM...", showspeed=true)
+        p = Progress(length(ephem.times); dt=1, desc="Running TPM...", showspeed=true)
         ProgressMeter.ijulia_behavior(:clear)
     end
 
-    for i_time in eachindex(ephem.time)
+    for i_time in eachindex(ephem.times)
         r☉₁ = ephem.r_sun[i_time]
         r₁₂ = ephem.r_secondary[i_time]
         R₁₂ = ephem.R_primary_to_secondary[i_time]
@@ -250,8 +250,8 @@ function _solve(
             ProgressMeter.next!(p; showvalues)
         end
 
-        i_time == length(ephem.time) && break
-        Δt = ephem.time[i_time+1] - ephem.time[i_time]
+        i_time == length(ephem.times) && break
+        Δt = ephem.times[i_time+1] - ephem.times[i_time]
         update_temperature!(state, Δt)
     end
 
