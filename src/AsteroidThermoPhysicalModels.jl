@@ -39,6 +39,13 @@ const au2m = 149597870700    # 1 astronomical unit [m]
                              # IAU 2012 definition (exact)
 const m2au = 1/au2m          # Conversion factor: meters to au
 
+include("ephem_types.jl")
+export AbstractAsteroidEphemerides
+export AbstractSingleAsteroidEphemerides
+export SingleAsteroidEphemerides, SingleAsteroidEphemeridesWithDynamics
+export AbstractBinaryAsteroidEphemerides
+export BinaryAsteroidEphemerides, BinaryAsteroidEphemeridesWithDynamics
+
 include("thermo_params.jl")
 export ThermoParams
 export thermal_skin_depth, thermal_inertia, subsolar_temperature
