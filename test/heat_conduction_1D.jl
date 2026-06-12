@@ -24,9 +24,7 @@ Tests for 1D heat conduction solvers:
     ## --- Seeting of time step ---
     et_range = range(0.0, 1.0; step=1e-5)
 
-    ephem = (
-        time = collect(et_range),
-    )
+    times = collect(et_range)
 
     ## --- Thermal properties ---
     k  = 0.1     # Thermal conductivity [W/m/K]
@@ -68,9 +66,9 @@ Tests for 1D heat conduction solvers:
     state_CN.temperature .= Ts
 
     ## --- Run heat conduction solvers ---
-    for i_time in eachindex(ephem.time)
+    for i_time in eachindex(times)
         i_time == length(et_range) && break  # Stop to update the temperature at the final step
-        Δt = ephem.time[i_time+1] - ephem.time[i_time]
+        Δt = times[i_time+1] - times[i_time]
 
         AsteroidThermoPhysicalModels.explicit_euler!(state_EE, Δt)
         AsteroidThermoPhysicalModels.implicit_euler!(state_IE, Δt)
@@ -117,7 +115,7 @@ Tests for 1D heat conduction solvers:
         T_analytical = similar(Ts)
         α = AsteroidThermoPhysicalModels.thermal_diffusivity(k, ρ, Cₚ)  # Thermal diffusivity [m²/s]
         for (i, x) in enumerate(xs)
-            T_analytical[i] = AsteroidThermoPhysicalModels.analytical_solution_isothermal(x, ephem.time[end], z_max, α; n_max=100)
+            T_analytical[i] = AsteroidThermoPhysicalModels.analytical_solution_isothermal(x, times[end], z_max, α; n_max=100)
         end
 
         # Maximum relative error between numerical and analytical solutions

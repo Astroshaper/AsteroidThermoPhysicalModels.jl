@@ -23,7 +23,7 @@ Validates both upper and lower boundary implementations.
 
     # Time settings
     et_range = range(0.0, 0.1; step=1e-4)
-    ephem = (time = collect(et_range),)
+    times = collect(et_range)
 
     # Thermal properties
     k  = 1.0                    # Thermal conductivity [W/m/K]
@@ -55,8 +55,8 @@ Validates both upper and lower boundary implementations.
         AsteroidThermoPhysicalModels.init_temperature!(state, 75.0)
 
         # Run simulation
-        for i_time in 1:(length(ephem.time)-1)
-            Δt = ephem.time[i_time+1] - ephem.time[i_time]
+        for i_time in 1:(length(times)-1)
+            Δt = times[i_time+1] - times[i_time]
             AsteroidThermoPhysicalModels.update_temperature!(state, Δt)
         end
 
@@ -85,8 +85,8 @@ Validates both upper and lower boundary implementations.
         AsteroidThermoPhysicalModels.init_temperature!(state, 50.0)
 
         # Run simulation
-        for i_time in 1:(length(ephem.time)-1)
-            Δt = ephem.time[i_time+1] - ephem.time[i_time]
+        for i_time in 1:(length(times)-1)
+            Δt = times[i_time+1] - times[i_time]
             AsteroidThermoPhysicalModels.update_temperature!(state, Δt)
         end
 
