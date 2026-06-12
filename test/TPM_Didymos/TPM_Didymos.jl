@@ -70,18 +70,12 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
     et_end   = et_begin + P₂ * n_cycle  # End time of TPM
     et_range = range(et_begin, et_end; length=n_step_in_cycle*n_cycle+1)
 
-    """
-    - `time` : Ephemeris times
-    - `sun`  : Sun's position in the primary's frame (DIDYMOS_FIXED)
-    - `sec`  : Secondary's position in the primary's frame (DIDYMOS_FIXED)
-    - `P2S`  : Rotation matrix from primary to secondary frames
-    """
-    ephem = (
-        time = collect(et_range),
-        sun  = [SVector{3}(SPICE.spkpos("SUN"      , et, "DIDYMOS_FIXED"  , "None", "DIDYMOS"  )[1]) * 1000 for et in et_range],
-        sec  = [SVector{3}(SPICE.spkpos("DIMORPHOS", et, "DIDYMOS_FIXED"  , "None", "DIDYMOS"  )[1]) * 1000 for et in et_range],
-        P2S  = [RotMatrix{3}(SPICE.pxform("DIDYMOS_FIXED"  , "DIMORPHOS_FIXED", et)) for et in et_range],
-    )
+    times                  = collect(et_range)
+    r_sun                  = [SVector{3}(SPICE.spkpos("SUN"      , et, "DIDYMOS_FIXED", "None", "DIDYMOS")[1]) * 1000 for et in et_range]  # Sun's position in DIDYMOS_FIXED [m]
+    r_secondary            = [SVector{3}(SPICE.spkpos("DIMORPHOS", et, "DIDYMOS_FIXED", "None", "DIDYMOS")[1]) * 1000 for et in et_range]  # Dimorphos position in DIDYMOS_FIXED [m]
+    R_primary_to_secondary = [RotMatrix{3}(SPICE.pxform("DIDYMOS_FIXED", "DIMORPHOS_FIXED", et)) for et in et_range]
+
+    ephem = BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary)
 
     SPICE.kclear()
 
@@ -132,7 +126,7 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
     )
 
     ## --- Run TPM ---
-    times_to_save = ephem.time[end-n_step_in_cycle:end]  # Save temperature during the final rotation
+    times_to_save = ephem.times[end-n_step_in_cycle:end]  # Save temperature during the final rotation
     face_ID_pri = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature of the primary
     face_ID_sec = [1, 2, 3, 4, 20]  # Face indices to save subsurface temperature of the secondary
 

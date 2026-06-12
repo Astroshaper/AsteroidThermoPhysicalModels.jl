@@ -54,14 +54,10 @@ This test validates:
 
     r☉₀ = [SPICE.convrt(-1, "au", "m"), 0, 0]  # Sun's position at the initial time step in the asteoid-fixed frame
 
-    """
-    - `time` : Ephemeris times
-    - `sun`  : Sun's position in the local frame
-    """
-    ephem = (
-        time = collect(et_range),
-        sun  = [global_to_local(lat, lon) * inv(RotZ(2π * et / P)) * r☉₀ for et in et_range],
-    )
+    times = collect(et_range)
+    r_sun = [global_to_local(lat, lon) * inv(RotZ(2π * et / P)) * r☉₀ for et in et_range]  # Sun's position in local frame [m]
+
+    ephem = SingleAsteroidEphemerides(times, r_sun)
     
     ## --- Thermal properties ---
     k  = 0.1     # Thermal conductivity [W/m/K]
@@ -89,7 +85,7 @@ This test validates:
         lower_boundary_condition = InsulationBoundaryCondition(),
     )
 
-    times_to_save = ephem.time[end-nsteps_in_cycle:end]  # Save temperature during the final rotation
+    times_to_save = ephem.times[end-nsteps_in_cycle:end]  # Save temperature during the final rotation
     face_ID = [49, 340, 648]  # Face indices to save subsurface temperature
 
     solution = solve(problem, ExplicitEuler();

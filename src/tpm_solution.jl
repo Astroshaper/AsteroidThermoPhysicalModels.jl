@@ -15,7 +15,7 @@ Solution data for a single asteroid thermophysical simulation.
 
 # Fields
 ## Saved at all time steps
-- `times`  : Timesteps, given the same vector as `ephem.time` [s]
+- `times`  : Timesteps, given the same vector as `ephem.times` [s]
 - `E_in`   : Input energy per second on the whole surface [W]
 - `E_out`  : Output energy per second from the whole surface [W]
 - `force`  : Thermal force on the asteroid [N]
@@ -59,7 +59,7 @@ Outer constructor of `SingleAsteroidThermoPhysicalSolution`
 - `face_ID`       : Face indices to save subsurface temperature
 """
 function SingleAsteroidThermoPhysicalSolution(state::SingleAsteroidThermoPhysicalState, ephem, times_to_save::Vector{Float64}, face_ID::Vector{Int})
-    n_step = length(ephem.time)             # Number of time steps
+    n_step = length(ephem.times)            # Number of time steps
     n_step_to_save = length(times_to_save)  # Number of time steps to save temperature
     n_face = length(state.problem.shape.faces)       # Number of faces of the shape model
 
@@ -76,7 +76,7 @@ function SingleAsteroidThermoPhysicalSolution(state::SingleAsteroidThermoPhysica
     face_forces = zeros(SVector{3, Float64}, n_face, n_step_to_save)
 
     return SingleAsteroidThermoPhysicalSolution(
-        ephem.time,
+        ephem.times,
         E_in,
         E_out,
         force,

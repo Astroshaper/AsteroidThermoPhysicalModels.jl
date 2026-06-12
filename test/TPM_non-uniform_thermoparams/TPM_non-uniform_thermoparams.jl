@@ -62,14 +62,10 @@ Based on TPM_Ryugu test but with varying thermophysical properties.
     et_end   = et_begin + P * n_cycle  # End time of TPM
     et_range = range(et_begin, et_end; length=n_step_in_cycle*n_cycle+1)
 
-    """
-    - `time` : Ephemeris times
-    - `sun`  : Sun's position in the RYUGU_FIXED frame
-    """
-    ephem = (
-        time = collect(et_range),
-        sun  = [SVector{3}(SPICE.spkpos("SUN", et, "RYUGU_FIXED", "None", "RYUGU")[1]) * 1000 for et in et_range],
-    )
+    times = collect(et_range)
+    r_sun = [SVector{3}(SPICE.spkpos("SUN", et, "RYUGU_FIXED", "None", "RYUGU")[1]) * 1000 for et in et_range]  # Sun's position in RYUGU_FIXED [m]
+
+    ephem = SingleAsteroidEphemerides(times, r_sun)
 
     SPICE.kclear()
 
@@ -117,7 +113,7 @@ Based on TPM_Ryugu test but with varying thermophysical properties.
     )
 
     ## --- Run TPM ---
-    times_to_save = ephem.time[end-n_step_in_cycle:end]  # Save temperature during the final rotation
+    times_to_save = ephem.times[end-n_step_in_cycle:end]  # Save temperature during the final rotation
     face_ID = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature
 
     solution = solve(problem, ExplicitEuler();
