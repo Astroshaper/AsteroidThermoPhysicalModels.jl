@@ -42,9 +42,9 @@ const m2au = 1/au2m          # Conversion factor: meters to au
 include("ephem_types.jl")
 export AbstractAsteroidEphemerides
 export AbstractSingleAsteroidEphemerides
-export SingleAsteroidEphemerides, SingleAsteroidEphemeridesWithDynamics
+export SingleAsteroidEphemerides
 export AbstractBinaryAsteroidEphemerides
-export BinaryAsteroidEphemerides, BinaryAsteroidEphemeridesWithDynamics
+export BinaryAsteroidEphemerides
 
 include("thermo_params.jl")
 export ThermoParams
