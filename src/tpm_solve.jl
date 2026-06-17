@@ -318,12 +318,12 @@ function _solve(
         r☉₁ = ephem.r_sun[i_time]
         r₁₂ = ephem.r_secondary[i_time]
         R₁₂ = ephem.R_primary_to_secondary[i_time]
-        R_p2i = ephem.R_primary_to_inertial[i_time]
-        R_s2i = R_p2i * R₁₂'  # R_secondary_to_inertial = R_p2i * R_primary_to_secondary'
+        R₁ᵢ = ephem.R_primary_to_inertial[i_time]
+        R₂ᵢ = R₁ᵢ * R₁₂'  # R_secondary_to_inertial = R_primary_to_inertial * R_primary_to_secondary'
 
         update_flux_all!(state, r☉₁, r₁₂, R₁₂)
         update_thermal_force!(state)
-        record_timestep!(solution, state, i_time, R_p2i, R_s2i)
+        record_timestep!(solution, state, i_time, R₁ᵢ, R₂ᵢ)
 
         if show_progress
             showvalues = [

@@ -247,11 +247,11 @@ function record_timestep!(
     solution ::BinaryAsteroidThermoPhysicalSolution{<:AbstractVector},
     state    ::BinaryAsteroidThermoPhysicalState,
     i_time   ::Integer,
-    R_p2i    ::SMatrix{3,3,Float64,9},
-    R_s2i    ::SMatrix{3,3,Float64,9},
+    R₁ᵢ      ::SMatrix{3,3,Float64,9},
+    R₂ᵢ      ::SMatrix{3,3,Float64,9},
 )
-    record_timestep!(solution.primary,   state.primary,   i_time, R_p2i)
-    record_timestep!(solution.secondary, state.secondary, i_time, R_s2i)
+    record_timestep!(solution.primary,   state.primary,   i_time, R₁ᵢ)
+    record_timestep!(solution.secondary, state.secondary, i_time, R₂ᵢ)
 end
 
 
