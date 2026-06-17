@@ -73,7 +73,7 @@ The type parameter `R` controls whether force and torque are computed:
     SingleAsteroidEphemerides(times, r_sun, R_body_to_inertial)
         -> SingleAsteroidEphemerides{typeof(R_body_to_inertial)}
 """
-struct SingleAsteroidEphemerides{R} <: AbstractSingleAsteroidEphemerides
+struct SingleAsteroidEphemerides{R <: Union{Nothing, AbstractVector}} <: AbstractSingleAsteroidEphemerides
     times              ::Vector{Float64}
     r_sun              ::Vector{SVector{3, Float64}}
     R_body_to_inertial ::R
@@ -82,7 +82,7 @@ struct SingleAsteroidEphemerides{R} <: AbstractSingleAsteroidEphemerides
         times              ::AbstractVector,
         r_sun              ::AbstractVector,
         R_body_to_inertial ::R,
-    ) where {R}
+    ) where {R <: Union{Nothing, AbstractVector}}
         n = length(times)
         length(r_sun) == n || throw(DimensionMismatch(
             "r_sun ($(length(r_sun))) and times ($n) must have the same length"
@@ -136,7 +136,7 @@ R_{s2i} = R_{p2i} \\cdot R_{p2s}^{\\top}
     BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary, R_primary_to_inertial)
         -> BinaryAsteroidEphemerides{typeof(R_primary_to_inertial)}
 """
-struct BinaryAsteroidEphemerides{R} <: AbstractBinaryAsteroidEphemerides
+struct BinaryAsteroidEphemerides{R <: Union{Nothing, AbstractVector}} <: AbstractBinaryAsteroidEphemerides
     times                  ::Vector{Float64}
     r_sun                  ::Vector{SVector{3, Float64}}
     r_secondary            ::Vector{SVector{3, Float64}}
@@ -149,7 +149,7 @@ struct BinaryAsteroidEphemerides{R} <: AbstractBinaryAsteroidEphemerides
         r_secondary            ::AbstractVector,
         R_primary_to_secondary ::AbstractVector,
         R_primary_to_inertial  ::R,
-    ) where {R}
+    ) where {R <: Union{Nothing, AbstractVector}}
         n = length(times)
         length(r_sun) == n || throw(DimensionMismatch(
             "r_sun ($(length(r_sun))) and times ($n) must have the same length"
