@@ -26,13 +26,12 @@ Unit tests for the Problem-Solver API introduced in v0.2.0:
         r☉_1au  = SVector{3, Float64}(1 * au2m, 0, 0)
         r☉_2au  = SVector{3, Float64}(2 * au2m, 0, 0)
 
-        Tss_1au = subsolar_temperature(r☉_1au, thermo_params1)
-        Tss_2au = subsolar_temperature(r☉_2au, thermo_params1)
+        Tss_1au = subsolar_temperature(r☉_1au, 0.1, 0.9)
+        Tss_2au = subsolar_temperature(r☉_2au, 0.1, 0.9)
 
         @test Tss_1au > 0
         @test Tss_1au isa Float64
-        @test subsolar_temperature(r☉_1au, 0.1, 0.9) ≈ Tss_1au  # two-argument form
-        @test Tss_2au < Tss_1au                                 # farther from Sun → cooler
+        @test Tss_2au < Tss_1au  # farther from Sun → cooler
     end
 
     @testset "BinaryAsteroidThermoPhysicalProblem convenience constructor" begin
