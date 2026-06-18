@@ -13,6 +13,7 @@ using AsteroidShapeModels
 using AsteroidThermoPhysicalModels
 using Test
 using Aqua
+using CSV
 using SPICE
 using Downloads
 using Statistics
@@ -33,3 +34,4 @@ include("heat_conduction_1D.jl")
 include("test_boundary_conditions.jl")
 include("test_ephem_types.jl")
 include("test_problem_api.jl")
+include("test_tpm_with_force.jl")

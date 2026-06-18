@@ -44,11 +44,21 @@ solution = solve(problem, CrankNicolson();
 - **Boundary condition types** (previously flags in `run_TPM!`)
   - `RadiationBoundaryCondition()`, `InsulationBoundaryCondition()`, `IsothermalBoundaryCondition()`
 
-- **Solution types**
-  - `SingleAsteroidThermoPhysicalSolution`: holds simulation output for a single asteroid
-  - `BinaryAsteroidThermoPhysicalSolution`: holds simulation output for a binary asteroid system
+- **Ephemerides types** — inputs for `solve`
+  - `SingleAsteroidEphemerides(times, r_sun)`: temperature-only mode; `r_sun` is the sun position in the body-fixed frame
+  - `SingleAsteroidEphemerides(times, r_sun, R_body_to_inertial)`: force/torque mode; additionally accepts body-to-inertial rotation matrices
+  - `BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary)`: temperature-only mode for binary systems
+  - `BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary, R_primary_to_inertial)`: force/torque mode for binary systems
+  - The presence or absence of rotation matrices is encoded in the type parameter `{R}` (`R = Nothing` or `R <: AbstractVector`), enabling zero-overhead dispatch in `solve`
+
+- **Solution types** (parametric on `{F}`)
+  - `SingleAsteroidThermoPhysicalSolution{F}`: holds simulation output for a single asteroid
+    - `F = Nothing`: temperature-only mode; `forces` and `torques` fields are `nothing`
+    - `F = Vector{SVector{3,Float64}}`: force/torque mode; net thermal force and torque are stored in the inertial frame
+  - `BinaryAsteroidThermoPhysicalSolution{F}`: holds simulation output for a binary asteroid system; contains `primary` and `secondary` sub-solutions of the same `{F}` type
 
 - `export_solution(dirpath, solution)`: export simulation results to CSV files; replaces `export_TPM_results`
+  - `physical_quantities.csv` includes `force_x/y/z` and `torque_x/y/z` columns when `F <: AbstractVector`
 - `subsolar_temperature(r☉, params)` is now publicly exported
 - `ThermoParams` is now publicly exported (previously required `AsteroidThermoPhysicalModels.ThermoParams`)
 

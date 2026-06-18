@@ -161,7 +161,7 @@ end
 function _solve(
     problem   ::SingleAsteroidThermoPhysicalProblem,
     algorithm ::AbstractThermoPhysicalAlgorithm,
-    ephem     ::SingleAsteroidEphemerides;
+    ephem     ::SingleAsteroidEphemerides{Nothing};
     times_to_save ::Vector{Float64},
     face_ID       ::Vector{Int},
     T₀,
@@ -204,17 +204,51 @@ end
 function _solve(
     problem   ::SingleAsteroidThermoPhysicalProblem,
     algorithm ::AbstractThermoPhysicalAlgorithm,
-    ephem     ::SingleAsteroidEphemeridesWithDynamics;
-    kwargs...,
+    ephem     ::SingleAsteroidEphemerides{<:AbstractVector};
+    times_to_save ::Vector{Float64},
+    face_ID       ::Vector{Int},
+    T₀,
+    show_progress ::Bool,
 )
-    error("solve with SingleAsteroidEphemeridesWithDynamics is not yet implemented")
+    state = _build_single_state(problem, algorithm)
+    init_temperature!(state, T₀)
+
+    solution = SingleAsteroidThermoPhysicalSolution(state, ephem, times_to_save, face_ID)
+
+    if show_progress
+        p = Progress(length(ephem.times); dt=1, desc="Running TPM...", showspeed=true)
+        ProgressMeter.ijulia_behavior(:clear)
+    end
+
+    for i_time in eachindex(ephem.times)
+        r☉ = ephem.r_sun[i_time]
+        R   = ephem.R_body_to_inertial[i_time]
+
+        update_flux_all!(state, r☉)
+        update_thermal_force!(state)
+        record_timestep!(solution, state, i_time, R)
+
+        if show_progress
+            showvalues = [
+                ("Timestep     ", i_time),
+                ("E_out / E_in ", solution.E_out[i_time] / solution.E_in[i_time]),
+            ]
+            ProgressMeter.next!(p; showvalues)
+        end
+
+        i_time == length(ephem.times) && break
+        Δt = ephem.times[i_time+1] - ephem.times[i_time]
+        update_temperature!(state, Δt)
+    end
+
+    return solution
 end
 
 
 function _solve(
     problem   ::BinaryAsteroidThermoPhysicalProblem,
     algorithm ::AbstractThermoPhysicalAlgorithm,
-    ephem     ::BinaryAsteroidEphemerides;
+    ephem     ::BinaryAsteroidEphemerides{Nothing};
     times_to_save ::Vector{Float64},
     face_ID_pri   ::Vector{Int},
     face_ID_sec   ::Vector{Int},
@@ -262,8 +296,48 @@ end
 function _solve(
     problem   ::BinaryAsteroidThermoPhysicalProblem,
     algorithm ::AbstractThermoPhysicalAlgorithm,
-    ephem     ::BinaryAsteroidEphemeridesWithDynamics;
-    kwargs...,
+    ephem     ::BinaryAsteroidEphemerides{<:AbstractVector};
+    times_to_save ::Vector{Float64},
+    face_ID_pri   ::Vector{Int},
+    face_ID_sec   ::Vector{Int},
+    T₀_primary,
+    T₀_secondary,
+    show_progress ::Bool,
 )
-    error("solve with BinaryAsteroidEphemeridesWithDynamics is not yet implemented")
+    state = _build_binary_state(problem, algorithm)
+    init_temperature!(state, T₀_primary, T₀_secondary)
+
+    solution = BinaryAsteroidThermoPhysicalSolution(state, ephem, times_to_save, face_ID_pri, face_ID_sec)
+
+    if show_progress
+        p = Progress(length(ephem.times); dt=1, desc="Running TPM...", showspeed=true)
+        ProgressMeter.ijulia_behavior(:clear)
+    end
+
+    for i_time in eachindex(ephem.times)
+        r☉₁ = ephem.r_sun[i_time]
+        r₁₂ = ephem.r_secondary[i_time]
+        R₁₂ = ephem.R_primary_to_secondary[i_time]
+        R₁ᵢ = ephem.R_primary_to_inertial[i_time]
+        R₂ᵢ = R₁ᵢ * R₁₂'  # R_secondary_to_inertial = R_primary_to_inertial * R_primary_to_secondary'
+
+        update_flux_all!(state, r☉₁, r₁₂, R₁₂)
+        update_thermal_force!(state)
+        record_timestep!(solution, state, i_time, R₁ᵢ, R₂ᵢ)
+
+        if show_progress
+            showvalues = [
+                ("Timestep                   ", i_time),
+                ("E_out / E_in for primary   ", solution.primary.E_out[i_time] / solution.primary.E_in[i_time]),
+                ("E_out / E_in for secondary ", solution.secondary.E_out[i_time] / solution.secondary.E_in[i_time]),
+            ]
+            ProgressMeter.next!(p; showvalues)
+        end
+
+        i_time == length(ephem.times) && break
+        Δt = ephem.times[i_time+1] - ephem.times[i_time]
+        update_temperature!(state, Δt)
+    end
+
+    return solution
 end

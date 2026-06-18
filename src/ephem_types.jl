@@ -7,11 +7,13 @@ These replace the informal NamedTuple previously used as `ephem`.
 Type hierarchy:
     AbstractAsteroidEphemerides
     ├── AbstractSingleAsteroidEphemerides
-    │   ├── SingleAsteroidEphemerides
-    │   └── SingleAsteroidEphemeridesWithDynamics
+    │   └── SingleAsteroidEphemerides{R}
     └── AbstractBinaryAsteroidEphemerides
-        ├── BinaryAsteroidEphemerides
-        └── BinaryAsteroidEphemeridesWithDynamics
+        └── BinaryAsteroidEphemerides{R}
+
+Type parameter R:
+    R = Nothing                          : temperature only (no force/torque)
+    R = Vector{SMatrix{3,3,Float64,9}}   : force/torque output in the inertial frame
 =#
 
 # ╔═══════════════════════════════════════════════════════════════════╗
@@ -51,158 +53,126 @@ Base.length(ephem::AbstractAsteroidEphemerides) = length(ephem.times)
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    struct SingleAsteroidEphemerides <: AbstractSingleAsteroidEphemerides
+    struct SingleAsteroidEphemerides{R} <: AbstractSingleAsteroidEphemerides
 
 Ephemerides for a single-asteroid thermophysical simulation.
-Only temperature is computed; force and torque are not.
 
-# Fields
-- `times` : Simulation timesteps [s]
-- `r_sun` : Sun position vector in the body-fixed frame [m]
-"""
-struct SingleAsteroidEphemerides <: AbstractSingleAsteroidEphemerides
-    times ::Vector{Float64}
-    r_sun ::Vector{SVector{3, Float64}}
-
-    function SingleAsteroidEphemerides(times, r_sun)
-        length(times) == length(r_sun) || throw(DimensionMismatch(
-            "times ($(length(times))) and r_sun ($(length(r_sun))) must have the same length"
-        ))
-        new(times, r_sun)
-    end
-end
-
-"""
-    struct SingleAsteroidEphemeridesWithDynamics <: AbstractSingleAsteroidEphemerides
-
-Ephemerides for a single-asteroid thermophysical simulation with force and torque output
-in the inertial frame. Requires the body orientation at each timestep.
+The type parameter `R` controls whether force and torque are computed:
+- `R = Nothing`                        : temperature only; `R_body_to_inertial = nothing`
+- `R = Vector{SMatrix{3,3,Float64,9}}` : force and torque are computed in the inertial frame
 
 # Fields
 - `times`              : Simulation timesteps [s]
-- `r_sun`              : Sun position vector in the body-fixed frame [m]
-- `R_body_to_inertial` : Passive rotation matrix from the body-fixed frame to the inertial frame
+- `r_sun`              : Sun position vector in the body-fixed frame at each timestep [m]
+- `R_body_to_inertial` : Passive rotation matrices from body-fixed to inertial frame,
+                         or `nothing` when force/torque are not needed.
+
+# Constructors
+    SingleAsteroidEphemerides(times, r_sun)
+        -> SingleAsteroidEphemerides{Nothing}
+    SingleAsteroidEphemerides(times, r_sun, R_body_to_inertial)
+        -> SingleAsteroidEphemerides{typeof(R_body_to_inertial)}
 """
-struct SingleAsteroidEphemeridesWithDynamics <: AbstractSingleAsteroidEphemerides
+struct SingleAsteroidEphemerides{R <: Union{Nothing, AbstractVector}} <: AbstractSingleAsteroidEphemerides
     times              ::Vector{Float64}
     r_sun              ::Vector{SVector{3, Float64}}
-    R_body_to_inertial ::Vector{SMatrix{3,3,Float64,9}}
+    R_body_to_inertial ::R
 
-    function SingleAsteroidEphemeridesWithDynamics(times, r_sun, R_body_to_inertial)
+    function SingleAsteroidEphemerides{R}(
+        times              ::AbstractVector,
+        r_sun              ::AbstractVector,
+        R_body_to_inertial ::R,
+    ) where {R <: Union{Nothing, AbstractVector}}
         n = length(times)
-        length(r_sun)              == n || throw(DimensionMismatch(
+        length(r_sun) == n || throw(DimensionMismatch(
             "r_sun ($(length(r_sun))) and times ($n) must have the same length"
         ))
-        length(R_body_to_inertial) == n || throw(DimensionMismatch(
+        R_body_to_inertial === nothing || length(R_body_to_inertial) == n || throw(DimensionMismatch(
             "R_body_to_inertial ($(length(R_body_to_inertial))) and times ($n) must have the same length"
         ))
-        new(times, r_sun, R_body_to_inertial)
+        new{R}(times, r_sun, R_body_to_inertial)
     end
 end
 
-"""
-    SingleAsteroidEphemeridesWithDynamics(ephem, R_body_to_inertial)
+# Temperature only: R_body_to_inertial = nothing
+SingleAsteroidEphemerides(times, r_sun) =
+    SingleAsteroidEphemerides{Nothing}(times, r_sun, nothing)
 
-Upgrade constructor: extend a `SingleAsteroidEphemerides` with body orientation data.
-"""
-function SingleAsteroidEphemeridesWithDynamics(
-    ephem              ::SingleAsteroidEphemerides,
-    R_body_to_inertial ::Vector{SMatrix{3,3,Float64,9}},
-)
-    SingleAsteroidEphemeridesWithDynamics(ephem.times, ephem.r_sun, R_body_to_inertial)
-end
+# With rotation matrices for force/torque computation
+SingleAsteroidEphemerides(times, r_sun, R_body_to_inertial) =
+    SingleAsteroidEphemerides{typeof(R_body_to_inertial)}(times, r_sun, R_body_to_inertial)
+
 
 # ╔═══════════════════════════════════════════════════════════════════╗
 # ║                     Binary asteroid                               ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    struct BinaryAsteroidEphemerides <: AbstractBinaryAsteroidEphemerides
+    struct BinaryAsteroidEphemerides{R} <: AbstractBinaryAsteroidEphemerides
 
 Ephemerides for a binary-asteroid thermophysical simulation.
-Only temperature is computed; force and torque are not.
+
+The type parameter `R` controls whether force and torque are computed:
+- `R = Nothing`                        : temperature only; `R_primary_to_inertial = nothing`
+- `R = Vector{SMatrix{3,3,Float64,9}}` : force and torque are computed in the inertial frame
+
+The secondary-to-inertial rotation is not stored but can be derived as:
+
+```math
+R_{s2i} = R_{p2i} \\cdot R_{p2s}^{\\top}
+```
 
 # Fields
 - `times`                  : Simulation timesteps [s]
-- `r_sun`                  : Sun position vector in the primary body-fixed frame [m]
-- `r_secondary`            : Secondary position vector in the primary body-fixed frame [m]
-- `R_primary_to_secondary` : Passive rotation matrix from the primary body-fixed frame to the secondary body-fixed frame
+- `r_sun`                  : Sun position vector in the primary body-fixed frame at each timestep [m]
+- `r_secondary`            : Secondary position vector in the primary body-fixed frame at each timestep [m]
+- `R_primary_to_secondary` : Passive rotation matrices from primary body-fixed to secondary body-fixed frame
+- `R_primary_to_inertial`  : Passive rotation matrices from primary body-fixed to inertial frame,
+                             or `nothing` when force/torque are not needed.
+
+# Constructors
+    BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary)
+        -> BinaryAsteroidEphemerides{Nothing}
+    BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary, R_primary_to_inertial)
+        -> BinaryAsteroidEphemerides{typeof(R_primary_to_inertial)}
 """
-struct BinaryAsteroidEphemerides <: AbstractBinaryAsteroidEphemerides
+struct BinaryAsteroidEphemerides{R <: Union{Nothing, AbstractVector}} <: AbstractBinaryAsteroidEphemerides
     times                  ::Vector{Float64}
     r_sun                  ::Vector{SVector{3, Float64}}
     r_secondary            ::Vector{SVector{3, Float64}}
     R_primary_to_secondary ::Vector{SMatrix{3,3,Float64,9}}
+    R_primary_to_inertial  ::R
 
-    function BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary)
+    function BinaryAsteroidEphemerides{R}(
+        times                  ::AbstractVector,
+        r_sun                  ::AbstractVector,
+        r_secondary            ::AbstractVector,
+        R_primary_to_secondary ::AbstractVector,
+        R_primary_to_inertial  ::R,
+    ) where {R <: Union{Nothing, AbstractVector}}
         n = length(times)
-        length(r_sun)                  == n || throw(DimensionMismatch(
+        length(r_sun) == n || throw(DimensionMismatch(
             "r_sun ($(length(r_sun))) and times ($n) must have the same length"
         ))
-        length(r_secondary)            == n || throw(DimensionMismatch(
+        length(r_secondary) == n || throw(DimensionMismatch(
             "r_secondary ($(length(r_secondary))) and times ($n) must have the same length"
         ))
         length(R_primary_to_secondary) == n || throw(DimensionMismatch(
             "R_primary_to_secondary ($(length(R_primary_to_secondary))) and times ($n) must have the same length"
         ))
-        new(times, r_sun, r_secondary, R_primary_to_secondary)
-    end
-end
-
-"""
-    struct BinaryAsteroidEphemeridesWithDynamics <: AbstractBinaryAsteroidEphemerides
-
-Ephemerides for a binary-asteroid thermophysical simulation with force and torque output
-in the inertial frame. Requires the primary body orientation at each timestep.
-
-The secondary-to-inertial rotation can be derived as
-`R_primary_to_inertial[i] * R_primary_to_secondary[i]'` when needed.
-
-# Fields
-- `times`                  : Simulation timesteps [s]
-- `r_sun`                  : Sun position vector in the primary body-fixed frame [m]
-- `r_secondary`            : Secondary position vector in the primary body-fixed frame [m]
-- `R_primary_to_secondary` : Passive rotation matrix from the primary body-fixed frame to the secondary body-fixed frame
-- `R_primary_to_inertial`  : Passive rotation matrix from the primary body-fixed frame to the inertial frame
-"""
-struct BinaryAsteroidEphemeridesWithDynamics <: AbstractBinaryAsteroidEphemerides
-    times                  ::Vector{Float64}
-    r_sun                  ::Vector{SVector{3, Float64}}
-    r_secondary            ::Vector{SVector{3, Float64}}
-    R_primary_to_secondary ::Vector{SMatrix{3,3,Float64,9}}
-    R_primary_to_inertial  ::Vector{SMatrix{3,3,Float64,9}}
-
-    function BinaryAsteroidEphemeridesWithDynamics(
-        times, r_sun, r_secondary, R_primary_to_secondary, R_primary_to_inertial,
-    )
-        n = length(times)
-        length(r_sun)                  == n || throw(DimensionMismatch(
-            "r_sun ($(length(r_sun))) and times ($n) must have the same length"
-        ))
-        length(r_secondary)            == n || throw(DimensionMismatch(
-            "r_secondary ($(length(r_secondary))) and times ($n) must have the same length"
-        ))
-        length(R_primary_to_secondary) == n || throw(DimensionMismatch(
-            "R_primary_to_secondary ($(length(R_primary_to_secondary))) and times ($n) must have the same length"
-        ))
-        length(R_primary_to_inertial)  == n || throw(DimensionMismatch(
+        R_primary_to_inertial === nothing || length(R_primary_to_inertial) == n || throw(DimensionMismatch(
             "R_primary_to_inertial ($(length(R_primary_to_inertial))) and times ($n) must have the same length"
         ))
-        new(times, r_sun, r_secondary, R_primary_to_secondary, R_primary_to_inertial)
+        new{R}(times, r_sun, r_secondary, R_primary_to_secondary, R_primary_to_inertial)
     end
 end
 
-"""
-    BinaryAsteroidEphemeridesWithDynamics(ephem, R_primary_to_inertial)
+# Temperature only: R_primary_to_inertial = nothing
+BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary) =
+    BinaryAsteroidEphemerides{Nothing}(times, r_sun, r_secondary, R_primary_to_secondary, nothing)
 
-Upgrade constructor: extend a `BinaryAsteroidEphemerides` with primary body orientation data.
-"""
-function BinaryAsteroidEphemeridesWithDynamics(
-    ephem                 ::BinaryAsteroidEphemerides,
-    R_primary_to_inertial ::Vector{SMatrix{3,3,Float64,9}},
-)
-    BinaryAsteroidEphemeridesWithDynamics(
-        ephem.times, ephem.r_sun, ephem.r_secondary, ephem.R_primary_to_secondary,
-        R_primary_to_inertial,
+# With rotation matrices for force/torque computation
+BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary, R_primary_to_inertial) =
+    BinaryAsteroidEphemerides{typeof(R_primary_to_inertial)}(
+        times, r_sun, r_secondary, R_primary_to_secondary, R_primary_to_inertial,
     )
-end
