@@ -54,7 +54,7 @@ Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
             times_to_save = times_to_save,
             face_ID       = face_ID,
             T₀            = 200.0,
-            show_progress = false,
+            show_progress = true,
         )
 
         # Solution type
@@ -106,7 +106,7 @@ Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
             face_ID_sec   = face_ID,
             T₀_primary    = 200.0,
             T₀_secondary  = 200.0,
-            show_progress = false,
+            show_progress = true,
         )
 
         # Solution type
