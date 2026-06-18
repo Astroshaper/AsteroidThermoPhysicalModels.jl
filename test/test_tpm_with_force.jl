@@ -49,12 +49,12 @@ Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
             with_self_heating   = false,
         )
 
+        output = SingleAsteroidOutputSpec(times_to_save, face_ID)
         solution = solve(problem, CrankNicolson();
-            ephem         = ephem,
-            times_to_save = times_to_save,
-            face_ID       = face_ID,
-            T₀            = 200.0,
-            show_progress = true,
+            ephem               = ephem,
+            output              = output,
+            initial_temperature = 200.0,
+            show_progress       = true,
         )
 
         # Solution type
@@ -99,14 +99,16 @@ Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
             with_mutual_heating   = false,
         )
 
+        output = BinaryAsteroidOutputSpec(
+            SingleAsteroidOutputSpec(times_to_save, face_ID),
+            SingleAsteroidOutputSpec(times_to_save, face_ID),
+        )
         solution = solve(problem, CrankNicolson();
-            ephem         = ephem,
-            times_to_save = times_to_save,
-            face_ID_pri   = face_ID,
-            face_ID_sec   = face_ID,
-            T₀_primary    = 200.0,
-            T₀_secondary  = 200.0,
-            show_progress = true,
+            ephem                         = ephem,
+            output                        = output,
+            initial_temperature_primary   = 200.0,
+            initial_temperature_secondary = 200.0,
+            show_progress                 = true,
         )
 
         # Solution type
