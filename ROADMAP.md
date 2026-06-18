@@ -80,7 +80,7 @@ Redesign the API around a Problem-Solver pattern inspired by `DifferentialEquati
   - [ ] `OutputSpec` type to encapsulate output settings (`times_to_save`, `face_ID`); replaces individual keyword arguments in `solve`
 
 - [ ] **API Cleanup**
-  - [ ] Remove `subsolar_temperature(r☉, params)` overload; use the explicit scalar form `subsolar_temperature(r☉, R_vis, ε)` instead
+  - [x] Remove `subsolar_temperature(r☉, params)` overload; use the explicit scalar form `subsolar_temperature(r☉, R_vis, ε)` instead
 
 ## v0.2.1 - Configuration File Support (Target: 2026)
 

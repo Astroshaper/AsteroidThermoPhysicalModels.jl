@@ -59,7 +59,6 @@ solution = solve(problem, CrankNicolson();
 
 - `export_solution(dirpath, solution)`: export simulation results to CSV files; replaces `export_TPM_results`
   - `physical_quantities.csv` includes `force_x/y/z` and `torque_x/y/z` columns when `F <: AbstractVector`
-- `subsolar_temperature(r☉, params)` is now publicly exported
 - `ThermoParams` is now publicly exported (previously required `AsteroidThermoPhysicalModels.ThermoParams`)
 
 ### Changed
@@ -70,6 +69,7 @@ solution = solve(problem, CrankNicolson();
 
 - `run_TPM!`: replaced by `solve(problem, algorithm; kwargs...)`
 - `export_TPM_results`: replaced by `export_solution`
+- `subsolar_temperature(r☉, params::AbstractThermoParams)` overload: used `params.reflectance_vis[begin]` and `params.emissivity[begin]` silently, which is semantically inconsistent for non-uniform `ThermoParams`; use `subsolar_temperature(r☉, R_vis, ε)` directly instead
 
 ### Internal
 

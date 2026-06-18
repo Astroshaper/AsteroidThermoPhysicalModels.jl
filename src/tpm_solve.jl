@@ -127,8 +127,8 @@ Run a thermophysical simulation for a binary asteroid system.
 
 # Example
 ```julia
-T₀_primary   = subsolar_temperature(ephem.r_sun[begin], params1)
-T₀_secondary = subsolar_temperature(ephem.r_sun[begin], params2)
+T₀_primary   = subsolar_temperature(ephem.r_sun[begin], R_vis, ε)
+T₀_secondary = subsolar_temperature(ephem.r_sun[begin], R_vis, ε)
 solution = solve(problem, CrankNicolson();
     ephem         = ephem,
     times_to_save = times_to_save,
