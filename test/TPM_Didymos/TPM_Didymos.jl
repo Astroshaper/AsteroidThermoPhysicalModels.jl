@@ -129,14 +129,16 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
     times_to_save = ephem.times[end-n_step_in_cycle:end]  # Save temperature during the final rotation
     face_ID_pri = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature of the primary
     face_ID_sec = [1, 2, 3, 4, 20]  # Face indices to save subsurface temperature of the secondary
+    output = BinaryAsteroidOutputSpec(
+        SingleAsteroidOutputSpec(times_to_save, face_ID_pri),
+        SingleAsteroidOutputSpec(times_to_save, face_ID_sec),
+    )
 
     solution = solve(problem, ExplicitEuler();
-        ephem         = ephem,
-        times_to_save = times_to_save,
-        face_ID_pri   = face_ID_pri,
-        face_ID_sec   = face_ID_sec,
-        T₀_primary    = 200.0,
-        T₀_secondary  = 200.0,
+        ephem                         = ephem,
+        output                        = output,
+        initial_temperature_primary   = 200.0,
+        initial_temperature_secondary = 200.0,
     )
 
     ## --- Save TPM result ---

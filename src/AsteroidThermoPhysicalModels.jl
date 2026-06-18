@@ -60,6 +60,7 @@ export SingleAsteroidThermoPhysicalProblem, BinaryAsteroidThermoPhysicalProblem
 include("tpm_state.jl")
 include("tpm_init.jl")
 include("tpm_solution.jl")
+export SingleAsteroidOutputSpec, BinaryAsteroidOutputSpec
 export SingleAsteroidThermoPhysicalSolution, BinaryAsteroidThermoPhysicalSolution
 export export_solution
 

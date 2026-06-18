@@ -21,11 +21,11 @@ result = run_TPM!(stpm, ephem, times_to_save, face_ID)
 
 # v0.2.0
 problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params; ...)
+output = SingleAsteroidOutputSpec(times_to_save, face_ID)
 solution = solve(problem, CrankNicolson();
-    ephem         = ephem,
-    times_to_save = times_to_save,
-    face_ID       = face_ID,
-    T₀            = 200.0,
+    ephem               = ephem,
+    output              = output,
+    initial_temperature = 200.0,
 )
 ```
 
@@ -35,8 +35,12 @@ solution = solve(problem, CrankNicolson();
   - `SingleAsteroidThermoPhysicalProblem(shape, thermo_params; kwargs...)`: encapsulates the physical problem definition for a single asteroid
   - `BinaryAsteroidThermoPhysicalProblem(primary, secondary; kwargs...)`: encapsulates the physical problem for a binary asteroid system
   - `BinaryAsteroidThermoPhysicalProblem(shape, thermo_params; kwargs...)`: convenience constructor accepting tuples `(shape1, shape2)` and `(thermo_params1, thermo_params2)`; single-body kwargs are applied identically to both bodies
-  - `solve(problem, algorithm; ephem, times_to_save, face_ID, T₀, ...)`: run a simulation for a single asteroid
-  - `solve(problem, algorithm; ephem, times_to_save, face_ID_pri, face_ID_sec, T₀_primary, T₀_secondary, ...)`: run a simulation for a binary system
+  - `solve(problem, algorithm; ephem, output, initial_temperature, ...)`: run a simulation for a single asteroid
+  - `solve(problem, algorithm; ephem, output, initial_temperature_primary, initial_temperature_secondary, ...)`: run a simulation for a binary system
+
+- **Output specification types**
+  - `SingleAsteroidOutputSpec(times_to_save, face_ID)`: encapsulates which timesteps and face indices to record in detail; replaces the individual `times_to_save` and `face_ID` keyword arguments of `solve`
+  - `BinaryAsteroidOutputSpec(primary, secondary)`: wraps a `SingleAsteroidOutputSpec` for each body; passed as the `output` keyword argument of `solve` for binary systems
 
 - **Algorithm types** (previously flags in `run_TPM!`)
   - `ExplicitEuler()`, `ImplicitEuler()`, `CrankNicolson()`
@@ -74,7 +78,7 @@ solution = solve(problem, CrankNicolson();
 ### Internal
 
 - Introduced `SingleAsteroidThermoPhysicalState` / `BinaryAsteroidThermoPhysicalState` as internal simulation state types (separate from problem definition; not exported)
-- `init_temperature!` is no longer exported; use the `T₀` keyword argument of `solve` to set the initial temperature
+- `init_temperature!` is no longer exported; use the `initial_temperature` keyword argument of `solve` to set the initial temperature
 - Renamed `src/tpm_types.jl` → `src/tpm_state.jl`
 - Renamed `src/tpm_result.jl` → `src/tpm_solution.jl`
 - Renamed `src/tpm_run.jl` → `src/tpm_init.jl` (file now contains only `init_temperature!`)

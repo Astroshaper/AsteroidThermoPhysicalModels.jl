@@ -59,7 +59,7 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    solve(problem, algorithm; ephem, times_to_save, face_ID, T₀, show_progress=true) -> solution
+    solve(problem, algorithm; ephem, output, initial_temperature, show_progress=true) -> solution
 
 Run a thermophysical simulation for a single asteroid.
 
@@ -68,11 +68,10 @@ Run a thermophysical simulation for a single asteroid.
 - `algorithm` : Numerical method (`ExplicitEuler()`, `ImplicitEuler()`, or `CrankNicolson()`)
 
 # Keyword Arguments
-- `ephem`                : Ephemerides (`AbstractSingleAsteroidEphemerides`)
-- `times_to_save`        : Time points at which to save detailed temperature data [s]
-- `face_ID`              : Face indices for which to save subsurface temperature profiles
-- `T₀`                   : Initial temperature; `Real` for uniform, or `AbstractMatrix` of size `(n_depth, n_face)` [K]
-- `show_progress = true` : Display progress meter during simulation
+- `ephem`                   : Ephemerides (`AbstractSingleAsteroidEphemerides`)
+- `output`                  : Output specification (`SingleAsteroidOutputSpec`); defines which timesteps and face indices to record in detail
+- `initial_temperature`     : Initial temperature; `Real` for uniform, or `AbstractMatrix` of size `(n_depth, n_face)` [K]
+- `show_progress = true`    : Display progress meter during simulation
 
 # Returns
 - `SingleAsteroidThermoPhysicalSolution`
@@ -83,29 +82,29 @@ problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
     with_self_shadowing = true,
     with_self_heating   = true,
 )
+output = SingleAsteroidOutputSpec(times_to_save, face_ID)
 solution = solve(problem, CrankNicolson();
-    ephem         = ephem,
-    times_to_save = times_to_save,
-    face_ID       = face_ID,
-    T₀            = 200.0,
+    ephem               = ephem,
+    output              = output,
+    initial_temperature = 200.0,
 )
 ```
 """
 function solve(
     problem   ::SingleAsteroidThermoPhysicalProblem,
     algorithm ::AbstractThermoPhysicalAlgorithm;
-    ephem         ::AbstractSingleAsteroidEphemerides,
-    times_to_save ::Vector{Float64},
-    face_ID       ::Vector{Int},
-    T₀,
-    show_progress ::Bool = true,
+    ephem                ::AbstractSingleAsteroidEphemerides,
+    output               ::SingleAsteroidOutputSpec,
+    initial_temperature,
+    show_progress        ::Bool = true,
 )
-    _solve(problem, algorithm, ephem; times_to_save, face_ID, T₀, show_progress)
+    _validate_output_spec(output, ephem)
+    _solve(problem, algorithm, ephem; output, initial_temperature, show_progress)
 end
 
 
 """
-    solve(problem, algorithm; ephem, times_to_save, face_ID_pri, face_ID_sec, T₀_primary, T₀_secondary, show_progress=true) -> solution
+    solve(problem, algorithm; ephem, output, initial_temperature_primary, initial_temperature_secondary, show_progress=true) -> solution
 
 Run a thermophysical simulation for a binary asteroid system.
 
@@ -114,43 +113,41 @@ Run a thermophysical simulation for a binary asteroid system.
 - `algorithm` : Numerical method (`ExplicitEuler()`, `ImplicitEuler()`, or `CrankNicolson()`)
 
 # Keyword Arguments
-- `ephem`                  : Ephemerides (`AbstractBinaryAsteroidEphemerides`)
-- `times_to_save`          : Time points at which to save detailed temperature data [s]
-- `face_ID_pri`            : Face indices for subsurface profiles of the primary
-- `face_ID_sec`            : Face indices for subsurface profiles of the secondary
-- `T₀_primary`             : Initial temperature for the primary; `Real` or `AbstractMatrix` of size `(n_depth, n_face)` [K]
-- `T₀_secondary`           : Initial temperature for the secondary; `Real` or `AbstractMatrix` of size `(n_depth, n_face)` [K]
-- `show_progress = true`   : Display progress meter during simulation
+- `ephem`                         : Ephemerides (`AbstractBinaryAsteroidEphemerides`)
+- `output`                        : Output specification (`BinaryAsteroidOutputSpec`); wraps a `SingleAsteroidOutputSpec` for each body
+- `initial_temperature_primary`   : Initial temperature for the primary; `Real` or `AbstractMatrix` of size `(n_depth, n_face)` [K]
+- `initial_temperature_secondary` : Initial temperature for the secondary; `Real` or `AbstractMatrix` of size `(n_depth, n_face)` [K]
+- `show_progress = true`          : Display progress meter during simulation
 
 # Returns
 - `BinaryAsteroidThermoPhysicalSolution`
 
 # Example
 ```julia
-T₀_primary   = subsolar_temperature(ephem.r_sun[begin], R_vis, ε)
-T₀_secondary = subsolar_temperature(ephem.r_sun[begin], R_vis, ε)
+T_init = subsolar_temperature(ephem.r_sun[begin], R_vis, ε)
+output = BinaryAsteroidOutputSpec(
+    SingleAsteroidOutputSpec(times_to_save, face_ID_pri),
+    SingleAsteroidOutputSpec(times_to_save, face_ID_sec),
+)
 solution = solve(problem, CrankNicolson();
-    ephem         = ephem,
-    times_to_save = times_to_save,
-    face_ID_pri   = face_ID_pri,
-    face_ID_sec   = face_ID_sec,
-    T₀_primary    = T₀_primary,
-    T₀_secondary  = T₀_secondary,
+    ephem                         = ephem,
+    output                        = output,
+    initial_temperature_primary   = T_init,
+    initial_temperature_secondary = T_init,
 )
 ```
 """
 function solve(
     problem   ::BinaryAsteroidThermoPhysicalProblem,
     algorithm ::AbstractThermoPhysicalAlgorithm;
-    ephem         ::AbstractBinaryAsteroidEphemerides,
-    times_to_save ::Vector{Float64},
-    face_ID_pri   ::Vector{Int},
-    face_ID_sec   ::Vector{Int},
-    T₀_primary,
-    T₀_secondary,
-    show_progress ::Bool = true,
+    ephem                        ::AbstractBinaryAsteroidEphemerides,
+    output                       ::BinaryAsteroidOutputSpec,
+    initial_temperature_primary,
+    initial_temperature_secondary,
+    show_progress                ::Bool = true,
 )
-    _solve(problem, algorithm, ephem; times_to_save, face_ID_pri, face_ID_sec, T₀_primary, T₀_secondary, show_progress)
+    _validate_output_spec(output, ephem)
+    _solve(problem, algorithm, ephem; output, initial_temperature_primary, initial_temperature_secondary, show_progress)
 end
 
 
@@ -162,15 +159,14 @@ function _solve(
     problem   ::SingleAsteroidThermoPhysicalProblem,
     algorithm ::AbstractThermoPhysicalAlgorithm,
     ephem     ::SingleAsteroidEphemerides{Nothing};
-    times_to_save ::Vector{Float64},
-    face_ID       ::Vector{Int},
-    T₀,
-    show_progress ::Bool,
+    output              ::SingleAsteroidOutputSpec,
+    initial_temperature,
+    show_progress       ::Bool,
 )
     state = _build_single_state(problem, algorithm)
-    init_temperature!(state, T₀)
+    init_temperature!(state, initial_temperature)
 
-    solution = SingleAsteroidThermoPhysicalSolution(state, ephem, times_to_save, face_ID)
+    solution = SingleAsteroidThermoPhysicalSolution(state, ephem, output)
 
     if show_progress
         p = Progress(length(ephem.times); dt=1, desc="Running TPM...", showspeed=true)
@@ -205,15 +201,14 @@ function _solve(
     problem   ::SingleAsteroidThermoPhysicalProblem,
     algorithm ::AbstractThermoPhysicalAlgorithm,
     ephem     ::SingleAsteroidEphemerides{<:AbstractVector};
-    times_to_save ::Vector{Float64},
-    face_ID       ::Vector{Int},
-    T₀,
-    show_progress ::Bool,
+    output              ::SingleAsteroidOutputSpec,
+    initial_temperature,
+    show_progress       ::Bool,
 )
     state = _build_single_state(problem, algorithm)
-    init_temperature!(state, T₀)
+    init_temperature!(state, initial_temperature)
 
-    solution = SingleAsteroidThermoPhysicalSolution(state, ephem, times_to_save, face_ID)
+    solution = SingleAsteroidThermoPhysicalSolution(state, ephem, output)
 
     if show_progress
         p = Progress(length(ephem.times); dt=1, desc="Running TPM...", showspeed=true)
@@ -249,17 +244,15 @@ function _solve(
     problem   ::BinaryAsteroidThermoPhysicalProblem,
     algorithm ::AbstractThermoPhysicalAlgorithm,
     ephem     ::BinaryAsteroidEphemerides{Nothing};
-    times_to_save ::Vector{Float64},
-    face_ID_pri   ::Vector{Int},
-    face_ID_sec   ::Vector{Int},
-    T₀_primary,
-    T₀_secondary,
-    show_progress ::Bool,
+    output                       ::BinaryAsteroidOutputSpec,
+    initial_temperature_primary,
+    initial_temperature_secondary,
+    show_progress                ::Bool,
 )
     state = _build_binary_state(problem, algorithm)
-    init_temperature!(state, T₀_primary, T₀_secondary)
+    init_temperature!(state, initial_temperature_primary, initial_temperature_secondary)
 
-    solution = BinaryAsteroidThermoPhysicalSolution(state, ephem, times_to_save, face_ID_pri, face_ID_sec)
+    solution = BinaryAsteroidThermoPhysicalSolution(state, ephem, output)
 
     if show_progress
         p = Progress(length(ephem.times); dt=1, desc="Running TPM...", showspeed=true)
@@ -297,17 +290,15 @@ function _solve(
     problem   ::BinaryAsteroidThermoPhysicalProblem,
     algorithm ::AbstractThermoPhysicalAlgorithm,
     ephem     ::BinaryAsteroidEphemerides{<:AbstractVector};
-    times_to_save ::Vector{Float64},
-    face_ID_pri   ::Vector{Int},
-    face_ID_sec   ::Vector{Int},
-    T₀_primary,
-    T₀_secondary,
-    show_progress ::Bool,
+    output                       ::BinaryAsteroidOutputSpec,
+    initial_temperature_primary,
+    initial_temperature_secondary,
+    show_progress                ::Bool,
 )
     state = _build_binary_state(problem, algorithm)
-    init_temperature!(state, T₀_primary, T₀_secondary)
+    init_temperature!(state, initial_temperature_primary, initial_temperature_secondary)
 
-    solution = BinaryAsteroidThermoPhysicalSolution(state, ephem, times_to_save, face_ID_pri, face_ID_sec)
+    solution = BinaryAsteroidThermoPhysicalSolution(state, ephem, output)
 
     if show_progress
         p = Progress(length(ephem.times); dt=1, desc="Running TPM...", showspeed=true)

@@ -87,12 +87,12 @@ This test validates:
 
     times_to_save = ephem.times[end-nsteps_in_cycle:end]  # Save temperature during the final rotation
     face_ID = [49, 340, 648]  # Face indices to save subsurface temperature
+    output = SingleAsteroidOutputSpec(times_to_save, face_ID)
 
     solution = solve(problem, ExplicitEuler();
-        ephem         = ephem,
-        times_to_save = times_to_save,
-        face_ID       = face_ID,
-        T₀            = 200.0,
+        ephem               = ephem,
+        output              = output,
+        initial_temperature = 200.0,
     )
 
     ## --- Check the thermal radiation from the local terrain model ---

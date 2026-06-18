@@ -115,12 +115,12 @@ Based on TPM_Ryugu test but with varying thermophysical properties.
     ## --- Run TPM ---
     times_to_save = ephem.times[end-n_step_in_cycle:end]  # Save temperature during the final rotation
     face_ID = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature
+    output = SingleAsteroidOutputSpec(times_to_save, face_ID)
 
     solution = solve(problem, ExplicitEuler();
-        ephem         = ephem,
-        times_to_save = times_to_save,
-        face_ID       = face_ID,
-        T₀            = 200.0,
+        ephem               = ephem,
+        output              = output,
+        initial_temperature = 200.0,
     )
 
     ## --- Save TPM result ---
