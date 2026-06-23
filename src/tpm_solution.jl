@@ -58,7 +58,8 @@ struct SingleAsteroidOutputSpec
             ))
         end
         new(
-            output_times, subsurface_face_ids,
+            output_times,
+            subsurface_face_ids,
             save_surface_temperature,
             save_subsurface_temperature,
             save_face_forces,
@@ -121,12 +122,12 @@ The type parameter `F` mirrors `SingleAsteroidEphemerides{R}`:
 
 ## Saved only at `output.output_times`
 - `output`                 : Output specification (controls which data are saved and when)
-- `forces`                 : Net thermal force in the inertial frame [N], or `nothing`; saved when `output.save_forces = true`
-- `torques`                : Net thermal torque in the inertial frame [N⋅m], or `nothing`; saved when `output.save_torques = true`
 - `depth_nodes`            : Depth of each calculation node [m], size `(n_depth,)`
 - `surface_temperature`    : Surface temperature [K], size `(n_face, n_save)`; saved when `output.save_surface_temperature = true`
 - `subsurface_temperature` : Subsurface temperature [K] by face ID, each entry `(n_depth, n_save)`; saved when `output.save_subsurface_temperature = true`
 - `face_forces`            : Per-face thermal force in the body-fixed frame [N], size `(n_face, n_save)`; saved when `output.save_face_forces = true`
+- `forces`                 : Net thermal force in the inertial frame [N], or `nothing`; saved when `output.save_forces = true`
+- `torques`                : Net thermal torque in the inertial frame [N⋅m], or `nothing`; saved when `output.save_torques = true`
 """
 struct SingleAsteroidThermoPhysicalSolution{F <: Union{Nothing, AbstractVector}}
     times          ::Vector{Float64}
@@ -134,12 +135,12 @@ struct SingleAsteroidThermoPhysicalSolution{F <: Union{Nothing, AbstractVector}}
     emitted_power  ::Vector{Float64}
 
     output                 ::SingleAsteroidOutputSpec
-    forces                 ::F
-    torques                ::F
     depth_nodes            ::Vector{Float64}
     surface_temperature    ::Matrix{Float64}
     subsurface_temperature ::Dict{Int, Matrix{Float64}}
     face_forces            ::Matrix{SVector{3, Float64}}
+    forces                 ::F
+    torques                ::F
 end
 
 
@@ -182,8 +183,9 @@ function _alloc_solution_no_force(
 
     SingleAsteroidThermoPhysicalSolution{Nothing}(
         times, absorbed_power, emitted_power,
-        output, nothing, nothing,
+        output,
         depth_nodes, surface_temperature, subsurface_temperature, face_forces,
+        nothing, nothing,
     )
 end
 
@@ -209,8 +211,9 @@ function _alloc_solution_with_force(
 
     SingleAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}(
         times, absorbed_power, emitted_power,
-        output, forces, torques,
+        output,
         depth_nodes, surface_temperature, subsurface_temperature, face_forces,
+        forces, torques,
     )
 end
 
