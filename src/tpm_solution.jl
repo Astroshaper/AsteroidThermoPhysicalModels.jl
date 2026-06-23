@@ -110,9 +110,9 @@ end
 
 Solution data for a single asteroid thermophysical simulation.
 
-The type parameter `F` mirrors `SingleAsteroidEphemerides{R}`:
-- `F = Nothing`                     : force/torque not computed; `forces = torques = nothing`
-- `F = Vector{SVector{3, Float64}}` : force/torque stored in the inertial frame
+The type parameter `F` mirrors `SingleAsteroidEphemerides{R}` and is used for dispatch:
+- `F = Nothing`                     : rotation matrices absent from ephemerides; `forces` and `torques` are always `nothing`
+- `F = Vector{SVector{3, Float64}}` : rotation matrices present; `forces`/`torques` are `nothing` when the corresponding flag is `false`
 
 # Fields
 ## Saved at all timesteps
@@ -120,14 +120,14 @@ The type parameter `F` mirrors `SingleAsteroidEphemerides{R}`:
 - `absorbed_power`  : Total absorbed power on the whole surface [W]
 - `emitted_power`   : Total emitted thermal radiation power from the whole surface [W]
 
-## Saved only at `output.output_times`
+## Saved only at `output.output_times` (`nothing` when the corresponding flag is `false`)
 - `output`                 : Output specification (controls which data are saved and when)
 - `depth_nodes`            : Depth of each calculation node [m], size `(n_depth,)`
-- `surface_temperature`    : Surface temperature [K], size `(n_face, n_save)`; saved when `output.save_surface_temperature = true`
-- `subsurface_temperature` : Subsurface temperature [K] by face ID, each entry `(n_depth, n_save)`; saved when `output.save_subsurface_temperature = true`
-- `face_forces`            : Per-face thermal force in the body-fixed frame [N], size `(n_face, n_save)`; saved when `output.save_face_forces = true`
-- `forces`                 : Net thermal force in the inertial frame [N], or `nothing`; saved when `output.save_forces = true`
-- `torques`                : Net thermal torque in the inertial frame [N⋅m], or `nothing`; saved when `output.save_torques = true`
+- `surface_temperature`    : Surface temperature [K], size `(n_face, n_save)`, or `nothing`
+- `subsurface_temperature` : Subsurface temperature [K] by face ID, each entry `(n_depth, n_save)`, or `nothing`
+- `face_forces`            : Per-face thermal force in the body-fixed frame [N], size `(n_face, n_save)`, or `nothing`
+- `forces`                 : Net thermal force in the inertial frame [N], or `nothing`
+- `torques`                : Net thermal torque in the inertial frame [N⋅m], or `nothing`
 """
 struct SingleAsteroidThermoPhysicalSolution{F <: Union{Nothing, AbstractVector}}
     times          ::Vector{Float64}
@@ -136,11 +136,11 @@ struct SingleAsteroidThermoPhysicalSolution{F <: Union{Nothing, AbstractVector}}
 
     output                 ::SingleAsteroidOutputSpec
     depth_nodes            ::Vector{Float64}
-    surface_temperature    ::Matrix{Float64}
-    subsurface_temperature ::Dict{Int, Matrix{Float64}}
-    face_forces            ::Matrix{SVector{3, Float64}}
-    forces                 ::F
-    torques                ::F
+    surface_temperature    ::Union{Nothing, Matrix{Float64}}
+    subsurface_temperature ::Union{Nothing, Dict{Int, Matrix{Float64}}}
+    face_forces            ::Union{Nothing, Matrix{SVector{3, Float64}}}
+    forces                 ::Union{Nothing, Vector{SVector{3, Float64}}}
+    torques                ::Union{Nothing, Vector{SVector{3, Float64}}}
 end
 
 
@@ -177,9 +177,9 @@ function _alloc_solution_no_force(
     absorbed_power = zeros(n_step)
     emitted_power  = zeros(n_step)
     depth_nodes            = state.problem.thermo_params.Δz * collect(0:n_depth-1)
-    surface_temperature    = output.save_surface_temperature    ? zeros(n_face, n_save)                      : zeros(0, 0)
-    subsurface_temperature = output.save_subsurface_temperature ? Dict{Int,Matrix{Float64}}(i => zeros(n_depth, n_save) for i in output.subsurface_face_ids) : Dict{Int,Matrix{Float64}}()
-    face_forces            = output.save_face_forces            ? zeros(SVector{3,Float64}, n_face, n_save)  : zeros(SVector{3,Float64}, 0, 0)
+    surface_temperature    = output.save_surface_temperature    ? zeros(n_face, n_save)                      : nothing
+    subsurface_temperature = output.save_subsurface_temperature ? Dict{Int,Matrix{Float64}}(i => zeros(n_depth, n_save) for i in output.subsurface_face_ids) : nothing
+    face_forces            = output.save_face_forces            ? zeros(SVector{3,Float64}, n_face, n_save)  : nothing
 
     SingleAsteroidThermoPhysicalSolution{Nothing}(
         times, absorbed_power, emitted_power,
@@ -202,12 +202,12 @@ function _alloc_solution_with_force(
 
     absorbed_power = zeros(n_step)
     emitted_power  = zeros(n_step)
-    forces         = output.save_forces  ? zeros(SVector{3,Float64}, n_save) : zeros(SVector{3,Float64}, 0)
-    torques        = output.save_torques ? zeros(SVector{3,Float64}, n_save) : zeros(SVector{3,Float64}, 0)
+    forces         = output.save_forces  ? zeros(SVector{3,Float64}, n_save) : nothing
+    torques        = output.save_torques ? zeros(SVector{3,Float64}, n_save) : nothing
     depth_nodes            = state.problem.thermo_params.Δz * collect(0:n_depth-1)
-    surface_temperature    = output.save_surface_temperature    ? zeros(n_face, n_save)                      : zeros(0, 0)
-    subsurface_temperature = output.save_subsurface_temperature ? Dict{Int,Matrix{Float64}}(i => zeros(n_depth, n_save) for i in output.subsurface_face_ids) : Dict{Int,Matrix{Float64}}()
-    face_forces            = output.save_face_forces            ? zeros(SVector{3,Float64}, n_face, n_save)  : zeros(SVector{3,Float64}, 0, 0)
+    surface_temperature    = output.save_surface_temperature    ? zeros(n_face, n_save)                      : nothing
+    subsurface_temperature = output.save_subsurface_temperature ? Dict{Int,Matrix{Float64}}(i => zeros(n_depth, n_save) for i in output.subsurface_face_ids) : nothing
+    face_forces            = output.save_face_forces            ? zeros(SVector{3,Float64}, n_face, n_save)  : nothing
 
     SingleAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}(
         times, absorbed_power, emitted_power,
