@@ -22,8 +22,8 @@ replacing the individual `times_to_save` and `face_ID` keyword arguments of `sol
 - `save_surface_temperature`    : Save surface temperature at `output_times` (default: `true`)
 - `save_subsurface_temperature` : Save subsurface temperature profiles at `output_times` (default: `true`)
 - `save_face_forces`            : Save per-face thermal forces at `output_times` (default: `false`)
-- `save_forces`                 : Save net thermal force at `output_times` (default: `true`)
-- `save_torques`                : Save net thermal torque at `output_times` (default: `true`)
+- `save_forces`                 : Save net thermal force at `output_times` (default: `false`)
+- `save_torques`                : Save net thermal torque at `output_times` (default: `false`)
 
 # Notes
 - `save_subsurface_temperature = true` requires a non-empty `subsurface_face_ids`.
@@ -323,23 +323,6 @@ function _export_diagnostics(dirpath, solution::SingleAsteroidThermoPhysicalSolu
     CSV.write(filepath, df)
 end
 
-function _export_thermal_net_forces(dirpath, solution::SingleAsteroidThermoPhysicalSolution)
-    df = DataFrame(time = solution.output.output_times)
-    if solution.output.save_forces
-        df.force_x  = [f[1] for f in solution.forces]
-        df.force_y  = [f[2] for f in solution.forces]
-        df.force_z  = [f[3] for f in solution.forces]
-    end
-    if solution.output.save_torques
-        df.torque_x = [τ[1] for τ in solution.torques]
-        df.torque_y = [τ[2] for τ in solution.torques]
-        df.torque_z = [τ[3] for τ in solution.torques]
-    end
-
-    filepath = joinpath(dirpath, "thermal_net_forces.csv")
-    CSV.write(filepath, df)
-end
-
 function _export_surface_temperature(dirpath, solution::SingleAsteroidThermoPhysicalSolution)
     df = hcat(
         DataFrame(time = solution.output.output_times),
@@ -365,7 +348,9 @@ function _export_subsurface_temperature(dirpath, solution::SingleAsteroidThermoP
     end
     keys_sorted = sort(names(df[:, 3:end]), by=x->parse(Int, replace(x, r"[^0-9]" => "")))
     df = df[:, ["time", "depth", keys_sorted...]]
-    CSV.write(joinpath(dirpath, "subsurface_temperature.csv"), df)
+
+    filepath = joinpath(dirpath, "subsurface_temperature.csv")
+    CSV.write(filepath, df)
 end
 
 function _export_thermal_face_forces(dirpath, solution::SingleAsteroidThermoPhysicalSolution)
@@ -385,6 +370,24 @@ function _export_thermal_face_forces(dirpath, solution::SingleAsteroidThermoPhys
     CSV.write(filepath, df)
 end
 
+function _export_thermal_net_forces(dirpath, solution::SingleAsteroidThermoPhysicalSolution)
+    df = DataFrame(time = solution.output.output_times)
+
+    if solution.output.save_forces
+        df.force_x  = [f[1] for f in solution.forces]
+        df.force_y  = [f[2] for f in solution.forces]
+        df.force_z  = [f[3] for f in solution.forces]
+    end
+    
+    if solution.output.save_torques
+        df.torque_x = [τ[1] for τ in solution.torques]
+        df.torque_y = [τ[2] for τ in solution.torques]
+        df.torque_z = [τ[3] for τ in solution.torques]
+    end
+
+    filepath = joinpath(dirpath, "thermal_net_forces.csv")
+    CSV.write(filepath, df)
+end
 
 """
     export_solution(dirpath, solution::SingleAsteroidThermoPhysicalSolution)
