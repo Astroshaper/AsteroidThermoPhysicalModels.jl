@@ -176,10 +176,11 @@ function _alloc_solution_no_force(
 
     absorbed_power = zeros(n_step)
     emitted_power  = zeros(n_step)
+
     depth_nodes            = state.problem.thermo_params.Δz * collect(0:n_depth-1)
-    surface_temperature    = output.save_surface_temperature    ? zeros(n_face, n_save)                      : nothing
+    surface_temperature    = output.save_surface_temperature    ? zeros(n_face, n_save) : nothing
     subsurface_temperature = output.save_subsurface_temperature ? Dict{Int,Matrix{Float64}}(i => zeros(n_depth, n_save) for i in output.subsurface_face_ids) : nothing
-    face_forces            = output.save_face_forces            ? zeros(SVector{3,Float64}, n_face, n_save)  : nothing
+    face_forces            = output.save_face_forces            ? zeros(SVector{3,Float64}, n_face, n_save) : nothing
 
     SingleAsteroidThermoPhysicalSolution{Nothing}(
         times, absorbed_power, emitted_power,
@@ -202,12 +203,13 @@ function _alloc_solution_with_force(
 
     absorbed_power = zeros(n_step)
     emitted_power  = zeros(n_step)
-    forces         = output.save_forces  ? zeros(SVector{3,Float64}, n_save) : nothing
-    torques        = output.save_torques ? zeros(SVector{3,Float64}, n_save) : nothing
+    
     depth_nodes            = state.problem.thermo_params.Δz * collect(0:n_depth-1)
-    surface_temperature    = output.save_surface_temperature    ? zeros(n_face, n_save)                      : nothing
+    surface_temperature    = output.save_surface_temperature    ? zeros(n_face, n_save) : nothing
     subsurface_temperature = output.save_subsurface_temperature ? Dict{Int,Matrix{Float64}}(i => zeros(n_depth, n_save) for i in output.subsurface_face_ids) : nothing
-    face_forces            = output.save_face_forces            ? zeros(SVector{3,Float64}, n_face, n_save)  : nothing
+    face_forces            = output.save_face_forces            ? zeros(SVector{3,Float64}, n_face, n_save) : nothing
+    forces                 = output.save_forces  ? zeros(SVector{3,Float64}, n_save) : nothing
+    torques                = output.save_torques ? zeros(SVector{3,Float64}, n_save) : nothing
 
     SingleAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}(
         times, absorbed_power, emitted_power,
