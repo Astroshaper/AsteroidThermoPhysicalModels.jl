@@ -1,12 +1,12 @@
 #=
 test_tpm_with_force.jl
 
-Tests for the force/torque-enabled simulation paths via parametric types:
-    SingleAsteroidEphemerides{<:AbstractVector}  →  SingleAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}
-    BinaryAsteroidEphemerides{<:AbstractVector}  →  BinaryAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}
+Tests for the force/torque-enabled simulation paths:
+    SingleAsteroidEphemerides{<:AbstractVector} with save_forces/save_torques=true
+    BinaryAsteroidEphemerides{<:AbstractVector} with save_forces/save_torques=true
 
-Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
-        export_solution {<:AbstractVector}, _solve {<:AbstractVector} (single + binary).
+Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
+        export_solution, _solve {<:AbstractVector} (single + binary).
 =#
 
 @testset "TPM with force/torque" begin
@@ -49,7 +49,7 @@ Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
             with_self_heating   = false,
         )
 
-        output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids)
+        output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids, true, true, false, true, true)
         solution = solve(problem, CrankNicolson();
             ephem               = ephem,
             output              = output,
@@ -58,7 +58,7 @@ Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
         )
 
         # Solution type
-        @test solution isa SingleAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}
+        @test solution isa SingleAsteroidThermoPhysicalSolution
 
         # forces/torques are populated at output_times only
         @test solution.forces  isa Vector{SVector{3,Float64}}
@@ -100,8 +100,8 @@ Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
         )
 
         output = BinaryAsteroidOutputSpec(
-            SingleAsteroidOutputSpec(output_times, subsurface_face_ids),
-            SingleAsteroidOutputSpec(output_times, subsurface_face_ids),
+            SingleAsteroidOutputSpec(output_times, subsurface_face_ids, true, true, false, true, true),
+            SingleAsteroidOutputSpec(output_times, subsurface_face_ids, true, true, false, true, true),
         )
         solution = solve(problem, CrankNicolson();
             ephem                         = ephem,
@@ -112,9 +112,9 @@ Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
         )
 
         # Solution type
-        @test solution isa BinaryAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}
-        @test solution.primary   isa SingleAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}
-        @test solution.secondary isa SingleAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}
+        @test solution isa BinaryAsteroidThermoPhysicalSolution
+        @test solution.primary   isa SingleAsteroidThermoPhysicalSolution
+        @test solution.secondary isa SingleAsteroidThermoPhysicalSolution
 
         # forces/torques are populated at output_times for both bodies
         @test length(solution.primary.forces)    == length(output_times)

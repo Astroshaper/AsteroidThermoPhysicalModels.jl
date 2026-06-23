@@ -2,10 +2,6 @@
 tpm_solution.jl
 
 Solution types and export functions for thermophysical simulations.
-
-Type parameter F mirrors the ephem type parameter R:
-    F = Nothing                        : forces/torques not computed (temperature only)
-    F = Vector{SVector{3, Float64}}    : forces/torques stored in the inertial frame
 =#
 
 # ╔═══════════════════════════════════════════════════════════════════╗
@@ -70,7 +66,7 @@ struct SingleAsteroidOutputSpec
 end
 
 SingleAsteroidOutputSpec(output_times::Vector{Float64}, subsurface_face_ids::Vector{Int}) =
-    SingleAsteroidOutputSpec(output_times, subsurface_face_ids, true, true, false, true, true)
+    SingleAsteroidOutputSpec(output_times, subsurface_face_ids, true, true, false, false, false)
 
 """
     struct BinaryAsteroidOutputSpec
@@ -95,6 +91,18 @@ function _validate_output_spec(output::SingleAsteroidOutputSpec, ephem)
     end
 end
 
+# For {Nothing} ephem, forces and torques cannot be computed (no rotation matrices).
+function _validate_output_spec(output::SingleAsteroidOutputSpec, ephem::SingleAsteroidEphemerides{Nothing})
+    for t in output.output_times
+        findfirst(isequal(t), ephem.times) === nothing &&
+            throw(ArgumentError("output_times contains $t which is not in ephem.times"))
+    end
+    (output.save_forces || output.save_torques) && throw(ArgumentError(
+        "save_forces and save_torques require R_body_to_inertial in ephemerides " *
+        "(use SingleAsteroidEphemerides with rotation matrices)"
+    ))
+end
+
 function _validate_output_spec(output::BinaryAsteroidOutputSpec, ephem)
     _validate_output_spec(output.primary,   ephem)
     _validate_output_spec(output.secondary, ephem)
@@ -106,13 +114,9 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    struct SingleAsteroidThermoPhysicalSolution{F}
+    struct SingleAsteroidThermoPhysicalSolution
 
 Solution data for a single asteroid thermophysical simulation.
-
-The type parameter `F` mirrors `SingleAsteroidEphemerides{R}` and is used for dispatch:
-- `F = Nothing`                     : rotation matrices absent from ephemerides; `forces` and `torques` are always `nothing`
-- `F = Vector{SVector{3, Float64}}` : rotation matrices present; `forces`/`torques` are `nothing` when the corresponding flag is `false`
 
 # Fields
 ## Saved at all timesteps
@@ -128,8 +132,13 @@ The type parameter `F` mirrors `SingleAsteroidEphemerides{R}` and is used for di
 - `face_forces`            : Per-face thermal force in the body-fixed frame [N], size `(n_face, n_save)`, or `nothing`
 - `forces`                 : Net thermal force in the inertial frame [N], or `nothing`
 - `torques`                : Net thermal torque in the inertial frame [N⋅m], or `nothing`
+
+# Notes
+- `forces` and `torques` are non-`nothing` only when the ephemerides include
+  `R_body_to_inertial` (i.e., `SingleAsteroidEphemerides{<:AbstractVector}`) and the
+  corresponding flag in `output` is `true`.
 """
-struct SingleAsteroidThermoPhysicalSolution{F <: Union{Nothing, AbstractVector}}
+struct SingleAsteroidThermoPhysicalSolution
     times          ::Vector{Float64}
     absorbed_power ::Vector{Float64}
     emitted_power  ::Vector{Float64}
@@ -145,7 +154,7 @@ end
 
 
 """
-    struct BinaryAsteroidThermoPhysicalSolution{F}
+    struct BinaryAsteroidThermoPhysicalSolution
 
 Solution data for a binary asteroid thermophysical simulation.
 
@@ -153,9 +162,9 @@ Solution data for a binary asteroid thermophysical simulation.
 - `primary`   : Solution for the primary body
 - `secondary` : Solution for the secondary body
 """
-struct BinaryAsteroidThermoPhysicalSolution{F <: Union{Nothing, AbstractVector}}
-    primary   ::SingleAsteroidThermoPhysicalSolution{F}
-    secondary ::SingleAsteroidThermoPhysicalSolution{F}
+struct BinaryAsteroidThermoPhysicalSolution
+    primary   ::SingleAsteroidThermoPhysicalSolution
+    secondary ::SingleAsteroidThermoPhysicalSolution
 end
 
 
@@ -163,8 +172,7 @@ end
 # ║                     Allocation helpers                            ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
-# Allocate a SingleAsteroidThermoPhysicalSolution{Nothing} (temperature only).
-function _alloc_solution_no_force(
+function _alloc_solution(
     state  ::SingleAsteroidThermoPhysicalState,
     times  ::Vector{Float64},
     output ::SingleAsteroidOutputSpec,
@@ -177,33 +185,6 @@ function _alloc_solution_no_force(
     absorbed_power = zeros(n_step)
     emitted_power  = zeros(n_step)
 
-    depth_nodes            = state.problem.thermo_params.Δz * collect(0:n_depth-1)
-    surface_temperature    = output.save_surface_temperature    ? zeros(n_face, n_save) : nothing
-    subsurface_temperature = output.save_subsurface_temperature ? Dict{Int,Matrix{Float64}}(i => zeros(n_depth, n_save) for i in output.subsurface_face_ids) : nothing
-    face_forces            = output.save_face_forces            ? zeros(SVector{3,Float64}, n_face, n_save) : nothing
-
-    SingleAsteroidThermoPhysicalSolution{Nothing}(
-        times, absorbed_power, emitted_power,
-        output,
-        depth_nodes, surface_temperature, subsurface_temperature, face_forces,
-        nothing, nothing,
-    )
-end
-
-# Allocate a SingleAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}} (with force/torque).
-function _alloc_solution_with_force(
-    state  ::SingleAsteroidThermoPhysicalState,
-    times  ::Vector{Float64},
-    output ::SingleAsteroidOutputSpec,
-)
-    n_step  = length(times)
-    n_save  = length(output.output_times)
-    n_face  = length(state.problem.shape.faces)
-    n_depth = state.problem.thermo_params.n_depth
-
-    absorbed_power = zeros(n_step)
-    emitted_power  = zeros(n_step)
-    
     depth_nodes            = state.problem.thermo_params.Δz * collect(0:n_depth-1)
     surface_temperature    = output.save_surface_temperature    ? zeros(n_face, n_save) : nothing
     subsurface_temperature = output.save_subsurface_temperature ? Dict{Int,Matrix{Float64}}(i => zeros(n_depth, n_save) for i in output.subsurface_face_ids) : nothing
@@ -211,7 +192,7 @@ function _alloc_solution_with_force(
     forces                 = output.save_forces  ? zeros(SVector{3,Float64}, n_save) : nothing
     torques                = output.save_torques ? zeros(SVector{3,Float64}, n_save) : nothing
 
-    SingleAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}(
+    SingleAsteroidThermoPhysicalSolution(
         times, absorbed_power, emitted_power,
         output,
         depth_nodes, surface_temperature, subsurface_temperature, face_forces,
@@ -227,41 +208,26 @@ end
 """
     SingleAsteroidThermoPhysicalSolution(state, ephem, output)
 
-Allocate a solution matching the type parameter of `ephem`.
+Allocate a solution from the given state, ephemerides, and output specification.
 """
 SingleAsteroidThermoPhysicalSolution(
     state  ::SingleAsteroidThermoPhysicalState,
-    ephem  ::SingleAsteroidEphemerides{Nothing},
+    ephem  ::AbstractSingleAsteroidEphemerides,
     output ::SingleAsteroidOutputSpec,
-) = _alloc_solution_no_force(state, ephem.times, output)
-
-SingleAsteroidThermoPhysicalSolution(
-    state  ::SingleAsteroidThermoPhysicalState,
-    ephem  ::SingleAsteroidEphemerides{<:AbstractVector},
-    output ::SingleAsteroidOutputSpec,
-) = _alloc_solution_with_force(state, ephem.times, output)
+) = _alloc_solution(state, ephem.times, output)
 
 """
     BinaryAsteroidThermoPhysicalSolution(state, ephem, output)
 
-Allocate a binary solution matching the type parameter of `ephem`.
+Allocate a binary solution from the given state, ephemerides, and output specification.
 """
 BinaryAsteroidThermoPhysicalSolution(
     state  ::BinaryAsteroidThermoPhysicalState,
-    ephem  ::BinaryAsteroidEphemerides{Nothing},
+    ephem  ::AbstractBinaryAsteroidEphemerides,
     output ::BinaryAsteroidOutputSpec,
-) = BinaryAsteroidThermoPhysicalSolution{Nothing}(
-    _alloc_solution_no_force(state.primary,   ephem.times, output.primary),
-    _alloc_solution_no_force(state.secondary, ephem.times, output.secondary),
-)
-
-BinaryAsteroidThermoPhysicalSolution(
-    state  ::BinaryAsteroidThermoPhysicalState,
-    ephem  ::BinaryAsteroidEphemerides{<:AbstractVector},
-    output ::BinaryAsteroidOutputSpec,
-) = BinaryAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}(
-    _alloc_solution_with_force(state.primary,   ephem.times, output.primary),
-    _alloc_solution_with_force(state.secondary, ephem.times, output.secondary),
+) = BinaryAsteroidThermoPhysicalSolution(
+    _alloc_solution(state.primary,   ephem.times, output.primary),
+    _alloc_solution(state.secondary, ephem.times, output.secondary),
 )
 
 
@@ -291,12 +257,12 @@ function _record_temperature!(solution::SingleAsteroidThermoPhysicalSolution, st
 end
 
 """
-    record_timestep!(solution::SingleAsteroidThermoPhysicalSolution{Nothing}, state, i_time)
+    record_timestep!(solution, state, i_time)
 
-Record energy balance and temperature data (no force/torque).
+Record energy balance and temperature data at all timesteps (no force/torque).
 """
 function record_timestep!(
-    solution ::SingleAsteroidThermoPhysicalSolution{Nothing},
+    solution ::SingleAsteroidThermoPhysicalSolution,
     state    ::SingleAsteroidThermoPhysicalState,
     i_time   ::Integer,
 )
@@ -306,13 +272,13 @@ function record_timestep!(
 end
 
 """
-    record_timestep!(solution::SingleAsteroidThermoPhysicalSolution{<:AbstractVector}, state, i_time, R)
+    record_timestep!(solution, state, i_time, R)
 
 Record energy balance at all timesteps, and at `output_times`: force/torque rotated to the
 inertial frame via `R` and temperature data.
 """
 function record_timestep!(
-    solution ::SingleAsteroidThermoPhysicalSolution{<:AbstractVector},
+    solution ::SingleAsteroidThermoPhysicalSolution,
     state    ::SingleAsteroidThermoPhysicalState,
     i_time   ::Integer,
     R        ::SMatrix{3,3,Float64,9},
@@ -328,11 +294,8 @@ function record_timestep!(
     _record_temperature!(solution, state, i_time)
 end
 
-"""
-    record_timestep!(solution::BinaryAsteroidThermoPhysicalSolution{Nothing}, state, i_time)
-"""
 function record_timestep!(
-    solution ::BinaryAsteroidThermoPhysicalSolution{Nothing},
+    solution ::BinaryAsteroidThermoPhysicalSolution,
     state    ::BinaryAsteroidThermoPhysicalState,
     i_time   ::Integer,
 )
@@ -340,11 +303,8 @@ function record_timestep!(
     record_timestep!(solution.secondary, state.secondary, i_time)
 end
 
-"""
-    record_timestep!(solution::BinaryAsteroidThermoPhysicalSolution{<:AbstractVector}, state, i_time, R_p2i, R_s2i)
-"""
 function record_timestep!(
-    solution ::BinaryAsteroidThermoPhysicalSolution{<:AbstractVector},
+    solution ::BinaryAsteroidThermoPhysicalSolution,
     state    ::BinaryAsteroidThermoPhysicalState,
     i_time   ::Integer,
     R₁ᵢ      ::SMatrix{3,3,Float64,9},
@@ -370,7 +330,7 @@ function _export_diagnostics(dirpath, solution::SingleAsteroidThermoPhysicalSolu
     CSV.write(filepath, df)
 end
 
-function _export_thermal_net_forces(dirpath, solution::SingleAsteroidThermoPhysicalSolution{<:AbstractVector})
+function _export_thermal_net_forces(dirpath, solution::SingleAsteroidThermoPhysicalSolution)
     df = DataFrame(time = solution.output.output_times)
     if solution.output.save_forces
         df.force_x  = [f[1] for f in solution.forces]
@@ -434,7 +394,7 @@ end
 
 
 """
-    export_solution(dirpath, solution::SingleAsteroidThermoPhysicalSolution{Nothing})
+    export_solution(dirpath, solution::SingleAsteroidThermoPhysicalSolution)
 
 Export simulation results to CSV files in `dirpath`.
 
@@ -443,36 +403,14 @@ Files written depend on the `output` specification:
 - `surface_temperature.csv`    : when `output.save_surface_temperature = true`
 - `subsurface_temperature.csv` : when `output.save_subsurface_temperature = true`
 - `thermal_face_forces.csv`    : when `output.save_face_forces = true`
-"""
-function export_solution(dirpath, solution::SingleAsteroidThermoPhysicalSolution{Nothing})
-    _export_diagnostics(dirpath, solution)
-    solution.output.save_surface_temperature    && _export_surface_temperature(dirpath, solution)
-    solution.output.save_subsurface_temperature && _export_subsurface_temperature(dirpath, solution)
-    solution.output.save_face_forces            && _export_thermal_face_forces(dirpath, solution)
-end
-
-
-"""
-    export_solution(dirpath, solution::SingleAsteroidThermoPhysicalSolution{<:AbstractVector})
-
-Export simulation results to CSV files in `dirpath`.
-
-Files written depend on the `output` specification:
-- `diagnostics.csv`            : always (`absorbed_power`, `emitted_power` at all timesteps)
 - `thermal_net_forces.csv`     : when `output.save_forces = true` or `output.save_torques = true`
-- `surface_temperature.csv`    : when `output.save_surface_temperature = true`
-- `subsurface_temperature.csv` : when `output.save_subsurface_temperature = true`
-- `thermal_face_forces.csv`    : when `output.save_face_forces = true`
 """
-function export_solution(dirpath, solution::SingleAsteroidThermoPhysicalSolution{<:AbstractVector})
+function export_solution(dirpath, solution::SingleAsteroidThermoPhysicalSolution)
     _export_diagnostics(dirpath, solution)
     solution.output.save_surface_temperature    && _export_surface_temperature(dirpath, solution)
     solution.output.save_subsurface_temperature && _export_subsurface_temperature(dirpath, solution)
     solution.output.save_face_forces            && _export_thermal_face_forces(dirpath, solution)
-
-    if solution.output.save_forces || solution.output.save_torques
-        _export_thermal_net_forces(dirpath, solution)
-    end
+    (solution.output.save_forces || solution.output.save_torques) && _export_thermal_net_forces(dirpath, solution)
 end
 
 

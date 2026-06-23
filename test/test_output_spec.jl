@@ -38,8 +38,8 @@ introduced in v0.2.0:
         @test output.save_surface_temperature    == true
         @test output.save_subsurface_temperature == true
         @test output.save_face_forces            == false
-        @test output.save_forces                 == true
-        @test output.save_torques                == true
+        @test output.save_forces                 == false
+        @test output.save_torques                == false
     end
 
     @testset "SingleAsteroidOutputSpec inner constructor validation" begin
@@ -64,10 +64,16 @@ introduced in v0.2.0:
         @test_nowarn AsteroidThermoPhysicalModels._validate_output_spec(output, ephem)
     end
 
-    @testset "_validate_output_spec — invalid single (ArgumentError)" begin
+    @testset "_validate_output_spec — invalid single (ArgumentError: time not in ephem)" begin
         invalid_time  = times[end] + 1.0  # not in ephem.times
         output_bad    = SingleAsteroidOutputSpec([times[1], invalid_time], subsurface_face_ids)
         @test_throws ArgumentError AsteroidThermoPhysicalModels._validate_output_spec(output_bad, ephem)
+    end
+
+    @testset "_validate_output_spec — invalid single (ArgumentError: forces with no rotation matrices)" begin
+        # save_forces=true requires R_body_to_inertial in ephemerides
+        output_with_forces = SingleAsteroidOutputSpec(output_times, subsurface_face_ids, true, true, false, true, false)
+        @test_throws ArgumentError AsteroidThermoPhysicalModels._validate_output_spec(output_with_forces, ephem)
     end
 
     @testset "_validate_output_spec — valid binary (no error)" begin
