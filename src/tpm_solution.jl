@@ -13,8 +13,7 @@ Solution types and export functions for thermophysical simulations.
 
 Output specification for a single-asteroid thermophysical simulation.
 
-Encapsulates which timesteps, face indices, and physical quantities to record,
-replacing the individual `times_to_save` and `face_ID` keyword arguments of `solve`.
+Encapsulates which timesteps, face indices, and physical quantities to record.
 
 # Fields
 - `output_times`                : Timesteps at which data are saved [s]; must be a subset of `ephem.times`
@@ -27,8 +26,9 @@ replacing the individual `times_to_save` and `face_ID` keyword arguments of `sol
 
 # Notes
 - `save_subsurface_temperature = true` requires a non-empty `subsurface_face_ids`.
-- `save_forces` and `save_torques` have effect only when the ephemerides include
-  `R_body_to_inertial` (i.e., `SingleAsteroidEphemerides{<:AbstractVector}`).
+- `save_forces` and `save_torques` require ephemerides with `R_body_to_inertial`
+  (i.e., `SingleAsteroidEphemerides{<:AbstractVector}`); using them with rotation-free
+  ephemerides raises an `ArgumentError` at `solve` time.
 """
 struct SingleAsteroidOutputSpec
     output_times                ::Vector{Float64}
@@ -124,14 +124,16 @@ Solution data for a single asteroid thermophysical simulation.
 - `absorbed_power`  : Total absorbed power on the whole surface [W]
 - `emitted_power`   : Total emitted thermal radiation power from the whole surface [W]
 
+## Metadata
+- `output`      : Output specification (controls which data are saved and when)
+- `depth_nodes` : Depth of each subsurface calculation node [m], size `(n_depth,)`
+
 ## Saved only at `output.output_times` (`nothing` when the corresponding flag is `false`)
-- `output`                 : Output specification (controls which data are saved and when)
-- `depth_nodes`            : Depth of each calculation node [m], size `(n_depth,)`
 - `surface_temperature`    : Surface temperature [K], size `(n_face, n_save)`, or `nothing`
 - `subsurface_temperature` : Subsurface temperature [K] by face ID, each entry `(n_depth, n_save)`, or `nothing`
 - `face_forces`            : Per-face thermal force in the body-fixed frame [N], size `(n_face, n_save)`, or `nothing`
-- `forces`                 : Net thermal force in the inertial frame [N], or `nothing`
-- `torques`                : Net thermal torque in the inertial frame [N⋅m], or `nothing`
+- `forces`                 : Net thermal force in the inertial frame [N], size `(n_save,)`, or `nothing`
+- `torques`                : Net thermal torque in the inertial frame [N⋅m], size `(n_save,)`, or `nothing`
 
 # Notes
 - `forces` and `torques` are non-`nothing` only when the ephemerides include

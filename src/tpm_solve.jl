@@ -68,10 +68,10 @@ Run a thermophysical simulation for a single asteroid.
 - `algorithm` : Numerical method (`ExplicitEuler()`, `ImplicitEuler()`, or `CrankNicolson()`)
 
 # Keyword Arguments
-- `ephem`                   : Ephemerides (`AbstractSingleAsteroidEphemerides`)
-- `output`                  : Output specification (`SingleAsteroidOutputSpec`); defines which timesteps and face indices to record in detail
-- `initial_temperature`     : Initial temperature; `Real` for uniform, or `AbstractMatrix` of size `(n_depth, n_face)` [K]
-- `show_progress = true`    : Display progress meter during simulation
+- `ephem`                : Ephemerides (`AbstractSingleAsteroidEphemerides`)
+- `output`               : Output specification (`SingleAsteroidOutputSpec`); controls which timesteps, face indices, and physical quantities (temperatures, forces, torques) to record
+- `initial_temperature`  : Initial temperature; `Real` for uniform, or `AbstractMatrix` of size `(n_depth, n_face)` [K]
+- `show_progress = true` : Display progress meter during simulation
 
 # Returns
 - `SingleAsteroidThermoPhysicalSolution`
