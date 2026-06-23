@@ -235,10 +235,20 @@ BinaryAsteroidThermoPhysicalSolution(
 # ║                     record_timestep!                              ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
-# Shared helper: record temperature and face-force data at output_times, respecting Bool flags.
-function _record_temperature!(solution::SingleAsteroidThermoPhysicalSolution, state::SingleAsteroidThermoPhysicalState, i_time::Integer)
-    t      = solution.times[i_time]
-    i_save = something(findfirst(isequal(t), solution.output.output_times), 0)
+"""
+    record_timestep!(solution, state, i_time)
+
+Record energy balance at all timesteps; record snapshot data at `output_times` (no force/torque).
+"""
+function record_timestep!(
+    solution ::SingleAsteroidThermoPhysicalSolution,
+    state    ::SingleAsteroidThermoPhysicalState,
+    i_time   ::Integer,
+)
+    solution.absorbed_power[i_time] = energy_in(state)
+    solution.emitted_power[i_time]  = energy_out(state)
+
+    i_save = something(findfirst(isequal(solution.times[i_time]), solution.output.output_times), 0)
     i_save == 0 && return
 
     if solution.output.save_surface_temperature
@@ -257,25 +267,10 @@ function _record_temperature!(solution::SingleAsteroidThermoPhysicalSolution, st
 end
 
 """
-    record_timestep!(solution, state, i_time)
-
-Record energy balance and temperature data at all timesteps (no force/torque).
-"""
-function record_timestep!(
-    solution ::SingleAsteroidThermoPhysicalSolution,
-    state    ::SingleAsteroidThermoPhysicalState,
-    i_time   ::Integer,
-)
-    solution.absorbed_power[i_time] = energy_in(state)
-    solution.emitted_power[i_time]  = energy_out(state)
-    _record_temperature!(solution, state, i_time)
-end
-
-"""
     record_timestep!(solution, state, i_time, R)
 
-Record energy balance at all timesteps, and at `output_times`: force/torque rotated to the
-inertial frame via `R` and temperature data.
+Record energy balance at all timesteps; record snapshot data at `output_times` including
+force/torque rotated to the inertial frame via `R`.
 """
 function record_timestep!(
     solution ::SingleAsteroidThermoPhysicalSolution,
@@ -283,15 +278,13 @@ function record_timestep!(
     i_time   ::Integer,
     R        ::SMatrix{3,3,Float64,9},
 )
-    solution.absorbed_power[i_time] = energy_in(state)
-    solution.emitted_power[i_time]  = energy_out(state)
+    record_timestep!(solution, state, i_time)
 
     i_save = something(findfirst(isequal(solution.times[i_time]), solution.output.output_times), 0)
-    if i_save != 0
-        solution.output.save_forces  && (solution.forces[i_save]  = R * state.force)
-        solution.output.save_torques && (solution.torques[i_save] = R * state.torque)
-    end
-    _record_temperature!(solution, state, i_time)
+    i_save == 0 && return
+
+    solution.output.save_forces  && (solution.forces[i_save]  = R * state.force)
+    solution.output.save_torques && (solution.torques[i_save] = R * state.torque)
 end
 
 function record_timestep!(
