@@ -183,7 +183,7 @@ function _solve(
         if show_progress
             showvalues = [
                 ("Timestep     ", i_time),
-                ("E_out / E_in ", solution.E_out[i_time] / solution.E_in[i_time]),
+                ("emitted / absorbed ", solution.emitted_power[i_time] / solution.absorbed_power[i_time]),
             ]
             ProgressMeter.next!(p; showvalues)
         end
@@ -226,7 +226,7 @@ function _solve(
         if show_progress
             showvalues = [
                 ("Timestep     ", i_time),
-                ("E_out / E_in ", solution.E_out[i_time] / solution.E_in[i_time]),
+                ("emitted / absorbed ", solution.emitted_power[i_time] / solution.absorbed_power[i_time]),
             ]
             ProgressMeter.next!(p; showvalues)
         end
@@ -271,8 +271,8 @@ function _solve(
         if show_progress
             showvalues = [
                 ("Timestep                   ", i_time),
-                ("E_out / E_in for primary   ", solution.primary.E_out[i_time] / solution.primary.E_in[i_time]),
-                ("E_out / E_in for secondary ", solution.secondary.E_out[i_time] / solution.secondary.E_in[i_time]),
+                ("emitted / absorbed (primary)   ", solution.primary.emitted_power[i_time]   / solution.primary.absorbed_power[i_time]),
+                ("emitted / absorbed (secondary) ", solution.secondary.emitted_power[i_time] / solution.secondary.absorbed_power[i_time]),
             ]
             ProgressMeter.next!(p; showvalues)
         end
@@ -319,8 +319,8 @@ function _solve(
         if show_progress
             showvalues = [
                 ("Timestep                   ", i_time),
-                ("E_out / E_in for primary   ", solution.primary.E_out[i_time] / solution.primary.E_in[i_time]),
-                ("E_out / E_in for secondary ", solution.secondary.E_out[i_time] / solution.secondary.E_in[i_time]),
+                ("emitted / absorbed (primary)   ", solution.primary.emitted_power[i_time]   / solution.primary.absorbed_power[i_time]),
+                ("emitted / absorbed (secondary) ", solution.secondary.emitted_power[i_time] / solution.secondary.absorbed_power[i_time]),
             ]
             ProgressMeter.next!(p; showvalues)
         end
