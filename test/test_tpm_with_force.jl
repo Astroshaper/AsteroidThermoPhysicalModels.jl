@@ -34,8 +34,8 @@ Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
 
     path_obj      = joinpath("shape", "icosahedron.obj")
     thermo_params = ThermoParams(0.1, 1000.0, 600.0, 0.1, 0.0, 0.9, 0.1, 0.01, 5)
-    times_to_save = times[end-n_step_cycle:end]
-    face_ID       = [1]
+    output_times        = times[end-n_step_cycle:end]
+    subsurface_face_ids = [1]
 
     @testset "Single asteroid — {<:AbstractVector}" begin
         DIR_OUTPUT = mktempdir()
@@ -49,7 +49,7 @@ Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
             with_self_heating   = false,
         )
 
-        output = SingleAsteroidOutputSpec(times_to_save, face_ID)
+        output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids)
         solution = solve(problem, CrankNicolson();
             ephem               = ephem,
             output              = output,
@@ -60,16 +60,16 @@ Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
         # Solution type
         @test solution isa SingleAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}
 
-        # forces/torques are populated
+        # forces/torques are populated at output_times only
         @test solution.forces  isa Vector{SVector{3,Float64}}
         @test solution.torques isa Vector{SVector{3,Float64}}
-        @test length(solution.forces)  == length(times)
-        @test length(solution.torques) == length(times)
+        @test length(solution.forces)  == length(output_times)
+        @test length(solution.torques) == length(output_times)
 
-        # export: physical_quantities.csv must contain force/torque columns
+        # export: thermal_net_forces.csv must contain force/torque columns
         AsteroidThermoPhysicalModels.export_solution(DIR_OUTPUT, solution)
-        @test isfile(joinpath(DIR_OUTPUT, "physical_quantities.csv"))
-        df = CSV.read(joinpath(DIR_OUTPUT, "physical_quantities.csv"), DataFrame)
+        @test isfile(joinpath(DIR_OUTPUT, "thermal_net_forces.csv"))
+        df = CSV.read(joinpath(DIR_OUTPUT, "thermal_net_forces.csv"), DataFrame)
         @test "force_x"  in names(df)
         @test "force_y"  in names(df)
         @test "force_z"  in names(df)
@@ -100,8 +100,8 @@ Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
         )
 
         output = BinaryAsteroidOutputSpec(
-            SingleAsteroidOutputSpec(times_to_save, face_ID),
-            SingleAsteroidOutputSpec(times_to_save, face_ID),
+            SingleAsteroidOutputSpec(output_times, subsurface_face_ids),
+            SingleAsteroidOutputSpec(output_times, subsurface_face_ids),
         )
         solution = solve(problem, CrankNicolson();
             ephem                         = ephem,
@@ -116,14 +116,15 @@ Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
         @test solution.primary   isa SingleAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}
         @test solution.secondary isa SingleAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}
 
-        # forces/torques are populated for both bodies
-        @test length(solution.primary.forces)    == length(times)
-        @test length(solution.secondary.torques) == length(times)
+        # forces/torques are populated at output_times for both bodies
+        @test length(solution.primary.forces)    == length(output_times)
+        @test length(solution.secondary.torques) == length(output_times)
 
-        # export: both bodies should have force/torque columns
+        # export: both bodies should have thermal_net_forces.csv with force/torque columns
         AsteroidThermoPhysicalModels.export_solution(DIR_OUTPUT, solution)
         for body in ("primary", "secondary")
-            df = CSV.read(joinpath(DIR_OUTPUT, body, "physical_quantities.csv"), DataFrame)
+            filepath = joinpath(DIR_OUTPUT, body, "thermal_net_forces.csv")
+            df = CSV.read(filepath, DataFrame)
             @test "force_x"  in names(df)
             @test "torque_x" in names(df)
         end

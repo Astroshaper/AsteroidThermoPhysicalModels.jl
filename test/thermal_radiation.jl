@@ -85,9 +85,9 @@ This test validates:
         lower_boundary_condition = InsulationBoundaryCondition(),
     )
 
-    times_to_save = ephem.times[end-nsteps_in_cycle:end]  # Save temperature during the final rotation
-    face_ID = [49, 340, 648]  # Face indices to save subsurface temperature
-    output = SingleAsteroidOutputSpec(times_to_save, face_ID)
+    output_times        = ephem.times[end-nsteps_in_cycle:end]  # Save temperature during the final rotation
+    subsurface_face_ids = [49, 340, 648]  # Face indices to save subsurface temperature
+    output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids)
 
     solution = solve(problem, ExplicitEuler();
         ephem               = ephem,

@@ -82,7 +82,7 @@ problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
     with_self_shadowing = true,
     with_self_heating   = true,
 )
-output = SingleAsteroidOutputSpec(times_to_save, face_ID)
+output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids)
 solution = solve(problem, CrankNicolson();
     ephem               = ephem,
     output              = output,
@@ -126,8 +126,8 @@ Run a thermophysical simulation for a binary asteroid system.
 ```julia
 T_init = subsolar_temperature(ephem.r_sun[begin], R_vis, ε)
 output = BinaryAsteroidOutputSpec(
-    SingleAsteroidOutputSpec(times_to_save, face_ID_pri),
-    SingleAsteroidOutputSpec(times_to_save, face_ID_sec),
+    SingleAsteroidOutputSpec(output_times, subsurface_face_ids_pri),
+    SingleAsteroidOutputSpec(output_times, subsurface_face_ids_sec),
 )
 solution = solve(problem, CrankNicolson();
     ephem                         = ephem,

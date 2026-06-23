@@ -103,9 +103,9 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for 
     )
 
     ## --- Run TPM ---
-    times_to_save = ephem.times[end-n_step_in_cycle:end]  # Save temperature during the final rotation
-    face_ID = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature
-    output = SingleAsteroidOutputSpec(times_to_save, face_ID)
+    output_times        = ephem.times[end-n_step_in_cycle:end]  # Save temperature during the final rotation
+    subsurface_face_ids = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature
+    output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids)
 
     solution = solve(problem, ExplicitEuler();
         ephem               = ephem,
@@ -117,9 +117,9 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for 
     @testset "Save TPM result" begin
         AsteroidThermoPhysicalModels.export_solution(DIR_OUTPUT, solution)
 
-        @test isfile(joinpath(DIR_OUTPUT, "physical_quantities.csv"))
-        @test isfile(joinpath(DIR_OUTPUT, "subsurface_temperature.csv"))
+        @test isfile(joinpath(DIR_OUTPUT, "diagnostics.csv"))
         @test isfile(joinpath(DIR_OUTPUT, "surface_temperature.csv"))
-        @test isfile(joinpath(DIR_OUTPUT, "thermal_force.csv"))
+        @test isfile(joinpath(DIR_OUTPUT, "subsurface_temperature.csv"))
+        @test !isfile(joinpath(DIR_OUTPUT, "thermal_face_forces.csv"))  # save_face_forces=false by default
     end
 end
