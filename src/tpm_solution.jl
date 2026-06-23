@@ -477,10 +477,10 @@ end
 Export results for both bodies to `dirpath/primary/` and `dirpath/secondary/`.
 """
 function export_solution(dirpath, solution::BinaryAsteroidThermoPhysicalSolution)
-    dirpath_pri = joinpath(dirpath, "primary")
-    dirpath_sec = joinpath(dirpath, "secondary")
-    mkpath(dirpath_pri)
-    mkpath(dirpath_sec)
-    export_solution(dirpath_pri, solution.primary)
-    export_solution(dirpath_sec, solution.secondary)
+    dirpath1 = joinpath(dirpath, "primary")
+    dirpath2 = joinpath(dirpath, "secondary")
+    mkpath(dirpath1)
+    mkpath(dirpath2)
+    export_solution(dirpath1, solution.primary)
+    export_solution(dirpath2, solution.secondary)
 end
