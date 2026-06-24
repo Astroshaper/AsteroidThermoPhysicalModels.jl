@@ -97,10 +97,13 @@ function _validate_output_spec(output::SingleAsteroidOutputSpec, ephem::SingleAs
         findfirst(isequal(t), ephem.times) === nothing &&
             throw(ArgumentError("output_times contains $t which is not in ephem.times"))
     end
-    (output.save_forces || output.save_torques) && throw(ArgumentError(
-        "save_forces and save_torques require R_body_to_inertial in ephemerides " *
-        "(use SingleAsteroidEphemerides with rotation matrices)"
-    ))
+
+    if output.save_forces || output.save_torques
+        throw(ArgumentError(
+            "save_forces and save_torques require R_body_to_inertial in ephemerides " *
+            "(use SingleAsteroidEphemerides with rotation matrices)"
+        ))
+    end
 end
 
 function _validate_output_spec(output::BinaryAsteroidOutputSpec, ephem)
