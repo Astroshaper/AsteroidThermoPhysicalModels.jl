@@ -154,6 +154,11 @@ function BinaryAsteroidOutputSpec(
     BinaryAsteroidOutputSpec(output_primary, output_secondary)
 end
 
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║                  OutputSpec validation                            ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
 # Validate that all output_times are present in ephem.times.
 function _validate_output_spec(output::SingleAsteroidOutputSpec, ephem)
     for t in output.output_times
@@ -245,7 +250,7 @@ end
 
 
 # ╔═══════════════════════════════════════════════════════════════════╗
-# ║                     Allocation helper                             ║
+# ║                  Solution constructors                            ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 function _build_single_solution(
@@ -275,11 +280,6 @@ function _build_single_solution(
         forces, torques,
     )
 end
-
-
-# ╔═══════════════════════════════════════════════════════════════════╗
-# ║                     Outer constructors                            ║
-# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     SingleAsteroidThermoPhysicalSolution(state, ephem, output)
