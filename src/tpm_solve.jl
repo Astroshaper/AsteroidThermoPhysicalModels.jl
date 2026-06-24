@@ -68,10 +68,10 @@ Run a thermophysical simulation for a single asteroid.
 - `algorithm` : Numerical method (`ExplicitEuler()`, `ImplicitEuler()`, or `CrankNicolson()`)
 
 # Keyword Arguments
-- `ephem`                   : Ephemerides (`AbstractSingleAsteroidEphemerides`)
-- `output`                  : Output specification (`SingleAsteroidOutputSpec`); defines which timesteps and face indices to record in detail
-- `initial_temperature`     : Initial temperature; `Real` for uniform, or `AbstractMatrix` of size `(n_depth, n_face)` [K]
-- `show_progress = true`    : Display progress meter during simulation
+- `ephem`                : Ephemerides (`AbstractSingleAsteroidEphemerides`)
+- `output`               : Output specification (`SingleAsteroidOutputSpec`); controls which timesteps, face indices, and physical quantities (temperatures, forces, torques) to record
+- `initial_temperature`  : Initial temperature; `Real` for uniform, or `AbstractMatrix` of size `(n_depth, n_face)` [K]
+- `show_progress = true` : Display progress meter during simulation
 
 # Returns
 - `SingleAsteroidThermoPhysicalSolution`
@@ -82,7 +82,7 @@ problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
     with_self_shadowing = true,
     with_self_heating   = true,
 )
-output = SingleAsteroidOutputSpec(times_to_save, face_ID)
+output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids)
 solution = solve(problem, CrankNicolson();
     ephem               = ephem,
     output              = output,
@@ -126,8 +126,8 @@ Run a thermophysical simulation for a binary asteroid system.
 ```julia
 T_init = subsolar_temperature(ephem.r_sun[begin], R_vis, ε)
 output = BinaryAsteroidOutputSpec(
-    SingleAsteroidOutputSpec(times_to_save, face_ID_pri),
-    SingleAsteroidOutputSpec(times_to_save, face_ID_sec),
+    SingleAsteroidOutputSpec(output_times, subsurface_face_ids_pri),
+    SingleAsteroidOutputSpec(output_times, subsurface_face_ids_sec),
 )
 solution = solve(problem, CrankNicolson();
     ephem                         = ephem,
@@ -183,7 +183,7 @@ function _solve(
         if show_progress
             showvalues = [
                 ("Timestep     ", i_time),
-                ("E_out / E_in ", solution.E_out[i_time] / solution.E_in[i_time]),
+                ("emitted / absorbed ", solution.emitted_power[i_time] / solution.absorbed_power[i_time]),
             ]
             ProgressMeter.next!(p; showvalues)
         end
@@ -226,7 +226,7 @@ function _solve(
         if show_progress
             showvalues = [
                 ("Timestep     ", i_time),
-                ("E_out / E_in ", solution.E_out[i_time] / solution.E_in[i_time]),
+                ("emitted / absorbed ", solution.emitted_power[i_time] / solution.absorbed_power[i_time]),
             ]
             ProgressMeter.next!(p; showvalues)
         end
@@ -271,8 +271,8 @@ function _solve(
         if show_progress
             showvalues = [
                 ("Timestep                   ", i_time),
-                ("E_out / E_in for primary   ", solution.primary.E_out[i_time] / solution.primary.E_in[i_time]),
-                ("E_out / E_in for secondary ", solution.secondary.E_out[i_time] / solution.secondary.E_in[i_time]),
+                ("emitted / absorbed (primary)   ", solution.primary.emitted_power[i_time]   / solution.primary.absorbed_power[i_time]),
+                ("emitted / absorbed (secondary) ", solution.secondary.emitted_power[i_time] / solution.secondary.absorbed_power[i_time]),
             ]
             ProgressMeter.next!(p; showvalues)
         end
@@ -319,8 +319,8 @@ function _solve(
         if show_progress
             showvalues = [
                 ("Timestep                   ", i_time),
-                ("E_out / E_in for primary   ", solution.primary.E_out[i_time] / solution.primary.E_in[i_time]),
-                ("E_out / E_in for secondary ", solution.secondary.E_out[i_time] / solution.secondary.E_in[i_time]),
+                ("emitted / absorbed (primary)   ", solution.primary.emitted_power[i_time]   / solution.primary.absorbed_power[i_time]),
+                ("emitted / absorbed (secondary) ", solution.secondary.emitted_power[i_time] / solution.secondary.absorbed_power[i_time]),
             ]
             ProgressMeter.next!(p; showvalues)
         end

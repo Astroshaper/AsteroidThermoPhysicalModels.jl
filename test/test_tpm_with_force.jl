@@ -1,12 +1,12 @@
 #=
 test_tpm_with_force.jl
 
-Tests for the force/torque-enabled simulation paths via parametric types:
-    SingleAsteroidEphemerides{<:AbstractVector}  →  SingleAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}
-    BinaryAsteroidEphemerides{<:AbstractVector}  →  BinaryAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}
+Tests for the force/torque-enabled simulation paths:
+    SingleAsteroidEphemerides{<:AbstractVector} with save_forces/save_torques=true
+    BinaryAsteroidEphemerides{<:AbstractVector} with save_forces/save_torques=true
 
-Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
-        export_solution {<:AbstractVector}, _solve {<:AbstractVector} (single + binary).
+Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
+        export_solution, _solve {<:AbstractVector} (single + binary).
 =#
 
 @testset "TPM with force/torque" begin
@@ -34,8 +34,8 @@ Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
 
     path_obj      = joinpath("shape", "icosahedron.obj")
     thermo_params = ThermoParams(0.1, 1000.0, 600.0, 0.1, 0.0, 0.9, 0.1, 0.01, 5)
-    times_to_save = times[end-n_step_cycle:end]
-    face_ID       = [1]
+    output_times        = times[end-n_step_cycle:end]
+    subsurface_face_ids = [1]
 
     @testset "Single asteroid — {<:AbstractVector}" begin
         DIR_OUTPUT = mktempdir()
@@ -49,7 +49,7 @@ Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
             with_self_heating   = false,
         )
 
-        output = SingleAsteroidOutputSpec(times_to_save, face_ID)
+        output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids, true, true, false, true, true)
         solution = solve(problem, CrankNicolson();
             ephem               = ephem,
             output              = output,
@@ -58,24 +58,62 @@ Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
         )
 
         # Solution type
-        @test solution isa SingleAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}
+        @test solution isa SingleAsteroidThermoPhysicalSolution
 
-        # forces/torques are populated
+        # forces/torques are populated at output_times only
         @test solution.forces  isa Vector{SVector{3,Float64}}
         @test solution.torques isa Vector{SVector{3,Float64}}
-        @test length(solution.forces)  == length(times)
-        @test length(solution.torques) == length(times)
+        @test length(solution.forces)  == length(output_times)
+        @test length(solution.torques) == length(output_times)
 
-        # export: physical_quantities.csv must contain force/torque columns
+        # export: thermal_net_forces.csv must contain force/torque columns
         AsteroidThermoPhysicalModels.export_solution(DIR_OUTPUT, solution)
-        @test isfile(joinpath(DIR_OUTPUT, "physical_quantities.csv"))
-        df = CSV.read(joinpath(DIR_OUTPUT, "physical_quantities.csv"), DataFrame)
+        @test isfile(joinpath(DIR_OUTPUT, "thermal_net_forces.csv"))
+        df = CSV.read(joinpath(DIR_OUTPUT, "thermal_net_forces.csv"), DataFrame)
         @test "force_x"  in names(df)
         @test "force_y"  in names(df)
         @test "force_z"  in names(df)
         @test "torque_x" in names(df)
         @test "torque_y" in names(df)
         @test "torque_z" in names(df)
+    end
+
+    @testset "Single asteroid — save_face_forces=true" begin
+        DIR_OUTPUT = mktempdir()
+
+        # face forces are in the body-fixed frame: no rotation matrices needed
+        ephem_no_rot = SingleAsteroidEphemerides(times, r_sun)
+
+        shape   = load_shape_obj(path_obj; scale=1000, with_face_visibility=false, with_bvh=false)
+        problem = AsteroidThermoPhysicalModels.SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+            with_self_shadowing = false,
+            with_self_heating   = false,
+        )
+        n_face = length(shape.faces)
+
+        output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids;
+            save_surface_temperature    = false,
+            save_subsurface_temperature = false,
+            save_face_forces            = true,
+        )
+        solution = solve(problem, CrankNicolson();
+            ephem               = ephem_no_rot,
+            output              = output,
+            initial_temperature = 200.0,
+            show_progress       = false,
+        )
+
+        @test solution.face_forces isa Matrix{SVector{3, Float64}}
+        @test size(solution.face_forces) == (n_face, length(output_times))
+
+        # export: thermal_face_forces.csv must be written with correct columns
+        AsteroidThermoPhysicalModels.export_solution(DIR_OUTPUT, solution)
+        @test isfile(joinpath(DIR_OUTPUT, "thermal_face_forces.csv"))
+        df = CSV.read(joinpath(DIR_OUTPUT, "thermal_face_forces.csv"), DataFrame)
+        @test "force_x" in names(df)
+        @test "force_y" in names(df)
+        @test "force_z" in names(df)
+        @test nrow(df) == n_face * length(output_times)
     end
 
     @testset "Binary asteroid — {<:AbstractVector}" begin
@@ -100,8 +138,8 @@ Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
         )
 
         output = BinaryAsteroidOutputSpec(
-            SingleAsteroidOutputSpec(times_to_save, face_ID),
-            SingleAsteroidOutputSpec(times_to_save, face_ID),
+            SingleAsteroidOutputSpec(output_times, subsurface_face_ids, true, true, false, true, true),
+            SingleAsteroidOutputSpec(output_times, subsurface_face_ids, true, true, false, true, true),
         )
         solution = solve(problem, CrankNicolson();
             ephem                         = ephem,
@@ -112,18 +150,19 @@ Covers: _alloc_solution_with_force, record_timestep! {<:AbstractVector},
         )
 
         # Solution type
-        @test solution isa BinaryAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}
-        @test solution.primary   isa SingleAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}
-        @test solution.secondary isa SingleAsteroidThermoPhysicalSolution{Vector{SVector{3,Float64}}}
+        @test solution isa BinaryAsteroidThermoPhysicalSolution
+        @test solution.primary   isa SingleAsteroidThermoPhysicalSolution
+        @test solution.secondary isa SingleAsteroidThermoPhysicalSolution
 
-        # forces/torques are populated for both bodies
-        @test length(solution.primary.forces)    == length(times)
-        @test length(solution.secondary.torques) == length(times)
+        # forces/torques are populated at output_times for both bodies
+        @test length(solution.primary.forces)    == length(output_times)
+        @test length(solution.secondary.torques) == length(output_times)
 
-        # export: both bodies should have force/torque columns
+        # export: both bodies should have thermal_net_forces.csv with force/torque columns
         AsteroidThermoPhysicalModels.export_solution(DIR_OUTPUT, solution)
         for body in ("primary", "secondary")
-            df = CSV.read(joinpath(DIR_OUTPUT, body, "physical_quantities.csv"), DataFrame)
+            filepath = joinpath(DIR_OUTPUT, body, "thermal_net_forces.csv")
+            df = CSV.read(filepath, DataFrame)
             @test "force_x"  in names(df)
             @test "torque_x" in names(df)
         end

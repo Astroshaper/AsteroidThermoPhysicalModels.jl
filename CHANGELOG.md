@@ -21,7 +21,13 @@ result = run_TPM!(stpm, ephem, times_to_save, face_ID)
 
 # v0.2.0
 problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params; ...)
-output = SingleAsteroidOutputSpec(times_to_save, face_ID)
+output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids;
+    save_surface_temperature    = true,
+    save_subsurface_temperature = true,
+    save_face_forces            = false,
+    save_forces                 = false,  # true requires R_body_to_inertial in ephem
+    save_torques                = false,  # true requires R_body_to_inertial in ephem
+)
 solution = solve(problem, CrankNicolson();
     ephem               = ephem,
     output              = output,
@@ -39,8 +45,9 @@ solution = solve(problem, CrankNicolson();
   - `solve(problem, algorithm; ephem, output, initial_temperature_primary, initial_temperature_secondary, ...)`: run a simulation for a binary system
 
 - **Output specification types**
-  - `SingleAsteroidOutputSpec(times_to_save, face_ID)`: encapsulates which timesteps and face indices to record in detail; replaces the individual `times_to_save` and `face_ID` keyword arguments of `solve`
-  - `BinaryAsteroidOutputSpec(primary, secondary)`: wraps a `SingleAsteroidOutputSpec` for each body; passed as the `output` keyword argument of `solve` for binary systems
+  - `SingleAsteroidOutputSpec(output_times, subsurface_face_ids; save_surface_temperature=true, save_subsurface_temperature=true, save_face_forces=false, save_forces=false, save_torques=false)`: specifies which timesteps, face indices, and physical quantities to record; Bool flags independently control each output item
+  - `BinaryAsteroidOutputSpec(output_times_primary, subsurface_face_ids_primary, output_times_secondary, subsurface_face_ids_secondary; save_*=...)`: convenience constructor with shared Bool flags for both bodies
+  - `BinaryAsteroidOutputSpec(primary, secondary)`: base constructor accepting an independent `SingleAsteroidOutputSpec` per body
 
 - **Algorithm types** (previously flags in `run_TPM!`)
   - `ExplicitEuler()`, `ImplicitEuler()`, `CrankNicolson()`
@@ -55,14 +62,16 @@ solution = solve(problem, CrankNicolson();
   - `BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary, R_primary_to_inertial)`: force/torque mode for binary systems
   - The presence or absence of rotation matrices is encoded in the type parameter `{R}` (`R = Nothing` or `R <: AbstractVector`), enabling zero-overhead dispatch in `solve`
 
-- **Solution types** (parametric on `{F}`)
-  - `SingleAsteroidThermoPhysicalSolution{F}`: holds simulation output for a single asteroid
-    - `F = Nothing`: temperature-only mode; `forces` and `torques` fields are `nothing`
-    - `F = Vector{SVector{3,Float64}}`: force/torque mode; net thermal force and torque are stored in the inertial frame
-  - `BinaryAsteroidThermoPhysicalSolution{F}`: holds simulation output for a binary asteroid system; contains `primary` and `secondary` sub-solutions of the same `{F}` type
+- **Solution types**
+  - `SingleAsteroidThermoPhysicalSolution`: holds simulation output for a single asteroid; optional fields (`surface_temperature`, `subsurface_temperature`, `face_forces`, `forces`, `torques`) are `nothing` when the corresponding `save_*` flag is `false`
+  - `BinaryAsteroidThermoPhysicalSolution`: holds simulation output for a binary asteroid system; contains `primary` and `secondary` sub-solutions
 
-- `export_solution(dirpath, solution)`: export simulation results to CSV files; replaces `export_TPM_results`
-  - `physical_quantities.csv` includes `force_x/y/z` and `torque_x/y/z` columns when `F <: AbstractVector`
+- `export_solution(dirpath, solution)`: export simulation results to CSV files; replaces `export_TPM_results`; files written depend on `output` flags:
+  - `diagnostics.csv`: always (`absorbed_power`, `emitted_power` at all timesteps)
+  - `surface_temperature.csv`: when `save_surface_temperature = true`
+  - `subsurface_temperature.csv`: when `save_subsurface_temperature = true`
+  - `thermal_face_forces.csv`: when `save_face_forces = true`
+  - `thermal_net_forces.csv`: when `save_forces = true` or `save_torques = true`
 - `ThermoParams` is now publicly exported (previously required `AsteroidThermoPhysicalModels.ThermoParams`)
 
 ### Changed
