@@ -73,13 +73,13 @@ Redesign the API around a Problem-Solver pattern inspired by `DifferentialEquati
   - [x] Implement problem types for single and binary asteroids
   - [x] Adopt `DifferentialEquations.jl`-style workflow: define problem → specify solver → solve
 
-- [ ] **Input/Output System Overhaul**
-  - [ ] Formal ephemerides types with validated fields (replaces informal `NamedTuple`)
-  - [ ] Optional force and torque output in the inertial frame; requires orientation data in the ephemerides
-  - [ ] Skipping force/torque computation when orientation data is not provided
-  - [ ] `OutputSpec` type to encapsulate output settings (`times_to_save`, `face_ID`); replaces individual keyword arguments in `solve`
+- [x] **Input/Output System Overhaul**
+  - [x] Formal ephemerides types with validated fields (replaces informal `NamedTuple`)
+  - [x] Optional force and torque output in the inertial frame; requires orientation data in the ephemerides
+  - [x] Skipping force/torque computation when orientation data is not provided
+  - [x] `OutputSpec` type with Bool flags to independently control each output item (`save_surface_temperature`, `save_subsurface_temperature`, `save_face_forces`, `save_forces`, `save_torques`); replaces individual keyword arguments in `solve`
 
-- [ ] **API Cleanup**
+- [x] **API Cleanup**
   - [x] Remove `subsolar_temperature(r☉, params)` overload; use the explicit scalar form `subsolar_temperature(r☉, R_vis, ε)` instead
 
 ## v0.2.1 - Configuration File Support (Target: 2026)
