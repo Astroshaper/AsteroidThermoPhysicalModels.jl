@@ -314,7 +314,16 @@ BinaryAsteroidThermoPhysicalSolution(
 """
     record_timestep!(solution, state, i_time)
 
-Record energy balance at all timesteps; record snapshot data at `output_times` (no force/torque).
+Record simulation data for a single asteroid at timestep `i_time`.
+
+Saves `absorbed_power` and `emitted_power` at every timestep. At timesteps that coincide
+with `solution.output.output_times`, also records snapshot data (surface temperature,
+subsurface temperature, face forces) according to the flags in `solution.output`.
+
+# Arguments
+- `solution` : Solution container (`SingleAsteroidThermoPhysicalSolution`)
+- `state`    : Current simulation state (`SingleAsteroidThermoPhysicalState`)
+- `i_time`   : Index into `solution.times` for the current timestep
 """
 function record_timestep!(
     solution ::SingleAsteroidThermoPhysicalSolution,
@@ -345,8 +354,18 @@ end
 """
     record_timestep!(solution, state, i_time, R)
 
-Record energy balance at all timesteps; record snapshot data at `output_times` including
-force/torque rotated to the inertial frame via `R`.
+Record simulation data for a single asteroid at timestep `i_time`, including force and torque
+rotated to the inertial frame.
+
+Extends the 3-argument form by additionally recording net thermal force and torque
+(when `save_forces`/`save_torques` are `true`) after rotating from the body-fixed frame
+to the inertial frame via `R`.
+
+# Arguments
+- `solution` : Solution container (`SingleAsteroidThermoPhysicalSolution`)
+- `state`    : Current simulation state (`SingleAsteroidThermoPhysicalState`)
+- `i_time`   : Index into `solution.times` for the current timestep
+- `R`        : Rotation matrix from the body-fixed frame to the inertial frame
 """
 function record_timestep!(
     solution ::SingleAsteroidThermoPhysicalSolution,
@@ -363,6 +382,17 @@ function record_timestep!(
     solution.output.save_torques && (solution.torques[i_save] = R * state.torque)
 end
 
+"""
+    record_timestep!(solution, state, i_time)
+
+Record simulation data for both bodies of a binary system at timestep `i_time`.
+Delegates to the single-body form for each body independently.
+
+# Arguments
+- `solution` : Solution container (`BinaryAsteroidThermoPhysicalSolution`)
+- `state`    : Current simulation state (`BinaryAsteroidThermoPhysicalState`)
+- `i_time`   : Index into `solution.primary.times` for the current timestep
+"""
 function record_timestep!(
     solution ::BinaryAsteroidThermoPhysicalSolution,
     state    ::BinaryAsteroidThermoPhysicalState,
@@ -372,6 +402,19 @@ function record_timestep!(
     record_timestep!(solution.secondary, state.secondary, i_time)
 end
 
+"""
+    record_timestep!(solution, state, i_time, R₁ᵢ, R₂ᵢ)
+
+Record simulation data for both bodies of a binary system at timestep `i_time`, including
+force and torque rotated to the inertial frame for each body.
+
+# Arguments
+- `solution` : Solution container (`BinaryAsteroidThermoPhysicalSolution`)
+- `state`    : Current simulation state (`BinaryAsteroidThermoPhysicalState`)
+- `i_time`   : Index into `solution.primary.times` for the current timestep
+- `R₁ᵢ`     : Rotation matrix from the primary body-fixed frame to the inertial frame
+- `R₂ᵢ`     : Rotation matrix from the secondary body-fixed frame to the inertial frame
+"""
 function record_timestep!(
     solution ::BinaryAsteroidThermoPhysicalSolution,
     state    ::BinaryAsteroidThermoPhysicalState,
