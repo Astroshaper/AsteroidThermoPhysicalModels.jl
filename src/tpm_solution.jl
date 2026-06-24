@@ -174,7 +174,7 @@ end
 # ║                     Allocation helper                             ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
-function _alloc_solution(
+function _build_single_solution(
     state  ::SingleAsteroidThermoPhysicalState,
     times  ::Vector{Float64},
     output ::SingleAsteroidOutputSpec,
@@ -216,7 +216,7 @@ SingleAsteroidThermoPhysicalSolution(
     state  ::SingleAsteroidThermoPhysicalState,
     ephem  ::AbstractSingleAsteroidEphemerides,
     output ::SingleAsteroidOutputSpec,
-) = _alloc_solution(state, ephem.times, output)
+) = _build_single_solution(state, ephem.times, output)
 
 """
     BinaryAsteroidThermoPhysicalSolution(state, ephem, output)
@@ -228,8 +228,8 @@ BinaryAsteroidThermoPhysicalSolution(
     ephem  ::AbstractBinaryAsteroidEphemerides,
     output ::BinaryAsteroidOutputSpec,
 ) = BinaryAsteroidThermoPhysicalSolution(
-    _alloc_solution(state.primary,   ephem.times, output.primary),
-    _alloc_solution(state.secondary, ephem.times, output.secondary),
+    _build_single_solution(state.primary,   ephem.times, output.primary),
+    _build_single_solution(state.secondary, ephem.times, output.secondary),
 )
 
 
