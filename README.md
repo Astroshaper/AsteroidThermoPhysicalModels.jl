@@ -46,13 +46,40 @@ pkg> add AsteroidThermoPhysicalModels
 - **Yarkovsky Effect**: Orbital perturbation due to asymmetric thermal emission
 - **YORP Effect**: Rotational perturbation due to asymmetric thermal emission
 
-### Coming in v0.2.0
-- Surface roughness modeling using `HierarchicalShapeModel` from `AsteroidShapeModels.jl`
-- Enhanced heat conduction solver validation and benchmarks
+## 🆕 What's New in v0.2.0
 
-## 🆕 What's New in v0.1.x
+This release introduces a **Problem-Solver API** inspired by `DifferentialEquations.jl`, replacing the old `run_TPM!` function.
 
-### v0.1.1
+### API Redesign (Breaking)
+
+```julia
+# v0.1.x
+ephem  = (time = times, sun = r_sun)   # NamedTuple
+stpm   = SingleAsteroidThermoPhysicalModel(shape, thermo_params; ...)
+result = run_TPM!(stpm, ephem, times_to_save, face_ID)
+
+# v0.2.0
+ephem   = SingleAsteroidEphemerides(times, r_sun)
+problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params; ...)
+output  = SingleAsteroidOutputSpec(output_times, subsurface_face_ids;
+    save_surface_temperature    = true,
+    save_subsurface_temperature = true,
+    save_face_forces            = false,
+    save_forces                 = false,  # true requires R_body_to_inertial in ephem
+    save_torques                = false,
+)
+solution = solve(problem, CrankNicolson();
+    ephem               = ephem,
+    output              = output,
+    initial_temperature = 200.0,
+)
+```
+
+See the [Migration Guide](CHANGELOG.md#migration-guide) and [CHANGELOG](CHANGELOG.md) for details.
+
+### What's New in v0.1.x
+
+#### v0.1.1
 - **Performance**: Shadow calculations are ~2.7x faster via `AsteroidShapeModels.jl` v0.4.2
 - **Compatibility**: Now supports `AsteroidShapeModels.jl` v0.5.x, which introduces `HierarchicalShapeModel` for future surface roughness support
 - **Bug fix**: Updated HERA SPICE kernel download URLs (ESA BitBucket now requires authentication)
