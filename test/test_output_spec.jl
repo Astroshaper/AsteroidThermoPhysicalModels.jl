@@ -100,4 +100,39 @@ introduced in v0.2.0:
         )
         @test_throws ArgumentError AsteroidThermoPhysicalModels._validate_output_spec(output, ephem_b)
     end
+
+    @testset "BinaryAsteroidOutputSpec convenience constructor" begin
+        output_times_s        = times[end-1:end]
+        subsurface_face_ids_s = [2, 4]
+
+        output = BinaryAsteroidOutputSpec(
+            output_times, subsurface_face_ids,
+            output_times_s, subsurface_face_ids_s;
+            save_surface_temperature    = false,
+            save_subsurface_temperature = true,
+            save_face_forces            = true,
+            save_forces                 = false,
+            save_torques                = false,
+        )
+
+        @test output isa BinaryAsteroidOutputSpec
+
+        # Each body gets the correct output_times and subsurface_face_ids
+        @test output.primary.output_times          === output_times
+        @test output.primary.subsurface_face_ids   === subsurface_face_ids
+        @test output.secondary.output_times        === output_times_s
+        @test output.secondary.subsurface_face_ids === subsurface_face_ids_s
+
+        # Shared Bool flags are propagated identically to both bodies
+        @test output.primary.save_surface_temperature    == false
+        @test output.secondary.save_surface_temperature  == false
+        @test output.primary.save_subsurface_temperature == true
+        @test output.secondary.save_subsurface_temperature == true
+        @test output.primary.save_face_forces   == true
+        @test output.secondary.save_face_forces == true
+        @test output.primary.save_forces        == false
+        @test output.secondary.save_forces      == false
+        @test output.primary.save_torques       == false
+        @test output.secondary.save_torques     == false
+    end
 end

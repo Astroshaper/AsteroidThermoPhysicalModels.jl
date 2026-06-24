@@ -78,6 +78,44 @@ Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
         @test "torque_z" in names(df)
     end
 
+    @testset "Single asteroid — save_face_forces=true" begin
+        DIR_OUTPUT = mktempdir()
+
+        # face forces are in the body-fixed frame: no rotation matrices needed
+        ephem_no_rot = SingleAsteroidEphemerides(times, r_sun)
+
+        shape   = load_shape_obj(path_obj; scale=1000, with_face_visibility=false, with_bvh=false)
+        problem = AsteroidThermoPhysicalModels.SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+            with_self_shadowing = false,
+            with_self_heating   = false,
+        )
+        n_face = length(shape.faces)
+
+        output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids;
+            save_surface_temperature    = false,
+            save_subsurface_temperature = false,
+            save_face_forces            = true,
+        )
+        solution = solve(problem, CrankNicolson();
+            ephem               = ephem_no_rot,
+            output              = output,
+            initial_temperature = 200.0,
+            show_progress       = false,
+        )
+
+        @test solution.face_forces isa Matrix{SVector{3, Float64}}
+        @test size(solution.face_forces) == (n_face, length(output_times))
+
+        # export: thermal_face_forces.csv must be written with correct columns
+        AsteroidThermoPhysicalModels.export_solution(DIR_OUTPUT, solution)
+        @test isfile(joinpath(DIR_OUTPUT, "thermal_face_forces.csv"))
+        df = CSV.read(joinpath(DIR_OUTPUT, "thermal_face_forces.csv"), DataFrame)
+        @test "force_x" in names(df)
+        @test "force_y" in names(df)
+        @test "force_z" in names(df)
+        @test nrow(df) == n_face * length(output_times)
+    end
+
     @testset "Binary asteroid — {<:AbstractVector}" begin
         DIR_OUTPUT = mktempdir()
 
