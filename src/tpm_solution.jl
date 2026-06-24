@@ -29,6 +29,17 @@ Encapsulates which timesteps, face indices, and physical quantities to record.
 - `save_forces` and `save_torques` require ephemerides with `R_body_to_inertial`
   (i.e., `SingleAsteroidEphemerides{<:AbstractVector}`); using them with rotation-free
   ephemerides raises an `ArgumentError` at `solve` time.
+
+# Example
+```julia
+output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids;
+    save_surface_temperature    = true,
+    save_subsurface_temperature = true,
+    save_face_forces            = false,
+    save_forces                 = true,
+    save_torques                = true,
+)
+```
 """
 struct SingleAsteroidOutputSpec
     output_times                ::Vector{Float64}
@@ -65,8 +76,25 @@ struct SingleAsteroidOutputSpec
     end
 end
 
-SingleAsteroidOutputSpec(output_times::Vector{Float64}, subsurface_face_ids::Vector{Int}) =
-    SingleAsteroidOutputSpec(output_times, subsurface_face_ids, true, true, false, false, false)
+function SingleAsteroidOutputSpec(
+    output_times        ::Vector{Float64},
+    subsurface_face_ids ::Vector{Int};
+    save_surface_temperature    ::Bool = true,
+    save_subsurface_temperature ::Bool = true,
+    save_face_forces            ::Bool = false,
+    save_forces                 ::Bool = false,
+    save_torques                ::Bool = false,
+)
+    SingleAsteroidOutputSpec(
+        output_times,
+        subsurface_face_ids,
+        save_surface_temperature,
+        save_subsurface_temperature,
+        save_face_forces,
+        save_forces,
+        save_torques,
+    )
+end
 
 """
     struct BinaryAsteroidOutputSpec
@@ -77,10 +105,53 @@ Wraps two `SingleAsteroidOutputSpec` instances, one for each body.
 # Fields
 - `primary`   : Output spec for the primary body
 - `secondary` : Output spec for the secondary body
+
+# Example
+```julia
+# Convenience constructor: shared Bool flags, separate output_times and subsurface_face_ids
+output = BinaryAsteroidOutputSpec(
+    output_times_primary,   subsurface_face_ids_primary,
+    output_times_secondary, subsurface_face_ids_secondary;
+    save_surface_temperature    = true,
+    save_subsurface_temperature = true,
+    save_face_forces            = false,
+    save_forces                 = true,
+    save_torques                = true,
+)
+
+# Base constructor: independent spec per body
+output_primary   = SingleAsteroidOutputSpec(output_times_primary,   subsurface_face_ids_primary;   save_forces=true)
+output_secondary = SingleAsteroidOutputSpec(output_times_secondary, subsurface_face_ids_secondary; save_forces=false)
+output = BinaryAsteroidOutputSpec(output_primary, output_secondary)
+```
 """
 struct BinaryAsteroidOutputSpec
     primary   ::SingleAsteroidOutputSpec
     secondary ::SingleAsteroidOutputSpec
+end
+
+function BinaryAsteroidOutputSpec(
+    output_times_primary          ::Vector{Float64},
+    subsurface_face_ids_primary   ::Vector{Int},
+    output_times_secondary        ::Vector{Float64},
+    subsurface_face_ids_secondary ::Vector{Int};
+    save_surface_temperature    ::Bool = true,
+    save_subsurface_temperature ::Bool = true,
+    save_face_forces            ::Bool = false,
+    save_forces                 ::Bool = false,
+    save_torques                ::Bool = false,
+)
+    output_primary = SingleAsteroidOutputSpec(
+        output_times_primary, subsurface_face_ids_primary;
+        save_surface_temperature, save_subsurface_temperature, save_face_forces, save_forces, save_torques,
+    )
+
+    output_secondary = SingleAsteroidOutputSpec(
+        output_times_secondary, subsurface_face_ids_secondary;
+        save_surface_temperature, save_subsurface_temperature, save_face_forces, save_forces, save_torques,
+    )
+
+    BinaryAsteroidOutputSpec(output_primary, output_secondary)
 end
 
 # Validate that all output_times are present in ephem.times.
