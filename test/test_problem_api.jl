@@ -23,8 +23,8 @@ Unit tests for the Problem-Solver API introduced in v0.2.0:
 
     @testset "subsolar_temperature" begin
         au2m = AsteroidThermoPhysicalModels.au2m
-        r☉_1au  = SVector{3, Float64}(1 * au2m, 0, 0)
-        r☉_2au  = SVector{3, Float64}(2 * au2m, 0, 0)
+        r☉_1au  = [1 * au2m, 0.0, 0.0]
+        r☉_2au  = [2 * au2m, 0.0, 0.0]
 
         Tss_1au = subsolar_temperature(r☉_1au, 0.1, 0.9)
         Tss_2au = subsolar_temperature(r☉_2au, 0.1, 0.9)

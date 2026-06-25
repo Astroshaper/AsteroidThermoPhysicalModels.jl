@@ -27,10 +27,10 @@ Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
     times        = collect(et_range)
 
     # Rotation matrices: body-fixed rotates with period P around z-axis
-    R_b2i = [SMatrix{3,3,Float64,9}(RotZ(2π * et / P)) for et in et_range]
+    R_b2i = [RotZ(2π * et / P) for et in et_range]
 
     # Sun position in body-fixed frame (inverse rotation of inertial position)
-    r_sun = [SVector{3,Float64}(inv(RotZ(2π * et / P)) * SVector(au2m, 0.0, 0.0)) for et in et_range]
+    r_sun = [inv(RotZ(2π * et / P)) * SVector(au2m, 0.0, 0.0) for et in et_range]
 
     path_obj      = joinpath("shape", "icosahedron.obj")
     thermo_params = ThermoParams(0.1, 1000.0, 600.0, 0.1, 0.0, 0.9, 0.1, 0.01, 5)
@@ -119,8 +119,8 @@ Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
     @testset "Binary asteroid — {<:AbstractVector}" begin
         DIR_OUTPUT = mktempdir()
 
-        r_secondary            = [SVector{3,Float64}(1e4, 0, 0) for _ in et_range]
-        R_primary_to_secondary = [SMatrix{3,3,Float64,9}(I)     for _ in et_range]
+        r_secondary            = [[1e4, 0.0, 0.0]          for _ in et_range]
+        R_primary_to_secondary = [Matrix{Float64}(I, 3, 3) for _ in et_range]
         R_primary_to_inertial  = R_b2i
 
         ephem = BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary, R_primary_to_inertial)
