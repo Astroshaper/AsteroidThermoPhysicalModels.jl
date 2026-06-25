@@ -44,7 +44,7 @@ Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
         @test ephem isa SingleAsteroidEphemerides{Vector{SMatrix{3,3,Float64,9}}}
 
         shape   = load_shape_obj(path_obj; scale=1000, with_face_visibility=false, with_bvh=false)
-        problem = AsteroidThermoPhysicalModels.SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+        problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
             with_self_shadowing = false,
             with_self_heating   = false,
         )
@@ -67,7 +67,7 @@ Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
         @test length(solution.torques) == length(output_times)
 
         # export: thermal_net_forces.csv must contain force/torque columns
-        AsteroidThermoPhysicalModels.export_solution(DIR_OUTPUT, solution)
+        export_solution(DIR_OUTPUT, solution)
         @test isfile(joinpath(DIR_OUTPUT, "thermal_net_forces.csv"))
         df = CSV.read(joinpath(DIR_OUTPUT, "thermal_net_forces.csv"), DataFrame)
         @test "force_x"  in names(df)
@@ -85,7 +85,7 @@ Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
         ephem_no_rot = SingleAsteroidEphemerides(times, r_sun)
 
         shape   = load_shape_obj(path_obj; scale=1000, with_face_visibility=false, with_bvh=false)
-        problem = AsteroidThermoPhysicalModels.SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+        problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
             with_self_shadowing = false,
             with_self_heating   = false,
         )
@@ -107,7 +107,7 @@ Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
         @test size(solution.face_forces) == (n_face, length(output_times))
 
         # export: thermal_face_forces.csv must be written with correct columns
-        AsteroidThermoPhysicalModels.export_solution(DIR_OUTPUT, solution)
+        export_solution(DIR_OUTPUT, solution)
         @test isfile(joinpath(DIR_OUTPUT, "thermal_face_forces.csv"))
         df = CSV.read(joinpath(DIR_OUTPUT, "thermal_face_forces.csv"), DataFrame)
         @test "force_x" in names(df)
@@ -159,7 +159,7 @@ Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
         @test length(solution.secondary.torques) == length(output_times)
 
         # export: both bodies should have thermal_net_forces.csv with force/torque columns
-        AsteroidThermoPhysicalModels.export_solution(DIR_OUTPUT, solution)
+        export_solution(DIR_OUTPUT, solution)
         for body in ("primary", "secondary")
             filepath = joinpath(DIR_OUTPUT, body, "thermal_net_forces.csv")
             df = CSV.read(filepath, DataFrame)

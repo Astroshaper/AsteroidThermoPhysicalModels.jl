@@ -81,8 +81,8 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for 
     ρ  = 1270.0  # Density [kg/m³]
     Cₚ = 600.0   # Heat capacity [J/kg/K]
 
-    l = AsteroidThermoPhysicalModels.thermal_skin_depth(P, k, ρ, Cₚ)  # Thermal skin depth [m]
-    Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)        # Thermal inertia [tiu]
+    l = thermal_skin_depth(P, k, ρ, Cₚ)  # Thermal skin depth [m]
+    Γ = thermal_inertia(k, ρ, Cₚ)        # Thermal inertia [tiu]
 
     R_vis = 0.04  # Reflectance in visible light [-]
     R_ir  = 0.0   # Reflectance in thermal infrared [-]
@@ -95,11 +95,11 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for 
     thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 
     ## --- Setting of TPM ---
-    problem = AsteroidThermoPhysicalModels.SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+    problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
         with_self_shadowing      = true,
         with_self_heating        = true,
-        upper_boundary_condition = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
-        lower_boundary_condition = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
+        upper_boundary_condition = RadiationBoundaryCondition(),
+        lower_boundary_condition = InsulationBoundaryCondition(),
     )
 
     ## --- Run TPM ---
@@ -115,7 +115,7 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for 
 
     ## --- Save TPM result ---
     @testset "Save TPM result" begin
-        AsteroidThermoPhysicalModels.export_solution(DIR_OUTPUT, solution)
+        export_solution(DIR_OUTPUT, solution)
 
         @test isfile(joinpath(DIR_OUTPUT, "diagnostics.csv"))
         @test isfile(joinpath(DIR_OUTPUT, "surface_temperature.csv"))

@@ -105,11 +105,11 @@ Based on TPM_Ryugu test but with varying thermophysical properties.
     thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 
     ## --- Setting of TPM ---
-    problem = AsteroidThermoPhysicalModels.SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+    problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
         with_self_shadowing      = true,
         with_self_heating        = true,
-        upper_boundary_condition = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
-        lower_boundary_condition = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
+        upper_boundary_condition = RadiationBoundaryCondition(),
+        lower_boundary_condition = InsulationBoundaryCondition(),
     )
 
     ## --- Run TPM ---
@@ -125,7 +125,7 @@ Based on TPM_Ryugu test but with varying thermophysical properties.
 
     ## --- Save TPM result ---
     @testset "Save TPM result" begin
-        AsteroidThermoPhysicalModels.export_solution(DIR_OUTPUT, solution)
+        export_solution(DIR_OUTPUT, solution)
     
         @test isfile(joinpath(DIR_OUTPUT, "diagnostics.csv"))
         @test isfile(joinpath(DIR_OUTPUT, "surface_temperature.csv"))

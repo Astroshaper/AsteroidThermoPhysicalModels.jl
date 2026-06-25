@@ -42,8 +42,8 @@ Tests for 1D heat conduction solvers:
     thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 
     ## --- Build states with different solvers ---
-    BC_UPPER = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(0)
-    BC_LOWER = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(0)
+    BC_UPPER = IsothermalBoundaryCondition(0)
+    BC_LOWER = IsothermalBoundaryCondition(0)
 
     problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
         with_self_shadowing      = false,

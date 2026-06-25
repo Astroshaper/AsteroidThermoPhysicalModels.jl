@@ -40,8 +40,8 @@ Validates both upper and lower boundary implementations.
 
     @testset "Isothermal BC with non-zero temperatures" begin
         # Test with T_upper = 100, T_lower = 50
-        BC_UPPER = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(100.0)
-        BC_LOWER = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(50.0)
+        BC_UPPER = IsothermalBoundaryCondition(100.0)
+        BC_LOWER = IsothermalBoundaryCondition(50.0)
 
         problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
             with_self_shadowing      = false,
@@ -70,8 +70,8 @@ Validates both upper and lower boundary implementations.
     end
 
     @testset "Insulation BC at lower boundary" begin
-        BC_UPPER = AsteroidThermoPhysicalModels.IsothermalBoundaryCondition(100.0)
-        BC_LOWER = AsteroidThermoPhysicalModels.InsulationBoundaryCondition()
+        BC_UPPER = IsothermalBoundaryCondition(100.0)
+        BC_LOWER = InsulationBoundaryCondition()
 
         problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
             with_self_shadowing      = false,
