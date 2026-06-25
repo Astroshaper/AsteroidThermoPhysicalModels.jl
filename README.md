@@ -77,13 +77,6 @@ solution = solve(problem, CrankNicolson();
 
 See the [Migration Guide](CHANGELOG.md#migration-guide) and [CHANGELOG](CHANGELOG.md) for details.
 
-### What's New in v0.1.x
-
-#### v0.1.1
-- **Performance**: Shadow calculations are ~2.7x faster via `AsteroidShapeModels.jl` v0.4.2
-- **Compatibility**: Now supports `AsteroidShapeModels.jl` v0.5.x, which introduces `HierarchicalShapeModel` for future surface roughness support
-- **Bug fix**: Updated HERA SPICE kernel download URLs (ESA BitBucket now requires authentication)
-
 ## 🌟 Example
 
 Temperature distribution of asteroid Didymos and its satellite Dimorphos:
