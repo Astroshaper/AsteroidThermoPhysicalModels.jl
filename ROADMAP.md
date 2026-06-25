@@ -60,11 +60,7 @@ The v0.1.0 release marks a significant milestone with stabilized core APIs, crit
   - [x] Split `src/TPM.jl` into focused files: `solver_types.jl`, `tpm_types.jl`, `tpm_result.jl`, `tpm_run.jl`
   - [x] Remove geometric operation tests that duplicate `AsteroidShapeModels.jl` tests
 
----
-**↓ Planned Releases ↓**
----
-
-## v0.2.0 - API Redesign (Target: 2026)
+## v0.2.0 - API Redesign (Released: 2026-06-24)
 
 Redesign the API around a Problem-Solver pattern inspired by `DifferentialEquations.jl`. Separating problem definition from simulation state provides the clean internal architecture needed to implement surface roughness support in v0.3.0.
 
@@ -81,6 +77,10 @@ Redesign the API around a Problem-Solver pattern inspired by `DifferentialEquati
 
 - [x] **API Cleanup**
   - [x] Remove `subsolar_temperature(r☉, params)` overload; use the explicit scalar form `subsolar_temperature(r☉, R_vis, ε)` instead
+
+---
+**↓ Planned Releases ↓**
+---
 
 ## v0.2.1 - Configuration File Support (Target: 2026)
 

@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.2.0] - TBD
+## [0.2.0] - 2026-06-24
 
 This release introduces a Problem-Solver API redesign inspired by `DifferentialEquations.jl`.
 The old `run_TPM!` function is replaced by `solve(problem, algorithm; kwargs...)`.
@@ -16,12 +16,16 @@ The old `run_TPM!` function is replaced by `solve(problem, algorithm; kwargs...)
 
 ```julia
 # v0.1.x
-stpm = SingleAsteroidThermoPhysicalModel(shape, thermo_params; ...)
+ephem = (time = times, sun = r_sun)   # NamedTuple with `time` and `sun` fields
+stpm  = SingleAsteroidThermoPhysicalModel(shape, thermo_params; ...)
 result = run_TPM!(stpm, ephem, times_to_save, face_ID)
 
 # v0.2.0
-problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params; ...)
-output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids;
+ephem   = SingleAsteroidEphemerides(times, r_sun)
+# ephem = SingleAsteroidEphemerides(times, r_sun, R_body_to_inertial)  # for force/torque output
+
+problem  = SingleAsteroidThermoPhysicalProblem(shape, thermo_params; ...)
+output   = SingleAsteroidOutputSpec(output_times, subsurface_face_ids;
     save_surface_temperature    = true,
     save_subsurface_temperature = true,
     save_face_forces            = false,
