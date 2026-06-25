@@ -74,6 +74,15 @@ Unit tests for parametric *Ephemerides{R} types introduced in v0.2.0:
         @test ephem.R_body_to_inertial === nothing
     end
 
+    @testset "SingleAsteroidEphemerides — SMatrix fast path (no allocation)" begin
+        # Passing Vector{SMatrix} directly hits the no-op fast path in _to_smat33_vec.
+        R_smat = [SMatrix{3,3,Float64,9}(I) for _ in 1:n]
+        ephem  = SingleAsteroidEphemerides(times, r_sun, R_smat)
+
+        @test eltype(ephem.R_body_to_inertial)  === SMatrix{3, 3, Float64, 9}
+        @test ephem.R_body_to_inertial          === R_smat  # same object: no copy
+    end
+
     @testset "SingleAsteroidEphemerides with rotation matrices" begin
         ephem = SingleAsteroidEphemerides(times, r_sun, R_body_to_inertial)
 
