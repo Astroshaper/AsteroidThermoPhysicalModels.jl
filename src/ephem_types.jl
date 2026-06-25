@@ -17,6 +17,20 @@ Type parameter R:
 =#
 
 # ╔═══════════════════════════════════════════════════════════════════╗
+# ║                     Conversion helpers                            ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
+# Two methods per helper: the first is a no-op fast path when the element type
+# already matches (avoids element-wise allocation); the second converts each
+# element so users need not import StaticArrays themselves.
+
+_to_svec3_vec(v::AbstractVector{SVector{3,Float64}}) = convert(Vector{SVector{3,Float64}}, v)
+_to_svec3_vec(v::AbstractVector) = [SVector{3,Float64}(x) for x in v]
+
+_to_smat33_vec(v::AbstractVector{SMatrix{3,3,Float64,9}}) = convert(Vector{SMatrix{3,3,Float64,9}}, v)
+_to_smat33_vec(v::AbstractVector) = [SMatrix{3,3,Float64,9}(x) for x in v]
+
+# ╔═══════════════════════════════════════════════════════════════════╗
 # ║                       Abstract types                              ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
@@ -70,8 +84,15 @@ The type parameter `R` controls whether force and torque are computed:
 # Constructors
     SingleAsteroidEphemerides(times, r_sun)
         -> SingleAsteroidEphemerides{Nothing}
+    SingleAsteroidEphemerides(times, r_sun, nothing)
+        -> SingleAsteroidEphemerides{Nothing}
     SingleAsteroidEphemerides(times, r_sun, R_body_to_inertial)
-        -> SingleAsteroidEphemerides{typeof(R_body_to_inertial)}
+        -> SingleAsteroidEphemerides{Vector{SMatrix{3,3,Float64,9}}}
+
+Plain `AbstractVector` / `AbstractMatrix` elements in `r_sun` and
+`R_body_to_inertial` are automatically converted to the corresponding
+`SVector{3,Float64}` / `SMatrix{3,3,Float64,9}` types, so importing
+`StaticArrays` in user code is not required.
 """
 struct SingleAsteroidEphemerides{R <: Union{Nothing, AbstractVector}} <: AbstractSingleAsteroidEphemerides
     times              ::Vector{Float64}
@@ -90,17 +111,23 @@ struct SingleAsteroidEphemerides{R <: Union{Nothing, AbstractVector}} <: Abstrac
         R_body_to_inertial === nothing || length(R_body_to_inertial) == n || throw(DimensionMismatch(
             "R_body_to_inertial ($(length(R_body_to_inertial))) and times ($n) must have the same length"
         ))
-        new{R}(times, r_sun, R_body_to_inertial)
+        new{R}(times, _to_svec3_vec(r_sun), R_body_to_inertial)
     end
 end
 
-# Temperature only: R_body_to_inertial = nothing
+# Temperature only (R_body_to_inertial = nothing), implicit or explicit.
 SingleAsteroidEphemerides(times, r_sun) =
     SingleAsteroidEphemerides{Nothing}(times, r_sun, nothing)
+SingleAsteroidEphemerides(times, r_sun, ::Nothing) =
+    SingleAsteroidEphemerides{Nothing}(times, r_sun, nothing)
 
-# With rotation matrices for force/torque computation
-SingleAsteroidEphemerides(times, r_sun, R_body_to_inertial) =
-    SingleAsteroidEphemerides{typeof(R_body_to_inertial)}(times, r_sun, R_body_to_inertial)
+# With rotation matrices for force/torque computation.
+# Converted here (before the inner constructor) so that the type parameter R is
+# correctly inferred as Vector{SMatrix{3,3,Float64,9}}.
+function SingleAsteroidEphemerides(times, r_sun, R_body_to_inertial)
+    R_conv = _to_smat33_vec(R_body_to_inertial)
+    SingleAsteroidEphemerides{typeof(R_conv)}(times, r_sun, R_conv)
+end
 
 
 # ╔═══════════════════════════════════════════════════════════════════╗
@@ -133,8 +160,13 @@ R_{s2i} = R_{p2i} \\cdot R_{p2s}^{\\top}
 # Constructors
     BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary)
         -> BinaryAsteroidEphemerides{Nothing}
+    BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary, nothing)
+        -> BinaryAsteroidEphemerides{Nothing}
     BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary, R_primary_to_inertial)
-        -> BinaryAsteroidEphemerides{typeof(R_primary_to_inertial)}
+        -> BinaryAsteroidEphemerides{Vector{SMatrix{3,3,Float64,9}}}
+
+Plain `AbstractVector` / `AbstractMatrix` elements are automatically converted
+to `SVector{3,Float64}` / `SMatrix{3,3,Float64,9}` types in all fields.
 """
 struct BinaryAsteroidEphemerides{R <: Union{Nothing, AbstractVector}} <: AbstractBinaryAsteroidEphemerides
     times                  ::Vector{Float64}
@@ -163,16 +195,26 @@ struct BinaryAsteroidEphemerides{R <: Union{Nothing, AbstractVector}} <: Abstrac
         R_primary_to_inertial === nothing || length(R_primary_to_inertial) == n || throw(DimensionMismatch(
             "R_primary_to_inertial ($(length(R_primary_to_inertial))) and times ($n) must have the same length"
         ))
-        new{R}(times, r_sun, r_secondary, R_primary_to_secondary, R_primary_to_inertial)
+        new{R}(
+            times,
+            _to_svec3_vec(r_sun),
+            _to_svec3_vec(r_secondary),
+            _to_smat33_vec(R_primary_to_secondary),
+            R_primary_to_inertial,
+        )
     end
 end
 
-# Temperature only: R_primary_to_inertial = nothing
+# Temperature only (R_primary_to_inertial = nothing), implicit or explicit.
 BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary) =
     BinaryAsteroidEphemerides{Nothing}(times, r_sun, r_secondary, R_primary_to_secondary, nothing)
+BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary, ::Nothing) =
+    BinaryAsteroidEphemerides{Nothing}(times, r_sun, r_secondary, R_primary_to_secondary, nothing)
 
-# With rotation matrices for force/torque computation
-BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary, R_primary_to_inertial) =
-    BinaryAsteroidEphemerides{typeof(R_primary_to_inertial)}(
-        times, r_sun, r_secondary, R_primary_to_secondary, R_primary_to_inertial,
-    )
+# With rotation matrices for force/torque computation.
+# Converted here (before the inner constructor) so that the type parameter R is
+# correctly inferred as Vector{SMatrix{3,3,Float64,9}}.
+function BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary, R_primary_to_inertial)
+    R_conv = _to_smat33_vec(R_primary_to_inertial)
+    BinaryAsteroidEphemerides{typeof(R_conv)}(times, r_sun, r_secondary, R_primary_to_secondary, R_conv)
+end
