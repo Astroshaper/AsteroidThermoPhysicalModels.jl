@@ -330,8 +330,8 @@ function record_timestep!(
     state    ::SingleAsteroidThermoPhysicalState,
     i_time   ::Integer,
 )
-    solution.absorbed_power[i_time] = energy_in(state)
-    solution.emitted_power[i_time]  = energy_out(state)
+    solution.absorbed_power[i_time] = integrate_absorbed_power(state)
+    solution.emitted_power[i_time]  = integrate_emitted_power(state)
 
     i_save = something(findfirst(isequal(solution.times[i_time]), solution.output.output_times), 0)
     i_save == 0 && return
