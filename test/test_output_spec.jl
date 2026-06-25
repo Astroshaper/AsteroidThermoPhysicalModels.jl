@@ -21,7 +21,7 @@ introduced in v0.2.0:
 
     n = 10
     times  = collect(range(0.0, 100.0; length=n))
-    r_sun  = [SVector{3, Float64}(au2m, 0, 0) for _ in 1:n]
+    r_sun  = [[au2m, 0.0, 0.0] for _ in 1:n]
     ephem  = SingleAsteroidEphemerides(times, r_sun)
 
     output_times        = times[end-2:end]
@@ -77,8 +77,8 @@ introduced in v0.2.0:
     end
 
     @testset "_validate_output_spec — valid binary (no error)" begin
-        r_secondary            = [SVector{3, Float64}(1e6, 0, 0) for _ in 1:n]
-        R_primary_to_secondary = [SMatrix{3,3,Float64,9}(I)      for _ in 1:n]
+        r_secondary            = [[1e6, 0.0, 0.0]          for _ in 1:n]
+        R_primary_to_secondary = [Matrix{Float64}(I, 3, 3) for _ in 1:n]
         ephem_b = BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary)
 
         output = BinaryAsteroidOutputSpec(
@@ -89,8 +89,8 @@ introduced in v0.2.0:
     end
 
     @testset "_validate_output_spec — invalid binary secondary (ArgumentError)" begin
-        r_secondary            = [SVector{3, Float64}(1e6, 0, 0) for _ in 1:n]
-        R_primary_to_secondary = [SMatrix{3,3,Float64,9}(I)      for _ in 1:n]
+        r_secondary            = [[1e6, 0.0, 0.0]          for _ in 1:n]
+        R_primary_to_secondary = [Matrix{Float64}(I, 3, 3) for _ in 1:n]
         ephem_b = BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary)
 
         invalid_time = times[end] + 1.0

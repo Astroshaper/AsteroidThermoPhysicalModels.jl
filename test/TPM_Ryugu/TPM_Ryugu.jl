@@ -63,7 +63,9 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for 
     et_range = range(et_begin, et_end; length=n_step_in_cycle*n_cycle+1)
 
     times = collect(et_range)
-    r_sun = [SVector{3}(SPICE.spkpos("SUN", et, "RYUGU_FIXED", "None", "RYUGU")[1]) * 1000 for et in et_range]  # Sun's position in RYUGU_FIXED [m]
+    r_sun = [SPICE.spkpos("SUN", et, "RYUGU_FIXED", "None", "RYUGU")[1] for et in et_range]  # Sun's position in RYUGU_FIXED [km]
+    r_sun .*= 1000  # Convert [km] to [m]
+
 
     ephem = SingleAsteroidEphemerides(times, r_sun)
 
