@@ -82,24 +82,13 @@ Redesign the API around a Problem-Solver pattern inspired by `DifferentialEquati
 **↓ Planned Releases ↓**
 ---
 
-## v0.2.1 - Configuration File Support (Target: 2026)
+## v0.2.1 - Patch Fixes (Target: 2026)
 
-- [ ] **TOML configuration file support** for running parameter surveys without writing Julia code; external data files (shape models, pre-computed ephemerides) are referenced by path within the config
-- [ ] **CLI runner**: run simulations from the command line via a configuration file
+Non-breaking fixes and convenience improvements before the v0.3.0 surface roughness work.
 
-## v0.2.2 - Solver Quality and Polish (Target: 2026)
-
-- [ ] **Heat conduction solver improvements**
-  - [ ] Validate numerical methods against analytical solutions
-  - [ ] Optimize implicit solver matrix operations
-
-- [ ] **Binary simulation improvements**
-  - [ ] Report eclipse status for each body in binary simulations
-  - [ ] Add approximation methods for `mutual_heating!` to reduce computation time
-
-- [ ] **Code quality**
-  - [ ] Refactor long heat conduction solver functions
-  - [ ] Expand unit test coverage for public functions
+- [ ] **Rename internal `energy_in` / `energy_out`** to `absorbed_power` / `emitted_power` — current names are physically inaccurate (units are W, not J); not exported so no breaking change
+- [ ] **`*Ephemerides` convenience constructors** — accept `et_begin`, `et_end`, step count to assemble `times` and `r_sun` in one call, reducing user boilerplate; purely additive
+- [ ] **Test prefix cleanup** — remove unnecessary `AsteroidThermoPhysicalModels.` prefixes from exported symbols in test files
 
 ## v0.3.0 - Surface Roughness Support (Target: 2026)
 
@@ -111,7 +100,30 @@ Introduce thermophysical modeling of surface roughness using `HierarchicalShapeM
 
 - [ ] **Global aggregation**: transform sub-face thermal forces to the global frame and accumulate into body-level force and torque
 
-## v0.4.0 - Performance Optimizations (Target: 2026)
+## v0.3.1 - Solver Quality and Extended I/O (Target: 2026)
+
+- [ ] **Heat conduction solver validation**
+  - [ ] Validate numerical methods against analytical solutions
+  - [ ] Optimize implicit solver matrix operations
+
+- [ ] **Extended I/O**
+  - [ ] `load_solution` — reload CSV output produced by `export_solution` as a Julia object
+  - [ ] `CommonSolve.step!` interface — step-by-step execution for interactive debugging and incremental output
+
+- [ ] **Binary simulation improvements**
+  - [ ] Report eclipse status for each body in binary simulations
+  - [ ] Add approximation methods for `mutual_heating!` to reduce computation time
+
+- [ ] **Code quality**
+  - [ ] Refactor long heat conduction solver functions
+  - [ ] Expand unit test coverage for public functions
+
+## v0.4.0 - Configuration and CLI (Target: 2027)
+
+- [ ] **TOML configuration file support** for running parameter surveys without writing Julia code; external data files (shape models, pre-computed ephemerides) are referenced by path within the config
+- [ ] **CLI runner**: run simulations from the command line via a configuration file
+
+## v0.5.0 - Performance Optimizations (Target: 2027)
 
 - [ ] **Computational Enhancements**
   - [ ] Multi-threading support
@@ -123,7 +135,7 @@ Introduce thermophysical modeling of surface roughness using `HierarchicalShapeM
   - [ ] Illumination state caching for full rotation
   - [ ] Temperature convergence criteria
 
-## v0.5.0 - Extended Features (Target: 2027)
+## v0.6.0 - Extended Features (Target: 2027)
 
 - [ ] **Extended Physics**
   - [ ] Coupled binary asteroid dynamics
