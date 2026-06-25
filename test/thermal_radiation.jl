@@ -64,8 +64,8 @@ This test validates:
     ρ  = 1270.0  # Density [kg/m³]
     Cₚ = 600.0   # Heat capacity [J/kg/K]
     
-    l = AsteroidThermoPhysicalModels.thermal_skin_depth(P, k, ρ, Cₚ)
-    Γ = AsteroidThermoPhysicalModels.thermal_inertia(k, ρ, Cₚ)
+    l = thermal_skin_depth(P, k, ρ, Cₚ)
+    Γ = thermal_inertia(k, ρ, Cₚ)
 
     R_vis = 0.04  # Reflectance in visible light [-]
     R_ir  = 0.0   # Reflectance in thermal infrared [-]

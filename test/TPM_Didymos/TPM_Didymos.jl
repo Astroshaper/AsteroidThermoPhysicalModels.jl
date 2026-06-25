@@ -106,21 +106,21 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
     thermo_params2 = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 
     ## --- Setting of TPM ---
-    prob1 = AsteroidThermoPhysicalModels.SingleAsteroidThermoPhysicalProblem(shape1, thermo_params1;
+    prob1 = SingleAsteroidThermoPhysicalProblem(shape1, thermo_params1;
         with_self_shadowing      = true,
         with_self_heating        = true,
-        upper_boundary_condition = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
-        lower_boundary_condition = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
+        upper_boundary_condition = RadiationBoundaryCondition(),
+        lower_boundary_condition = InsulationBoundaryCondition(),
     )
 
-    prob2 = AsteroidThermoPhysicalModels.SingleAsteroidThermoPhysicalProblem(shape2, thermo_params2;
+    prob2 = SingleAsteroidThermoPhysicalProblem(shape2, thermo_params2;
         with_self_shadowing      = true,
         with_self_heating        = true,
-        upper_boundary_condition = AsteroidThermoPhysicalModels.RadiationBoundaryCondition(),
-        lower_boundary_condition = AsteroidThermoPhysicalModels.InsulationBoundaryCondition(),
+        upper_boundary_condition = RadiationBoundaryCondition(),
+        lower_boundary_condition = InsulationBoundaryCondition(),
     )
 
-    problem = AsteroidThermoPhysicalModels.BinaryAsteroidThermoPhysicalProblem(prob1, prob2;
+    problem = BinaryAsteroidThermoPhysicalProblem(prob1, prob2;
         with_mutual_shadowing = true,
         with_mutual_heating   = true,
     )
@@ -143,7 +143,7 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
 
     ## --- Save TPM result ---
     @testset "Save TPM result" begin
-        AsteroidThermoPhysicalModels.export_solution(DIR_OUTPUT, solution)
+        export_solution(DIR_OUTPUT, solution)
 
         @test isfile(joinpath(DIR_OUTPUT, "primary", "diagnostics.csv"))
         @test isfile(joinpath(DIR_OUTPUT, "primary", "surface_temperature.csv"))
