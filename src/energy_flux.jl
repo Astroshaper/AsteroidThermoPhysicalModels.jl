@@ -56,41 +56,19 @@ absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad) = (1 - R_vis) * F_sun + 
 
 
 """
-    energy_in(state::SingleAsteroidThermoPhysicalState) -> E_in
+    integrate_absorbed_power(state::SingleAsteroidThermoPhysicalState) -> Float64
 
-Calculate the total energy input rate (power) absorbed by the entire asteroid surface.
-
-# Arguments
-- `state::SingleAsteroidThermoPhysicalState` : Thermophysical simulation state for a single asteroid
-
-# Returns
-- `E_in::Float64` : Total absorbed power [W]
-
-# Calculation
-Integrates the absorbed energy flux over all surface facets:
+Integrate the absorbed energy flux over all surface facets to obtain total absorbed power [W]:
 ```
-E_in = Σᵢ F_abs,ᵢ × Aᵢ
+P_abs = Σᵢ F_abs,ᵢ × Aᵢ
 ```
-where:
-- F_abs,ᵢ is the absorbed energy flux on facet i (calculated by `absorbed_energy_flux`)
-- Aᵢ is the area of facet i
-
-# Components
-The absorbed energy includes:
-1. Direct solar radiation
-2. Scattered light from other facets (if self-heating is enabled)
-3. Thermal radiation from other facets (if self-heating is enabled)
-
-# Usage
-This function is typically used to check energy conservation in the model by
-comparing with `energy_out`.
 
 # See Also
-- `energy_out` for the total emitted power
-- `absorbed_energy_flux` for the flux calculation
+- `integrate_emitted_power` for the total emitted power
+- `absorbed_energy_flux` for the per-facet flux calculation
 """
-function energy_in(state::SingleAsteroidThermoPhysicalState)
-    E_in = 0.
+function integrate_absorbed_power(state::SingleAsteroidThermoPhysicalState)
+    P_abs = 0.0
     for i in eachindex(state.problem.shape.faces)
         R_vis  = state.problem.thermo_params.reflectance_vis[i]
         R_ir   = state.problem.thermo_params.reflectance_ir[i]
@@ -98,54 +76,36 @@ function energy_in(state::SingleAsteroidThermoPhysicalState)
         F_scat = state.flux_scat[i]
         F_rad  = state.flux_rad[i]
         a      = state.problem.shape.face_areas[i]
-        
-        E_in += absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad) * a
+
+        P_abs += absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad) * a
     end
-    E_in
+    P_abs
 end
 
 
 """
-    energy_out(state::SingleAsteroidThermoPhysicalState) -> E_out
+    integrate_emitted_power(state::SingleAsteroidThermoPhysicalState) -> Float64
 
-Calculate the total energy output rate (power) emitted by the entire asteroid surface
-through thermal radiation.
-
-# Arguments
-- `state::SingleAsteroidThermoPhysicalState` : Thermophysical simulation state for a single asteroid
-
-# Returns
-- `E_out::Float64` : Total emitted power [W]
-
-# Calculation
-Integrates the thermal emission over all surface facets using the Stefan-Boltzmann law:
+Integrate the thermal emission over all surface facets to obtain total emitted power [W]:
 ```
-E_out = Σᵢ εᵢ × σ × Tᵢ⁴ × Aᵢ
+P_emit = Σᵢ εᵢ × σ × Tᵢ⁴ × Aᵢ
 ```
-where:
-- εᵢ is the emissivity of facet i
-- σ is the Stefan-Boltzmann constant (5.67×10⁻⁸ W/m²/K⁴)
-- Tᵢ is the surface temperature of facet i [K]
-- Aᵢ is the area of facet i [m²]
 
-# Energy Conservation
-In thermal equilibrium, E_out should approximately equal E_in (from `energy_in`).
-The ratio E_out/E_in is often used as a convergence criterion in thermophysical models.
+In thermal equilibrium, `integrate_emitted_power` ≈ `integrate_absorbed_power`.
 
 # See Also
-- `energy_in` for the total absorbed power
-- `update_thermal_force!` for thermal recoil effects from this emission
+- `integrate_absorbed_power` for the total absorbed power
 """
-function energy_out(state::SingleAsteroidThermoPhysicalState)
-    E_out = 0.
+function integrate_emitted_power(state::SingleAsteroidThermoPhysicalState)
+    P_emit = 0.0
     for i in eachindex(state.problem.shape.faces)
         ε = state.problem.thermo_params.emissivity[i]
         T = state.temperature[begin, i]  # Surface temperature
         a = state.problem.shape.face_areas[i]
 
-        E_out += ε * σ_SB * T^4 * a
+        P_emit += ε * σ_SB * T^4 * a
     end
-    E_out
+    P_emit
 end
 
 
