@@ -145,4 +145,18 @@ Unit tests for parametric *Ephemerides{R} types introduced in v0.2.0:
         @test_throws DimensionMismatch BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary[1:end-1], R_primary_to_inertial)
         @test_throws DimensionMismatch BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary, R_primary_to_inertial[1:end-1])
     end
+
+    @testset "AbstractRange as times" begin
+        et_range = range(0.0, 100.0; length=n)
+
+        ephem_s = SingleAsteroidEphemerides(et_range, r_sun)
+        @test ephem_s.times isa Vector{Float64}
+        @test ephem_s.times == collect(et_range)
+        @test length(ephem_s) == n
+
+        ephem_b = BinaryAsteroidEphemerides(et_range, r_sun, r_secondary, R_primary_to_secondary)
+        @test ephem_b.times isa Vector{Float64}
+        @test ephem_b.times == collect(et_range)
+        @test length(ephem_b) == n
+    end
 end

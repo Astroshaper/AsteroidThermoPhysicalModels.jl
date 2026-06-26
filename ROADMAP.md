@@ -87,7 +87,7 @@ Redesign the API around a Problem-Solver pattern inspired by `DifferentialEquati
 Non-breaking fixes and convenience improvements before the v0.3.0 surface roughness work.
 
 - [ ] **Rename internal `energy_in` / `energy_out`** to `absorbed_power` / `emitted_power` — current names are physically inaccurate (units are W, not J); not exported so no breaking change
-- [ ] **`*Ephemerides` convenience constructors** — accept `et_begin`, `et_end`, step count to assemble `times` and `r_sun` in one call, reducing user boilerplate; purely additive
+- [x] **`*Ephemerides` convenience constructors** — `times` accepts any `AbstractRange` (e.g. `range(et_begin, et_end; length=n)`) and is automatically collected to `Vector{Float64}`, eliminating the separate `collect` call; purely additive
 - [ ] **Test prefix cleanup** — remove unnecessary `AsteroidThermoPhysicalModels.` prefixes from exported symbols in test files
 
 ## v0.3.0 - Surface Roughness Support (Target: 2026)
