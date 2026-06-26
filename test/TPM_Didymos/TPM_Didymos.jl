@@ -70,7 +70,6 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
     et_end   = et_begin + P₂ * n_cycle  # End time of TPM
     et_range = range(et_begin, et_end; length=n_step_in_cycle*n_cycle+1)
 
-    times                  = collect(et_range)
     r_sun                  = [SPICE.spkpos("SUN"      , et, "DIDYMOS_FIXED", "None", "DIDYMOS")[1] for et in et_range]  # Sun's position in DIDYMOS_FIXED [km]
     r_secondary            = [SPICE.spkpos("DIMORPHOS", et, "DIDYMOS_FIXED", "None", "DIDYMOS")[1] for et in et_range]  # Dimorphos position in DIDYMOS_FIXED [km]
     R_primary_to_secondary = [SPICE.pxform("DIDYMOS_FIXED", "DIMORPHOS_FIXED", et) for et in et_range]
@@ -78,7 +77,7 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
     r_sun       .*= 1000  # Convert [km] to [m]
     r_secondary .*= 1000  # Convert [km] to [m]
 
-    ephem = BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary)
+    ephem = BinaryAsteroidEphemerides(et_range, r_sun, r_secondary, R_primary_to_secondary)
 
     SPICE.kclear()
 
