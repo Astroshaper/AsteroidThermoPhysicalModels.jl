@@ -89,6 +89,8 @@ The type parameter `R` controls whether force and torque are computed:
     SingleAsteroidEphemerides(times, r_sun, R_body_to_inertial)
         -> SingleAsteroidEphemerides{Vector{SMatrix{3,3,Float64,9}}}
 
+An `AbstractRange` (e.g. `range(et_begin, et_end; length=n)`) may be passed
+as `times` and is automatically collected to `Vector{Float64}`.
 Plain `AbstractVector` / `AbstractMatrix` elements in `r_sun` and
 `R_body_to_inertial` are automatically converted to the corresponding
 `SVector{3,Float64}` / `SMatrix{3,3,Float64,9}` types, so importing
@@ -111,7 +113,7 @@ struct SingleAsteroidEphemerides{R <: Union{Nothing, AbstractVector}} <: Abstrac
         R_body_to_inertial === nothing || length(R_body_to_inertial) == n || throw(DimensionMismatch(
             "R_body_to_inertial ($(length(R_body_to_inertial))) and times ($n) must have the same length"
         ))
-        new{R}(times, _to_svec3_vec(r_sun), R_body_to_inertial)
+        new{R}(convert(Vector{Float64}, times), _to_svec3_vec(r_sun), R_body_to_inertial)
     end
 end
 
@@ -165,6 +167,8 @@ R_{s2i} = R_{p2i} \\cdot R_{p2s}^{\\top}
     BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary, R_primary_to_inertial)
         -> BinaryAsteroidEphemerides{Vector{SMatrix{3,3,Float64,9}}}
 
+An `AbstractRange` (e.g. `range(et_begin, et_end; length=n)`) may be passed
+as `times` and is automatically collected to `Vector{Float64}`.
 Plain `AbstractVector` / `AbstractMatrix` elements are automatically converted
 to `SVector{3,Float64}` / `SMatrix{3,3,Float64,9}` types in all fields.
 """
@@ -196,7 +200,7 @@ struct BinaryAsteroidEphemerides{R <: Union{Nothing, AbstractVector}} <: Abstrac
             "R_primary_to_inertial ($(length(R_primary_to_inertial))) and times ($n) must have the same length"
         ))
         new{R}(
-            times,
+            convert(Vector{Float64}, times),
             _to_svec3_vec(r_sun),
             _to_svec3_vec(r_secondary),
             _to_smat33_vec(R_primary_to_secondary),
