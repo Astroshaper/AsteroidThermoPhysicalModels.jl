@@ -82,17 +82,20 @@ Redesign the API around a Problem-Solver pattern inspired by `DifferentialEquati
 **↓ Planned Releases ↓**
 ---
 
-## v0.2.1 - Patch Fixes (Target: 2026)
+## v0.2.1 - Patch Fixes (Released: 2026-06-26)
 
 Non-breaking fixes and convenience improvements before the v0.3.0 surface roughness work.
 
-- [ ] **Rename internal `energy_in` / `energy_out`** to `absorbed_power` / `emitted_power` — current names are physically inaccurate (units are W, not J); not exported so no breaking change
+- [x] **Rename internal `energy_in` / `energy_out`** to `absorbed_power` / `emitted_power` — current names are physically inaccurate (units are W, not J); not exported so no breaking change
 - [x] **`*Ephemerides` convenience constructors** — `times` accepts any `AbstractRange` (e.g. `range(et_begin, et_end; length=n)`) and is automatically collected to `Vector{Float64}`, eliminating the separate `collect` call; purely additive
-- [ ] **Test prefix cleanup** — remove unnecessary `AsteroidThermoPhysicalModels.` prefixes from exported symbols in test files
+- [x] **`*Ephemerides` auto-conversion** — constructors accept plain `Vector` inputs for position and rotation fields and convert to `SVector`/`SMatrix` internally; no need to import `StaticArrays` at the call site
+- [x] **Test prefix cleanup** — remove unnecessary `AsteroidThermoPhysicalModels.` prefixes from exported symbols in test files
 
-## v0.3.0 - Surface Roughness Support (Target: 2026)
+## v0.3.0 - Surface Roughness Support + ThermoParams Redesign (Target: 2026)
 
-Introduce thermophysical modeling of surface roughness using `HierarchicalShapeModel` from `AsteroidShapeModels.jl`, built on the clean Problem-Solver architecture established in v0.2.0. Each global face can optionally carry a roughness model, and an independent mini-TPM is run on its sub-faces (Full Sub-facet TPM). This is the most physically accurate approach and provides a basis for validating simpler approximations in the future.
+Introduce thermophysical modeling of surface roughness using `HierarchicalShapeModel` from `AsteroidShapeModels.jl`. This release also redesigns `ThermoParams` to separate material properties from numerical grid settings — a prerequisite for clean per-face material access in the roughness model.
+
+- [ ] **`ThermoParams` / `GridParams` redesign** (breaking): `ThermoParams` holds material properties only; new `GridParams` holds numerical grid settings; problem constructor expands scalar input to per-face `Vector{ThermoParams}` at construction time
 
 - [ ] **Roughness-aware problem type**: extend the problem type to accept `HierarchicalShapeModel` and hold independent sub-face state (illumination, flux, temperature, thermal force) for each face
 

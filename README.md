@@ -46,7 +46,14 @@ pkg> add AsteroidThermoPhysicalModels
 - **Yarkovsky Effect**: Orbital perturbation due to asymmetric thermal emission
 - **YORP Effect**: Rotational perturbation due to asymmetric thermal emission
 
-## 🆕 What's New in v0.2.0
+## 🆕 What's New in v0.2.x
+
+### v0.2.1
+
+- `*Ephemerides` constructors now accept `AbstractRange` for `times` — no need to call `collect` beforehand
+- `*Ephemerides` constructors now auto-convert plain arrays to `SVector`/`SMatrix` — no need to import `StaticArrays`
+
+### v0.2.0
 
 This release introduces a **Problem-Solver API** inspired by `DifferentialEquations.jl`, replacing the old `run_TPM!` function.
 
@@ -87,45 +94,60 @@ Temperature distribution of asteroid Didymos and its satellite Dimorphos:
 
 ## 📖 Basic Usage
 
+The workflow follows a **Problem → Solve → Export** pattern.
+
 ```julia
 using AsteroidShapeModels
 using AsteroidThermoPhysicalModels
 
+# --- Shape model ---
+shape = load_shape_obj("path/to/shape.obj"; scale=1000, with_face_visibility=true, with_bvh=true)
 
-# Load an asteroid shape model
-# - `path/to/shape.obj` is the path to your OBJ file (mandatory)
-# - `scale` : scale factor for the shape model (e.g., 1000 for km to m conversion)
-shape = load_shape_obj("path/to/shape.obj"; scale=1000)
+# --- Ephemerides ---
+# `times`  : epochs [s], any AbstractRange or Vector{Float64}
+# `r_sun`  : Sun position in body-fixed frame [m], Vector of length-3 arrays
+#   (typically computed from SPICE kernels — see integration test examples)
+ephem = SingleAsteroidEphemerides(times, r_sun)
 
-# Set thermal parameters
-thermo_params = ThermoParams(
-    8.0 * 3600,  # Rotation period [s]
-    0.05,        # Thermal skin depth [m]
-    200.0,       # Thermal inertia [J m⁻² K⁻¹ s⁻¹/²]
-    0.1,         # Reflectance in visible light [-]
-    0.0,         # Reflectance in thermal infrared [-]
-    0.9,         # Emissivity [-]
-    0.5,         # Depth of lower boundary [m]
-    0.0125,      # Depth step width [m]
-    41           # Number of depth steps
+# --- Thermal parameters ---
+k     = 0.1    # Thermal conductivity [W/m/K]
+ρ     = 1270.0 # Density [kg/m³]
+Cₚ    = 600.0  # Heat capacity [J/kg/K]
+R_vis = 0.04   # Reflectance in visible light [-]
+R_ir  = 0.0    # Reflectance in thermal infrared [-]
+ε     = 1.0    # Emissivity [-]
+z_max   = 0.6  # Lower boundary depth [m]
+n_depth = 61   # Number of depth nodes
+Δz      = z_max / (n_depth - 1)
+
+thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+
+# --- Problem definition ---
+problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+    with_self_shadowing      = true,
+    with_self_heating        = true,
+    upper_boundary_condition = RadiationBoundaryCondition(),
+    lower_boundary_condition = InsulationBoundaryCondition(),
 )
 
-# Create TPM model with solver selection
-stpm = SingleAsteroidTPM(shape, thermo_params;
-    SELF_SHADOWING = true,
-    SELF_HEATING   = true,
-    SOLVER         = CrankNicolsonSolver(thermo_params),  # Choose solver
-    BC_UPPER       = RadiationBoundaryCondition(),
-    BC_LOWER       = InsulationBoundaryCondition()
+# --- Output specification ---
+output_times        = ephem.times[end-119:end]  # final rotation period
+subsurface_face_ids = [1, 2, 3]                 # faces for saving subsurface temperature profiles
+output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids)
+
+# --- Solve ---
+solution = solve(problem, CrankNicolson();
+    ephem               = ephem,
+    output              = output,
+    initial_temperature = 200.0,  # [K]
 )
 
-# Available solvers:
-# - ExplicitEulerSolver(thermo_params)   # Fast but requires small time steps
-# - ImplicitEulerSolver(thermo_params)   # Stable for any time step
-# - CrankNicolsonSolver(thermo_params)   # Best accuracy
-
-# Run simulation - see documentation for complete examples
+# --- Export results ---
+export_solution("output/", solution)
+# Writes: diagnostics.csv, surface_temperature.csv, subsurface_temperature.csv
 ```
+
+For a complete end-to-end example with SPICE ephemerides, see [test/TPM_Ryugu/TPM_Ryugu.jl](test/TPM_Ryugu/TPM_Ryugu.jl).
 
 ## 📊 Output
 
