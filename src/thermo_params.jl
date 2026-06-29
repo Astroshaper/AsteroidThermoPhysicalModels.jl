@@ -186,6 +186,10 @@ function ThermoParams(;
 end
 
 
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║              Equilibrium temperature estimation                   ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
 """
     subsolar_temperature(r☉, R_vis, ε) -> Tₛₛ
 
