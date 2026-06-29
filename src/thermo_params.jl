@@ -161,24 +161,6 @@ end
 
 
 """
-    struct GridParams
-
-Numerical grid settings for the 1D heat conduction equation,
-shared across all facets and sub-facets.
-
-# Fields
-- `z_max`   : Depth of the lower boundary [m]
-- `Δz`      : Depth step width [m]
-- `n_depth` : Number of depth nodes
-"""
-struct GridParams
-    z_max   ::Float64
-    Δz      ::Float64
-    n_depth ::Int
-end
-
-
-"""
     subsolar_temperature(r☉, R_vis, ε) -> Tₛₛ
 
 Calculate the subsolar equilibrium temperature at a given heliocentric distance.

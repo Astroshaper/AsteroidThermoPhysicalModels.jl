@@ -46,6 +46,9 @@ export SingleAsteroidEphemerides
 export AbstractBinaryAsteroidEphemerides
 export BinaryAsteroidEphemerides
 
+include("grid_params.jl")
+export GridParams
+
 include("thermo_params.jl")
 export ThermoParams
 export thermal_skin_depth, thermal_inertia, subsolar_temperature
