@@ -113,9 +113,9 @@ abstract type AbstractThermoParams end
 
 Material thermal properties per facet.
 
-For a uniform surface, pass a single `ThermoParams` constructed from scalar values.
-For a non-uniform surface, pass a `ThermoParams` constructed from `Vector{Float64}` values
-of length `n_face`.
+Each field is a `Vector{Float64}` of length `n_face`.
+The outer constructor accepts `Float64` (uniform) or `Vector{Float64}` (non-uniform) per field,
+and scalar arguments are automatically broadcast to match any vector arguments.
 
 # Fields
 - `conductivity`    : Thermal conductivity for each facet [W/m/K]
@@ -138,7 +138,9 @@ end
 """
     ThermoParams(conductivity, density, heat_capacity, reflectance_vis, reflectance_ir, emissivity)
 
-Construct `ThermoParams` from scalar values (uniform surface).
+Construct `ThermoParams` from scalar or vector arguments, which may be freely mixed.
+`Float64` arguments are automatically broadcast to match the length of any `Vector{Float64}`
+arguments. All vector arguments must have the same length.
 
 # Arguments
 - `conductivity`    : Thermal conductivity [W/m/K]
@@ -147,16 +149,39 @@ Construct `ThermoParams` from scalar values (uniform surface).
 - `reflectance_vis` : Reflectance in visible light [-]
 - `reflectance_ir`  : Reflectance in thermal infrared [-]
 - `emissivity`      : Emissivity [-]
+
+# Examples
+```julia
+# Uniform surface (all scalars)
+ThermoParams(0.1, 1500.0, 800.0, 0.05, 0.0, 0.9)
+
+# Non-uniform conductivity only; other parameters are uniform
+ThermoParams(k_vec, 1500.0, 800.0, 0.05, 0.0, 0.9)
+
+# Fully non-uniform
+ThermoParams(k_vec, ρ_vec, Cₚ_vec, R_vis_vec, R_ir_vec, ε_vec)
+```
 """
 function ThermoParams(
-    conductivity    ::Float64,
-    density         ::Float64,
-    heat_capacity   ::Float64,
-    reflectance_vis ::Float64,
-    reflectance_ir  ::Float64,
-    emissivity      ::Float64,
+    conductivity    ::Union{Float64, Vector{Float64}},
+    density         ::Union{Float64, Vector{Float64}},
+    heat_capacity   ::Union{Float64, Vector{Float64}},
+    reflectance_vis ::Union{Float64, Vector{Float64}},
+    reflectance_ir  ::Union{Float64, Vector{Float64}},
+    emissivity      ::Union{Float64, Vector{Float64}},
 )
-    ThermoParams([conductivity], [density], [heat_capacity], [reflectance_vis], [reflectance_ir], [emissivity])
+    args = (conductivity, density, heat_capacity, reflectance_vis, reflectance_ir, emissivity)
+    lengths = [length(a) for a in args if a isa Vector{Float64}]
+    n = isempty(lengths) ? 1 : first(lengths)
+    all(==(n), lengths) || throw(ArgumentError(
+        "ThermoParams vector arguments must all have the same length, got: $lengths"
+    ))
+    expand(x::Float64)         = fill(x, n)
+    expand(x::Vector{Float64}) = x
+    ThermoParams(
+        expand(conductivity), expand(density), expand(heat_capacity),
+        expand(reflectance_vis), expand(reflectance_ir), expand(emissivity),
+    )
 end
 
 
@@ -164,7 +189,8 @@ end
     ThermoParams(; conductivity, density, heat_capacity, reflectance_vis, reflectance_ir, emissivity)
 
 Construct `ThermoParams` from keyword arguments.
-Accepts the same types as the positional constructors (scalar `Float64` or `Vector{Float64}`).
+Each argument can be a `Float64` (uniform) or `Vector{Float64}` (non-uniform),
+and scalar/vector arguments may be freely mixed.
 
 # Keyword Arguments
 - `conductivity`    : Thermal conductivity [W/m/K]
