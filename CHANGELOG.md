@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-06-26
+
+No migration required from v0.2.0.
+
+### Added
+
+- `*Ephemerides` constructors now accept `AbstractRange` for `times` (e.g. `range(et_begin, et_end; length=n)`); the range is collected to `Vector{Float64}` internally, eliminating the manual `collect` call
+- `*Ephemerides` constructors now auto-convert plain `Vector` inputs to `Vector{SVector{3,Float64}}` for position vectors and `Vector{SMatrix{3,3,Float64,9}}` for rotation matrices; no need to import `StaticArrays` at the call site
+
+### Internal
+
+- Renamed `energy_in` / `energy_out` fields to `absorbed_power` / `emitted_power` in the diagnostics data — aligns the implementation with the documented names; these fields are not exported
+
 ## [0.2.0] - 2026-06-24
 
 This release introduces a Problem-Solver API redesign inspired by `DifferentialEquations.jl`.
