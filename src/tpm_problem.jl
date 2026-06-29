@@ -12,6 +12,10 @@ Abstract type for thermophysical problem definitions.
 abstract type AbstractThermoPhysicalProblem end
 
 
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║              Single-asteroid thermophysical problem               ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
 """
     struct SingleAsteroidThermoPhysicalProblem
 
@@ -120,6 +124,10 @@ function SingleAsteroidThermoPhysicalProblem(shape, thermo_params::ThermoParams,
     SingleAsteroidThermoPhysicalProblem(shape, thermo_params_expanded, grid_params, with_self_shadowing, with_self_heating, upper_boundary_condition, lower_boundary_condition)
 end
 
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║               Binary-asteroid thermophysical problem              ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     struct BinaryAsteroidThermoPhysicalProblem
@@ -235,14 +243,14 @@ problem = BinaryAsteroidThermoPhysicalProblem(
 """
 function BinaryAsteroidThermoPhysicalProblem(
     shape         ::Tuple,
-    thermo_params,
-    grid_params;
-    with_self_shadowing ::Bool   = true,
-    with_self_heating   ::Bool   = true,
-    upper_boundary_condition     = RadiationBoundaryCondition(),
-    lower_boundary_condition     = InsulationBoundaryCondition(),
-    with_mutual_shadowing ::Bool = true,
-    with_mutual_heating   ::Bool = true,
+    thermo_params ::Union{Tuple, ThermoParams},
+    grid_params   ::Union{Tuple, GridParams};
+    with_self_shadowing::Bool   = true,
+    with_self_heating::Bool     = true,
+    upper_boundary_condition    = RadiationBoundaryCondition(),
+    lower_boundary_condition    = InsulationBoundaryCondition(),
+    with_mutual_shadowing::Bool = true,
+    with_mutual_heating::Bool   = true,
 )
     thermo_params1, thermo_params2 = _to_pair(thermo_params)
     grid_params1, grid_params2 = _to_pair(grid_params)
