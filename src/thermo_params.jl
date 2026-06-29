@@ -161,6 +161,32 @@ end
 
 
 """
+    ThermoParams(; conductivity, density, heat_capacity, reflectance_vis, reflectance_ir, emissivity)
+
+Construct `ThermoParams` from keyword arguments.
+Accepts the same types as the positional constructors (scalar `Float64` or `Vector{Float64}`).
+
+# Keyword Arguments
+- `conductivity`    : Thermal conductivity [W/m/K]
+- `density`         : Density [kg/m³]
+- `heat_capacity`   : Heat capacity [J/kg/K]
+- `reflectance_vis` : Reflectance in visible light [-]
+- `reflectance_ir`  : Reflectance in thermal infrared [-]
+- `emissivity`      : Emissivity [-]
+"""
+function ThermoParams(;
+    conductivity,
+    density,
+    heat_capacity,
+    reflectance_vis,
+    reflectance_ir,
+    emissivity,
+)
+    ThermoParams(conductivity, density, heat_capacity, reflectance_vis, reflectance_ir, emissivity)
+end
+
+
+"""
     subsolar_temperature(r☉, R_vis, ε) -> Tₛₛ
 
 Calculate the subsolar equilibrium temperature at a given heliocentric distance.
