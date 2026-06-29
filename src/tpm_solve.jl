@@ -12,19 +12,18 @@ Internal dispatch:
 =#
 
 # Build the appropriate HeatConductionCache from an algorithm type
-_build_cache(::ExplicitEuler, thermo_params) = ExplicitEulerCache(thermo_params)
-_build_cache(::ImplicitEuler, thermo_params) = ImplicitEulerCache(thermo_params)
-_build_cache(::CrankNicolson, thermo_params) = CrankNicolsonCache(thermo_params)
+_build_cache(::ExplicitEuler, grid_params) = ExplicitEulerCache(grid_params)
+_build_cache(::ImplicitEuler, grid_params) = ImplicitEulerCache(grid_params)
+_build_cache(::CrankNicolson, grid_params) = CrankNicolsonCache(grid_params)
 
 
 # Internal helper: build SingleAsteroidThermoPhysicalState from a problem + algorithm.
-# broadcast_thermo_params! has already been called in the problem constructor.
 function _build_single_state(
     problem   ::SingleAsteroidThermoPhysicalProblem,
     algorithm ::AbstractThermoPhysicalAlgorithm,
 )
-    cache   = _build_cache(algorithm, problem.thermo_params)
-    n_depth = problem.thermo_params.n_depth
+    cache   = _build_cache(algorithm, problem.grid_params)
+    n_depth = problem.grid_params.n_depth
     n_face  = length(problem.shape.faces)
 
     SingleAsteroidThermoPhysicalState(

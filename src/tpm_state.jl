@@ -11,49 +11,6 @@ Abstract type for asteroid thermophysical simulation state.
 abstract type AbstractAsteroidThermoPhysicalState end
 
 
-"""
-    broadcast_thermo_params!(thermo_params::ThermoParams, n_face::Int)
-
-Broadcast the thermophysical parameters to all faces if the values are uniform globally.
-
-# Arguments
-- `thermo_params` : Thermophysical parameters
-- `n_face`        : Number of faces on the shape model
-"""
-function broadcast_thermo_params!(thermo_params::ThermoParams, n_face::Int)
-    if length(thermo_params.thermal_conductivity) == 1
-        resize!(thermo_params.thermal_conductivity, n_face)
-        resize!(thermo_params.density,              n_face)
-        resize!(thermo_params.heat_capacity,        n_face)
-        resize!(thermo_params.reflectance_vis,      n_face)
-        resize!(thermo_params.reflectance_ir,       n_face)
-        resize!(thermo_params.emissivity,           n_face)
-
-        thermo_params.thermal_conductivity[2:end] .= thermo_params.thermal_conductivity[begin]
-        thermo_params.density[2:end]              .= thermo_params.density[begin]
-        thermo_params.heat_capacity[2:end]        .= thermo_params.heat_capacity[begin]
-        thermo_params.reflectance_vis[2:end]      .= thermo_params.reflectance_vis[begin]
-        thermo_params.reflectance_ir[2:end]       .= thermo_params.reflectance_ir[begin]
-        thermo_params.emissivity[2:end]           .= thermo_params.emissivity[begin]
-    elseif length(thermo_params.thermal_conductivity) == n_face
-        # Do nothing
-    else
-        throw(ArgumentError("The length of the thermophysical parameters is invalid."))
-    end
-end
-
-
-"""
-    broadcast_thermo_params!(thermo_params::ThermoParams, shape::ShapeModel)
-
-Broadcast the thermophysical parameters to all faces if the values are uniform globally.
-
-# Arguments
-- `thermo_params` : Thermophysical parameters
-- `shape`         : Shape model
-"""
-broadcast_thermo_params!(thermo_params::ThermoParams, shape::ShapeModel) = broadcast_thermo_params!(thermo_params, length(shape.faces))
-
 
 """
     struct SingleAsteroidThermoPhysicalState <: AbstractAsteroidThermoPhysicalState

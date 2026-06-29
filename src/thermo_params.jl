@@ -109,78 +109,72 @@ thermal_diffusivity(k, ρ, Cₚ) = @. k / (ρ * Cₚ)
 abstract type AbstractThermoParams end
 
 """
-    struct ThermoParams
+    struct ThermoParams <: AbstractThermoParams
+
+Material thermal properties per facet.
+
+For a uniform surface, pass a single `ThermoParams` constructed from scalar values.
+For a non-uniform surface, pass a `ThermoParams` constructed from `Vector{Float64}` values
+of length `n_face`.
 
 # Fields
-- `thermal_conductivity` : Vector of thermal conductivity for each facet [W/m/K]
-- `density`              : Vector of density for each facet [kg/m³]
-- `heat_capacity`        : Vector of heat capacity for each facet [J/kg/K]
-
-- `reflectance_vis` : Vector of reflectance in visible light for each facet [-]
-- `reflectance_ir`  : Vector of reflectance in thermal infrared for each facet [-]
-- `emissivity`      : Vector of emissivity for each facet [-]
-
-- `z_max`   : Depth of the lower boundary of a heat conduction equation [m]
-- `Δz`      : Depth step width [m]
-- `n_depth` : Number of depth steps
+- `conductivity`    : Thermal conductivity for each facet [W/m/K]
+- `density`         : Density for each facet [kg/m³]
+- `heat_capacity`   : Heat capacity for each facet [J/kg/K]
+- `reflectance_vis` : Reflectance in visible light for each facet [-]
+- `reflectance_ir`  : Reflectance in thermal infrared for each facet [-]
+- `emissivity`      : Emissivity for each facet [-]
 """
 struct ThermoParams <: AbstractThermoParams
-    thermal_conductivity ::Vector{Float64}
-    density              ::Vector{Float64}
-    heat_capacity        ::Vector{Float64}
-
+    conductivity    ::Vector{Float64}
+    density         ::Vector{Float64}
+    heat_capacity   ::Vector{Float64}
     reflectance_vis ::Vector{Float64}
     reflectance_ir  ::Vector{Float64}
     emissivity      ::Vector{Float64}
-
-    z_max   ::Float64
-    Δz      ::Float64
-    n_depth ::Int
 end
 
 
 """
-    ThermoParams(
-        thermal_conductivity ::Float64,
-        density              ::Float64,
-        heat_capacity        ::Float64,
-        reflectance_vis      ::Float64,
-        reflectance_ir       ::Float64,
-        emissivity           ::Float64,
-        z_max                ::Float64,
-        Δz                   ::Float64,
-        n_depth              ::Int
-    )
+    ThermoParams(conductivity, density, heat_capacity, reflectance_vis, reflectance_ir, emissivity)
 
-Outer constructor for `ThermoParams`.
-You can give the same parameters to all facets by `Float64`.
+Construct `ThermoParams` from scalar values (uniform surface).
 
 # Arguments
-- `thermal_conductivity` : Thermal conductivity [W/m/K]
-- `density`              : Density [kg/m³]
-- `heat_capacity`        : Heat capacity [J/kg/K]
-
+- `conductivity`    : Thermal conductivity [W/m/K]
+- `density`         : Density [kg/m³]
+- `heat_capacity`   : Heat capacity [J/kg/K]
 - `reflectance_vis` : Reflectance in visible light [-]
 - `reflectance_ir`  : Reflectance in thermal infrared [-]
 - `emissivity`      : Emissivity [-]
-
-- `z_max`           : Depth of the lower boundary of a heat conduction equation [m]
-- `Δz`              : Depth step width [m]
-- `n_depth`         : Number of depth steps
 """
 function ThermoParams(
-    thermal_conductivity ::Float64,
-    density              ::Float64,
-    heat_capacity        ::Float64,
-    reflectance_vis      ::Float64,
-    reflectance_ir       ::Float64,
-    emissivity           ::Float64,
-    z_max                ::Float64,
-    Δz                   ::Float64,
-    n_depth              ::Int
+    conductivity    ::Float64,
+    density         ::Float64,
+    heat_capacity   ::Float64,
+    reflectance_vis ::Float64,
+    reflectance_ir  ::Float64,
+    emissivity      ::Float64,
 )
+    ThermoParams([conductivity], [density], [heat_capacity], [reflectance_vis], [reflectance_ir], [emissivity])
+end
 
-    return ThermoParams([thermal_conductivity], [density], [heat_capacity], [reflectance_vis], [reflectance_ir], [emissivity], z_max, Δz, n_depth)
+
+"""
+    struct GridParams
+
+Numerical grid settings for the 1D heat conduction equation,
+shared across all facets and sub-facets.
+
+# Fields
+- `z_max`   : Depth of the lower boundary [m]
+- `Δz`      : Depth step width [m]
+- `n_depth` : Number of depth nodes
+"""
+struct GridParams
+    z_max   ::Float64
+    Δz      ::Float64
+    n_depth ::Int
 end
 
 
