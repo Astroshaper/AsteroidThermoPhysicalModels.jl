@@ -35,7 +35,7 @@ separate from the numerical method used to solve it.
 # Usage
 ```julia
 thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε)
-grid_params   = GridParams(z_max, Δz, n_depth)
+grid_params   = GridParams(z_max, n_depth, Δz)
 problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
     with_self_shadowing = true,
     with_self_heating   = true,
