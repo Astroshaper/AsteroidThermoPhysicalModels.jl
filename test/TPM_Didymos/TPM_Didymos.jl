@@ -96,26 +96,25 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
     ρ  = 2170.0  # Density [kg/m³]
     Cₚ = 600.0   # Heat capacity [J/kg/K]
 
-    R_vis = 0.059  # Reflectance in visible light [-]
-    R_ir  = 0.0    # Reflectance in thermal infrared [-]
-    ε     = 0.9    # Emissivity [-]
-
-    z_max = 0.6   # Depth of the lower boundary of a heat conduction equation [m]
-    n_depth = 41  # Number of depth steps
-    Δz = z_max / (n_depth - 1)  # Depth step width [m]
-
-    thermo_params1 = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
-    thermo_params2 = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+    thermo_params = ThermoParams(
+        conductivity    = k,     # Thermal conductivity [W/m/K]
+        density         = ρ,     # Density [kg/m³]
+        heat_capacity   = Cₚ,    # Heat capacity [J/kg/K]
+        reflectance_vis = 0.059, # Reflectance in visible light [-]
+        reflectance_ir  = 0.0,   # Reflectance in thermal infrared [-]
+        emissivity      = 0.9,   # Emissivity [-]
+    )
+    grid_params = GridParams(; z_max=0.6, n_depth=41)
 
     ## --- Setting of TPM ---
-    prob1 = SingleAsteroidThermoPhysicalProblem(shape1, thermo_params1;
+    prob1 = SingleAsteroidThermoPhysicalProblem(shape1, thermo_params, grid_params;
         with_self_shadowing      = true,
         with_self_heating        = true,
         upper_boundary_condition = RadiationBoundaryCondition(),
         lower_boundary_condition = InsulationBoundaryCondition(),
     )
 
-    prob2 = SingleAsteroidThermoPhysicalProblem(shape2, thermo_params2;
+    prob2 = SingleAsteroidThermoPhysicalProblem(shape2, thermo_params, grid_params;
         with_self_shadowing      = true,
         with_self_heating        = true,
         upper_boundary_condition = RadiationBoundaryCondition(),

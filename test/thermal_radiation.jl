@@ -67,18 +67,18 @@ This test validates:
     l = thermal_skin_depth(P, k, ρ, Cₚ)
     Γ = thermal_inertia(k, ρ, Cₚ)
 
-    R_vis = 0.04  # Reflectance in visible light [-]
-    R_ir  = 0.0   # Reflectance in thermal infrared [-]
-    ε     = 1.0   # Emissivity [-]
-
-    z_max = 0.6   # Depth of the lower boundary of a heat conduction equation [m]
-    n_depth = 41  # Number of depth steps
-    Δz = z_max / (n_depth - 1)  # Depth step width [m]
-
-    thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+    thermo_params = ThermoParams(
+        conductivity    = k,     # Thermal conductivity [W/m/K]
+        density         = ρ,     # Density [kg/m³]
+        heat_capacity   = Cₚ,    # Heat capacity [J/kg/K]
+        reflectance_vis = 0.04,  # Reflectance in visible light [-]
+        reflectance_ir  = 0.0,   # Reflectance in thermal infrared [-]
+        emissivity      = 1.0,   # Emissivity [-]
+    )
+    grid_params = GridParams(; z_max=0.6, n_depth=41)
 
     ## --- Setting of TPM ---
-    problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+    problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
         with_self_shadowing      = true,
         with_self_heating        = true,
         upper_boundary_condition = RadiationBoundaryCondition(),

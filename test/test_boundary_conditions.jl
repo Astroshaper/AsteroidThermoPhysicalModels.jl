@@ -32,18 +32,18 @@ Validates both upper and lower boundary implementations.
     R_vis = 0.0                 # Reflectance in visible light [-]
     R_ir  = 0.0                 # Reflectance in thermal infrared [-]
     ε     = 1.0                 # Emissivity [-]
-    z_max = 1.0                 # Depth of the lower boundary of a heat conduction equation [m]
-    n_depth = 21                # Number of depth steps
-    Δz = z_max / (n_depth - 1)  # Depth step width [m]
+    z_max   = 1.0  # Depth of the lower boundary of a heat conduction equation [m]
+    n_depth = 21   # Number of depth steps
 
-    thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+    thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε)
+    grid_params   = GridParams(; z_max, n_depth)
 
     @testset "Isothermal BC with non-zero temperatures" begin
         # Test with T_upper = 100, T_lower = 50
         BC_UPPER = IsothermalBoundaryCondition(100.0)
         BC_LOWER = IsothermalBoundaryCondition(50.0)
 
-        problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+        problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
             with_self_shadowing      = false,
             with_self_heating        = false,
             upper_boundary_condition = BC_UPPER,
@@ -73,7 +73,7 @@ Validates both upper and lower boundary implementations.
         BC_UPPER = IsothermalBoundaryCondition(100.0)
         BC_LOWER = InsulationBoundaryCondition()
 
-        problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+        problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
             with_self_shadowing      = false,
             with_self_heating        = false,
             upper_boundary_condition = BC_UPPER,
