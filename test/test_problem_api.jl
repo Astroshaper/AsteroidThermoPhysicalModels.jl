@@ -92,6 +92,16 @@ Unit tests for the Problem-Solver API introduced in v0.2.0:
         @test state.temperature ≈ T_matrix
     end
 
+    @testset "_expand_thermo_params — wrong vector length" begin
+        # icosahedron has 20 faces; a ThermoParams with 3 entries is neither 1 nor n_face
+        tp_wrong = ThermoParams([0.1, 0.2, 0.3], [1000.0, 1000.0, 1000.0], [700.0, 700.0, 700.0],
+                                [0.1, 0.1, 0.1], [0.0, 0.0, 0.0], [0.9, 0.9, 0.9])
+        @test_throws ArgumentError SingleAsteroidThermoPhysicalProblem(shape2, tp_wrong, grid_params2;
+            with_self_shadowing = false,
+            with_self_heating   = false,
+        )
+    end
+
     @testset "init_temperature! binary per-body" begin
         prob = BinaryAsteroidThermoPhysicalProblem(
             (shape1, shape2),
