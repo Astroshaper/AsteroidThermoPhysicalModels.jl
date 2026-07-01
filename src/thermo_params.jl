@@ -109,80 +109,112 @@ thermal_diffusivity(k, ρ, Cₚ) = @. k / (ρ * Cₚ)
 abstract type AbstractThermoParams end
 
 """
-    struct ThermoParams
+    struct ThermoParams <: AbstractThermoParams
+
+Material thermal properties per facet.
+
+Each field is a `Vector{Float64}` of length `n_face`.
+The outer constructor accepts `Float64` (uniform) or `Vector{Float64}` (non-uniform) per field,
+and scalar arguments are automatically broadcast to match any vector arguments.
 
 # Fields
-- `thermal_conductivity` : Vector of thermal conductivity for each facet [W/m/K]
-- `density`              : Vector of density for each facet [kg/m³]
-- `heat_capacity`        : Vector of heat capacity for each facet [J/kg/K]
-
-- `reflectance_vis` : Vector of reflectance in visible light for each facet [-]
-- `reflectance_ir`  : Vector of reflectance in thermal infrared for each facet [-]
-- `emissivity`      : Vector of emissivity for each facet [-]
-
-- `z_max`   : Depth of the lower boundary of a heat conduction equation [m]
-- `Δz`      : Depth step width [m]
-- `n_depth` : Number of depth steps
+- `conductivity`    : Thermal conductivity for each facet [W/m/K]
+- `density`         : Density for each facet [kg/m³]
+- `heat_capacity`   : Heat capacity for each facet [J/kg/K]
+- `reflectance_vis` : Reflectance in visible light for each facet [-]
+- `reflectance_ir`  : Reflectance in thermal infrared for each facet [-]
+- `emissivity`      : Emissivity for each facet [-]
 """
 struct ThermoParams <: AbstractThermoParams
-    thermal_conductivity ::Vector{Float64}
-    density              ::Vector{Float64}
-    heat_capacity        ::Vector{Float64}
-
+    conductivity    ::Vector{Float64}
+    density         ::Vector{Float64}
+    heat_capacity   ::Vector{Float64}
     reflectance_vis ::Vector{Float64}
     reflectance_ir  ::Vector{Float64}
     emissivity      ::Vector{Float64}
-
-    z_max   ::Float64
-    Δz      ::Float64
-    n_depth ::Int
 end
 
 
 """
-    ThermoParams(
-        thermal_conductivity ::Float64,
-        density              ::Float64,
-        heat_capacity        ::Float64,
-        reflectance_vis      ::Float64,
-        reflectance_ir       ::Float64,
-        emissivity           ::Float64,
-        z_max                ::Float64,
-        Δz                   ::Float64,
-        n_depth              ::Int
-    )
+    ThermoParams(conductivity, density, heat_capacity, reflectance_vis, reflectance_ir, emissivity)
 
-Outer constructor for `ThermoParams`.
-You can give the same parameters to all facets by `Float64`.
+Construct `ThermoParams` from scalar or vector arguments, which may be freely mixed.
+`Float64` arguments are automatically broadcast to match the length of any `Vector{Float64}`
+arguments. All vector arguments must have the same length.
 
 # Arguments
-- `thermal_conductivity` : Thermal conductivity [W/m/K]
-- `density`              : Density [kg/m³]
-- `heat_capacity`        : Heat capacity [J/kg/K]
-
+- `conductivity`    : Thermal conductivity [W/m/K]
+- `density`         : Density [kg/m³]
+- `heat_capacity`   : Heat capacity [J/kg/K]
 - `reflectance_vis` : Reflectance in visible light [-]
 - `reflectance_ir`  : Reflectance in thermal infrared [-]
 - `emissivity`      : Emissivity [-]
 
-- `z_max`           : Depth of the lower boundary of a heat conduction equation [m]
-- `Δz`              : Depth step width [m]
-- `n_depth`         : Number of depth steps
+# Examples
+```julia
+# Uniform surface (all scalars)
+ThermoParams(0.1, 1500.0, 800.0, 0.05, 0.0, 0.9)
+
+# Non-uniform conductivity only; other parameters are uniform
+ThermoParams(k_vec, 1500.0, 800.0, 0.05, 0.0, 0.9)
+
+# Fully non-uniform
+ThermoParams(k_vec, ρ_vec, Cₚ_vec, R_vis_vec, R_ir_vec, ε_vec)
+```
 """
 function ThermoParams(
-    thermal_conductivity ::Float64,
-    density              ::Float64,
-    heat_capacity        ::Float64,
-    reflectance_vis      ::Float64,
-    reflectance_ir       ::Float64,
-    emissivity           ::Float64,
-    z_max                ::Float64,
-    Δz                   ::Float64,
-    n_depth              ::Int
+    conductivity    ::Union{Float64, Vector{Float64}},
+    density         ::Union{Float64, Vector{Float64}},
+    heat_capacity   ::Union{Float64, Vector{Float64}},
+    reflectance_vis ::Union{Float64, Vector{Float64}},
+    reflectance_ir  ::Union{Float64, Vector{Float64}},
+    emissivity      ::Union{Float64, Vector{Float64}},
 )
-
-    return ThermoParams([thermal_conductivity], [density], [heat_capacity], [reflectance_vis], [reflectance_ir], [emissivity], z_max, Δz, n_depth)
+    args = (conductivity, density, heat_capacity, reflectance_vis, reflectance_ir, emissivity)
+    lengths = [length(a) for a in args if a isa Vector{Float64}]
+    n = isempty(lengths) ? 1 : first(lengths)
+    all(==(n), lengths) || throw(ArgumentError(
+        "ThermoParams vector arguments must all have the same length, got: $lengths"
+    ))
+    expand(x::Float64)         = fill(x, n)
+    expand(x::Vector{Float64}) = x
+    ThermoParams(
+        expand(conductivity), expand(density), expand(heat_capacity),
+        expand(reflectance_vis), expand(reflectance_ir), expand(emissivity),
+    )
 end
 
+
+"""
+    ThermoParams(; conductivity, density, heat_capacity, reflectance_vis, reflectance_ir, emissivity)
+
+Construct `ThermoParams` from keyword arguments.
+Each argument can be a `Float64` (uniform) or `Vector{Float64}` (non-uniform),
+and scalar/vector arguments may be freely mixed.
+
+# Keyword Arguments
+- `conductivity`    : Thermal conductivity [W/m/K]
+- `density`         : Density [kg/m³]
+- `heat_capacity`   : Heat capacity [J/kg/K]
+- `reflectance_vis` : Reflectance in visible light [-]
+- `reflectance_ir`  : Reflectance in thermal infrared [-]
+- `emissivity`      : Emissivity [-]
+"""
+function ThermoParams(;
+    conductivity,
+    density,
+    heat_capacity,
+    reflectance_vis,
+    reflectance_ir,
+    emissivity,
+)
+    ThermoParams(conductivity, density, heat_capacity, reflectance_vis, reflectance_ir, emissivity)
+end
+
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║              Equilibrium temperature estimation                   ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     subsolar_temperature(r☉, R_vis, ε) -> Tₛₛ

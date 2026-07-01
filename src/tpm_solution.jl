@@ -261,12 +261,12 @@ function _build_single_solution(
     n_step  = length(times)
     n_save  = length(output.output_times)
     n_face  = length(state.problem.shape.faces)
-    n_depth = state.problem.thermo_params.n_depth
+    n_depth = state.problem.grid_params.n_depth
 
     absorbed_power = zeros(n_step)
     emitted_power  = zeros(n_step)
 
-    depth_nodes            = state.problem.thermo_params.Δz * collect(0:n_depth-1)
+    depth_nodes            = state.problem.grid_params.Δz * collect(0:n_depth-1)
     surface_temperature    = output.save_surface_temperature    ? zeros(n_face, n_save) : nothing
     subsurface_temperature = output.save_subsurface_temperature ? Dict{Int,Matrix{Float64}}(i => zeros(n_depth, n_save) for i in output.subsurface_face_ids) : nothing
     face_forces            = output.save_face_forces            ? zeros(SVector{3,Float64}, n_face, n_save) : nothing

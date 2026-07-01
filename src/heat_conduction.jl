@@ -40,7 +40,7 @@ where:
 - F_rad : Thermal radiation flux from surrounding surfaces
 
 # Notes
-- This function is called when `state.problem.thermo_params.thermal_conductivity` is zero
+- This function is called when `state.problem.thermo_params.conductivity` is zero
 - The temperature instantly adjusts to balance incoming and outgoing radiation
 - No subsurface temperatures are updated (only surface layer)
 """
@@ -93,7 +93,7 @@ where α = k/(ρCₚ) is the thermal diffusivity.
 """
 function update_temperature!(state::SingleAsteroidThermoPhysicalState, Δt)
     # Handle zero-conductivity case
-    if iszero(state.problem.thermo_params.thermal_conductivity)
+    if iszero(state.problem.thermo_params.conductivity)
         update_temperature_zero_conductivity!(state)
         return
     end
@@ -175,10 +175,10 @@ function explicit_euler!(state::SingleAsteroidThermoPhysicalState, Δt)
     n_face = size(T, 2)
 
     for i_face in 1:n_face
-        k  = state.problem.thermo_params.thermal_conductivity[i_face]
+        k  = state.problem.thermo_params.conductivity[i_face]
         ρ  = state.problem.thermo_params.density[i_face]
         Cₚ = state.problem.thermo_params.heat_capacity[i_face]
-        Δz = state.problem.thermo_params.Δz
+        Δz = state.problem.grid_params.Δz
 
         α = thermal_diffusivity(k, ρ, Cₚ)  # Thermal diffusivity [m²/s]
         λ = α * Δt / Δz^2
@@ -248,10 +248,10 @@ function implicit_euler!(state::SingleAsteroidThermoPhysicalState, Δt)
     n_face = size(T, 2)
 
     for i_face in 1:n_face
-        k  = state.problem.thermo_params.thermal_conductivity[i_face]
+        k  = state.problem.thermo_params.conductivity[i_face]
         ρ  = state.problem.thermo_params.density[i_face]
         Cₚ = state.problem.thermo_params.heat_capacity[i_face]
-        Δz = state.problem.thermo_params.Δz
+        Δz = state.problem.grid_params.Δz
 
         α = thermal_diffusivity(k, ρ, Cₚ)  # Thermal diffusivity [m²/s]
         λ = α * Δt / Δz^2
@@ -369,10 +369,10 @@ function crank_nicolson!(state::SingleAsteroidThermoPhysicalState, Δt)
     n_face = size(T, 2)
 
     for i_face in 1:n_face
-        k  = state.problem.thermo_params.thermal_conductivity[i_face]
+        k  = state.problem.thermo_params.conductivity[i_face]
         ρ  = state.problem.thermo_params.density[i_face]
         Cₚ = state.problem.thermo_params.heat_capacity[i_face]
-        Δz = state.problem.thermo_params.Δz
+        Δz = state.problem.grid_params.Δz
 
         α = thermal_diffusivity(k, ρ, Cₚ)  # Thermal diffusivity [m²/s]
         r = α * Δt / (2 * Δz^2)
@@ -499,13 +499,13 @@ function update_upper_temperature!(state::SingleAsteroidThermoPhysicalState, i::
 
     #### Radiation boundary condition ####
     if state.problem.upper_boundary_condition isa RadiationBoundaryCondition
-        k     = state.problem.thermo_params.thermal_conductivity[i]
+        k     = state.problem.thermo_params.conductivity[i]
         ρ     = state.problem.thermo_params.density[i]
         Cₚ    = state.problem.thermo_params.heat_capacity[i]
         R_vis = state.problem.thermo_params.reflectance_vis[i]
         R_ir  = state.problem.thermo_params.reflectance_ir[i]
         ε     = state.problem.thermo_params.emissivity[i]
-        Δz    = state.problem.thermo_params.Δz
+        Δz    = state.problem.grid_params.Δz
     
         F_sun = state.flux_sun[i]
         F_scat = state.flux_scat[i]

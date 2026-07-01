@@ -33,7 +33,15 @@ Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
     r_sun = [inv(RotZ(2π * et / P)) * SVector(au2m, 0.0, 0.0) for et in et_range]
 
     path_obj      = joinpath("shape", "icosahedron.obj")
-    thermo_params = ThermoParams(0.1, 1000.0, 600.0, 0.1, 0.0, 0.9, 0.1, 0.01, 5)
+    thermo_params = ThermoParams(
+        conductivity    = 0.1,
+        density         = 1000.0,
+        heat_capacity   = 600.0,
+        reflectance_vis = 0.1,
+        reflectance_ir  = 0.0,
+        emissivity      = 0.9,
+    )
+    grid_params = GridParams(; z_max=0.1, n_depth=5)
     output_times        = times[end-n_step_cycle:end]
     subsurface_face_ids = [1]
 
@@ -44,7 +52,7 @@ Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
         @test ephem isa SingleAsteroidEphemerides{Vector{SMatrix{3,3,Float64,9}}}
 
         shape   = load_shape_obj(path_obj; scale=1000, with_face_visibility=false, with_bvh=false)
-        problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+        problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
             with_self_shadowing = false,
             with_self_heating   = false,
         )
@@ -85,7 +93,7 @@ Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
         ephem_no_rot = SingleAsteroidEphemerides(times, r_sun)
 
         shape   = load_shape_obj(path_obj; scale=1000, with_face_visibility=false, with_bvh=false)
-        problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+        problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
             with_self_shadowing = false,
             with_self_heating   = false,
         )
@@ -130,7 +138,8 @@ Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
         shape2  = load_shape_obj(path_obj; scale=500,  with_face_visibility=false, with_bvh=false)
         problem = BinaryAsteroidThermoPhysicalProblem(
             (shape1, shape2),
-            (thermo_params, thermo_params);
+            thermo_params,
+            grid_params;
             with_self_shadowing   = false,
             with_self_heating     = false,
             with_mutual_shadowing = false,

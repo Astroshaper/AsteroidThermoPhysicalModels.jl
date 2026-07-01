@@ -18,8 +18,25 @@ Unit tests for the Problem-Solver API introduced in v0.2.0:
 
     shape1 = load_shape_obj(joinpath(@__DIR__, "shape", "single_face.obj"))
     shape2 = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"))
-    thermo_params1 = ThermoParams(0.1, 1000.0, 700.0, 0.1, 0.0, 0.9, 0.1, 0.01, 10)
-    thermo_params2 = ThermoParams(0.2, 1500.0, 700.0, 0.2, 0.0, 0.9, 0.1, 0.01, 10)
+
+    thermo_params1 = ThermoParams(
+        conductivity    = 0.1,
+        density         = 1000.0,
+        heat_capacity   = 700.0,
+        reflectance_vis = 0.1,
+        reflectance_ir  = 0.0,
+        emissivity      = 0.9,
+    )
+    thermo_params2 = ThermoParams(
+        conductivity    = 0.2,
+        density         = 1500.0,
+        heat_capacity   = 700.0,
+        reflectance_vis = 0.2,
+        reflectance_ir  = 0.0,
+        emissivity      = 0.9,
+    )
+    grid_params1 = GridParams(; z_max=0.1, n_depth=10)
+    grid_params2 = GridParams(; z_max=0.1, n_depth=10)
 
     @testset "subsolar_temperature" begin
         au2m = AsteroidThermoPhysicalModels.au2m
@@ -37,7 +54,8 @@ Unit tests for the Problem-Solver API introduced in v0.2.0:
     @testset "BinaryAsteroidThermoPhysicalProblem convenience constructor" begin
         problem = BinaryAsteroidThermoPhysicalProblem(
             (shape1, shape2),
-            (thermo_params1, thermo_params2);
+            (thermo_params1, thermo_params2),
+            (grid_params1, grid_params2);
             with_self_shadowing   = false,
             with_self_heating     = false,
             with_mutual_shadowing = false,
@@ -53,20 +71,20 @@ Unit tests for the Problem-Solver API introduced in v0.2.0:
         @test problem.primary.with_self_heating   == problem.secondary.with_self_heating   == false
         @test problem.with_mutual_shadowing == false
         @test problem.with_mutual_heating   == false
-        
+
         # Each body gets its own parameters
-        @test problem.primary.thermo_params.thermal_conductivity[begin]   ≈ 0.1
-        @test problem.secondary.thermo_params.thermal_conductivity[begin] ≈ 0.2
+        @test problem.primary.thermo_params.conductivity[begin]   ≈ 0.1
+        @test problem.secondary.thermo_params.conductivity[begin] ≈ 0.2
     end
 
     @testset "init_temperature! with AbstractMatrix" begin
-        problem = SingleAsteroidThermoPhysicalProblem(shape1, thermo_params1;
+        problem = SingleAsteroidThermoPhysicalProblem(shape1, thermo_params1, grid_params1;
             with_self_shadowing = false,
             with_self_heating   = false,
         )
         state = AsteroidThermoPhysicalModels._build_single_state(problem, CrankNicolson())
 
-        n_depth  = thermo_params1.n_depth
+        n_depth  = grid_params1.n_depth
         n_face   = length(shape1.faces)
         T_matrix = fill(350.0, n_depth, n_face)
         AsteroidThermoPhysicalModels.init_temperature!(state, T_matrix)
@@ -74,10 +92,21 @@ Unit tests for the Problem-Solver API introduced in v0.2.0:
         @test state.temperature ≈ T_matrix
     end
 
+    @testset "_expand_thermo_params — wrong vector length" begin
+        # icosahedron has 20 faces; a ThermoParams with 3 entries is neither 1 nor n_face
+        tp_wrong = ThermoParams([0.1, 0.2, 0.3], [1000.0, 1000.0, 1000.0], [700.0, 700.0, 700.0],
+                                [0.1, 0.1, 0.1], [0.0, 0.0, 0.0], [0.9, 0.9, 0.9])
+        @test_throws ArgumentError SingleAsteroidThermoPhysicalProblem(shape2, tp_wrong, grid_params2;
+            with_self_shadowing = false,
+            with_self_heating   = false,
+        )
+    end
+
     @testset "init_temperature! binary per-body" begin
         prob = BinaryAsteroidThermoPhysicalProblem(
             (shape1, shape2),
-            (thermo_params1, thermo_params2);
+            (thermo_params1, thermo_params2),
+            (grid_params1, grid_params2);
             with_self_shadowing   = false,
             with_self_heating     = false,
             with_mutual_shadowing = false,

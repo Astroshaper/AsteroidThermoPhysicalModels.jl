@@ -12,6 +12,10 @@ Abstract type for thermophysical problem definitions.
 abstract type AbstractThermoPhysicalProblem end
 
 
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║              Single-asteroid thermophysical problem               ║
+# ╚═══════════════════════════════════════════════════════════════════╝
+
 """
     struct SingleAsteroidThermoPhysicalProblem
 
@@ -21,7 +25,8 @@ separate from the numerical method used to solve it.
 
 # Fields
 - `shape`                    : Shape model of the asteroid (`ShapeModel` or `HierarchicalShapeModel`)
-- `thermo_params`            : Thermophysical parameters
+- `thermo_params`            : Thermophysical material parameters (all vectors expanded to length `n_face`)
+- `grid_params`              : Numerical grid settings
 - `with_self_shadowing`      : Whether to include self-shadowing
 - `with_self_heating`        : Whether to include self-heating (re-absorption of thermal emission from other faces)
 - `upper_boundary_condition` : Boundary condition at the surface (upper boundary)
@@ -29,23 +34,25 @@ separate from the numerical method used to solve it.
 
 # Usage
 ```julia
-problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε)
+grid_params   = GridParams(z_max, n_depth, Δz)
+problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
     with_self_shadowing = true,
     with_self_heating   = true,
     upper_boundary_condition = RadiationBoundaryCondition(),
     lower_boundary_condition = InsulationBoundaryCondition(),
 )
-solution = solve(problem, CrankNicolson(); ephem = ephem, T₀ = 200.0)
+solution = solve(problem, CrankNicolson(); ephem = ephem, initial_temperature = 200.0)
 ```
 """
 struct SingleAsteroidThermoPhysicalProblem{
     Sh <: AbstractShapeModel,
-    P  <: AbstractThermoParams,
     BU <: AbstractBoundaryCondition,
     BL <: AbstractBoundaryCondition,
 } <: AbstractThermoPhysicalProblem
     shape                    ::Sh
-    thermo_params            ::P
+    thermo_params            ::ThermoParams
+    grid_params              ::GridParams
     with_self_shadowing      ::Bool
     with_self_heating        ::Bool
     upper_boundary_condition ::BU
@@ -54,13 +61,39 @@ end
 
 
 """
-    SingleAsteroidThermoPhysicalProblem(shape, thermo_params; kwargs...) -> problem
+    _expand_thermo_params(thermo_params::ThermoParams, n_face::Int) -> ThermoParams
+
+Expand a `ThermoParams` with length-1 vectors to length `n_face` (uniform surface),
+or validate that all vectors already have length `n_face` (non-uniform surface).
+"""
+function _expand_thermo_params(thermo_params::ThermoParams, n_face::Int)
+    n = length(thermo_params.conductivity)
+    if n == 1
+        return ThermoParams(
+            fill(thermo_params.conductivity[1],    n_face),
+            fill(thermo_params.density[1],         n_face),
+            fill(thermo_params.heat_capacity[1],   n_face),
+            fill(thermo_params.reflectance_vis[1], n_face),
+            fill(thermo_params.reflectance_ir[1],  n_face),
+            fill(thermo_params.emissivity[1],      n_face),
+        )
+    elseif n == n_face
+        return thermo_params
+    else
+        throw(ArgumentError("ThermoParams vector length ($n) must be 1 (uniform) or n_face ($n_face)."))
+    end
+end
+
+
+"""
+    SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params; kwargs...) -> problem
 
 Construct a thermophysical problem for a single asteroid.
 
 # Arguments
 - `shape`         : Shape model of the asteroid
-- `thermo_params` : Thermophysical parameters
+- `thermo_params` : Thermophysical material parameters (`ThermoParams`)
+- `grid_params`   : Numerical grid settings (`GridParams`)
 
 # Keyword Arguments
 - `with_self_shadowing = true` : Whether to include self-shadowing
@@ -72,9 +105,9 @@ Construct a thermophysical problem for a single asteroid.
 - If `with_self_shadowing = true` and `face_visibility_graph` is not yet built, it is built automatically.
   To avoid this, pre-build with `build_face_visibility_graph!` or pass `with_face_visibility=true`
   when loading the shape.
-- Thermophysical parameters are broadcast to all faces via `broadcast_thermo_params!`.
+- `ThermoParams` with length-1 vectors is expanded to `n_face` at construction time.
 """
-function SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+function SingleAsteroidThermoPhysicalProblem(shape, thermo_params::ThermoParams, grid_params::GridParams;
     with_self_shadowing ::Bool = true,
     with_self_heating   ::Bool = true,
     upper_boundary_condition   = RadiationBoundaryCondition(),
@@ -85,11 +118,16 @@ function SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
         build_face_visibility_graph!(shape)
     end
 
-    broadcast_thermo_params!(thermo_params, shape)
+    n_face = length(shape.faces)
+    thermo_params_expanded = _expand_thermo_params(thermo_params, n_face)
 
-    SingleAsteroidThermoPhysicalProblem(shape, thermo_params, with_self_shadowing, with_self_heating, upper_boundary_condition, lower_boundary_condition)
+    SingleAsteroidThermoPhysicalProblem(shape, thermo_params_expanded, grid_params, with_self_shadowing, with_self_heating, upper_boundary_condition, lower_boundary_condition)
 end
 
+
+# ╔═══════════════════════════════════════════════════════════════════╗
+# ║               Binary-asteroid thermophysical problem              ║
+# ╚═══════════════════════════════════════════════════════════════════╝
 
 """
     struct BinaryAsteroidThermoPhysicalProblem
@@ -162,14 +200,19 @@ function BinaryAsteroidThermoPhysicalProblem(
 end
 
 
+_to_pair(x)        = (x, x)   # single value → apply to both bodies
+_to_pair(x::Tuple) = x        # Tuple → use as-is (element per body)
+
+
 """
-    BinaryAsteroidThermoPhysicalProblem(shape, thermo_params; kwargs...) -> problem
+    BinaryAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params; kwargs...) -> problem
 
 Convenience constructor: build both single-body problems from raw shapes and parameters.
 
 # Arguments
 - `shape`         : Tuple `(shape1, shape2)` of shape models
-- `thermo_params` : Tuple `(thermo_params1, thermo_params2)` of thermophysical parameters
+- `thermo_params` : `ThermoParams` applied to both bodies, or Tuple `(thermo_params1, thermo_params2)` for per-body settings
+- `grid_params`   : `GridParams` applied to both bodies, or Tuple `(grid_params1, grid_params2)` for per-body settings
 
 # Keyword Arguments
 Single-body kwargs (applied identically to both bodies):
@@ -188,9 +231,11 @@ separately and pass the results to `BinaryAsteroidThermoPhysicalProblem(primary,
 
 # Example
 ```julia
+grid_params = GridParams(z_max, Δz, n_depth)
 problem = BinaryAsteroidThermoPhysicalProblem(
     (shape1, shape2),
-    (thermo_params1, thermo_params2);
+    (thermo_params1, thermo_params2),
+    grid_params;
     with_mutual_shadowing = true,
     with_mutual_heating   = true,
 )
@@ -198,28 +243,32 @@ problem = BinaryAsteroidThermoPhysicalProblem(
 """
 function BinaryAsteroidThermoPhysicalProblem(
     shape         ::Tuple,
-    thermo_params ::Tuple;
-    with_self_shadowing ::Bool   = true,
-    with_self_heating   ::Bool   = true,
-    upper_boundary_condition     = RadiationBoundaryCondition(),
-    lower_boundary_condition     = InsulationBoundaryCondition(),
-    with_mutual_shadowing ::Bool = true,
-    with_mutual_heating   ::Bool = true,
+    thermo_params ::Union{Tuple, ThermoParams},
+    grid_params   ::Union{Tuple, GridParams};
+    with_self_shadowing::Bool   = true,
+    with_self_heating::Bool     = true,
+    upper_boundary_condition    = RadiationBoundaryCondition(),
+    lower_boundary_condition    = InsulationBoundaryCondition(),
+    with_mutual_shadowing::Bool = true,
+    with_mutual_heating::Bool   = true,
 )
-    prob1 = SingleAsteroidThermoPhysicalProblem(shape[1], thermo_params[1];
+    thermo_params1, thermo_params2 = _to_pair(thermo_params)
+    grid_params1, grid_params2 = _to_pair(grid_params)
+
+    prob1 = SingleAsteroidThermoPhysicalProblem(shape[1], thermo_params1, grid_params1;
         with_self_shadowing,
         with_self_heating,
         upper_boundary_condition,
         lower_boundary_condition,
     )
 
-    prob2 = SingleAsteroidThermoPhysicalProblem(shape[2], thermo_params[2];
+    prob2 = SingleAsteroidThermoPhysicalProblem(shape[2], thermo_params2, grid_params2;
         with_self_shadowing,
         with_self_heating,
         upper_boundary_condition,
         lower_boundary_condition,
     )
-    
+
     BinaryAsteroidThermoPhysicalProblem(prob1, prob2;
         with_mutual_shadowing,
         with_mutual_heating,

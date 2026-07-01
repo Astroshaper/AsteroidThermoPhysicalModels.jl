@@ -90,22 +90,18 @@ Based on TPM_Ryugu test but with varying thermophysical properties.
         - Emissivity           : ε   = 0.9  [-]
     """
 
-    k  = [r[3] > 0 ? 0.1 : 0.3  for r in shape.face_centers]  # Thermal conductivity [W/m/K]
-    ρ  = fill(1270.0, n_face)  # Density [kg/m³]
-    Cₚ = fill(600.0, n_face)   # Heat capacity [J/kg/K]
-
-    R_vis = [r[3] > 0 ? 0.04 : 0.1 for r in shape.face_centers]  # Reflectance in visible light [-]
-    R_ir  = [r[3] > 0 ? 0.0 : 0.0  for r in shape.face_centers]  # Reflectance in thermal infrared [-]
-    ε     = fill(1.0, n_face)   # Emissivity [-]
-
-    z_max = 0.6   # Depth of the lower boundary of a heat conduction equation [m]
-    n_depth = 41  # Number of depth steps
-    Δz = z_max / (n_depth - 1)  # Depth step width [m]
-
-    thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+    thermo_params = ThermoParams(
+        conductivity    = [r[3] > 0 ? 0.1  : 0.3  for r in shape.face_centers],  # non-uniform [W/m/K]
+        density         = 1270.0,                                                # uniform [kg/m³]
+        heat_capacity   = 600.0,                                                 # uniform [J/kg/K]
+        reflectance_vis = [r[3] > 0 ? 0.04 : 0.1  for r in shape.face_centers],  # non-uniform [-]
+        reflectance_ir  = 0.0,                                                   # uniform [-]
+        emissivity      = 1.0,                                                   # uniform [-]
+    )
+    grid_params = GridParams(; z_max=0.6, n_depth=41)
 
     ## --- Setting of TPM ---
-    problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+    problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
         with_self_shadowing      = true,
         with_self_heating        = true,
         upper_boundary_condition = RadiationBoundaryCondition(),

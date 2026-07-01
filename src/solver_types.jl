@@ -72,7 +72,7 @@ struct ExplicitEulerCache <: HeatConductionCache
     x::Vector{Float64}
 end
 
-ExplicitEulerCache(thermo_params::AbstractThermoParams) = ExplicitEulerCache(thermo_params.n_depth)
+ExplicitEulerCache(grid_params::GridParams) = ExplicitEulerCache(grid_params.n_depth)
 ExplicitEulerCache(N::Integer) = ExplicitEulerCache(zeros(N))
 
 
@@ -88,7 +88,7 @@ struct ImplicitEulerCache <: HeatConductionCache
     x::Vector{Float64}
 end
 
-ImplicitEulerCache(thermo_params::AbstractThermoParams) = ImplicitEulerCache(thermo_params.n_depth)
+ImplicitEulerCache(grid_params::GridParams) = ImplicitEulerCache(grid_params.n_depth)
 ImplicitEulerCache(N::Integer) = ImplicitEulerCache(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
 
 
@@ -107,7 +107,7 @@ struct CrankNicolsonCache <: HeatConductionCache
     x::Vector{Float64}
 end
 
-CrankNicolsonCache(thermo_params::AbstractThermoParams) = CrankNicolsonCache(thermo_params.n_depth)
+CrankNicolsonCache(grid_params::GridParams) = CrankNicolsonCache(grid_params.n_depth)
 CrankNicolsonCache(N::Integer) = CrankNicolsonCache(zeros(N), zeros(N), zeros(N), zeros(N), zeros(N))
 
 

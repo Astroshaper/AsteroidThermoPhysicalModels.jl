@@ -30,6 +30,7 @@ include("TPM_zero-conductivity/TPM_zero-conductivity.jl")
 include("TPM_Didymos/TPM_Didymos.jl")
 
 include("thermal_radiation.jl")
+include("test_thermo_grid_params.jl")
 include("heat_conduction_1D.jl")
 include("test_boundary_conditions.jl")
 include("test_ephem_types.jl")

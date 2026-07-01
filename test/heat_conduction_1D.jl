@@ -37,15 +37,15 @@ Tests for 1D heat conduction solvers:
 
     z_max   = 1.0  # Depth of the lower boundary of a heat conduction equation [m]
     n_depth = 101  # Number of depth steps
-    Δz = z_max / (n_depth - 1)  # Depth step width [m]
 
-    thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+    thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε)
+    grid_params   = GridParams(; z_max, n_depth)
 
     ## --- Build states with different solvers ---
     BC_UPPER = IsothermalBoundaryCondition(0)
     BC_LOWER = IsothermalBoundaryCondition(0)
 
-    problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+    problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
         with_self_shadowing      = false,
         with_self_heating        = false,
         upper_boundary_condition = BC_UPPER,
@@ -58,7 +58,7 @@ Tests for 1D heat conduction solvers:
 
     ## --- Initial temperature ---
     T₀(x) = x < 0.5 ? 2x : 2(1 - x)
-    xs = [thermo_params.Δz * (i-1) for i in 1:thermo_params.n_depth]
+    xs = [grid_params.Δz * (i-1) for i in 1:grid_params.n_depth]
     Ts = [T₀(x) for x in xs]
 
     state_EE.temperature .= Ts
