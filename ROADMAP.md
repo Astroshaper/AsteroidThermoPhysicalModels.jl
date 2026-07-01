@@ -95,7 +95,7 @@ Non-breaking fixes and convenience improvements before the v0.3.0 surface roughn
 
 Introduce thermophysical modeling of surface roughness using `HierarchicalShapeModel` from `AsteroidShapeModels.jl`. This release also redesigns `ThermoParams` to separate material properties from numerical grid settings — a prerequisite for clean per-face material access in the roughness model.
 
-- [x] **`ThermoParams` / `GridParams` redesign** (breaking) — PR #218: `ThermoParams` holds material properties only; new `GridParams` holds depth-grid settings (`z_max`, `n_depth`, `Δz`); both types gain keyword-argument constructors; `ThermoParams` supports mixed scalar/vector input for non-uniform surfaces
+- [x] **`ThermoParams` / `GridParams` redesign** (breaking) — PR #218: separate thermophysical material properties (`ThermoParams`) from numerical depth-grid settings (`GridParams`)
 
 - [ ] **Roughness-aware problem type**: extend the problem type to accept `HierarchicalShapeModel` and hold independent sub-face state (illumination, flux, temperature, thermal force) for each face
 
