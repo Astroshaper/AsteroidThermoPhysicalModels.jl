@@ -7,6 +7,98 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - TBD
+
+This release separates thermophysical material properties (`ThermoParams`) from
+numerical grid configuration (`GridParams`). The old monolithic `ThermoParams` that
+held both material and grid parameters is replaced by two focused types.
+
+### Migration Guide
+
+```julia
+# v0.2.x
+thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params; ...)
+
+# v0.3.0 — material and grid parameters are now separate
+thermo_params = ThermoParams(
+    conductivity    = k,
+    density         = ρ,
+    heat_capacity   = Cₚ,
+    reflectance_vis = R_vis,
+    reflectance_ir  = R_ir,
+    emissivity      = ε,
+)
+grid_params = GridParams(; z_max=z_max, n_depth=n_depth)  # Δz is auto-computed
+problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params; ...)
+```
+
+For binary asteroid problems:
+
+```julia
+# v0.2.x
+problem = BinaryAsteroidThermoPhysicalProblem(
+    (shape1, shape2),
+    (thermo_params1, thermo_params2);
+    ...
+)
+
+# v0.3.0 — grid_params is now a required third positional argument
+problem = BinaryAsteroidThermoPhysicalProblem(
+    (shape1, shape2),
+    (thermo_params1, thermo_params2),
+    (grid_params1, grid_params2);
+    ...
+)
+# Or pass a single shared instance for both bodies:
+problem = BinaryAsteroidThermoPhysicalProblem(
+    (shape1, shape2),
+    thermo_params,
+    grid_params;
+    ...
+)
+```
+
+For code that reads fields of `ThermoParams`:
+
+```julia
+# v0.2.x
+thermo_params.thermal_conductivity  # Vector{Float64}
+thermo_params.n_depth               # Int
+thermo_params.Δz                    # Float64
+
+# v0.3.0
+thermo_params.conductivity  # renamed field
+grid_params.n_depth
+grid_params.Δz
+```
+
+### Added
+
+- **`GridParams`** struct for numerical depth-grid configuration, extracted from the
+  old monolithic `ThermoParams`:
+  - Fields: `z_max` (depth of lower boundary [m]), `n_depth` (number of depth nodes), `Δz` (node spacing [m])
+  - `GridParams(; z_max, n_depth)` keyword constructor: `Δz` is auto-computed as `z_max / (n_depth - 1)`, placing nodes uniformly at `0, Δz, 2Δz, …, z_max`; use the positional constructor `GridParams(z_max, n_depth, Δz)` to specify `Δz` explicitly
+  - `GridParams` is now exported
+- **`ThermoParams` keyword constructor** `ThermoParams(; conductivity, density, heat_capacity, reflectance_vis, reflectance_ir, emissivity)`: avoids relying on positional argument order
+- **`ThermoParams` mixed scalar/vector constructor**: scalar arguments are automatically broadcast to match the length of any vector arguments, removing the need for manual `fill()` calls in non-uniform surface cases
+
+### Changed
+
+- **Breaking**: `ThermoParams` no longer holds grid parameters (`z_max`, `Δz`, `n_depth`); pass a `GridParams` instance separately
+- **Breaking**: `ThermoParams.thermal_conductivity` renamed to `ThermoParams.conductivity`
+- **Breaking**: Positional 9-argument constructor `ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)` removed; use `ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε)` (6-arg) or the keyword constructor
+- **Breaking**: `SingleAsteroidThermoPhysicalProblem(shape, thermo_params; ...)` → `SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params; ...)`
+- **Breaking**: `BinaryAsteroidThermoPhysicalProblem((shape1, shape2), (tp1, tp2); ...)` → `BinaryAsteroidThermoPhysicalProblem((shape1, shape2), (tp1, tp2), (gp1, gp2); ...)`; a single `ThermoParams`/`GridParams` instance (non-tuple) can be shared between both bodies
+
+### Removed
+
+- **Breaking**: `broadcast_thermo_params!` removed; single-body `ThermoParams` (length-1 vectors) are now expanded to `n_face` at `SingleAsteroidThermoPhysicalProblem` construction time via an internal `_expand_thermo_params` call, eliminating the need for mutation
+
+### Internal
+
+- Moved `GridParams` definition to `src/grid_params.jl`
+
 ## [0.2.1] - 2026-06-26
 
 No migration required from v0.2.0.
