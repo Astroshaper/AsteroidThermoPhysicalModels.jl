@@ -32,11 +32,11 @@ accessed via the `problem` field to avoid duplication.
 - `torque`            : Net thermal recoil torque in body-fixed frame [N⋅m]
 """
 struct SingleAsteroidThermoPhysicalState{
-    Pr <: SingleAsteroidThermoPhysicalProblem,
-    C  <: HeatConductionCache,
+    Pr  <: SingleAsteroidThermoPhysicalProblem,
+    HCC <: HeatConductionCache,
 } <: AbstractAsteroidThermoPhysicalState
     problem           ::Pr
-    solver_cache      ::C
+    solver_cache      ::HCC
     illuminated_faces ::Vector{Bool}
     flux_sun          ::Vector{Float64}
     flux_scat         ::Vector{Float64}
