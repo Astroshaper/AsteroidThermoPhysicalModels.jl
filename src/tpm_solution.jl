@@ -26,6 +26,8 @@ Encapsulates which timesteps, face indices, and physical quantities to record.
 
 # Notes
 - `save_subsurface_temperature = true` requires a non-empty `subsurface_face_ids`.
+- `save_face_forces` stores per-face forces in the body-fixed frame; it works with both
+  `SingleAsteroidEphemerides{Nothing}` and `SingleAsteroidEphemerides{<:AbstractVector}`.
 - `save_forces` and `save_torques` require ephemerides with `R_body_to_inertial`
   (i.e., `SingleAsteroidEphemerides{<:AbstractVector}`); using them with rotation-free
   ephemerides raises an `ArgumentError` at `solve` time.

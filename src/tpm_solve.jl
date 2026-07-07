@@ -176,7 +176,7 @@ function _solve(
         r☉ = ephem.r_sun[i_time]
 
         update_flux_all!(state, r☉)
-        update_thermal_force!(state)
+        output.save_face_forces && update_thermal_force!(state)
         record_timestep!(solution, state, i_time)
 
         if show_progress
@@ -264,7 +264,7 @@ function _solve(
         R₁₂ = ephem.R_primary_to_secondary[i_time]
 
         update_flux_all!(state, r☉₁, r₁₂, R₁₂)
-        update_thermal_force!(state)
+        (output.primary.save_face_forces || output.secondary.save_face_forces) && update_thermal_force!(state)
         record_timestep!(solution, state, i_time)
 
         if show_progress

@@ -1,0 +1,8 @@
+coverage:
+  status:
+    project:
+      default:
+        threshold: 1%   # allow up to 1% drop to accommodate refactoring
+    patch:
+      default:
+        threshold: 0%   # all changed lines must be covered

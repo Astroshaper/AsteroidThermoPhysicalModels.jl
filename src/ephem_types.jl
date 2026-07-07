@@ -12,7 +12,8 @@ Type hierarchy:
         └── BinaryAsteroidEphemerides{R}
 
 Type parameter R:
-    R = Nothing                          : temperature only (no force/torque)
+    R = Nothing                          : no inertial-frame force/torque output
+                                           (per-face body-fixed forces available via save_face_forces)
     R = Vector{SMatrix{3,3,Float64,9}}   : force/torque output in the inertial frame
 =#
 
@@ -71,15 +72,16 @@ Base.length(ephem::AbstractAsteroidEphemerides) = length(ephem.times)
 
 Ephemerides for a single-asteroid thermophysical simulation.
 
-The type parameter `R` controls whether force and torque are computed:
-- `R = Nothing`                        : temperature only; `R_body_to_inertial = nothing`
-- `R = Vector{SMatrix{3,3,Float64,9}}` : force and torque are computed in the inertial frame
+The type parameter `R` controls whether force and torque in the inertial frame are computed:
+- `R = Nothing`                        : no inertial-frame rotation available; per-face forces in the
+                                         body-fixed frame can still be obtained via `save_face_forces`.
+- `R = Vector{SMatrix{3,3,Float64,9}}` : forces and torques are rotated to the inertial frame.
 
 # Fields
 - `times`              : Simulation timesteps [s]
 - `r_sun`              : Sun position vector in the body-fixed frame at each timestep [m]
 - `R_body_to_inertial` : Passive rotation matrices from body-fixed to inertial frame,
-                         or `nothing` when force/torque are not needed.
+                         or `nothing` when inertial-frame force/torque output is not needed.
 
 # Constructors
     SingleAsteroidEphemerides(times, r_sun)
@@ -141,9 +143,10 @@ end
 
 Ephemerides for a binary-asteroid thermophysical simulation.
 
-The type parameter `R` controls whether force and torque are computed:
-- `R = Nothing`                        : temperature only; `R_primary_to_inertial = nothing`
-- `R = Vector{SMatrix{3,3,Float64,9}}` : force and torque are computed in the inertial frame
+The type parameter `R` controls whether force and torque in the inertial frame are computed:
+- `R = Nothing`                        : no inertial-frame rotation available; per-face forces in the
+                                         body-fixed frame can still be obtained via `save_face_forces`.
+- `R = Vector{SMatrix{3,3,Float64,9}}` : forces and torques are rotated to the inertial frame.
 
 The secondary-to-inertial rotation is not stored but can be derived as:
 
@@ -157,7 +160,7 @@ R_{s2i} = R_{p2i} \\cdot R_{p2s}^{\\top}
 - `r_secondary`            : Secondary position vector in the primary body-fixed frame at each timestep [m]
 - `R_primary_to_secondary` : Passive rotation matrices from primary body-fixed to secondary body-fixed frame
 - `R_primary_to_inertial`  : Passive rotation matrices from primary body-fixed to inertial frame,
-                             or `nothing` when force/torque are not needed.
+                             or `nothing` when inertial-frame force/torque output is not needed.
 
 # Constructors
     BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary)
