@@ -11,7 +11,6 @@ Abstract type for asteroid thermophysical simulation state.
 abstract type AbstractAsteroidThermoPhysicalState end
 
 
-
 """
     struct SingleAsteroidThermoPhysicalState <: AbstractAsteroidThermoPhysicalState
 
@@ -34,10 +33,10 @@ accessed via the `problem` field to avoid duplication.
 """
 struct SingleAsteroidThermoPhysicalState{
     Pr <: SingleAsteroidThermoPhysicalProblem,
-    S  <: HeatConductionCache,
+    C  <: HeatConductionCache,
 } <: AbstractAsteroidThermoPhysicalState
     problem           ::Pr
-    solver_cache      ::S
+    solver_cache      ::C
     illuminated_faces ::Vector{Bool}
     flux_sun          ::Vector{Float64}
     flux_scat         ::Vector{Float64}
@@ -68,21 +67,21 @@ state.secondary.problem === state.problem.secondary
 Use `_build_binary_state` rather than constructing directly to guarantee consistency.
 """
 struct BinaryAsteroidThermoPhysicalState{
-    S1 <: SingleAsteroidThermoPhysicalState,
-    S2 <: SingleAsteroidThermoPhysicalState,
+    St1 <: SingleAsteroidThermoPhysicalState,
+    St2 <: SingleAsteroidThermoPhysicalState,
 } <: AbstractAsteroidThermoPhysicalState
     problem   ::BinaryAsteroidThermoPhysicalProblem
-    primary   ::S1
-    secondary ::S2
+    primary   ::St1
+    secondary ::St2
 
     function BinaryAsteroidThermoPhysicalState(
         problem   ::BinaryAsteroidThermoPhysicalProblem,
-        primary   ::S1,
-        secondary ::S2,
-    ) where {S1 <: SingleAsteroidThermoPhysicalState, S2 <: SingleAsteroidThermoPhysicalState}
+        primary   ::St1,
+        secondary ::St2,
+    ) where {St1 <: SingleAsteroidThermoPhysicalState, St2 <: SingleAsteroidThermoPhysicalState}
         primary.problem   === problem.primary   || error("primary.problem ≢ problem.primary: use _build_binary_state to construct")
         secondary.problem === problem.secondary || error("secondary.problem ≢ problem.secondary: use _build_binary_state to construct")
-        new{S1, S2}(problem, primary, secondary)
+        new{St1, St2}(problem, primary, secondary)
     end
 end
 

@@ -46,17 +46,17 @@ solution = solve(problem, CrankNicolson(); ephem = ephem, initial_temperature = 
 ```
 """
 struct SingleAsteroidThermoPhysicalProblem{
-    Sh <: AbstractShapeModel,
-    BU <: AbstractBoundaryCondition,
-    BL <: AbstractBoundaryCondition,
+    Sh  <: AbstractShapeModel,
+    UBC <: AbstractBoundaryCondition,
+    LBC <: AbstractBoundaryCondition,
 } <: AbstractThermoPhysicalProblem
     shape                    ::Sh
     thermo_params            ::ThermoParams
     grid_params              ::GridParams
     with_self_shadowing      ::Bool
     with_self_heating        ::Bool
-    upper_boundary_condition ::BU
-    lower_boundary_condition ::BL
+    upper_boundary_condition ::UBC
+    lower_boundary_condition ::LBC
 end
 
 
@@ -152,11 +152,11 @@ solution = solve(problem, CrankNicolson(); ephem = ephem, T₀ = 200.0)
 ```
 """
 struct BinaryAsteroidThermoPhysicalProblem{
-    P1 <: SingleAsteroidThermoPhysicalProblem,
-    P2 <: SingleAsteroidThermoPhysicalProblem,
+    Pr1 <: SingleAsteroidThermoPhysicalProblem,
+    Pr2 <: SingleAsteroidThermoPhysicalProblem,
 } <: AbstractThermoPhysicalProblem
-    primary               ::P1
-    secondary             ::P2
+    primary               ::Pr1
+    secondary             ::Pr2
     with_mutual_shadowing ::Bool
     with_mutual_heating   ::Bool
 end
