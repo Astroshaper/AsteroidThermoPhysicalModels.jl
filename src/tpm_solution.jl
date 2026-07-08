@@ -514,6 +514,7 @@ end
     export_solution(dirpath, solution::SingleAsteroidThermoPhysicalSolution)
 
 Export simulation results to CSV files in `dirpath`.
+`dirpath` is created automatically if it does not exist.
 
 Files written depend on the `output` specification:
 - `diagnostics.csv`            : always (`absorbed_power`, `emitted_power` at all timesteps)
@@ -523,6 +524,7 @@ Files written depend on the `output` specification:
 - `thermal_net_forces.csv`     : when `output.save_forces = true` or `output.save_torques = true`
 """
 function export_solution(dirpath, solution::SingleAsteroidThermoPhysicalSolution)
+    mkpath(dirpath)
     _export_diagnostics(dirpath, solution)
     solution.output.save_surface_temperature    && _export_surface_temperature(dirpath, solution)
     solution.output.save_subsurface_temperature && _export_subsurface_temperature(dirpath, solution)
@@ -535,6 +537,7 @@ end
     export_solution(dirpath, solution::BinaryAsteroidThermoPhysicalSolution)
 
 Export results for both bodies to `dirpath/primary/` and `dirpath/secondary/`.
+All directories are created automatically if they do not exist.
 """
 function export_solution(dirpath, solution::BinaryAsteroidThermoPhysicalSolution)
     dirpath1 = joinpath(dirpath, "primary")
