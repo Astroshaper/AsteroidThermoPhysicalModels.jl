@@ -176,4 +176,57 @@ Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
             @test "torque_x" in names(df)
         end
     end
+
+    @testset "export_solution creates output directory — single asteroid" begin
+        shape = load_shape_obj(path_obj; scale=1000, with_face_visibility=false, with_bvh=false)
+        solution = solve(
+            SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
+                with_self_shadowing=false, with_self_heating=false),
+            ExplicitEuler();
+            ephem               = SingleAsteroidEphemerides(times, r_sun),
+            output              = SingleAsteroidOutputSpec(output_times, subsurface_face_ids),
+            initial_temperature = 200.0,
+            show_progress       = false,
+        )
+
+        dir = joinpath(mktempdir(), "nonexistent", "single")
+        @test !isdir(dir)
+        export_solution(dir, solution)
+        @test isdir(dir)
+        @test isfile(joinpath(dir, "diagnostics.csv"))
+    end
+
+    @testset "export_solution creates output directory — binary asteroid" begin
+        shape1 = load_shape_obj(path_obj; scale=1000, with_face_visibility=false, with_bvh=false)
+        shape2 = load_shape_obj(path_obj; scale=500,  with_face_visibility=false, with_bvh=false)
+
+        solution = solve(
+            BinaryAsteroidThermoPhysicalProblem(
+                (shape1, shape2), thermo_params, grid_params;
+                with_self_shadowing=false, with_self_heating=false,
+                with_mutual_shadowing=false, with_mutual_heating=false,
+            ),
+            ExplicitEuler();
+            ephem = BinaryAsteroidEphemerides(
+                times, r_sun,
+                [[1e4, 0.0, 0.0] for _ in times],
+                [Matrix{Float64}(I, 3, 3) for _ in times],
+            ),
+            output = BinaryAsteroidOutputSpec(
+                SingleAsteroidOutputSpec(output_times, subsurface_face_ids),
+                SingleAsteroidOutputSpec(output_times, subsurface_face_ids),
+            ),
+            initial_temperature_primary   = 200.0,
+            initial_temperature_secondary = 200.0,
+            show_progress                 = false,
+        )
+        
+        dir = joinpath(mktempdir(), "nonexistent", "binary")
+        @test !isdir(dir)
+        export_solution(dir, solution)
+        @test isdir(joinpath(dir, "primary"))
+        @test isdir(joinpath(dir, "secondary"))
+        @test isfile(joinpath(dir, "primary",   "diagnostics.csv"))
+        @test isfile(joinpath(dir, "secondary", "diagnostics.csv"))
+    end
 end
