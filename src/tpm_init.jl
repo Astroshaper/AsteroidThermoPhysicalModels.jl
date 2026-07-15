@@ -35,6 +35,42 @@ end
 
 
 """
+    init_temperature!(state::HierarchicalSingleAsteroidThermoPhysicalState, T₀::Real)
+
+Initialize all temperature cells at the uniform temperature `T₀`, including all sub-face states.
+
+# Arguments
+- `state` : Thermophysical simulation state for a single asteroid with surface roughness
+- `T₀`   : Initial temperature [K]
+"""
+function init_temperature!(state::HierarchicalSingleAsteroidThermoPhysicalState, T₀::Real)
+    state.temperature .= T₀
+    for rs in state.roughness_states
+        rs.temperature .= T₀
+    end
+end
+
+
+"""
+    init_temperature!(state::HierarchicalSingleAsteroidThermoPhysicalState, T₀::AbstractMatrix)
+
+Initialize global temperatures from a depth–face matrix.
+Each sub-face state is initialized to the surface temperature of its parent global face.
+
+# Arguments
+- `state` : Thermophysical simulation state for a single asteroid with surface roughness
+- `T₀`   : Temperature matrix of size `(n_depth, n_global_faces)` [K]
+"""
+function init_temperature!(state::HierarchicalSingleAsteroidThermoPhysicalState, T₀::AbstractMatrix)
+    state.temperature .= T₀
+    for (i, k) in enumerate(state.face_roughness_indices)
+        k == 0 && continue
+        state.roughness_states[k].temperature .= T₀[begin, i]
+    end
+end
+
+
+"""
     init_temperature!(state::BinaryAsteroidThermoPhysicalState, T₀::Real)
 
 Initialize all temperature cells in both bodies at the uniform temperature `T₀`.

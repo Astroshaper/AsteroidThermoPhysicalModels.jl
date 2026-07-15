@@ -41,6 +41,65 @@ function _build_single_state(
 end
 
 
+# Build HierarchicalSingleAsteroidThermoPhysicalState for a HierarchicalShapeModel problem.
+# Each global face with a roughness model gets its own independent sub-state.
+function _build_single_state(
+    problem   ::SingleAsteroidThermoPhysicalProblem{<:HierarchicalShapeModel},
+    algorithm ::AbstractThermoPhysicalAlgorithm,
+)
+    shape   = problem.shape
+    cache   = _build_cache(algorithm, problem.grid_params)
+    n_depth = problem.grid_params.n_depth
+    n_face  = length(shape.global_shape.faces)
+
+    # Map each global face to an independent roughness state index (0 = no roughness)
+    face_roughness_indices = zeros(Int, n_face)
+    roughness_state_count  = 0
+    for i in 1:n_face
+        if has_roughness_model(shape, i)
+            roughness_state_count += 1
+            face_roughness_indices[i] = roughness_state_count
+        end
+    end
+
+    # Build an independent SingleAsteroidThermoPhysicalState for each face with roughness
+    roughness_states = map(findall(!=(0), face_roughness_indices)) do i
+        roughness_shape = get_roughness_model(shape, i)::ShapeModel
+        tp_sub = ThermoParams(
+            [problem.thermo_params.conductivity[i]],
+            [problem.thermo_params.density[i]],
+            [problem.thermo_params.heat_capacity[i]],
+            [problem.thermo_params.reflectance_vis[i]],
+            [problem.thermo_params.reflectance_ir[i]],
+            [problem.thermo_params.emissivity[i]],
+        )
+        mini_prob = SingleAsteroidThermoPhysicalProblem(
+            roughness_shape, tp_sub, problem.grid_params;
+            with_self_shadowing = false,
+            with_self_heating   = false,
+            upper_boundary_condition = problem.upper_boundary_condition,
+            lower_boundary_condition = problem.lower_boundary_condition,
+        )
+        _build_single_state(mini_prob, algorithm)
+    end
+
+    HierarchicalSingleAsteroidThermoPhysicalState(
+        problem,
+        cache,
+        zeros(Bool, n_face),
+        zeros(n_face),
+        zeros(n_face),
+        zeros(n_face),
+        zeros(n_depth, n_face),
+        zeros(SVector{3, Float64}, n_face),
+        zero(MVector{3, Float64}),
+        zero(MVector{3, Float64}),
+        face_roughness_indices,
+        roughness_states,
+    )
+end
+
+
 # Internal helper: build BinaryAsteroidThermoPhysicalState from a problem + algorithm.
 # Both bodies always share the same algorithm and time step.
 function _build_binary_state(

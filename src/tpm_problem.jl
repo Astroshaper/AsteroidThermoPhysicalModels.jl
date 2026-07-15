@@ -107,7 +107,7 @@ Construct a thermophysical problem for a single asteroid.
   when loading the shape.
 - `ThermoParams` with length-1 vectors is expanded to `n_face` at construction time.
 """
-function SingleAsteroidThermoPhysicalProblem(shape, thermo_params::ThermoParams, grid_params::GridParams;
+function SingleAsteroidThermoPhysicalProblem(shape::AbstractShapeModel, thermo_params::ThermoParams, grid_params::GridParams;
     with_self_shadowing ::Bool = true,
     with_self_heating   ::Bool = true,
     upper_boundary_condition   = RadiationBoundaryCondition(),
@@ -119,6 +119,24 @@ function SingleAsteroidThermoPhysicalProblem(shape, thermo_params::ThermoParams,
     end
 
     n_face = length(shape.faces)
+    thermo_params_expanded = _expand_thermo_params(thermo_params, n_face)
+
+    SingleAsteroidThermoPhysicalProblem(shape, thermo_params_expanded, grid_params, with_self_shadowing, with_self_heating, upper_boundary_condition, lower_boundary_condition)
+end
+
+
+function SingleAsteroidThermoPhysicalProblem(shape::HierarchicalShapeModel, thermo_params::ThermoParams, grid_params::GridParams;
+    with_self_shadowing ::Bool = true,
+    with_self_heating   ::Bool = true,
+    upper_boundary_condition   = RadiationBoundaryCondition(),
+    lower_boundary_condition   = InsulationBoundaryCondition(),
+)
+    if with_self_shadowing && isnothing(shape.global_shape.face_visibility_graph)
+        @info "Building face_visibility_graph for self-shadowing..."
+        build_face_visibility_graph!(shape)
+    end
+
+    n_face = length(shape.global_shape.faces)
     thermo_params_expanded = _expand_thermo_params(thermo_params, n_face)
 
     SingleAsteroidThermoPhysicalProblem(shape, thermo_params_expanded, grid_params, with_self_shadowing, with_self_heating, upper_boundary_condition, lower_boundary_condition)
