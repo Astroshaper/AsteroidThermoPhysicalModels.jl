@@ -6,6 +6,7 @@ Unit tests for the Problem-Solver API introduced in v0.2.0:
 - BinaryAsteroidThermoPhysicalProblem convenience constructor (tuple args)
 - init_temperature! with AbstractMatrix
 - init_temperature! with per-body temperatures for binary systems
+- automatic preparation of the geometric data required for self-shadowing and self-heating
 =#
 
 @testset "Problem API" begin
@@ -123,5 +124,38 @@ Unit tests for the Problem-Solver API introduced in v0.2.0:
 
         @test all(state.primary.temperature   .== 300.0)
         @test all(state.secondary.temperature .== 300.0)
+    end
+
+    @testset "self-shadowing geometry prepared automatically" begin
+        # A shape loaded without `with_face_visibility` carries neither the visibility graph
+        # nor the maximum elevations; both are required by `update_illumination!`.
+        shape = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"))
+
+        @test isnothing(shape.face_visibility_graph)
+        @test isnothing(shape.face_max_elevations)
+
+        SingleAsteroidThermoPhysicalProblem(shape, thermo_params2, grid_params2;
+            with_self_shadowing = true,
+            with_self_heating   = false,
+        )
+
+        @test !isnothing(shape.face_visibility_graph)
+        @test !isnothing(shape.face_max_elevations)
+    end
+
+    @testset "self-heating geometry prepared automatically" begin
+        # Self-heating needs the view factors only. Without the graph, `update_flux_scat_single!`
+        # and `update_flux_rad_single!` return silently, i.e. self-heating is lost without warning.
+        shape = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"))
+
+        @test isnothing(shape.face_visibility_graph)
+
+        SingleAsteroidThermoPhysicalProblem(shape, thermo_params2, grid_params2;
+            with_self_shadowing = false,
+            with_self_heating   = true,
+        )
+
+        @test !isnothing(shape.face_visibility_graph)
+        @test isnothing(shape.face_max_elevations)  # not needed by self-heating
     end
 end

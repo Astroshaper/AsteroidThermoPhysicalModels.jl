@@ -97,7 +97,7 @@ Introduce thermophysical modeling of surface roughness using `HierarchicalShapeM
 
 - [x] **`ThermoParams` / `GridParams` redesign** (breaking) — PR #218: separate thermophysical material properties (`ThermoParams`) from numerical depth-grid settings (`GridParams`)
 
-- [ ] **Roughness-aware problem type**: extend the problem type to accept `HierarchicalShapeModel` and hold independent sub-face state (illumination, flux, temperature, thermal force) for each face
+- [x] **Roughness-aware problem type** — PR #222: `SingleAsteroidThermoPhysicalProblem` accepts a `HierarchicalShapeModel`, and the new `HierarchicalSingleAsteroidThermoPhysicalState` holds an independent sub-face state (illumination, flux, temperature, thermal force) for each roughness-carrying face
 
 - [ ] **Sub-face flux and temperature calculations**: compute solar flux, self-heating, and 1D heat conduction on sub-faces in their local coordinate frames
 

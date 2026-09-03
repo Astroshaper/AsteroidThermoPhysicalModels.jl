@@ -82,6 +82,15 @@ grid_params.Δz
   - `GridParams` is now exported
 - **`ThermoParams` keyword constructor** `ThermoParams(; conductivity, density, heat_capacity, reflectance_vis, reflectance_ir, emissivity)`: avoids relying on positional argument order
 - **`ThermoParams` mixed scalar/vector constructor**: scalar arguments are automatically broadcast to match the length of any vector arguments, removing the need for manual `fill()` calls in non-uniform surface cases
+- **`HierarchicalSingleAsteroidThermoPhysicalState`** for surface roughness: a two-level
+  state mirroring `HierarchicalShapeModel`. The global level has the same layout as
+  `SingleAsteroidThermoPhysicalState`; the sub-face level adds `face_roughness_indices`
+  (global face → sub-state index, 0 = no roughness) and `roughness_states` (an independent
+  `SingleAsteroidThermoPhysicalState` per roughness-carrying face)
+- **`SingleAsteroidThermoPhysicalProblem` accepts a `HierarchicalShapeModel`**: the problem
+  type is unchanged (`shape` is already parametric); the solver builds the hierarchical state
+  by dispatching on the shape type. `init_temperature!` and `surface_temperature` support the
+  new state. Sub-face flux and temperature updates land in later releases of the v0.3.0 series
 
 ### Changed
 
@@ -94,6 +103,20 @@ grid_params.Δz
 ### Removed
 
 - **Breaking**: `broadcast_thermo_params!` removed; single-body `ThermoParams` (length-1 vectors) are now expanded to `n_face` at `SingleAsteroidThermoPhysicalProblem` construction time via an internal `_expand_thermo_params` call, eliminating the need for mutation
+
+### Fixed
+
+- **Self-heating silently did nothing without a face visibility graph.** When a shape was
+  loaded without `with_face_visibility=true`, `with_self_heating = true` was accepted but the
+  scattered-light and thermal-radiation flux updates returned early and the re-absorption
+  recoil term was skipped, so the run completed and reported physically wrong results with no
+  warning. The problem constructor now builds the visibility graph whenever self-heating is
+  enabled
+- **Self-shadowing crashed at the first flux update on a lazily prepared shape.** Only
+  `face_visibility_graph` was built, while `update_illumination!` also requires
+  `face_max_elevations`. Both are now built, in dependency order
+- Preparing the geometry reports its elapsed time; building the visibility graph for a large
+  shape takes minutes and previously produced no output until the run ended
 
 ### Internal
 

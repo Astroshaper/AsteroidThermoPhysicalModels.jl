@@ -86,6 +86,57 @@ end
 
 
 """
+    _log_elapsed(f, what::AbstractString)
+
+Run `f`, reporting both its start and its elapsed time. Building the geometric data for a
+large shape model takes minutes, so the closing message tells the user that the run has moved
+on rather than stalled.
+"""
+function _log_elapsed(f, what::AbstractString)
+    @info "$what..."
+    elapsed = @elapsed f()
+    @info "$what: done in $(round(elapsed; digits=1)) s"
+end
+
+
+"""
+    _prepare_self_shadowing!(shape::ShapeModel)
+
+Ensure that `shape` carries the geometric data required for self-shadowing, building
+whatever is missing. `face_max_elevations` depends on `face_visibility_graph`, so the
+visibility graph is built first.
+"""
+function _prepare_self_shadowing!(shape::ShapeModel)
+    if isnothing(shape.face_visibility_graph)
+        _log_elapsed("Building face_visibility_graph for self-shadowing") do
+            build_face_visibility_graph!(shape)
+        end
+    end
+    if isnothing(shape.face_max_elevations)
+        _log_elapsed("Computing face_max_elevations for self-shadowing") do
+            compute_face_max_elevations!(shape)
+        end
+    end
+end
+
+
+"""
+    _prepare_self_heating!(shape::ShapeModel)
+
+Ensure that `shape` carries the geometric data required for self-heating, building it when
+missing. Self-heating needs the view factors of `face_visibility_graph` only; the maximum
+elevations used to accelerate self-shadowing are not involved.
+"""
+function _prepare_self_heating!(shape::ShapeModel)
+    if isnothing(shape.face_visibility_graph)
+        _log_elapsed("Building face_visibility_graph for self-heating") do
+            build_face_visibility_graph!(shape)
+        end
+    end
+end
+
+
+"""
     SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params; kwargs...) -> problem
 
 Construct a thermophysical problem for a single asteroid.
@@ -102,23 +153,38 @@ Construct a thermophysical problem for a single asteroid.
 - `lower_boundary_condition = InsulationBoundaryCondition()` : Boundary condition at depth
 
 # Notes
-- If `with_self_shadowing = true` and `face_visibility_graph` is not yet built, it is built automatically.
-  To avoid this, pre-build with `build_face_visibility_graph!` or pass `with_face_visibility=true`
-  when loading the shape.
+- The geometric data required by the enabled flags is computed automatically when missing:
+  `with_self_shadowing = true` needs `face_visibility_graph` and `face_max_elevations`, while
+  `with_self_heating = true` needs `face_visibility_graph` alone. To avoid this, pass
+  `with_face_visibility=true` when loading the shape.
 - `ThermoParams` with length-1 vectors is expanded to `n_face` at construction time.
 """
-function SingleAsteroidThermoPhysicalProblem(shape, thermo_params::ThermoParams, grid_params::GridParams;
+function SingleAsteroidThermoPhysicalProblem(shape::AbstractShapeModel, thermo_params::ThermoParams, grid_params::GridParams;
     with_self_shadowing ::Bool = true,
     with_self_heating   ::Bool = true,
     upper_boundary_condition   = RadiationBoundaryCondition(),
     lower_boundary_condition   = InsulationBoundaryCondition(),
 )
-    if with_self_shadowing && isnothing(shape.face_visibility_graph)
-        @info "Building face_visibility_graph for self-shadowing..."
-        build_face_visibility_graph!(shape)
-    end
+    with_self_shadowing && _prepare_self_shadowing!(shape)
+    with_self_heating   && _prepare_self_heating!(shape)
 
     n_face = length(shape.faces)
+    thermo_params_expanded = _expand_thermo_params(thermo_params, n_face)
+
+    SingleAsteroidThermoPhysicalProblem(shape, thermo_params_expanded, grid_params, with_self_shadowing, with_self_heating, upper_boundary_condition, lower_boundary_condition)
+end
+
+
+function SingleAsteroidThermoPhysicalProblem(shape::HierarchicalShapeModel, thermo_params::ThermoParams, grid_params::GridParams;
+    with_self_shadowing ::Bool = true,
+    with_self_heating   ::Bool = true,
+    upper_boundary_condition   = RadiationBoundaryCondition(),
+    lower_boundary_condition   = InsulationBoundaryCondition(),
+)
+    with_self_shadowing && _prepare_self_shadowing!(shape.global_shape)
+    with_self_heating   && _prepare_self_heating!(shape.global_shape)
+
+    n_face = length(shape.global_shape.faces)
     thermo_params_expanded = _expand_thermo_params(thermo_params, n_face)
 
     SingleAsteroidThermoPhysicalProblem(shape, thermo_params_expanded, grid_params, with_self_shadowing, with_self_heating, upper_boundary_condition, lower_boundary_condition)
