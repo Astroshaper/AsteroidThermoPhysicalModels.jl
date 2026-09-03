@@ -5,6 +5,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
 - _build_single_state dispatch for HierarchicalShapeModel
 - init_temperature! for HierarchicalSingleAsteroidThermoPhysicalState (Real and AbstractMatrix)
 - automatic preparation of the geometric data required for self-shadowing and self-heating
+- update_flux_sun! on the global level, compared against the plain ShapeModel result
 =#
 
 @testset "HierarchicalSingleAsteroidThermoPhysicalState" begin
@@ -143,5 +144,63 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
 
         @test !isnothing(hier_shape4.global_shape.face_visibility_graph)
         @test isnothing(hier_shape4.global_shape.face_max_elevations)  # not needed by self-heating
+    end
+
+    @testset "update_flux_sun! (global level)" begin
+        # The global level of a hierarchical state must reproduce the plain ShapeModel result
+        # exactly: the sub-face machinery must not perturb the global solar flux.
+        path_obj = joinpath(@__DIR__, "shape", "icosahedron.obj")
+        au = 1 / AsteroidThermoPhysicalModels.m2au
+        r☉s = [
+            SVector(1.0, 0.0, 0.0) * au,
+            SVector(0.3, -0.5, 0.8) * 1.2au,
+        ]
+
+        for with_self_shadowing in (false, true)
+            shape_plain = load_shape_obj(path_obj)
+            shape_hier  = load_shape_obj(path_obj; as_hierarchical=true)
+            add_roughness_models!(shape_hier, roughness_model)
+
+            problem_plain = SingleAsteroidThermoPhysicalProblem(shape_plain, thermo_params, grid_params;
+                with_self_shadowing, with_self_heating=false)
+            problem_hier  = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
+                with_self_shadowing, with_self_heating=false)
+
+            state_plain = AsteroidThermoPhysicalModels._build_single_state(problem_plain, CrankNicolson())
+            state_hier  = AsteroidThermoPhysicalModels._build_single_state(problem_hier,  CrankNicolson())
+
+            for r☉ in r☉s
+                AsteroidThermoPhysicalModels.update_flux_sun!(state_plain, r☉)
+                AsteroidThermoPhysicalModels.update_flux_sun!(state_hier,  r☉)
+
+                # Global level matches the plain ShapeModel result exactly
+                @test state_hier.illuminated_faces == state_plain.illuminated_faces
+                @test state_hier.flux_sun          == state_plain.flux_sun
+
+                # Physical sanity: the icosahedron is convex, so illumination reduces to n̂ ⋅ r̂☉ > 0.
+                # Faces whose normal is perpendicular to the Sun direction (cosθ ≈ 0 up to
+                # round-off) are skipped, since their illumination flag is not well defined.
+                r̂☉ = normalize(r☉)
+                F☉ = AsteroidThermoPhysicalModels.SOLAR_CONST / (norm(r☉) * AsteroidThermoPhysicalModels.m2au)^2
+                for (i, n̂) in enumerate(shape_hier.global_shape.face_normals)
+                    cosθ = n̂ ⋅ r̂☉
+                    abs(cosθ) < 1e-8 && continue
+                    if cosθ > 0
+                        @test state_hier.illuminated_faces[i]
+                        @test state_hier.flux_sun[i] ≈ F☉ * cosθ
+                    else
+                        @test !state_hier.illuminated_faces[i]
+                        @test state_hier.flux_sun[i] == 0.0
+                    end
+                end
+                @test any(state_hier.illuminated_faces) && !all(state_hier.illuminated_faces)
+
+                # Sub-face states are not touched by the global-level update
+                for rs in state_hier.roughness_states
+                    @test !any(rs.illuminated_faces)
+                    @test all(rs.flux_sun .== 0.0)
+                end
+            end
+        end
     end
 end

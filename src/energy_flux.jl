@@ -179,6 +179,43 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 
+# Shared implementation of the solar flux update for the faces of `shape`.
+# `state` may be a `SingleAsteroidThermoPhysicalState` or a
+# `HierarchicalSingleAsteroidThermoPhysicalState`; both carry `illuminated_faces`,
+# `flux_sun`, and `problem.with_self_shadowing` with the same layout. The shape is
+# passed explicitly because a `HierarchicalShapeModel` keeps its faces under
+# `global_shape` rather than as direct fields.
+function _update_flux_sun!(state, shape::ShapeModel, r☉::StaticVector{3})
+    # Calculate solar flux and direction
+    r̂☉ = normalize(r☉)
+    F☉ = SOLAR_CONST / (norm(r☉) * m2au)^2
+
+    # Update illumination states
+    if state.problem.with_self_shadowing
+        # Check face_visibility_graph availability for self-shadowing
+        if isnothing(shape.face_visibility_graph)
+            error(
+                "face_visibility_graph must be built when `with_self_shadowing` is enabled. " *
+                "Use `build_face_visibility_graph!(shape)` or load shape with `with_face_visibility=true`."
+            )
+        end
+        update_illumination!(state.illuminated_faces, shape, r̂☉; with_self_shadowing=true)
+    else
+        update_illumination!(state.illuminated_faces, shape, r̂☉; with_self_shadowing=false)
+    end
+
+    # Calculate flux for each face
+    for i in eachindex(shape.faces)
+        if state.illuminated_faces[i]
+            n̂ = shape.face_normals[i]
+            state.flux_sun[i] = F☉ * (n̂ ⋅ r̂☉)
+        else
+            state.flux_sun[i] = 0.0
+        end
+    end
+end
+
+
 """
     update_flux_sun!(state::SingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
 
@@ -194,42 +231,36 @@ For each face, the solar flux is calculated as:
 2. Normalize sun direction: r̂☉ = r☉ / |r☉|
 3. Face flux: F_sun = F☉ × max(0, n̂ · r̂☉)
 
-where n̂ is the face normal. If `SELF_SHADOWING` is enabled, the function also
+where n̂ is the face normal. If `with_self_shadowing` is enabled, the function also
 checks whether each face is shadowed by other parts of the asteroid.
 
 # Notes
 - The input vector `r☉` must not be normalized (used for distance calculation)
 - Faces with negative dot product (facing away from Sun) receive zero flux
-- Shadowed faces (when `SELF_SHADOWING = true`) also receive zero flux
+- Shadowed faces (when `with_self_shadowing = true`) also receive zero flux
 """
 function update_flux_sun!(state::SingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
-    # Calculate solar flux and direction
-    r̂☉ = normalize(r☉)
-    F☉ = SOLAR_CONST / (norm(r☉) * m2au)^2
-    
-    # Update illumination states
-    if state.problem.with_self_shadowing
-        # Check face_visibility_graph availability for self-shadowing
-        if isnothing(state.problem.shape.face_visibility_graph)
-            error(
-                "face_visibility_graph must be built when SELF_SHADOWING is enabled. " *
-                "Use `build_face_visibility_graph!(shape)` or load shape with `with_face_visibility=true`."
-            )
-        end
-        update_illumination!(state.illuminated_faces, state.problem.shape, r̂☉; with_self_shadowing=true)
-    else
-        update_illumination!(state.illuminated_faces, state.problem.shape, r̂☉; with_self_shadowing=false)
-    end
+    _update_flux_sun!(state, state.problem.shape, r☉)
+end
 
-    # Calculate flux for each face
-    for i in eachindex(state.problem.shape.faces)
-        if state.illuminated_faces[i]
-            n̂ = state.problem.shape.face_normals[i]
-            state.flux_sun[i] = F☉ * (n̂ ⋅ r̂☉)
-        else
-            state.flux_sun[i] = 0.0
-        end
-    end
+
+"""
+    update_flux_sun!(state::HierarchicalSingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
+
+Update the direct solar irradiation flux on every global face of an asteroid with surface roughness.
+
+# Arguments
+- `state::HierarchicalSingleAsteroidThermoPhysicalState` : Thermophysical simulation state for a single asteroid with surface roughness
+- `r☉::StaticVector{3}`     : Position vector from asteroid to Sun in body-fixed frame (NOT normalized) [m]
+
+# Notes
+- Only the global level (`state.problem.shape.global_shape`) is updated; the algorithm and
+  self-shadowing treatment are the same as for `SingleAsteroidThermoPhysicalState`.
+- The sub-face states in `state.roughness_states` are left untouched. Their illumination and
+  solar flux in the local frame of each roughness model are computed separately.
+"""
+function update_flux_sun!(state::HierarchicalSingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
+    _update_flux_sun!(state, state.problem.shape.global_shape, r☉)
 end
 
 """
