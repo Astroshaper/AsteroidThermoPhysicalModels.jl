@@ -105,6 +105,21 @@ end
 
 
 """
+    _prepare_self_heating!(shape::ShapeModel)
+
+Ensure that `shape` carries the geometric data required for self-heating, building it when
+missing. Self-heating needs the view factors of `face_visibility_graph` only; the maximum
+elevations used to accelerate self-shadowing are not involved.
+"""
+function _prepare_self_heating!(shape::ShapeModel)
+    if isnothing(shape.face_visibility_graph)
+        @info "Building face_visibility_graph for self-heating..."
+        build_face_visibility_graph!(shape)
+    end
+end
+
+
+"""
     SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params; kwargs...) -> problem
 
 Construct a thermophysical problem for a single asteroid.
@@ -121,8 +136,9 @@ Construct a thermophysical problem for a single asteroid.
 - `lower_boundary_condition = InsulationBoundaryCondition()` : Boundary condition at depth
 
 # Notes
-- If `with_self_shadowing = true`, the geometric data it requires (`face_visibility_graph` and
-  `face_max_elevations`) is computed automatically when missing. To avoid this, pass
+- The geometric data required by the enabled flags is computed automatically when missing:
+  `with_self_shadowing = true` needs `face_visibility_graph` and `face_max_elevations`, while
+  `with_self_heating = true` needs `face_visibility_graph` alone. To avoid this, pass
   `with_face_visibility=true` when loading the shape.
 - `ThermoParams` with length-1 vectors is expanded to `n_face` at construction time.
 """
@@ -133,6 +149,7 @@ function SingleAsteroidThermoPhysicalProblem(shape::AbstractShapeModel, thermo_p
     lower_boundary_condition   = InsulationBoundaryCondition(),
 )
     with_self_shadowing && _prepare_self_shadowing!(shape)
+    with_self_heating   && _prepare_self_heating!(shape)
 
     n_face = length(shape.faces)
     thermo_params_expanded = _expand_thermo_params(thermo_params, n_face)
@@ -148,6 +165,7 @@ function SingleAsteroidThermoPhysicalProblem(shape::HierarchicalShapeModel, ther
     lower_boundary_condition   = InsulationBoundaryCondition(),
 )
     with_self_shadowing && _prepare_self_shadowing!(shape.global_shape)
+    with_self_heating   && _prepare_self_heating!(shape.global_shape)
 
     n_face = length(shape.global_shape.faces)
     thermo_params_expanded = _expand_thermo_params(thermo_params, n_face)

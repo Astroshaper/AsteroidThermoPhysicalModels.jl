@@ -4,7 +4,7 @@ test_hierarchical_state.jl
 Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
 - _build_single_state dispatch for HierarchicalShapeModel
 - init_temperature! for HierarchicalSingleAsteroidThermoPhysicalState (Real and AbstractMatrix)
-- automatic preparation of the geometric data required for self-shadowing
+- automatic preparation of the geometric data required for self-shadowing and self-heating
 =#
 
 @testset "HierarchicalSingleAsteroidThermoPhysicalState" begin
@@ -128,5 +128,20 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
 
         @test !isnothing(hier_shape3.global_shape.face_visibility_graph)
         @test !isnothing(hier_shape3.global_shape.face_max_elevations)
+    end
+
+    @testset "self-heating geometry prepared automatically" begin
+        hier_shape4 = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"); as_hierarchical=true)
+        add_roughness_models!(hier_shape4, roughness_model)
+
+        @test isnothing(hier_shape4.global_shape.face_visibility_graph)
+
+        SingleAsteroidThermoPhysicalProblem(hier_shape4, thermo_params, grid_params;
+            with_self_shadowing = false,
+            with_self_heating   = true,
+        )
+
+        @test !isnothing(hier_shape4.global_shape.face_visibility_graph)
+        @test isnothing(hier_shape4.global_shape.face_max_elevations)  # not needed by self-heating
     end
 end
