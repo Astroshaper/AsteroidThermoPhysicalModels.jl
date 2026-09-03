@@ -73,6 +73,10 @@ function _build_single_state(
             [problem.thermo_params.reflectance_ir[i]],
             [problem.thermo_params.emissivity[i]],
         )
+        # TODO: Self-shadowing and self-heating inside a roughness model are the origin of
+        #       thermal beaming, so they must eventually be enabled here. They are kept off
+        #       until the sub-face flux calculations land, since enabling them also requires
+        #       the roughness model to carry a face visibility graph.
         mini_prob = SingleAsteroidThermoPhysicalProblem(
             roughness_shape, tp_sub, problem.grid_params;
             with_self_shadowing = false,
