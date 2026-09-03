@@ -86,6 +86,20 @@ end
 
 
 """
+    _log_elapsed(f, what::AbstractString)
+
+Run `f`, reporting both its start and its elapsed time. Building the geometric data for a
+large shape model takes minutes, so the closing message tells the user that the run has moved
+on rather than stalled.
+"""
+function _log_elapsed(f, what::AbstractString)
+    @info "$what..."
+    elapsed = @elapsed f()
+    @info "$what: done in $(round(elapsed; digits=1)) s"
+end
+
+
+"""
     _prepare_self_shadowing!(shape::ShapeModel)
 
 Ensure that `shape` carries the geometric data required for self-shadowing, building
@@ -94,12 +108,14 @@ visibility graph is built first.
 """
 function _prepare_self_shadowing!(shape::ShapeModel)
     if isnothing(shape.face_visibility_graph)
-        @info "Building face_visibility_graph for self-shadowing..."
-        build_face_visibility_graph!(shape)
+        _log_elapsed("Building face_visibility_graph for self-shadowing") do
+            build_face_visibility_graph!(shape)
+        end
     end
     if isnothing(shape.face_max_elevations)
-        @info "Computing face_max_elevations for self-shadowing..."
-        compute_face_max_elevations!(shape)
+        _log_elapsed("Computing face_max_elevations for self-shadowing") do
+            compute_face_max_elevations!(shape)
+        end
     end
 end
 
@@ -113,8 +129,9 @@ elevations used to accelerate self-shadowing are not involved.
 """
 function _prepare_self_heating!(shape::ShapeModel)
     if isnothing(shape.face_visibility_graph)
-        @info "Building face_visibility_graph for self-heating..."
-        build_face_visibility_graph!(shape)
+        _log_elapsed("Building face_visibility_graph for self-heating") do
+            build_face_visibility_graph!(shape)
+        end
     end
 end
 
