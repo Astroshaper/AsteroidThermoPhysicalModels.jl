@@ -89,10 +89,12 @@ grid_params.Δz
   `SingleAsteroidThermoPhysicalState` per roughness-carrying face)
 - **`SingleAsteroidThermoPhysicalProblem` accepts a `HierarchicalShapeModel`**: the problem
   type is unchanged (`shape` is already parametric); the solver builds the hierarchical state
-  by dispatching on the shape type. `init_temperature!`, `surface_temperature`, and the
+  by dispatching on the shape type. `init_temperature!`, `surface_temperature`, the
   global-level flux updates (`update_flux_sun!`, `update_flux_scat_single!`,
-  `update_flux_rad_single!`) support the new state. Sub-face flux and temperature updates
-  land in later releases of the v0.3.0 series
+  `update_flux_rad_single!`), and the global-level heat conduction (`update_temperature!`
+  with all three solvers) support the new state. The global faces are solved independently
+  of their roughness models and serve as the smooth-surface baseline. Sub-face flux and
+  temperature updates land in later releases of the v0.3.0 series
 
 ### Changed
 
