@@ -202,5 +202,15 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
                 end
             end
         end
+
+        # Self-shadowing on a global shape whose visibility graph was dropped after
+        # construction must fail loudly rather than silently skip the shadow test.
+        shape_hier = load_shape_obj(path_obj; as_hierarchical=true)
+        add_roughness_models!(shape_hier, roughness_model)
+        problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
+            with_self_shadowing=true, with_self_heating=false)
+        state_hier = AsteroidThermoPhysicalModels._build_single_state(problem_hier, CrankNicolson())
+        shape_hier.global_shape.face_visibility_graph = nothing
+        @test_throws ErrorException AsteroidThermoPhysicalModels.update_flux_sun!(state_hier, r☉s[1])
     end
 end
