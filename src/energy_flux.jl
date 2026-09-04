@@ -179,13 +179,12 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 
-# Shared implementation of the solar flux update for the faces of `shape`.
-# `state` may be a `SingleAsteroidThermoPhysicalState` or a
-# `HierarchicalSingleAsteroidThermoPhysicalState`; both carry `illuminated_faces`,
-# `flux_sun`, and `problem.with_self_shadowing` with the same layout. The shape is
-# passed explicitly because a `HierarchicalShapeModel` keeps its faces under
-# `global_shape` rather than as direct fields.
-function _update_flux_sun!(state, shape::ShapeModel, r☉::StaticVector{3})
+# Shared implementation of the solar flux update for the faces of `shape`. The shape is
+# passed explicitly because a `HierarchicalShapeModel` keeps its faces under `global_shape`
+# rather than as direct fields, so the caller decides which level is being updated.
+function _update_flux_sun!(
+    state::SingleLevelThermoPhysicalState, shape::ShapeModel, r☉::StaticVector{3},
+)
     # Calculate solar flux and direction
     r̂☉ = normalize(r☉)
     F☉ = SOLAR_CONST / (norm(r☉) * m2au)^2
