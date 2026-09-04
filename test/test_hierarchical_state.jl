@@ -6,6 +6,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
 - init_temperature! for HierarchicalSingleAsteroidThermoPhysicalState (Real and AbstractMatrix)
 - automatic preparation of the geometric data required for self-shadowing and self-heating
 - update_flux_sun! on the global level, compared against the plain ShapeModel result
+- update_flux_scat_single! / update_flux_rad_single! on the global level, likewise
 =#
 
 @testset "HierarchicalSingleAsteroidThermoPhysicalState" begin
@@ -217,5 +218,72 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         shape_hier.global_shape.face_visibility_graph = nothing
         r☉ = SVector(1.0, 0.0, 0.0) * AsteroidThermoPhysicalModels.au2m
         @test_throws ErrorException AsteroidThermoPhysicalModels.update_flux_sun!(state_hier, r☉)
+    end
+
+    @testset "update_flux_scat_single! / update_flux_rad_single! (global level)" begin
+        # Self-heating vanishes identically on a convex shape, so the icosahedron used above
+        # cannot tell a working implementation from a broken one. A crater is concave: its
+        # faces see each other, and both self-heating terms are non-zero.
+        make_crater(; as_hierarchical) =
+            create_shape_crater(0.4, 0.1; Nx=8, Ny=8, as_hierarchical)
+
+        shape_plain = make_crater(as_hierarchical=false)
+        shape_hier  = make_crater(as_hierarchical=true)
+        add_roughness_models!(shape_hier, create_shape_crater(0.4, 0.1; Nx=4, Ny=4))
+
+        problem_plain = SingleAsteroidThermoPhysicalProblem(shape_plain, thermo_params, grid_params;
+            with_self_shadowing=false, with_self_heating=true)
+        problem_hier  = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
+            with_self_shadowing=false, with_self_heating=true)
+
+        state_plain = AsteroidThermoPhysicalModels._build_single_state(problem_plain, CrankNicolson())
+        state_hier  = AsteroidThermoPhysicalModels._build_single_state(problem_hier,  CrankNicolson())
+
+        # Vary the temperature from face to face, so that a wrong face index in the radiation
+        # term would change the result rather than cancel out.
+        n_faces = length(shape_plain.faces)
+        T₀ = repeat(reshape(range(200.0, 300.0; length=n_faces) |> collect, 1, n_faces),
+                    grid_params.n_depth)
+        AsteroidThermoPhysicalModels.init_temperature!(state_plain, T₀)
+        AsteroidThermoPhysicalModels.init_temperature!(state_hier,  T₀)
+
+        r☉ = SVector(0.2, -0.1, 1.0) * AsteroidThermoPhysicalModels.au2m
+        for state in (state_plain, state_hier)
+            AsteroidThermoPhysicalModels.update_flux_sun!(state, r☉)
+            AsteroidThermoPhysicalModels.update_flux_scat_single!(state)
+            AsteroidThermoPhysicalModels.update_flux_rad_single!(state)
+        end
+
+        # Global level matches the plain ShapeModel result exactly
+        @test state_hier.flux_scat == state_plain.flux_scat
+        @test state_hier.flux_rad  == state_plain.flux_rad
+
+        # The comparison is not vacuous: the concave shape really does exchange energy
+        @test any(>(0), state_hier.flux_scat)
+        @test any(>(0), state_hier.flux_rad)
+
+        # Sub-face states are not touched by the global-level update
+        for rs in state_hier.roughness_states
+            @test all(rs.flux_scat .== 0.0)
+            @test all(rs.flux_rad  .== 0.0)
+        end
+    end
+
+    @testset "self-heating disabled leaves the global fluxes at zero" begin
+        shape_hier = create_shape_crater(0.4, 0.1; Nx=8, Ny=8, as_hierarchical=true)
+        add_roughness_models!(shape_hier, create_shape_crater(0.4, 0.1; Nx=4, Ny=4))
+
+        problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
+            with_self_shadowing=false, with_self_heating=false)
+        state_hier = AsteroidThermoPhysicalModels._build_single_state(problem_hier, CrankNicolson())
+        AsteroidThermoPhysicalModels.init_temperature!(state_hier, 300.0)
+
+        AsteroidThermoPhysicalModels.update_flux_sun!(state_hier, SVector(0.0, 0.0, 1.0) * AsteroidThermoPhysicalModels.au2m)
+        AsteroidThermoPhysicalModels.update_flux_scat_single!(state_hier)
+        AsteroidThermoPhysicalModels.update_flux_rad_single!(state_hier)
+
+        @test all(state_hier.flux_scat .== 0.0)
+        @test all(state_hier.flux_rad  .== 0.0)
+        @test any(>(0), state_hier.flux_sun)  # the shape is lit, so the zeros are the flag's doing
     end
 end
