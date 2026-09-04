@@ -256,7 +256,8 @@ Update the direct solar irradiation flux on every global face of an asteroid wit
 - Only the global level (`state.problem.shape.global_shape`) is updated; the algorithm and
   self-shadowing treatment are the same as for `SingleAsteroidThermoPhysicalState`.
 - The sub-face states in `state.roughness_states` are left untouched. Their illumination and
-  solar flux in the local frame of each roughness model are computed separately.
+  solar flux in the local frame of each roughness model will be handled by the sub-face flux
+  update.
 """
 function update_flux_sun!(state::HierarchicalSingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
     _update_flux_sun!(state, state.problem.shape.global_shape, r☉)
@@ -327,6 +328,29 @@ end
 # ║                 Energy flux: Scattering                           ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
+# Shared implementation of the single-scattering update for the faces of `shape`. As for
+# `_update_flux_sun!`, the shape is passed explicitly so the caller decides which level of a
+# `HierarchicalShapeModel` is being updated.
+function _update_flux_scat_single!(state::SingleLevelThermoPhysicalState, shape::ShapeModel)
+    state.problem.with_self_heating == false && return
+    isnothing(shape.face_visibility_graph) && return
+
+    for i_face in eachindex(shape.faces)
+        state.flux_scat[i_face] = 0.
+
+        # Face properties visible from `i_face`: Face indices and view factors
+        visible_indices = get_visible_face_indices(shape.face_visibility_graph, i_face)
+        view_factors = get_view_factors(shape.face_visibility_graph, i_face)
+
+        for (j, fᵢⱼ) in zip(visible_indices, view_factors)
+            R_vis = state.problem.thermo_params.reflectance_vis[j]
+
+            state.flux_scat[i_face] += fᵢⱼ * R_vis * state.flux_sun[j]
+        end
+    end
+end
+
+
 """
     update_flux_scat_single!(state::SingleAsteroidThermoPhysicalState)
 
@@ -336,22 +360,27 @@ Update flux of scattered sunlight, only considering single scattering.
 - `state` : Thermophysical simulation state for a single asteroid
 """
 function update_flux_scat_single!(state::SingleAsteroidThermoPhysicalState)
-    state.problem.with_self_heating == false && return
-    isnothing(state.problem.shape.face_visibility_graph) && return
+    _update_flux_scat_single!(state, state.problem.shape)
+end
 
-    for i_face in eachindex(state.problem.shape.faces)
-        state.flux_scat[i_face] = 0.
-        
-        # Face properties visible from `i_face`: Face indices and view factors
-        visible_indices = get_visible_face_indices(state.problem.shape.face_visibility_graph, i_face)
-        view_factors = get_view_factors(state.problem.shape.face_visibility_graph, i_face)
-        
-        for (j, fᵢⱼ) in zip(visible_indices, view_factors)
-            R_vis = state.problem.thermo_params.reflectance_vis[j]
 
-            state.flux_scat[i_face] += fᵢⱼ * R_vis * state.flux_sun[j]
-        end
-    end
+"""
+    update_flux_scat_single!(state::HierarchicalSingleAsteroidThermoPhysicalState)
+
+Update flux of scattered sunlight between the global faces of an asteroid with surface roughness,
+only considering single scattering.
+
+# Arguments
+- `state` : Thermophysical simulation state for a single asteroid with surface roughness
+
+# Notes
+- Only the global level (`state.problem.shape.global_shape`) is updated, from the global-level
+  `flux_sun` computed by `update_flux_sun!`.
+- The sub-face states in `state.roughness_states` are left untouched. Scattering within each
+  roughness model will be handled by the sub-face flux update.
+"""
+function update_flux_scat_single!(state::HierarchicalSingleAsteroidThermoPhysicalState)
+    _update_flux_scat_single!(state, state.problem.shape.global_shape)
 end
 
 """
@@ -380,6 +409,29 @@ end
 # ║                Energy flux: Thermal radiation                     ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
+# Shared implementation of the thermal-radiation absorption update for the faces of `shape`.
+function _update_flux_rad_single!(state::SingleLevelThermoPhysicalState, shape::ShapeModel)
+    state.problem.with_self_heating == false && return
+    isnothing(shape.face_visibility_graph) && return
+
+    for i in eachindex(shape.faces)
+        state.flux_rad[i] = 0.
+
+        # Face properties visible from `i_face`: Face indices and view factors
+        visible_indices = get_visible_face_indices(shape.face_visibility_graph, i)
+        view_factors = get_view_factors(shape.face_visibility_graph, i)
+
+        for (j, fᵢⱼ) in zip(visible_indices, view_factors)
+            ε    = state.problem.thermo_params.emissivity[j]
+            R_ir = state.problem.thermo_params.reflectance_ir[j]
+            Tⱼ   = state.temperature[begin, j]
+
+            state.flux_rad[i] += ε * σ_SB * (1 - R_ir) * fᵢⱼ * Tⱼ^4
+        end
+    end
+end
+
+
 """
     update_flux_rad_single!(state::SingleAsteroidThermoPhysicalState)
 
@@ -390,24 +442,27 @@ Single radiation-absorption is only considered, assuming albedo is close to zero
 - `state` : Thermophysical simulation state for a single asteroid
 """
 function update_flux_rad_single!(state::SingleAsteroidThermoPhysicalState)
-    state.problem.with_self_heating == false && return
-    isnothing(state.problem.shape.face_visibility_graph) && return
+    _update_flux_rad_single!(state, state.problem.shape)
+end
 
-    for i in eachindex(state.problem.shape.faces)
-        state.flux_rad[i] = 0.
-        
-        # Face properties visible from `i_face`: Face indices and view factors
-        visible_indices = get_visible_face_indices(state.problem.shape.face_visibility_graph, i)
-        view_factors = get_view_factors(state.problem.shape.face_visibility_graph, i)
-        
-        for (j, fᵢⱼ) in zip(visible_indices, view_factors)
-            ε    = state.problem.thermo_params.emissivity[j]
-            R_ir = state.problem.thermo_params.reflectance_ir[j]
-            Tⱼ   = state.temperature[begin, j]
-            
-            state.flux_rad[i] += ε * σ_SB * (1 - R_ir) * fᵢⱼ * Tⱼ^4
-        end
-    end
+
+"""
+    update_flux_rad_single!(state::HierarchicalSingleAsteroidThermoPhysicalState)
+
+Update flux of absorption of thermal radiation between the global faces of an asteroid with
+surface roughness.
+
+# Arguments
+- `state` : Thermophysical simulation state for a single asteroid with surface roughness
+
+# Notes
+- Only the global level (`state.problem.shape.global_shape`) is updated, from the global-level
+  surface temperatures.
+- The sub-face states in `state.roughness_states` are left untouched. Radiative exchange within
+  each roughness model will be handled by the sub-face flux update.
+"""
+function update_flux_rad_single!(state::HierarchicalSingleAsteroidThermoPhysicalState)
+    _update_flux_rad_single!(state, state.problem.shape.global_shape)
 end
 
 """
