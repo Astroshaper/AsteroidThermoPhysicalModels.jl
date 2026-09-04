@@ -136,8 +136,8 @@ end
 
 States that describe one set of faces directly: `illuminated_faces`, `flux_sun`, `flux_scat`,
 `flux_rad`, `temperature` and `face_forces` share the same layout in both, so a per-face
-implementation written against one applies to the other. `BinaryAsteroidThermoPhysicalState` holds two such
-states rather than face data of its own, and is deliberately excluded.
+implementation written against one applies to the other. `BinaryAsteroidThermoPhysicalState`
+holds two such states rather than face data of its own, and is deliberately excluded.
 
 For `HierarchicalSingleAsteroidThermoPhysicalState` these fields describe the global faces;
 its sub-face states are themselves `SingleAsteroidThermoPhysicalState`s.
