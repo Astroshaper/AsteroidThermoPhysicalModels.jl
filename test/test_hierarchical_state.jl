@@ -150,10 +150,10 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         # The global level of a hierarchical state must reproduce the plain ShapeModel result
         # exactly: the sub-face machinery must not perturb the global solar flux.
         path_obj = joinpath(@__DIR__, "shape", "icosahedron.obj")
-        au = 1 / AsteroidThermoPhysicalModels.m2au
+        au2m = AsteroidThermoPhysicalModels.au2m
         r☉s = [
-            SVector(1.0, 0.0, 0.0) * au,
-            SVector(0.3, -0.5, 0.8) * 1.2au,
+            SVector(1.0, 0.0, 0.0) * au2m,        # 1.0 au
+            SVector(0.3, -0.5, 0.8) * 1.2au2m,    # 1.2 au, oblique
         ]
 
         for with_self_shadowing in (false, true)
@@ -215,7 +215,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         state_hier = AsteroidThermoPhysicalModels._build_single_state(problem_hier, CrankNicolson())
 
         shape_hier.global_shape.face_visibility_graph = nothing
-        r☉ = SVector(1.0, 0.0, 0.0) / AsteroidThermoPhysicalModels.m2au
+        r☉ = SVector(1.0, 0.0, 0.0) * AsteroidThermoPhysicalModels.au2m
         @test_throws ErrorException AsteroidThermoPhysicalModels.update_flux_sun!(state_hier, r☉)
     end
 end
