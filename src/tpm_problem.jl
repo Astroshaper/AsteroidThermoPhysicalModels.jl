@@ -88,14 +88,19 @@ end
 """
     _log_elapsed(f, what::AbstractString)
 
-Run `f`, reporting both its start and its elapsed time. Building the geometric data for a
-large shape model takes minutes, so the closing message tells the user that the run has moved
-on rather than stalled.
+Run `f`, reporting what it is about to do and, once it returns, how long it took — both on a
+single line. Preparing the geometric data for a large shape model takes minutes, so the
+opening half tells the user what the wait is for and the closing half reports its cost.
+
+The line is written to `stdout` rather than through `@info`, because a log record cannot be
+completed after the fact. This matches how `solve` already reports its progress.
 """
 function _log_elapsed(f, what::AbstractString)
-    @info "$what..."
+    printstyled("[ Info: "; color=:cyan, bold=true)
+    print("$what... ")
+    flush(stdout)
     elapsed = @elapsed f()
-    @info "$what: done in $(round(elapsed; digits=1)) s"
+    println("done ($(round(elapsed; digits=2)) s)")
 end
 
 
