@@ -13,6 +13,9 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
   the roughness model, the external irradiation from the other global faces, and its absence
   when the global self-heating is off
 - update_temperature! on the global level, for all three solvers and for zero conductivity
+- update_temperature! on the sub-face level: the sub-faces advance, a near-flat roughness model
+  reproduces the temperature of its parent face, and zero conductivity gives radiative
+  equilibrium on every sub-face
 =#
 
 @testset "HierarchicalSingleAsteroidThermoPhysicalState" begin
@@ -569,11 +572,55 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
             @test state_hier.temperature == state_plain.temperature
             @test state_hier.temperature != T₀
 
-            # Sub-face states are not advanced by the global-level update
+            # Sub-faces advance too (every face radiates, so none stays at its initial value)
             for (i, k) in enumerate(state_hier.face_roughness_indices)
                 k == 0 && continue
-                @test all(state_hier.roughness_states[k].temperature .== T₀[begin, i])
+                @test any(state_hier.roughness_states[k].temperature .!= T₀[begin, i])
             end
+        end
+    end
+
+    @testset "update_temperature! (sub-face level, near-flat reproduces the parent)" begin
+        # A roughness model flat to 1e-6 sees the same flux as its parent face and has the same
+        # material and grid, so after any number of steps every one of its columns must match
+        # the parent's column. This exercises the whole chain — local illumination, sub-face
+        # boundary condition, per-state solver cache — against the global-level result, which
+        # #226 pinned to the plain ShapeModel. The convex icosahedron keeps the external
+        # irradiation at zero, so nothing else enters.
+        path_obj = joinpath(@__DIR__, "shape", "icosahedron.obj")
+        r☉ = SVector(0.3, -0.2, 0.9) * AsteroidThermoPhysicalModels.au2m
+        r̂☉ = normalize(r☉)
+        Δt = 100.0
+        n_steps = 10
+
+        for algorithm in (CrankNicolson(), ImplicitEuler(), ExplicitEuler())
+            shape_hier = load_shape_obj(path_obj; as_hierarchical=true)
+            add_roughness_models!(shape_hier, create_shape_crater(0.4, 1e-6; Nx=4, Ny=4))
+            problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
+                with_self_shadowing=true, with_self_heating=false)
+            state_hier = AsteroidThermoPhysicalModels._build_single_state(problem_hier, algorithm)
+            AsteroidThermoPhysicalModels.init_temperature!(state_hier, 250.0)
+
+            for _ in 1:n_steps
+                AsteroidThermoPhysicalModels.update_flux_sun!(state_hier, r☉)
+                AsteroidThermoPhysicalModels.update_flux_scat_single!(state_hier)
+                AsteroidThermoPhysicalModels.update_flux_rad_single!(state_hier)
+                AsteroidThermoPhysicalModels.update_temperature!(state_hier, Δt)
+            end
+            @test any(state_hier.temperature .!= 250.0)
+
+            n_checked = 0
+            for (i, k) in enumerate(state_hier.face_roughness_indices)
+                rs = state_hier.roughness_states[k]
+                # Skip grazing incidence, where the 1e-6 tilt of the sub-face normals is not
+                # small against cos θ of the parent (same reasoning as for the fluxes)
+                state_hier.illuminated_faces[i] && shape_hier.global_shape.face_normals[i] ⋅ r̂☉ < 0.05 && continue
+                n_checked += 1
+                for j in axes(rs.temperature, 2)
+                    @test all(isapprox.(rs.temperature[:, j], state_hier.temperature[:, i]; rtol=1e-5))
+                end
+            end
+            @test n_checked > 0
         end
     end
 
@@ -621,5 +668,15 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
             @test state_hier.temperature[begin, i] ≈ (F_abs / εσ)^(1/4)
         end
         @test any(>(0), state_hier.temperature[begin, :])
+
+        # The same holds on every sub-face, with the sub-face's own fluxes
+        for rs in state_hier.roughness_states
+            for j in axes(rs.temperature, 2)
+                F_abs = AsteroidThermoPhysicalModels.absorbed_energy_flux(
+                    0.1, 0.0, rs.flux_sun[j], rs.flux_scat[j], rs.flux_rad[j])
+                @test rs.temperature[begin, j] ≈ (F_abs / εσ)^(1/4)
+            end
+            @test any(>(0), rs.temperature[begin, :])
+        end
     end
 end
