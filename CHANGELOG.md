@@ -95,8 +95,13 @@ grid_params.Δz
   with all three solvers) support the new state. The global faces are solved independently
   of their roughness models and serve as the smooth-surface baseline. `update_flux_sun!` also
   illuminates the sub-faces of every roughness model in its local frame, with self-shadowing
-  inside the roughness model, gated on the illumination of the parent global face. Sub-face
-  self-heating and temperature updates land in later releases of the v0.3.0 series
+  inside the roughness model, gated on the illumination of the parent global face.
+  `update_flux_scat_single!` and `update_flux_rad_single!` compute the self-heating inside
+  each roughness model and add the flux the parent face receives from the other global faces,
+  distributed over the sub-faces by their sky view factor. Self-shadowing and self-heating
+  inside a roughness model are always on; the problem's `with_self_heating` governs the global
+  faces and, through them, the external irradiation of the sub-faces. Sub-face temperature
+  updates land in a later release of the v0.3.0 series
 
 ### Changed
 
