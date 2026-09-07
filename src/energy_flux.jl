@@ -481,7 +481,11 @@ end
 # ║                Energy flux: Thermal radiation                     ║
 # ╚═══════════════════════════════════════════════════════════════════╝
 
-# Shared implementation of the thermal-radiation absorption update for the faces of `shape`.
+# Shared implementation of the thermal-radiation update for the faces of `shape`. `flux_rad`
+# is the irradiance incident on each face from the others — like `flux_sun` and `flux_scat`,
+# it carries no absorptivity: the receiving face's `1 − R_ir` is applied where the flux is
+# absorbed (surface boundary condition, `absorbed_energy_flux`) and its `R_ir` where the
+# reflected part is emitted (`update_thermal_force!`).
 function _update_flux_rad_single!(state::SingleLevelThermoPhysicalState, shape::ShapeModel)
     state.problem.with_self_heating == false && return
     _require_face_visibility_graph(shape, "with_self_heating")
@@ -494,11 +498,12 @@ function _update_flux_rad_single!(state::SingleLevelThermoPhysicalState, shape::
         view_factors = get_view_factors(shape.face_visibility_graph, i)
 
         for (j, fᵢⱼ) in zip(visible_indices, view_factors)
-            ε    = state.problem.thermo_params.emissivity[j]
-            R_ir = state.problem.thermo_params.reflectance_ir[j]
-            Tⱼ   = state.temperature[begin, j]
+            εⱼ = state.problem.thermo_params.emissivity[j]
+            Tⱼ = state.temperature[begin, j]
 
-            state.flux_rad[i] += ε * σ_SB * (1 - R_ir) * fᵢⱼ * Tⱼ^4
+            # Irradiance on i from the Lambertian emission of j: Eⱼ Aⱼ Fⱼᵢ / Aᵢ = Eⱼ Fᵢⱼ by
+            # reciprocity, with Fᵢⱼ the view factor stored for face i
+            state.flux_rad[i] += εⱼ * σ_SB * fᵢⱼ * Tⱼ^4
         end
     end
 end
@@ -507,8 +512,11 @@ end
 """
     update_flux_rad_single!(state::SingleAsteroidThermoPhysicalState)
 
-Update flux of absorption of thermal radiation from surrounding surface.
-Single radiation-absorption is only considered, assuming albedo is close to zero at thermal infrared wavelength.
+Update the flux of thermal radiation incident on each face from the surrounding surface.
+
+Only the direct emission of the other faces is counted (single bounce); thermal radiation they
+reflect is neglected. `flux_rad` is an incident flux, like `flux_sun` and `flux_scat`: the
+thermal-infrared reflectance of the receiving face is applied where the flux is absorbed.
 
 # Arguments
 - `state` : Thermophysical simulation state for a single asteroid
@@ -617,16 +625,15 @@ function mutual_heating!(state::BinaryAsteroidThermoPhysicalState, r₁₂, R₂
                 ε₂     = thermo_params2.emissivity[j]
                 R_vis₁ = thermo_params1.reflectance_vis[i]
                 R_vis₂ = thermo_params2.reflectance_vis[j]
-                R_ir₁  = thermo_params1.reflectance_ir[i]
-                R_ir₂  = thermo_params2.reflectance_ir[j]
 
                 ## Mutual heating by scattered light
                 state.primary.flux_scat[i] += f₁₂ * R_vis₂ * state.secondary.flux_sun[j]
                 state.secondary.flux_scat[j] += f₂₁ * R_vis₁ * state.primary.flux_sun[i]
 
-                ## Mutual heating by thermal radiation
-                state.primary.flux_rad[i] += ε₂ * σ_SB * (1 - R_ir₂) * f₁₂ * T₂^4
-                state.secondary.flux_rad[j] += ε₁ * σ_SB * (1 - R_ir₁) * f₂₁ * T₁^4
+                ## Mutual heating by thermal radiation (incident flux; the receiving face's
+                ## thermal-infrared reflectance is applied where the flux is absorbed)
+                state.primary.flux_rad[i] += ε₂ * σ_SB * f₁₂ * T₂^4
+                state.secondary.flux_rad[j] += ε₁ * σ_SB * f₂₁ * T₁^4
             end
         end
     end
