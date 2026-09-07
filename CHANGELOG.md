@@ -100,8 +100,10 @@ grid_params.Δz
   each roughness model and add the flux the parent face receives from the other global faces,
   distributed over the sub-faces by their sky view factor. Self-shadowing and self-heating
   inside a roughness model are always on; the problem's `with_self_heating` governs the global
-  faces and, through them, the external irradiation of the sub-faces. Sub-face temperature
-  updates land in a later release of the v0.3.0 series
+  faces and, through them, the external irradiation of the sub-faces. `update_temperature!`
+  advances the sub-faces after the global faces, each as a full set of 1D columns driven by its
+  own fluxes. Sub-face thermal forces and the `solve` integration land in a later release of
+  the v0.3.0 series
 
 ### Changed
 
