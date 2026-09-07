@@ -61,13 +61,14 @@ function update_temperature_zero_conductivity!(state::SingleLevelThermoPhysicalS
 end
 
 """
-    update_temperature!(state::SingleLevelThermoPhysicalState, Δt)
+    update_temperature!(state::SingleAsteroidThermoPhysicalState, Δt)
+    update_temperature!(state::HierarchicalSingleAsteroidThermoPhysicalState, Δt)
 
 Update the temperature distribution for the next time step by solving the 1D heat conduction equation.
 The solver method is determined by `state.solver_cache`, and special handling is applied for zero conductivity.
 
 # Arguments
-- `state::SingleLevelThermoPhysicalState` : Thermophysical simulation state for a single asteroid
+- `state` : Thermophysical simulation state for a single asteroid, with or without surface roughness
 - `Δt::Real` : Time step [s]
 
 # Solver Selection
@@ -81,10 +82,11 @@ The function automatically selects the appropriate solver based on `state.solver
 - The zero-conductivity case uses instantaneous radiative equilibrium
 
 # Notes
-- For a `HierarchicalSingleAsteroidThermoPhysicalState`, only the global-level temperature
-  is advanced; the sub-face states in `roughness_states` are left untouched. The global
-  faces are solved independently of their roughness models and serve as the smooth-surface
-  baseline for the same run.
+- For a `HierarchicalSingleAsteroidThermoPhysicalState`, the global faces are advanced first
+  and then every sub-face state in `roughness_states`, each a full set of 1D columns driven by
+  its own fluxes and using its own solver cache. The global faces are solved independently of
+  their roughness models and serve as the smooth-surface baseline for the same run; nothing
+  flows from the sub-faces back to them.
 
 # Mathematical Background
 Solves the 1D heat conduction equation:
@@ -97,7 +99,17 @@ where α = k/(ρCₚ) is the thermal diffusivity.
 - `explicit_euler!`, `implicit_euler!`, `crank_nicolson!` for specific solver implementations
 - `update_temperature_zero_conductivity!` for the zero-conductivity case
 """
-function update_temperature!(state::SingleLevelThermoPhysicalState, Δt)
+update_temperature!(state::SingleAsteroidThermoPhysicalState, Δt) = _update_temperature!(state, Δt)
+
+function update_temperature!(state::HierarchicalSingleAsteroidThermoPhysicalState, Δt)
+    _update_temperature!(state, Δt)      # global faces: the smooth-surface baseline
+    for rs in state.roughness_states      # sub-faces of each roughness model
+        _update_temperature!(rs, Δt)
+    end
+end
+
+# Advance the faces that `state` describes directly, by the solver its cache was built for.
+function _update_temperature!(state::SingleLevelThermoPhysicalState, Δt)
     # Handle zero-conductivity case
     if iszero(state.problem.thermo_params.conductivity)
         update_temperature_zero_conductivity!(state)
