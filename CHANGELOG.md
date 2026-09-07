@@ -106,6 +106,16 @@ grid_params.Δz
 - **Breaking**: `SingleAsteroidThermoPhysicalProblem(shape, thermo_params; ...)` → `SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params; ...)`
 - **Breaking**: `BinaryAsteroidThermoPhysicalProblem((shape1, shape2), (tp1, tp2); ...)` → `BinaryAsteroidThermoPhysicalProblem((shape1, shape2), (tp1, tp2), (gp1, gp2); ...)`; a single `ThermoParams`/`GridParams` instance (non-tuple) can be shared between both bodies
 
+- **A missing face visibility graph now raises when the flag that needs it is enabled.** The
+  scattered-light and thermal-radiation updates used to return silently, so `with_self_heating
+  = true` on a shape whose graph was removed after problem construction produced zero
+  self-heating with no warning. They now fail the way the solar flux update already did for
+  `with_self_shadowing`
+- **The re-absorption recoil term in `update_thermal_force!` follows `with_self_heating`.** It
+  used to be applied whenever a visibility graph was present, so enabling `with_self_shadowing`
+  alone switched it on. It is the momentum counterpart of the re-absorbed energy and now follows
+  the same flag as the energy terms
+
 ### Removed
 
 - **Breaking**: `broadcast_thermo_params!` removed; single-body `ThermoParams` (length-1 vectors) are now expanded to `n_face` at `SingleAsteroidThermoPhysicalProblem` construction time via an internal `_expand_thermo_params` call, eliminating the need for mutation

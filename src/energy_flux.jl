@@ -179,6 +179,19 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 
+# Raise if `shape` lacks the visibility graph that the modeling flag `flag` requires. The
+# problem constructor builds the graph whenever the flag is enabled, so this is reached only
+# when the graph was removed from the (mutable) shape afterwards — which must fail loudly
+# rather than silently drop the term that depends on it.
+function _require_face_visibility_graph(shape::ShapeModel, flag::AbstractString)
+    isnothing(shape.face_visibility_graph) && error(
+        "face_visibility_graph must be built when `$flag` is enabled. " *
+        "Use `build_face_visibility_graph!(shape)` or load the shape with `with_face_visibility=true`."
+    )
+    return nothing
+end
+
+
 # Shared implementation of the solar flux update for the faces of `shape`. The shape is
 # passed explicitly because a `HierarchicalShapeModel` keeps its faces under `global_shape`
 # rather than as direct fields, so the caller decides which level is being updated.
@@ -191,13 +204,7 @@ function _update_flux_sun!(
 
     # Update illumination states
     if state.problem.with_self_shadowing
-        # Check face_visibility_graph availability for self-shadowing
-        if isnothing(shape.face_visibility_graph)
-            error(
-                "face_visibility_graph must be built when `with_self_shadowing` is enabled. " *
-                "Use `build_face_visibility_graph!(shape)` or load shape with `with_face_visibility=true`."
-            )
-        end
+        _require_face_visibility_graph(shape, "with_self_shadowing")
         update_illumination!(state.illuminated_faces, shape, r̂☉; with_self_shadowing=true)
     else
         update_illumination!(state.illuminated_faces, shape, r̂☉; with_self_shadowing=false)
@@ -362,7 +369,7 @@ end
 # `HierarchicalShapeModel` is being updated.
 function _update_flux_scat_single!(state::SingleLevelThermoPhysicalState, shape::ShapeModel)
     state.problem.with_self_heating == false && return
-    isnothing(shape.face_visibility_graph) && return
+    _require_face_visibility_graph(shape, "with_self_heating")
 
     for i_face in eachindex(shape.faces)
         state.flux_scat[i_face] = 0.
@@ -441,7 +448,7 @@ end
 # Shared implementation of the thermal-radiation absorption update for the faces of `shape`.
 function _update_flux_rad_single!(state::SingleLevelThermoPhysicalState, shape::ShapeModel)
     state.problem.with_self_heating == false && return
-    isnothing(shape.face_visibility_graph) && return
+    _require_face_visibility_graph(shape, "with_self_heating")
 
     for i in eachindex(shape.faces)
         state.flux_rad[i] = 0.

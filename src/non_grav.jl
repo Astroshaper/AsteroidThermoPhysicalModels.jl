@@ -40,7 +40,10 @@ where:
 - d̂_ij = unit vector from facet i to j
 
 The first term represents direct photon recoil normal to the surface.
-The second term accounts for photons intercepted by other facets (self-heating contribution).
+The second term accounts for photons intercepted by other facets: their momentum stays with
+the body, so it cancels part of the recoil. It is the momentum counterpart of the energy
+re-absorbed in self-heating, and is therefore applied only when `with_self_heating` is
+enabled; without it, every emitted photon counts as having left the body.
 
 # Outputs (stored in state)
 - `state.face_forces` : Thermal force vector on each facet [N]
@@ -59,6 +62,9 @@ The second term accounts for photons intercepted by other facets (self-heating c
 function update_thermal_force!(state::SingleAsteroidThermoPhysicalState)
     state.force  .= 0.
     state.torque .= 0.
+
+    with_self_heating = state.problem.with_self_heating
+    with_self_heating && _require_face_visibility_graph(state.problem.shape, "with_self_heating")
 
     for i in eachindex(state.problem.shape.faces)
         rᵢ = state.problem.shape.face_centers[i]
@@ -84,7 +90,7 @@ function update_thermal_force!(state::SingleAsteroidThermoPhysicalState)
         # For Lambertian surface: ∫cos(θ)dΩ = 2π/3 over hemisphere
         state.face_forces[i] = - 2/3 * Eᵢ * aᵢ / c₀ * n̂ᵢ  # Direct recoil force normal to face
         
-        if !isnothing(state.problem.shape.face_visibility_graph)
+        if with_self_heating
             # Face properties visible from `i`: View factors and directions
             view_factors = get_view_factors(state.problem.shape.face_visibility_graph, i)
             directions = get_visible_face_directions(state.problem.shape.face_visibility_graph, i)
