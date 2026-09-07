@@ -4,6 +4,30 @@ This page summarizes breaking changes between versions and how to update your co
 
 ---
 
+## v0.3.0
+
+The API changes of v0.2.0 and v0.3.0 are listed in the [changelog](https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl/blob/main/CHANGELOG.md).
+
+### Results that change: net thermal force on non-spherical shapes
+
+Up to v0.2.1 the net thermal force was accumulated as ``\sum_i (\hat{\mathbf{r}}_i \cdot \mathbf{F}_i)\,\hat{\mathbf{r}}_i``,
+each facet force projected onto the direction of its centre from the origin, instead of
+``\sum_i \mathbf{F}_i``. The projection has no physical basis — where a force acts does not enter the
+motion of the centre of mass — and dropped the tangential part of every facet force.
+
+- **Unaffected**: spheres centred at the origin and symmetric polyhedra whose facet centres lie
+  along their normals, where the projection is the identity or its spurious part cancels.
+- **Affected**: every irregular shape. On the 49k-facet Ryugu model the rotation-averaged net
+  force was about 7 % too small and 6° off in direction, and its component along the spin
+  axis had the wrong sign.
+
+`face_forces` and the torque are unchanged. If you have published or archived net forces
+(`forces` in the solution, `thermal_net_forces.csv`) computed with v0.2.1 or earlier on a
+non-spherical shape, recompute them with v0.3.0. See *Net force and torque* in the
+[physical model](physical_model.md) page.
+
+---
+
 ## v0.1.1
 
 No breaking changes. No migration required from v0.1.0.
