@@ -47,8 +47,9 @@ enabled; without it, every emitted photon counts as having left the body.
 
 # Outputs (stored in state)
 - `state.face_forces` : Thermal force vector on each facet [N]
-- `state.force` : Total thermal force in body-fixed frame [N]
-- `state.torque` : Total thermal torque in body-fixed frame [N⋅m]
+- `state.force` : Net thermal force `Σᵢ F_i` in the body-fixed frame [N]
+- `state.torque` : Net thermal torque `Σᵢ r_i × F_i` about the body-fixed origin [N⋅m]; the
+  origin is assumed to be the centre of mass
 
 # Physical Significance
 - The force causes orbital drift (Yarkovsky effect)
@@ -68,7 +69,6 @@ function update_thermal_force!(state::SingleAsteroidThermoPhysicalState)
 
     for i in eachindex(state.problem.shape.faces)
         rᵢ = state.problem.shape.face_centers[i]
-        r̂ᵢ = normalize(rᵢ)
         n̂ᵢ = state.problem.shape.face_normals[i]
         aᵢ = state.problem.shape.face_areas[i]
 
@@ -102,10 +102,13 @@ function update_thermal_force!(state::SingleAsteroidThermoPhysicalState)
             end
         end
 
-        ## Thermal force on the entire shape
+        ## Thermal force and torque on the entire shape. The net force is the plain sum of
+        ## the face forces: where a force acts does not enter the motion of the centre of
+        ## mass, only the torque. The torque is taken about the body-fixed origin, which is
+        ## assumed to be the centre of mass.
         dfᵢ = state.face_forces[i]
-        state.force  .+= (r̂ᵢ ⋅ dfᵢ) * r̂ᵢ  # Thermal force
-        state.torque .+= rᵢ × dfᵢ         # Thermal torque
+        state.force  .+= dfᵢ        # Thermal force
+        state.torque .+= rᵢ × dfᵢ   # Thermal torque
     end
 end
 
