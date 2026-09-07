@@ -7,6 +7,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
 - automatic preparation of the geometric data required for self-shadowing and self-heating
 - update_flux_sun! on the global level, compared against the plain ShapeModel result
 - update_flux_scat_single! / update_flux_rad_single! on the global level, likewise
+- update_temperature! on the global level, for all three solvers and for zero conductivity
 =#
 
 @testset "HierarchicalSingleAsteroidThermoPhysicalState" begin
@@ -285,5 +286,99 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         @test all(state_hier.flux_scat .== 0.0)
         @test all(state_hier.flux_rad  .== 0.0)
         @test any(>(0), state_hier.flux_sun)  # the shape is lit, so the zeros are the flag's doing
+    end
+
+    @testset "update_temperature! (global level)" begin
+        # The global faces of a hierarchical state are solved independently of their roughness
+        # models, so after any number of steps they must match the plain ShapeModel exactly.
+        # A concave crater with self-heating exercises every flux term in the surface balance.
+        make_crater(; as_hierarchical) =
+            create_shape_crater(0.4, 0.1; Nx=8, Ny=8, as_hierarchical)
+
+        n_faces = length(make_crater(as_hierarchical=false).faces)
+        T₀ = repeat(reshape(range(200.0, 300.0; length=n_faces) |> collect, 1, n_faces),
+                    grid_params.n_depth)
+        r☉ = SVector(0.2, -0.1, 1.0) * AsteroidThermoPhysicalModels.au2m
+        Δt = 100.0  # λ = αΔt/Δz² ≈ 0.12 keeps the explicit Euler step stable
+        n_steps = 10
+
+        for algorithm in (CrankNicolson(), ImplicitEuler(), ExplicitEuler())
+            shape_plain = make_crater(as_hierarchical=false)
+            shape_hier  = make_crater(as_hierarchical=true)
+            add_roughness_models!(shape_hier, create_shape_crater(0.4, 0.1; Nx=4, Ny=4))
+
+            problem_plain = SingleAsteroidThermoPhysicalProblem(shape_plain, thermo_params, grid_params;
+                with_self_shadowing=false, with_self_heating=true)
+            problem_hier  = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
+                with_self_shadowing=false, with_self_heating=true)
+
+            state_plain = AsteroidThermoPhysicalModels._build_single_state(problem_plain, algorithm)
+            state_hier  = AsteroidThermoPhysicalModels._build_single_state(problem_hier,  algorithm)
+            AsteroidThermoPhysicalModels.init_temperature!(state_plain, T₀)
+            AsteroidThermoPhysicalModels.init_temperature!(state_hier,  T₀)
+
+            for _ in 1:n_steps, state in (state_plain, state_hier)
+                AsteroidThermoPhysicalModels.update_flux_sun!(state, r☉)
+                AsteroidThermoPhysicalModels.update_flux_scat_single!(state)
+                AsteroidThermoPhysicalModels.update_flux_rad_single!(state)
+                AsteroidThermoPhysicalModels.update_temperature!(state, Δt)
+            end
+
+            # Global level matches the plain ShapeModel result exactly, and has actually moved
+            @test state_hier.temperature == state_plain.temperature
+            @test state_hier.temperature != T₀
+
+            # Sub-face states are not advanced by the global-level update
+            for (i, k) in enumerate(state_hier.face_roughness_indices)
+                k == 0 && continue
+                @test all(state_hier.roughness_states[k].temperature .== T₀[begin, i])
+            end
+        end
+    end
+
+    @testset "update_temperature! (global level, zero conductivity)" begin
+        # Zero conductivity replaces the solver by instantaneous radiative equilibrium at the
+        # surface, which is the one code path that used to reach for `shape.faces` directly.
+        thermo_params_k0 = ThermoParams(
+            conductivity    = 0.0,
+            density         = 1000.0,
+            heat_capacity   = 700.0,
+            reflectance_vis = 0.1,
+            reflectance_ir  = 0.0,
+            emissivity      = 0.9,
+        )
+
+        shape_plain = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
+        shape_hier  = create_shape_crater(0.4, 0.1; Nx=8, Ny=8, as_hierarchical=true)
+        add_roughness_models!(shape_hier, create_shape_crater(0.4, 0.1; Nx=4, Ny=4))
+
+        problem_plain = SingleAsteroidThermoPhysicalProblem(shape_plain, thermo_params_k0, grid_params;
+            with_self_shadowing=false, with_self_heating=true)
+        problem_hier  = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params_k0, grid_params;
+            with_self_shadowing=false, with_self_heating=true)
+
+        state_plain = AsteroidThermoPhysicalModels._build_single_state(problem_plain, CrankNicolson())
+        state_hier  = AsteroidThermoPhysicalModels._build_single_state(problem_hier,  CrankNicolson())
+        AsteroidThermoPhysicalModels.init_temperature!(state_plain, 250.0)
+        AsteroidThermoPhysicalModels.init_temperature!(state_hier,  250.0)
+
+        r☉ = SVector(0.2, -0.1, 1.0) * AsteroidThermoPhysicalModels.au2m
+        for state in (state_plain, state_hier)
+            AsteroidThermoPhysicalModels.update_flux_sun!(state, r☉)
+            AsteroidThermoPhysicalModels.update_flux_scat_single!(state)
+            AsteroidThermoPhysicalModels.update_flux_rad_single!(state)
+            AsteroidThermoPhysicalModels.update_temperature!(state, 100.0)
+        end
+
+        @test state_hier.temperature == state_plain.temperature
+
+        # Surface is in radiative equilibrium with the absorbed flux: εσT⁴ = F_abs
+        εσ = 0.9 * AsteroidThermoPhysicalModels.σ_SB
+        for i in axes(state_hier.temperature, 2)
+            F_abs = AsteroidThermoPhysicalModels.absorbed_energy_flux(
+                0.1, 0.0, state_hier.flux_sun[i], state_hier.flux_scat[i], state_hier.flux_rad[i])
+            @test state_hier.temperature[begin, i] ≈ (F_abs / εσ)^(1/4)
+        end
+        @test any(>(0), state_hier.temperature[begin, :])
     end
 end
