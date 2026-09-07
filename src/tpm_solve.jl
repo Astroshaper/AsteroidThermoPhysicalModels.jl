@@ -73,16 +73,16 @@ function _build_single_state(
             [problem.thermo_params.reflectance_ir[i]],
             [problem.thermo_params.emissivity[i]],
         )
-        # Self-shadowing inside a roughness model is the origin of thermal beaming, so it is
-        # always on rather than inherited from the global problem: a roughness model without
-        # it has no physical meaning. The constructor builds the visibility graph and the
+        # Self-shadowing and self-heating inside a roughness model are the origin of thermal
+        # beaming, so both are always on rather than inherited from the global problem: a
+        # roughness model without them has no physical meaning. The global problem's
+        # `with_self_heating` governs the global faces only, and through them the external
+        # irradiation of the sub-faces. The constructor builds the visibility graph and the
         # maximum elevations on the roughness model, which is shared by all faces, once.
-        # TODO: Self-heating inside the roughness model is enabled together with the sub-face
-        #       scattering and thermal radiation updates.
         mini_prob = SingleAsteroidThermoPhysicalProblem(
             roughness_shape, tp_sub, problem.grid_params;
             with_self_shadowing = true,
-            with_self_heating   = false,
+            with_self_heating   = true,
             upper_boundary_condition = problem.upper_boundary_condition,
             lower_boundary_condition = problem.lower_boundary_condition,
         )
