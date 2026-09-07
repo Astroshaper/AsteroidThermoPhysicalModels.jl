@@ -127,6 +127,13 @@ grid_params.Δz
 
 ### Fixed
 
+- **`flux_rad` carried the emitter's thermal-infrared reflectance.** The self-heating and
+  mutual-heating thermal radiation terms multiplied the emission of the source face by
+  `1 − R_ir` of the *source*, on top of the `1 − R_ir` of the *receiving* face applied by the
+  surface boundary condition, so with a non-zero `R_ir` the absorbed thermal radiation was
+  counted short by a factor `1 − R_ir`. `flux_rad` is now the incident irradiance, like
+  `flux_sun` and `flux_scat`, and the receiving face's reflectance is applied exactly once.
+  No change for the default `R_ir = 0`
 - **Self-heating silently did nothing without a face visibility graph.** When a shape was
   loaded without `with_face_visibility=true`, `with_self_heating = true` was accepted but the
   scattered-light and thermal-radiation flux updates returned early and the re-absorption
