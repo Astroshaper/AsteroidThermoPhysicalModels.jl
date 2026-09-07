@@ -16,6 +16,10 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
 - update_temperature! on the sub-face level: the sub-faces advance, a near-flat roughness model
   reproduces the temperature of its parent face, and zero conductivity gives radiative
   equilibrium on every sub-face
+- update_thermal_force!: faces without roughness keep the plain result, a near-flat roughness
+  model reproduces the force on its parent face, the roughness scale cancels, a deep crater
+  changes the force and the net force/torque are re-summed, and the sky re-absorption term
+  follows the global self-heating flag
 =#
 
 @testset "HierarchicalSingleAsteroidThermoPhysicalState" begin
@@ -677,6 +681,182 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
                 @test rs.temperature[begin, j] ≈ (F_abs / εσ)^(1/4)
             end
             @test any(>(0), rs.temperature[begin, :])
+        end
+    end
+
+    # ---- update_thermal_force! ----------------------------------------------------------
+
+    # One flux update followed by the thermal force, on a state whose temperature is set.
+    function update_fluxes_and_force!(state, r☉)
+        AsteroidThermoPhysicalModels.update_flux_sun!(state, r☉)
+        AsteroidThermoPhysicalModels.update_flux_scat_single!(state)
+        AsteroidThermoPhysicalModels.update_flux_rad_single!(state)
+        AsteroidThermoPhysicalModels.update_thermal_force!(state)
+    end
+
+    @testset "update_thermal_force! (global level, partial roughness)" begin
+        # A global face without a roughness model keeps the plain ShapeModel force exactly;
+        # the one face with a crater gets a different force (its recoil is that of the crater).
+        path_obj = joinpath(@__DIR__, "shape", "icosahedron.obj")
+        shape_plain = load_shape_obj(path_obj)
+        shape_hier  = load_shape_obj(path_obj; as_hierarchical=true)
+        add_roughness_models!(shape_hier, roughness_model, 1)
+
+        problem_plain = SingleAsteroidThermoPhysicalProblem(shape_plain, thermo_params, grid_params;
+            with_self_shadowing=false, with_self_heating=false)
+        problem_hier  = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
+            with_self_shadowing=false, with_self_heating=false)
+        state_plain = AsteroidThermoPhysicalModels._build_single_state(problem_plain, CrankNicolson())
+        state_hier  = AsteroidThermoPhysicalModels._build_single_state(problem_hier,  CrankNicolson())
+        AsteroidThermoPhysicalModels.init_temperature!(state_plain, 250.0)
+        AsteroidThermoPhysicalModels.init_temperature!(state_hier,  250.0)
+
+        r☉ = SVector(0.3, -0.2, 0.9) * AsteroidThermoPhysicalModels.au2m
+        update_fluxes_and_force!(state_plain, r☉)
+        update_fluxes_and_force!(state_hier,  r☉)
+
+        @test state_hier.face_forces[2:end] == state_plain.face_forces[2:end]
+        @test state_hier.face_forces[1]     != state_plain.face_forces[1]
+        @test state_hier.force ≈ sum(state_hier.face_forces)
+    end
+
+    @testset "update_thermal_force! (near-flat roughness reproduces the parent face)" begin
+        # A roughness model flat to 1e-6 has no self-heating and the normal of its parent, so
+        # the sum of its sub-face forces, counted for the parent's area and rotated back, must
+        # be the plain force on the parent. This pins both the rotation and the A_i / A_proj
+        # normalisation.
+        path_obj = joinpath(@__DIR__, "shape", "icosahedron.obj")
+        shape_plain = load_shape_obj(path_obj)
+        shape_hier  = load_shape_obj(path_obj; as_hierarchical=true)
+        add_roughness_models!(shape_hier, create_shape_crater(0.4, 1e-6; Nx=4, Ny=4))
+
+        problem_plain = SingleAsteroidThermoPhysicalProblem(shape_plain, thermo_params, grid_params;
+            with_self_shadowing=false, with_self_heating=false)
+        problem_hier  = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
+            with_self_shadowing=false, with_self_heating=false)
+        state_plain = AsteroidThermoPhysicalModels._build_single_state(problem_plain, CrankNicolson())
+        state_hier  = AsteroidThermoPhysicalModels._build_single_state(problem_hier,  CrankNicolson())
+        AsteroidThermoPhysicalModels.init_temperature!(state_plain, 250.0)
+        AsteroidThermoPhysicalModels.init_temperature!(state_hier,  250.0)
+
+        r☉ = SVector(0.3, -0.2, 0.9) * AsteroidThermoPhysicalModels.au2m
+        r̂☉ = normalize(r☉)
+        update_fluxes_and_force!(state_plain, r☉)
+        update_fluxes_and_force!(state_hier,  r☉)
+
+        n_checked = 0
+        for i in eachindex(shape_plain.faces)
+            # Skip grazing incidence, where the 1e-6 tilt of the sub-face normals is not small
+            # against cos θ of the parent (same reasoning as for the fluxes)
+            state_hier.illuminated_faces[i] && shape_plain.face_normals[i] ⋅ r̂☉ < 0.05 && continue
+            n_checked += 1
+            @test isapprox(state_hier.face_forces[i], state_plain.face_forces[i]; rtol=1e-4)
+        end
+        @test n_checked > 0
+        @test isapprox(state_hier.force, state_plain.force; rtol=1e-4)
+    end
+
+    @testset "update_thermal_force! (roughness scale cancels)" begin
+        # The force on one patch grows as scale², the number of patches covering the face falls
+        # as scale⁻²: the face force must not depend on the scale of the roughness model.
+        path_obj = joinpath(@__DIR__, "shape", "icosahedron.obj")
+        r☉ = SVector(0.3, -0.2, 0.9) * AsteroidThermoPhysicalModels.au2m
+
+        states = map((1.0, 0.1)) do scale
+            shape_hier = load_shape_obj(path_obj; as_hierarchical=true)
+            add_roughness_models!(shape_hier, roughness_model; scale)
+            problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
+                with_self_shadowing=false, with_self_heating=false)
+            state_hier = AsteroidThermoPhysicalModels._build_single_state(problem_hier, CrankNicolson())
+            AsteroidThermoPhysicalModels.init_temperature!(state_hier, 250.0)
+            update_fluxes_and_force!(state_hier, r☉)
+            state_hier
+        end
+
+        @test all(isapprox.(states[1].face_forces, states[2].face_forces; rtol=1e-12))
+        @test isapprox(states[1].force,  states[2].force;  rtol=1e-12)
+        @test isapprox(states[1].torque, states[2].torque; rtol=1e-12)
+        @test any(f -> norm(f) > 0, states[1].face_forces)
+    end
+
+    @testset "update_thermal_force! (deep crater changes the force; net force and torque re-summed)" begin
+        path_obj = joinpath(@__DIR__, "shape", "icosahedron.obj")
+        shape_plain = load_shape_obj(path_obj)
+        shape_hier  = load_shape_obj(path_obj; as_hierarchical=true)
+        add_roughness_models!(shape_hier, roughness_model)
+
+        problem_plain = SingleAsteroidThermoPhysicalProblem(shape_plain, thermo_params, grid_params;
+            with_self_shadowing=false, with_self_heating=false)
+        problem_hier  = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
+            with_self_shadowing=false, with_self_heating=false)
+        state_plain = AsteroidThermoPhysicalModels._build_single_state(problem_plain, CrankNicolson())
+        state_hier  = AsteroidThermoPhysicalModels._build_single_state(problem_hier,  CrankNicolson())
+        AsteroidThermoPhysicalModels.init_temperature!(state_plain, 250.0)
+        AsteroidThermoPhysicalModels.init_temperature!(state_hier,  250.0)
+
+        # A few steps so that the crater walls develop a temperature contrast
+        r☉ = SVector(0.3, -0.2, 0.9) * AsteroidThermoPhysicalModels.au2m
+        for state in (state_plain, state_hier), _ in 1:5
+            AsteroidThermoPhysicalModels.update_flux_sun!(state, r☉)
+            AsteroidThermoPhysicalModels.update_flux_scat_single!(state)
+            AsteroidThermoPhysicalModels.update_flux_rad_single!(state)
+            AsteroidThermoPhysicalModels.update_temperature!(state, 100.0)
+        end
+        update_fluxes_and_force!(state_plain, r☉)
+        update_fluxes_and_force!(state_hier,  r☉)
+
+        @test all(state_hier.face_forces .!= state_plain.face_forces)
+        @test all(f -> all(isfinite, f), state_hier.face_forces)
+        @test state_hier.force  ≈ sum(state_hier.face_forces)
+        @test state_hier.torque ≈ sum(r × f for (r, f) in zip(shape_hier.global_shape.face_centers, state_hier.face_forces))
+    end
+
+    @testset "update_thermal_force! (sky re-absorption term follows the global self-heating)" begin
+        # On a globally concave shape, the photons that leave a roughness model towards the sky
+        # can hit other global faces. Their momentum is added only when the global self-heating
+        # is on; without it the face force is exactly the normalised sum of the sub-face forces.
+        ẑ  = SVector(0.0, 0.0, 1.0)
+        c₀ = AsteroidThermoPhysicalModels.c₀
+        σ  = AsteroidThermoPhysicalModels.σ_SB
+        R_vis, R_ir, ε = 0.1, 0.0, 0.9   # as in `thermo_params`
+        r☉ = SVector(0.2, -0.1, 1.0) * AsteroidThermoPhysicalModels.au2m
+
+        for with_self_heating in (true, false)
+            shape_hier = create_shape_crater(0.4, 0.1; Nx=8, Ny=8, as_hierarchical=true)
+            add_roughness_models!(shape_hier, create_shape_crater(0.4, 0.1; Nx=4, Ny=4))
+            problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
+                with_self_shadowing=false, with_self_heating)
+            state_hier = AsteroidThermoPhysicalModels._build_single_state(problem_hier, CrankNicolson())
+            AsteroidThermoPhysicalModels.init_temperature!(state_hier, 250.0)
+            update_fluxes_and_force!(state_hier, r☉)
+
+            global_shape = shape_hier.global_shape
+            n_sky = 0
+            for (i, k) in enumerate(state_hier.face_roughness_indices)
+                rs = state_hier.roughness_states[k]
+                rshape = rs.problem.shape
+                A_proj = sum(a * (n̂ ⋅ ẑ) for (a, n̂) in zip(rshape.face_areas, rshape.face_normals))
+                patches_per_face = global_shape.face_areas[i] / A_proj
+                patch = patches_per_face * transform_physical_vector_local_to_global(shape_hier, i, sum(rs.face_forces))
+
+                if with_self_heating
+                    P_sky = patches_per_face * sum(eachindex(rshape.faces)) do j
+                        E_j   = R_vis * (rs.flux_sun[j] + rs.flux_scat[j]) + R_ir * rs.flux_rad[j] + ε * σ * rs.temperature[begin, j]^4
+                        f_sky = max(0.0, 1 - sum(get_view_factors(rshape.face_visibility_graph, j)))
+                        E_j * rshape.face_areas[j] * f_sky
+                    end
+                    sky = sum(zip(get_view_factors(global_shape.face_visibility_graph, i),
+                                  get_visible_face_directions(global_shape.face_visibility_graph, i));
+                              init=zero(SVector{3, Float64})) do (f, d̂)
+                        P_sky / c₀ * f * d̂
+                    end
+                    norm(sky) > 0 && (n_sky += 1)
+                    @test isapprox(state_hier.face_forces[i], patch + sky; rtol=1e-12)
+                else
+                    @test isapprox(state_hier.face_forces[i], patch; rtol=1e-12)
+                end
+            end
+            with_self_heating && @test n_sky > 0
         end
     end
 end

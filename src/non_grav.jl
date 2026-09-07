@@ -130,6 +130,93 @@ end
 
 
 """
+    update_thermal_force!(state::HierarchicalSingleAsteroidThermoPhysicalState)
+
+Calculate the thermal recoil force and torque on an asteroid with surface roughness.
+
+# Arguments
+- `state::HierarchicalSingleAsteroidThermoPhysicalState` : Thermophysical simulation state for a single asteroid with surface roughness
+
+# Algorithm
+1. Global level: the recoil on every global face from the smooth-surface fluxes and
+   temperatures, exactly as for `SingleAsteroidThermoPhysicalState`. This is the baseline, and
+   it is what a global face without a roughness model keeps.
+2. Sub-face level, for every global face `i` that carries a roughness model: the recoil on each
+   sub-face `j` in the local frame of the model, including the momentum of the photons
+   intercepted by the other sub-faces (self-heating inside a roughness model is always on).
+   The roughness model is a patch that represents the surface of the parent face
+   statistically, so the sum is counted for the parent's area rather than for the area of
+   the patch, and rotated into the body frame:
+   ```
+   F_i = (A_i / A_proj) × R_iᵀ Σⱼ f_j,    A_proj = Σⱼ a_j (n̂_j ⋅ ẑ)
+   ```
+   where `f_j` and `a_j` are the force and area of sub-face `j` in the units of the model,
+   `A_proj` is the area of the model projected onto its reference plane, and `R_i` rotates
+   from the body frame to the local frame. The `scale` of the roughness model cancels: the
+   force on one patch grows as `scale²` and the number of patches covering the face falls as
+   `scale⁻²`. The result replaces `face_forces[i]`.
+3. With `with_self_heating`, the photons that leave the roughness model towards the sky and
+   are intercepted by other global faces `k` are accounted for as for a smooth face, taking
+   the emission of the patch as isotropic: the power escaping the model,
+   `P_sky = (A_i / A_proj) Σⱼ E_j a_j f_sky,j`, contributes `P_sky / c × Σₖ f_ik d̂_ik`.
+   This is the momentum counterpart of the external irradiation of the sub-faces.
+4. `force` and `torque` are summed from the resulting `face_forces`. The torque takes the
+   centre of the parent face as the point of action; the torque of the patch about its own
+   centre is smaller by the ratio of the patch size to the body size and is neglected.
+
+# Notes
+- The sub-face states' own `force` and `torque` are summed about the local origin of each
+  roughness model and are not used here.
+- Only the derived quantities of the global faces are overwritten; their fluxes and
+  temperatures remain the smooth-surface solution.
+"""
+function update_thermal_force!(state::HierarchicalSingleAsteroidThermoPhysicalState)
+    shape             = state.problem.shape
+    global_shape      = shape.global_shape
+    with_self_heating = state.problem.with_self_heating
+
+    _update_face_forces!(state, global_shape)  # smooth-surface baseline on every global face
+
+    for (i, k) in enumerate(state.face_roughness_indices)
+        k == 0 && continue
+        rs = state.roughness_states[k]
+        roughness_shape = rs.problem.shape
+        update_thermal_force!(rs)  # includes the re-absorption inside the roughness model
+
+        # Representative patch: count the model-unit forces for the parent's area. The
+        # rotation is linear, so the sub-face forces are summed first and rotated once.
+        patches_per_face = global_shape.face_areas[i] / _projected_area(roughness_shape)
+        f_sum = sum(rs.face_forces)
+        state.face_forces[i] = patches_per_face * transform_physical_vector_local_to_global(shape, i, f_sum)
+
+        # Photons that leave the roughness model towards the sky and are intercepted by other
+        # global faces: the momentum counterpart of the external irradiation, isotropic.
+        if with_self_heating
+            graph_sub = roughness_shape.face_visibility_graph
+            P_sky = patches_per_face * sum(eachindex(roughness_shape.faces)) do j
+                _emittance(rs, j) * roughness_shape.face_areas[j] * _sky_view_factor(graph_sub, j)
+            end
+            view_factors = get_view_factors(global_shape.face_visibility_graph, i)
+            directions   = get_visible_face_directions(global_shape.face_visibility_graph, i)
+            for (fᵢₖ, d̂ᵢₖ) in zip(view_factors, directions)
+                state.face_forces[i] += P_sky / c₀ * fᵢₖ * d̂ᵢₖ
+            end
+        end
+    end
+
+    _accumulate_force_torque!(state, global_shape)
+end
+
+
+# Area of `shape` projected onto its reference plane, Σⱼ aⱼ (n̂ⱼ ⋅ ẑ), with ẑ the normal of the
+# reference plane in the local frame of a roughness model.
+function _projected_area(shape::ShapeModel)
+    ẑ = SVector(0.0, 0.0, 1.0)
+    sum(a * (n̂ ⋅ ẑ) for (a, n̂) in zip(shape.face_areas, shape.face_normals))
+end
+
+
+"""
     update_thermal_force!(state::BinaryAsteroidThermoPhysicalState)
 
 Calculate the thermal force and torque on every face and integrate them over all faces.
