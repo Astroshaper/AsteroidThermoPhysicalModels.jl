@@ -129,6 +129,14 @@ grid_params.Δz
 
 ### Fixed
 
+- **The net thermal force dropped the tangential part of every face force.** `update_thermal_force!`
+  accumulated `(r̂ᵢ ⋅ Fᵢ) r̂ᵢ` — each face force projected onto the direction of the face
+  centre from the origin — instead of `Fᵢ`. Where a force acts does not enter the motion of
+  the centre of mass, so the projection had no physical basis; it rotated each face force
+  towards the radial direction and scaled it by `r̂ᵢ ⋅ n̂ᵢ`, which on Ryugu ranges from −0.28
+  to 1. On an isothermal closed body the net recoil must vanish, and the projected sum did
+  not (0.14 % of the one-sided force scale on the 49k-face Ryugu shape). The net force is
+  now `Σᵢ Fᵢ`; the torque was already `Σᵢ rᵢ × Fᵢ` and is unchanged
 - **`flux_rad` carried the emitter's thermal-infrared reflectance.** The self-heating and
   mutual-heating thermal radiation terms multiplied the emission of the source face by
   `1 − R_ir` of the *source*, on top of the `1 − R_ir` of the *receiving* face applied by the

@@ -138,6 +138,20 @@ The Yarkovsky effect is an orbital perturbation caused by the asymmetric thermal
 
 The YORP effect (Yarkovsky-O'Keefe-Radzievskii-Paddack effect) is a rotational perturbation resulting from thermal emission due to the asymmetric shape of the asteroid. This effect influences the rotation rate and the orientation of the asteroid's spin axis.
 
+### Net force and torque
+
+The photon recoil on each facet ``i`` is integrated over the surface as
+
+```math
+\mathbf{F} = \sum_i \mathbf{F}_i, \qquad
+\boldsymbol{\tau} = \sum_i \mathbf{r}_i \times \mathbf{F}_i
+```
+
+where ``\mathbf{F}_i`` is the recoil force on facet ``i`` (direct emission and reflection, plus the momentum of photons intercepted by other facets when self-heating is enabled) and ``\mathbf{r}_i`` is the position of the facet centre. The net force is the plain vector sum: where a force acts does not enter the motion of the centre of mass, only the torque. The torque is taken about the body-fixed origin, which is therefore assumed to coincide with the centre of mass.
+
+!!! warning "Net force before v0.3.0"
+    Up to v0.2.1 the net force was accumulated as ``\sum_i (\hat{\mathbf{r}}_i \cdot \mathbf{F}_i)\,\hat{\mathbf{r}}_i`` — each facet force projected onto the direction of its centre from the origin. This has no physical basis and dropped the tangential part of every facet force; it was corrected in [#232](https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl/pull/232). It is harmless on a sphere centred at the origin, where ``\hat{\mathbf{r}}_i = \hat{\mathbf{n}}_i``, and on symmetric polyhedra whose facet centres lie along their normals, but on an irregular body it biases the Yarkovsky force. As an order of magnitude, on the 49k-facet Ryugu shape the rotation-averaged net force came out about 7 % too small in magnitude and 6° off in direction. Net forces computed with earlier versions on non-spherical shapes should be recomputed.
+
 ## Binary Asteroid Systems
 
 For binary asteroid systems, `AsteroidThermoPhysicalModels.jl` provides comprehensive modeling of thermal interactions between the primary and secondary bodies.
