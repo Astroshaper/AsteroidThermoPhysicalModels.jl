@@ -102,8 +102,14 @@ grid_params.Δz
   inside a roughness model are always on; the problem's `with_self_heating` governs the global
   faces and, through them, the external irradiation of the sub-faces. `update_temperature!`
   advances the sub-faces after the global faces, each as a full set of 1D columns driven by its
-  own fluxes. Sub-face thermal forces and the `solve` integration land in a later release of
-  the v0.3.0 series
+  own fluxes. `update_thermal_force!` computes the recoil on every sub-face, including the
+  momentum of photons re-absorbed inside the roughness model, and replaces the force on the
+  parent face by the sum, counted for the parent's area as a representative patch
+  (`F_i = (A_i / A_proj) Σⱼ fⱼ`, rotated into the body frame; the roughness `scale` cancels);
+  the torque acts at the parent face centre, and with `with_self_heating` the photons that
+  leave the roughness model towards the sky and are intercepted by other global faces are
+  accounted for isotropically. The `solve` integration lands in a later release of the v0.3.0
+  series
 
 ### Changed
 

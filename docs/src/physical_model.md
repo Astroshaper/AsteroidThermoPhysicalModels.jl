@@ -152,6 +152,19 @@ where ``\mathbf{F}_i`` is the recoil force on facet ``i`` (direct emission and r
 !!! warning "Net force before v0.3.0"
     Up to v0.2.1 the net force was accumulated as ``\sum_i (\hat{\mathbf{r}}_i \cdot \mathbf{F}_i)\,\hat{\mathbf{r}}_i`` — each facet force projected onto the direction of its centre from the origin. This has no physical basis and dropped the tangential part of every facet force; it was corrected in [#232](https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl/pull/232). It is harmless on a sphere centred at the origin, where ``\hat{\mathbf{r}}_i = \hat{\mathbf{n}}_i``, and on symmetric polyhedra whose facet centres lie along their normals, but on an irregular body it biases the Yarkovsky force. As an order of magnitude, on the 49k-facet Ryugu shape the rotation-averaged net force came out about 7 % too small in magnitude and 6° off in direction. Net forces computed with earlier versions on non-spherical shapes should be recomputed.
 
+### Facets with a roughness model
+
+When a facet ``i`` of a `HierarchicalShapeModel` carries a roughness model, the recoil is computed on every sub-facet ``j`` of that model in its local frame — direct emission and reflection, plus the momentum of photons intercepted by the other sub-facets, which is always included — and the facet force is replaced by their sum. The roughness model is a patch that represents the surface of the facet statistically, so the sum is counted for the area of the facet rather than for the area of the patch:
+
+```math
+\mathbf{F}_i = \frac{A_i}{A_\mathrm{proj}} \, \mathbf{R}_i^{\mathsf T} \sum_j \mathbf{f}_j, \qquad
+A_\mathrm{proj} = \sum_j a_j \, (\hat{\mathbf{n}}_j \cdot \hat{\mathbf{z}})
+```
+
+where ``\mathbf{f}_j`` and ``a_j`` are the force and area of sub-facet ``j`` in the units of the roughness model, ``A_\mathrm{proj}`` is the area of the model projected onto its reference plane (``\hat{\mathbf{z}}`` is the local normal), and ``\mathbf{R}_i`` rotates from the body frame to the local frame of facet ``i``. The `scale` given to `add_roughness_models!` does not enter: the force on one patch grows as ``\mathrm{scale}^2`` and the number of patches covering the facet falls as ``\mathrm{scale}^{-2}``. The torque uses the facet centre ``\mathbf{r}_i`` as the point of action; the torque of the patch about its own centre is smaller by the ratio of the patch size to the body size and is neglected.
+
+When self-heating is enabled, the photons that leave the roughness model towards the sky and are intercepted by other facets ``k`` of the global shape are accounted for as for a smooth facet, taking the emission of the patch as isotropic: the power ``P_{\mathrm{sky},i} = (A_i / A_\mathrm{proj}) \sum_j E_j a_j f_{\mathrm{sky},j}`` that escapes the model, with ``f_{\mathrm{sky},j}`` the sky view factor of sub-facet ``j``, contributes ``(P_{\mathrm{sky},i} / c) \sum_k f_{ik} \hat{\mathbf{d}}_{ik}``.
+
 ## Binary Asteroid Systems
 
 For binary asteroid systems, `AsteroidThermoPhysicalModels.jl` provides comprehensive modeling of thermal interactions between the primary and secondary bodies.

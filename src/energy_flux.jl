@@ -450,10 +450,14 @@ function _add_external_irradiance!(flux_sub::AbstractVector, shape::ShapeModel, 
     iszero(flux_parent) && return
     graph = shape.face_visibility_graph
     for j in eachindex(shape.faces)
-        f_sky = max(0.0, 1 - sum(get_view_factors(graph, j)))
-        flux_sub[j] += f_sky * flux_parent
+        flux_sub[j] += _sky_view_factor(graph, j) * flux_parent
     end
 end
+
+
+# Sky view factor of face `j`: the part of its hemisphere not covered by the other faces of
+# the same shape, `1 − Σₖ fⱼₖ`. Clamped at zero against round-off in the view factors.
+_sky_view_factor(graph::FaceVisibilityGraph, j::Integer) = max(0.0, 1 - sum(get_view_factors(graph, j)))
 
 """
     update_flux_scat_single!(state::BinaryAsteroidThermoPhysicalState)
