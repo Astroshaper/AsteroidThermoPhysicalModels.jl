@@ -6,6 +6,8 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
 - init_temperature! for HierarchicalSingleAsteroidThermoPhysicalState (Real and AbstractMatrix)
 - automatic preparation of the geometric data required for self-shadowing and self-heating
 - update_flux_sun! on the global level, compared against the plain ShapeModel result
+- update_flux_sun! on the sub-face level: gate on the global illumination, consistency with a
+  standalone roughness model, and a near-flat roughness model reproducing the parent face
 - update_flux_scat_single! / update_flux_rad_single! on the global level, likewise
 - update_temperature! on the global level, for all three solvers and for zero conductivity
 =#
@@ -197,13 +199,122 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
                 end
                 @test any(state_hier.illuminated_faces) && !all(state_hier.illuminated_faces)
 
-                # Sub-face states are not touched by the global-level update
-                for rs in state_hier.roughness_states
+                # Sub-faces of a dark global face are all dark (the sub-face level is covered
+                # in detail by the dedicated testsets below)
+                for (i, k) in enumerate(state_hier.face_roughness_indices)
+                    k == 0 && continue
+                    state_hier.illuminated_faces[i] && continue
+                    rs = state_hier.roughness_states[k]
                     @test !any(rs.illuminated_faces)
                     @test all(rs.flux_sun .== 0.0)
                 end
             end
         end
+    end
+
+    @testset "update_flux_sun! (sub-face level)" begin
+        # For a lit global face, the sub-faces must be exactly what a standalone state of the
+        # roughness model gives for the Sun vector rotated into the local frame. For a dark
+        # global face, every sub-face must be dark regardless of the local geometry: the
+        # roughness model has no terrain beyond its rim, so a Sun just below the local horizon
+        # would otherwise light sub-faces tilted towards it.
+        path_obj = joinpath(@__DIR__, "shape", "icosahedron.obj")
+        crater   = create_shape_crater(0.4, 0.1; Nx=6, Ny=6)
+
+        shape_hier = load_shape_obj(path_obj; as_hierarchical=true)
+        add_roughness_models!(shape_hier, crater)
+        problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
+            with_self_shadowing=true, with_self_heating=false)
+        state_hier = AsteroidThermoPhysicalModels._build_single_state(problem_hier, CrankNicolson())
+
+        # A standalone state of the same roughness model, illuminated with the same model
+        problem_alone = SingleAsteroidThermoPhysicalProblem(crater, thermo_params, grid_params;
+            with_self_shadowing=true, with_self_heating=false)
+        state_alone = AsteroidThermoPhysicalModels._build_single_state(problem_alone, CrankNicolson())
+
+        # Sub-face self-shadowing is always on, so the roughness model carries its geometry
+        @test !isnothing(crater.face_visibility_graph)
+        @test !isnothing(crater.face_max_elevations)
+
+        r☉s = [
+            SVector(1.0, 0.0, 0.0) * AsteroidThermoPhysicalModels.au2m,
+            SVector(0.3, -0.5, 0.8) * 1.2AsteroidThermoPhysicalModels.au2m,
+        ]
+        for r☉ in r☉s
+            AsteroidThermoPhysicalModels.update_flux_sun!(state_hier, r☉)
+
+            n_lit_parents = n_dark_parents = 0
+            for (i, k) in enumerate(state_hier.face_roughness_indices)
+                rs = state_hier.roughness_states[k]
+                if state_hier.illuminated_faces[i]
+                    n_lit_parents += 1
+                    r☉_local = transform_physical_vector_global_to_local(shape_hier, i, r☉)
+                    @test norm(r☉_local) ≈ norm(r☉)   # pure rotation: solar flux is preserved
+                    AsteroidThermoPhysicalModels.update_flux_sun!(state_alone, r☉_local)
+                    @test rs.illuminated_faces == state_alone.illuminated_faces
+                    @test rs.flux_sun          == state_alone.flux_sun
+                    @test any(rs.illuminated_faces)
+                else
+                    n_dark_parents += 1
+                    @test !any(rs.illuminated_faces)
+                    @test all(rs.flux_sun .== 0.0)
+                end
+            end
+            # Both branches of the gate were exercised
+            @test n_lit_parents > 0 && n_dark_parents > 0
+        end
+    end
+
+    @testset "update_flux_sun! (near-flat roughness reproduces the parent face)" begin
+        # With a roughness model that is flat to 1e-6, every sub-face has the normal of its
+        # parent face, so its solar flux must equal the parent's. This pins the rotation into
+        # the local frame: a wrong rotation would change cos θ and show up here.
+        shape_hier = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"); as_hierarchical=true)
+        add_roughness_models!(shape_hier, create_shape_crater(0.4, 1e-6; Nx=4, Ny=4))
+        problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
+            with_self_shadowing=false, with_self_heating=false)
+        state_hier = AsteroidThermoPhysicalModels._build_single_state(problem_hier, CrankNicolson())
+
+        r☉ = SVector(0.3, -0.2, 0.9) * AsteroidThermoPhysicalModels.au2m
+        AsteroidThermoPhysicalModels.update_flux_sun!(state_hier, r☉)
+
+        # The residual tilt of the sub-face normals (~1e-6) is an absolute error in cos θ, so
+        # compare against the flux at normal incidence rather than relatively: at grazing
+        # incidence the parent flux itself is tiny and a relative tolerance is ill-conditioned.
+        # A wrong rotation would produce O(1) differences and is still caught.
+        r̂☉ = normalize(r☉)
+        F☉ = AsteroidThermoPhysicalModels.SOLAR_CONST / (norm(r☉) * AsteroidThermoPhysicalModels.m2au)^2
+        n_checked = 0
+        for (i, k) in enumerate(state_hier.face_roughness_indices)
+            rs = state_hier.roughness_states[k]
+            if state_hier.illuminated_faces[i]
+                shape_hier.global_shape.face_normals[i] ⋅ r̂☉ < 1e-3 && continue  # grazing: skip
+                n_checked += 1
+                @test all(rs.illuminated_faces)
+                @test all(isapprox.(rs.flux_sun, state_hier.flux_sun[i]; atol=1e-5 * F☉))
+            else
+                @test all(rs.flux_sun .== 0.0)
+            end
+        end
+        @test n_checked > 0
+    end
+
+    @testset "update_flux_sun! (partial roughness)" begin
+        # Faces without a roughness model are skipped; the one with it is updated
+        shape_hier = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"); as_hierarchical=true)
+        add_roughness_models!(shape_hier, create_shape_crater(0.4, 0.1; Nx=4, Ny=4), 1)
+        problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
+            with_self_shadowing=false, with_self_heating=false)
+        state_hier = AsteroidThermoPhysicalModels._build_single_state(problem_hier, CrankNicolson())
+
+        # Point the Sun along the normal of face 1 so that it is certainly lit
+        n̂₁ = shape_hier.global_shape.face_normals[1]
+        AsteroidThermoPhysicalModels.update_flux_sun!(state_hier, n̂₁ * AsteroidThermoPhysicalModels.au2m)
+
+        @test state_hier.illuminated_faces[1]
+        @test length(state_hier.roughness_states) == 1
+        @test all(state_hier.roughness_states[1].illuminated_faces)
+        @test all(>(0), state_hier.roughness_states[1].flux_sun)
     end
 
     @testset "update_flux_sun! requires face_visibility_graph for self-shadowing" begin
