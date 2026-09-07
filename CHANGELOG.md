@@ -93,8 +93,10 @@ grid_params.Δz
   global-level flux updates (`update_flux_sun!`, `update_flux_scat_single!`,
   `update_flux_rad_single!`), and the global-level heat conduction (`update_temperature!`
   with all three solvers) support the new state. The global faces are solved independently
-  of their roughness models and serve as the smooth-surface baseline. Sub-face flux and
-  temperature updates land in later releases of the v0.3.0 series
+  of their roughness models and serve as the smooth-surface baseline. `update_flux_sun!` also
+  illuminates the sub-faces of every roughness model in its local frame, with self-shadowing
+  inside the roughness model, gated on the illumination of the parent global face. Sub-face
+  self-heating and temperature updates land in later releases of the v0.3.0 series
 
 ### Changed
 

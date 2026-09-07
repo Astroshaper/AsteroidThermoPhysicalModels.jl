@@ -246,21 +246,50 @@ end
 """
     update_flux_sun!(state::HierarchicalSingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
 
-Update the direct solar irradiation flux on every global face of an asteroid with surface roughness.
+Update the direct solar irradiation flux on every global face and on every sub-face of an
+asteroid with surface roughness.
 
 # Arguments
 - `state::HierarchicalSingleAsteroidThermoPhysicalState` : Thermophysical simulation state for a single asteroid with surface roughness
 - `r☉::StaticVector{3}`     : Position vector from asteroid to Sun in body-fixed frame (NOT normalized) [m]
 
+# Algorithm
+1. Global level: identical to `SingleAsteroidThermoPhysicalState`, on `state.problem.shape.global_shape`.
+2. Sub-face level, for every global face that carries a roughness model:
+   - If the global face is not illuminated (facing away from the Sun, or shadowed by the global
+     topography), every one of its sub-faces is dark. A roughness model has no terrain beyond
+     its own rim, so without this gate a Sun below the local horizon could still light sub-faces
+     tilted towards it.
+   - Otherwise the Sun vector is rotated into the local frame of the face and the sub-faces are
+     illuminated by the same model as any `ShapeModel`, including self-shadowing within the
+     roughness model.
+
 # Notes
-- Only the global level (`state.problem.shape.global_shape`) is updated; the algorithm and
-  self-shadowing treatment are the same as for `SingleAsteroidThermoPhysicalState`.
-- The sub-face states in `state.roughness_states` are left untouched. Their illumination and
-  solar flux in the local frame of each roughness model will be handled by the sub-face flux
-  update.
+- The global level must be updated first: the sub-face gate reads `state.illuminated_faces`.
+- The transform to the local frame is a pure rotation, so `|r☉|` and hence the solar flux at
+  the asteroid are preserved.
 """
 function update_flux_sun!(state::HierarchicalSingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
     _update_flux_sun!(state, state.problem.shape.global_shape, r☉)
+    _update_roughness_flux_sun!(state, r☉)
+end
+
+
+# Sub-face solar flux for every global face that carries a roughness model. See the docstring
+# of `update_flux_sun!` for the gate on the global illumination.
+function _update_roughness_flux_sun!(state::HierarchicalSingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
+    shape = state.problem.shape
+    for (i, k) in enumerate(state.face_roughness_indices)
+        k == 0 && continue
+        rs = state.roughness_states[k]
+        if state.illuminated_faces[i]
+            r☉_local = transform_physical_vector_global_to_local(shape, i, r☉)
+            update_flux_sun!(rs, r☉_local)
+        else
+            rs.illuminated_faces .= false
+            rs.flux_sun          .= 0.0
+        end
+    end
 end
 
 """
