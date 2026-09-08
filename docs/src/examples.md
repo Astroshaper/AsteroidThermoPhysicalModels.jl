@@ -293,3 +293,32 @@ solution = solve(problem, ExplicitEuler(); ephem=ephem, output=output, initial_t
 # Per-face thermal force in the body-fixed frame [N] — matrix of size (n_face, n_time)
 solution.face_forces
 ```
+
+## Surface Roughness
+
+Surface roughness is modelled by attaching a small shape model — a *roughness model*, for example a spherical crater — to the facets of a `HierarchicalShapeModel` from `AsteroidShapeModels.jl`. Each facet with a roughness model is then solved as a full thermophysical model of its own, in the local frame of the facet, with self-shadowing and self-heating inside the roughness model. This is the origin of thermal-infrared beaming.
+
+```julia
+using AsteroidShapeModels
+using AsteroidThermoPhysicalModels
+
+# Load the global shape as a HierarchicalShapeModel
+shape = load_shape_obj("path/to/shape.obj"; scale=1000, as_hierarchical=true)
+
+# A spherical crater of radius 0.4 and depth 0.1 (in the units of the roughness model),
+# discretised on an 8 × 8 grid, attached to every facet
+crater = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
+add_roughness_models!(shape, crater)
+# ...or to selected facets only: add_roughness_models!(shape, crater, face_idx)
+
+# The problem, ephemerides, output and solver are defined exactly as for a plain ShapeModel
+problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
+    with_self_shadowing = true,
+    with_self_heating   = true,
+)
+solution = solve(problem, CrankNicolson(); ephem=ephem, output=output, initial_temperature=200.0)
+```
+
+The recorded `surface_temperature` and `subsurface_temperature` are those of the global facets, which are solved independently of their roughness models and serve as the smooth-surface baseline of the same run. `face_forces`, `forces` and `torques` include the roughness: on a facet with a roughness model the force is the sum over its sub-facets, counted for the area of the facet (see *Facets with a roughness model* in the physical model). `absorbed_power` and `emitted_power` count such facets from their sub-facets in the same way.
+
+The problem's `with_self_heating` governs the global facets and, through them, the irradiation the sub-facets receive from the rest of the body; self-shadowing and self-heating inside a roughness model are always on.
