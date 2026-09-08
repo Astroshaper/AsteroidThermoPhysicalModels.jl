@@ -55,29 +55,60 @@ F_abs = absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad)
 absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad) = (1 - R_vis) * F_sun + (1 - R_vis) * F_scat + (1 - R_ir) * F_rad
 
 
+# Power absorbed by face `i` of `shape` [W]
+function _absorbed_power(state::SingleLevelThermoPhysicalState, shape::ShapeModel, i::Integer)
+    R_vis  = state.problem.thermo_params.reflectance_vis[i]
+    R_ir   = state.problem.thermo_params.reflectance_ir[i]
+    F_sun  = state.flux_sun[i]
+    F_scat = state.flux_scat[i]
+    F_rad  = state.flux_rad[i]
+
+    absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad) * shape.face_areas[i]
+end
+
+# Power emitted by face `i` of `shape` [W]
+function _emitted_power(state::SingleLevelThermoPhysicalState, shape::ShapeModel, i::Integer)
+    ε = state.problem.thermo_params.emissivity[i]
+    T = state.temperature[begin, i]  # Surface temperature
+
+    ε * σ_SB * T^4 * shape.face_areas[i]
+end
+
+
 """
     integrate_absorbed_power(state::SingleAsteroidThermoPhysicalState) -> Float64
+    integrate_absorbed_power(state::HierarchicalSingleAsteroidThermoPhysicalState) -> Float64
 
 Integrate the absorbed energy flux over all surface facets to obtain total absorbed power [W]:
 ```
 P_abs = Σᵢ F_abs,ᵢ × Aᵢ
 ```
 
+For a `HierarchicalSingleAsteroidThermoPhysicalState`, a global face with a roughness model is
+counted from its sub-faces and not from the global level: its roughness model is a patch that
+represents the face statistically, so the absorbed power of the patch, `Σⱼ F_abs,ⱼ aⱼ` in the
+units of the model, is scaled to the area of the face by `Aᵢ / A_proj` (see
+`update_thermal_force!`). A global face without a roughness model contributes as usual.
+
 # See Also
 - `integrate_emitted_power` for the total emitted power
 - `absorbed_energy_flux` for the per-facet flux calculation
 """
 function integrate_absorbed_power(state::SingleAsteroidThermoPhysicalState)
-    P_abs = 0.0
-    for i in eachindex(state.problem.shape.faces)
-        R_vis  = state.problem.thermo_params.reflectance_vis[i]
-        R_ir   = state.problem.thermo_params.reflectance_ir[i]
-        F_sun  = state.flux_sun[i]
-        F_scat = state.flux_scat[i]
-        F_rad  = state.flux_rad[i]
-        a      = state.problem.shape.face_areas[i]
+    shape = state.problem.shape
+    sum(i -> _absorbed_power(state, shape, i), eachindex(shape.faces))
+end
 
-        P_abs += absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad) * a
+function integrate_absorbed_power(state::HierarchicalSingleAsteroidThermoPhysicalState)
+    global_shape = state.problem.shape.global_shape
+    P_abs = 0.0
+    for (i, k) in enumerate(state.face_roughness_indices)
+        if k == 0
+            P_abs += _absorbed_power(state, global_shape, i)
+        else
+            rs = state.roughness_states[k]
+            P_abs += global_shape.face_areas[i] / _projected_area(rs.problem.shape) * integrate_absorbed_power(rs)
+        end
     end
     P_abs
 end
@@ -85,6 +116,7 @@ end
 
 """
     integrate_emitted_power(state::SingleAsteroidThermoPhysicalState) -> Float64
+    integrate_emitted_power(state::HierarchicalSingleAsteroidThermoPhysicalState) -> Float64
 
 Integrate the thermal emission over all surface facets to obtain total emitted power [W]:
 ```
@@ -93,17 +125,28 @@ P_emit = Σᵢ εᵢ × σ × Tᵢ⁴ × Aᵢ
 
 In thermal equilibrium, `integrate_emitted_power` ≈ `integrate_absorbed_power`.
 
+For a `HierarchicalSingleAsteroidThermoPhysicalState`, a global face with a roughness model is
+counted from its sub-faces, scaled to the area of the face by `Aᵢ / A_proj`, exactly as in
+`integrate_absorbed_power`; the smooth-surface emission of that global face is not added.
+
 # See Also
 - `integrate_absorbed_power` for the total absorbed power
 """
 function integrate_emitted_power(state::SingleAsteroidThermoPhysicalState)
-    P_emit = 0.0
-    for i in eachindex(state.problem.shape.faces)
-        ε = state.problem.thermo_params.emissivity[i]
-        T = state.temperature[begin, i]  # Surface temperature
-        a = state.problem.shape.face_areas[i]
+    shape = state.problem.shape
+    sum(i -> _emitted_power(state, shape, i), eachindex(shape.faces))
+end
 
-        P_emit += ε * σ_SB * T^4 * a
+function integrate_emitted_power(state::HierarchicalSingleAsteroidThermoPhysicalState)
+    global_shape = state.problem.shape.global_shape
+    P_emit = 0.0
+    for (i, k) in enumerate(state.face_roughness_indices)
+        if k == 0
+            P_emit += _emitted_power(state, global_shape, i)
+        else
+            rs = state.roughness_states[k]
+            P_emit += global_shape.face_areas[i] / _projected_area(rs.problem.shape) * integrate_emitted_power(rs)
+        end
     end
     P_emit
 end
@@ -132,6 +175,28 @@ Update all energy fluxes (solar, scattered, thermal radiation) to the surface fo
 - Automatically respects SELF_SHADOWING and SELF_HEATING flags
 """
 function update_flux_all!(state::SingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
+    update_flux_sun!(state, r☉)
+    update_flux_scat_single!(state)
+    update_flux_rad_single!(state)
+end
+
+"""
+    update_flux_all!(state::HierarchicalSingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
+
+Update all energy fluxes (solar, scattered, thermal radiation) on both levels of an asteroid
+with surface roughness.
+
+# Arguments
+- `state::HierarchicalSingleAsteroidThermoPhysicalState` : Thermophysical simulation state for a single asteroid with surface roughness
+- `r☉::StaticVector{3}`     : Sun's position in the asteroid-fixed frame (NOT normalized) [m]
+
+# Notes
+- Each of the three updates handles the global faces first and then the sub-faces of every
+  roughness model. The order of the three calls is fixed: the external irradiation of the
+  sub-faces reads the scattered and thermal flux of the parent global face, which must
+  therefore be complete before the sub-face update runs.
+"""
+function update_flux_all!(state::HierarchicalSingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
     update_flux_sun!(state, r☉)
     update_flux_scat_single!(state)
     update_flux_rad_single!(state)

@@ -256,13 +256,13 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 function _build_single_solution(
-    state  ::SingleAsteroidThermoPhysicalState,
+    state  ::SingleLevelThermoPhysicalState,
     times  ::Vector{Float64},
     output ::SingleAsteroidOutputSpec,
 )
     n_step  = length(times)
     n_save  = length(output.output_times)
-    n_face  = length(state.problem.shape.faces)
+    n_face  = size(state.temperature, 2)
     n_depth = state.problem.grid_params.n_depth
 
     absorbed_power = zeros(n_step)
@@ -289,7 +289,7 @@ end
 Allocate a solution from the given state, ephemerides, and output specification.
 """
 SingleAsteroidThermoPhysicalSolution(
-    state  ::SingleAsteroidThermoPhysicalState,
+    state  ::SingleLevelThermoPhysicalState,
     ephem  ::AbstractSingleAsteroidEphemerides,
     output ::SingleAsteroidOutputSpec,
 ) = _build_single_solution(state, ephem.times, output)
@@ -329,7 +329,7 @@ subsurface temperature, face forces) according to the flags in `solution.output`
 """
 function record_timestep!(
     solution ::SingleAsteroidThermoPhysicalSolution,
-    state    ::SingleAsteroidThermoPhysicalState,
+    state    ::SingleLevelThermoPhysicalState,
     i_time   ::Integer,
 )
     solution.absorbed_power[i_time] = integrate_absorbed_power(state)
@@ -371,7 +371,7 @@ to the inertial frame via `R`.
 """
 function record_timestep!(
     solution ::SingleAsteroidThermoPhysicalSolution,
-    state    ::SingleAsteroidThermoPhysicalState,
+    state    ::SingleLevelThermoPhysicalState,
     i_time   ::Integer,
     R        ::SMatrix{3,3,Float64,9},
 )
