@@ -123,6 +123,14 @@ grid_params.Δz
   `face_id`, `sub_face_id`, `temperature`). `surface_temperature` remains the smooth-surface
   baseline of the global faces
 
+- **Direction-dependent radiance and brightness temperature**: `roughness_radiance`,
+  `directional_radiance` and `brightness_temperature` evaluate, as a post-processing step,
+  the thermal radiance of every facet towards an observer direction from the recorded
+  surface temperatures. A facet with a roughness model radiates from its visible sub-facets
+  per unit projected area (thermal-infrared beaming); the others as smooth Lambertian
+  surfaces. Total (`σT⁴`) or spectral (Planck at a given wavelength); one value per facet,
+  ready for a ray-caster
+
 ### Changed
 
 - **Breaking**: `ThermoParams` no longer holds grid parameters (`z_max`, `Δz`, `n_depth`); pass a `GridParams` instance separately

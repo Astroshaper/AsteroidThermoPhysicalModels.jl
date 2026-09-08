@@ -335,4 +335,17 @@ solution = solve(problem, CrankNicolson(); ephem=ephem, output=output, initial_t
 solution.roughness_surface_temperature[7]   # (n_sub, n_output): sub-facet j of the crater on facet 7, at each output time
 ```
 
-`export_solution` then also writes `roughness_surface_temperature.csv` in long format (`time`, `face_id`, `sub_face_id`, `temperature`), since roughness models may differ in size from facet to facet. These temperatures, together with the roughness model's geometry and an observer direction, are what the direction-dependent brightness temperature of a rough facet is computed from.
+`export_solution` then also writes `roughness_surface_temperature.csv` in long format (`time`, `face_id`, `sub_face_id`, `temperature`), since roughness models may differ in size from facet to facet.
+
+From these temperatures, the radiance or brightness temperature of every facet towards an observer is a post-processing step, so any number of observer directions can be tried on one solution. For a thermal-infrared image, list every facet in `roughness_face_ids`:
+
+```julia
+d̂_obs = normalize(r_observer)   # direction to the observer in the body-fixed frame
+i_save = 3                        # index into output_times, e.g. the image epoch
+
+L   = directional_radiance(problem, solution, i_save, d̂_obs)            # W/m²/sr, one value per facet
+T_b = brightness_temperature(problem, solution, i_save, d̂_obs)          # K
+L_λ = directional_radiance(problem, solution, i_save, d̂_obs; λ=10e-6)   # spectral, at 10 μm
+```
+
+Facets with a recorded roughness model radiate according to their sub-facet temperatures and the crater walls in view (see *Direction-Dependent Radiance of a Rough Facet* in the physical model); the others as smooth Lambertian surfaces. Facets seen from behind give `NaN`. The per-facet vector is ready to be placed on an image by a ray-caster such as `FOVSimulator.jl`.
