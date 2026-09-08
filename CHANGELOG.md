@@ -116,6 +116,13 @@ grid_params.Δz
   Recording the sub-face temperatures and the direction-dependent brightness temperature of a
   rough face follow in the next releases of the v0.3.0 series
 
+- **Roughness surface temperatures can be recorded**: `SingleAsteroidOutputSpec` gains
+  `roughness_face_ids` and `save_roughness_surface_temperature`; the solution carries
+  `roughness_surface_temperature::Dict{Int, Matrix}` (global face → `(n_sub, n_output)`) and
+  `export_solution` writes `roughness_surface_temperature.csv` in long format (`time`,
+  `face_id`, `sub_face_id`, `temperature`). `surface_temperature` remains the smooth-surface
+  baseline of the global faces
+
 ### Changed
 
 - **Breaking**: `ThermoParams` no longer holds grid parameters (`z_max`, `Δz`, `n_depth`); pass a `GridParams` instance separately

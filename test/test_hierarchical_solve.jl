@@ -144,6 +144,66 @@ End-to-end tests of `solve` on a `HierarchicalShapeModel`:
         @test abs(ratio - 1) < 0.05
     end
 
+    @testset "roughness surface temperature is recorded and exported" begin
+        times, ephem = make_ephem(1; with_rotation=false)
+        output_times = times[end-3:end]
+        n_sub = length(roughness_model.faces)
+
+        # A crater on faces 1 and 7 only; record both
+        shape_hier = load_shape_obj(path_obj; as_hierarchical=true)
+        add_roughness_models!(shape_hier, roughness_model, 1)
+        add_roughness_models!(shape_hier, roughness_model, 7)
+        output = SingleAsteroidOutputSpec(output_times, Int[];
+            save_subsurface_temperature = false,
+            roughness_face_ids = [7, 1], save_roughness_surface_temperature = true)
+        sol = solve(make_problem(shape_hier), CrankNicolson();
+            ephem, output, initial_temperature=200.0, show_progress=false)
+
+        @test sol.roughness_surface_temperature isa Dict{Int, Matrix{Float64}}
+        @test sort(collect(keys(sol.roughness_surface_temperature))) == [1, 7]
+        for (i, T_rough) in sol.roughness_surface_temperature
+            @test size(T_rough) == (n_sub, length(output_times))
+            @test all(isfinite, T_rough) && all(>(0), T_rough)
+            # The crater is not isothermal: its sub-faces spread around the smooth face
+            @test maximum(T_rough[:, end]) - minimum(T_rough[:, end]) > 1.0
+        end
+
+        # Exported in long format: one row per (time, face, sub-face)
+        dir = mktempdir()
+        export_solution(dir, sol)
+        file = joinpath(dir, "roughness_surface_temperature.csv")
+        @test isfile(file)
+        df = CSV.read(file, DataFrame)
+        @test names(df) == ["time", "face_id", "sub_face_id", "temperature"]
+        @test nrow(df) == 2 * n_sub * length(output_times)
+        @test sort(unique(df.face_id)) == [1, 7]
+        @test df.temperature[df.face_id .== 7 .&& df.sub_face_id .== 3 .&& df.time .== output_times[end]][1] ==
+              sol.roughness_surface_temperature[7][3, end]
+
+        # A roughness model flat to 1e-6 reproduces the smooth face's surface temperature
+        shape_flat = load_shape_obj(path_obj; as_hierarchical=true)
+        add_roughness_models!(shape_flat, create_shape_crater(0.4, 1e-6; Nx=4, Ny=4))
+        output_flat = SingleAsteroidOutputSpec(output_times, Int[];
+            save_subsurface_temperature = false,
+            roughness_face_ids = collect(1:length(shape_flat.global_shape.faces)),
+            save_roughness_surface_temperature = true)
+        sol_flat = solve(make_problem(shape_flat), CrankNicolson();
+            ephem, output=output_flat, initial_temperature=200.0, show_progress=false)
+        for (i, T_rough) in sol_flat.roughness_surface_temperature
+            @test all(isapprox.(T_rough, sol_flat.surface_temperature[i:i, :]; rtol=1e-4))
+        end
+
+        # Requesting a face without a roughness model, or a plain ShapeModel, is an error
+        output_bad = SingleAsteroidOutputSpec(output_times, Int[];
+            save_subsurface_temperature = false,
+            roughness_face_ids = [2], save_roughness_surface_temperature = true)
+        @test_throws ArgumentError solve(make_problem(shape_hier), CrankNicolson();
+            ephem, output=output_bad, initial_temperature=200.0, show_progress=false)
+        shape_plain = load_shape_obj(path_obj)
+        @test_throws ArgumentError solve(make_problem(shape_plain), CrankNicolson();
+            ephem, output, initial_temperature=200.0, show_progress=false)
+    end
+
     @testset "export_solution and show_progress" begin
         times, ephem = make_ephem(1; with_rotation=true)
         output_times = times[end-5:end]

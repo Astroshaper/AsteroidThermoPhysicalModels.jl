@@ -322,3 +322,17 @@ solution = solve(problem, CrankNicolson(); ephem=ephem, output=output, initial_t
 The recorded `surface_temperature` and `subsurface_temperature` are those of the global facets, which are solved independently of their roughness models and serve as the smooth-surface baseline of the same run. `face_forces`, `forces` and `torques` include the roughness: on a facet with a roughness model the force is the sum over its sub-facets, counted for the area of the facet (see *Facets with a roughness model* in the physical model). `absorbed_power` and `emitted_power` count such facets from their sub-facets in the same way.
 
 The problem's `with_self_heating` governs the global facets and, through them, the irradiation the sub-facets receive from the rest of the body; self-shadowing and self-heating inside a roughness model are always on.
+
+To record the temperatures of the rough surface itself, list the facets whose roughness models to save:
+
+```julia
+output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids;
+    roughness_face_ids                 = [1, 7],
+    save_roughness_surface_temperature = true,
+)
+solution = solve(problem, CrankNicolson(); ephem=ephem, output=output, initial_temperature=200.0)
+
+solution.roughness_surface_temperature[7]   # (n_sub, n_output): sub-facet j of the crater on facet 7, at each output time
+```
+
+`export_solution` then also writes `roughness_surface_temperature.csv` in long format (`time`, `face_id`, `sub_face_id`, `temperature`), since roughness models may differ in size from facet to facet. These temperatures, together with the roughness model's geometry and an observer direction, are what the direction-dependent brightness temperature of a rough facet is computed from.
