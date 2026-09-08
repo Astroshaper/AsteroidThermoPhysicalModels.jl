@@ -158,11 +158,12 @@ end
 
 """
     update_flux_all!(state::SingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
+    update_flux_all!(state::HierarchicalSingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
 
 Update all energy fluxes (solar, scattered, thermal radiation) to the surface for a single asteroid.
 
 # Arguments
-- `state::SingleAsteroidThermoPhysicalState` : Thermophysical simulation state for a single asteroid
+- `state` : Thermophysical simulation state for a single asteroid, with or without surface roughness
 - `r☉::StaticVector{3}`     : Sun's position in the asteroid-fixed frame (NOT normalized) [m]
 
 # Algorithm
@@ -172,31 +173,14 @@ Update all energy fluxes (solar, scattered, thermal radiation) to the surface fo
 
 # Notes
 - This is a convenience function that calls all individual flux update functions
-- Automatically respects SELF_SHADOWING and SELF_HEATING flags
+- Automatically respects `with_self_shadowing` and `with_self_heating`
+- For a `HierarchicalSingleAsteroidThermoPhysicalState`, each of the three updates handles the
+  global faces first and then the sub-faces of every roughness model. The order of the three
+  calls is fixed: the external irradiation of the sub-faces reads the scattered and thermal
+  flux of the parent global face, which must therefore be complete before the sub-face update
+  runs.
 """
-function update_flux_all!(state::SingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
-    update_flux_sun!(state, r☉)
-    update_flux_scat_single!(state)
-    update_flux_rad_single!(state)
-end
-
-"""
-    update_flux_all!(state::HierarchicalSingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
-
-Update all energy fluxes (solar, scattered, thermal radiation) on both levels of an asteroid
-with surface roughness.
-
-# Arguments
-- `state::HierarchicalSingleAsteroidThermoPhysicalState` : Thermophysical simulation state for a single asteroid with surface roughness
-- `r☉::StaticVector{3}`     : Sun's position in the asteroid-fixed frame (NOT normalized) [m]
-
-# Notes
-- Each of the three updates handles the global faces first and then the sub-faces of every
-  roughness model. The order of the three calls is fixed: the external irradiation of the
-  sub-faces reads the scattered and thermal flux of the parent global face, which must
-  therefore be complete before the sub-face update runs.
-"""
-function update_flux_all!(state::HierarchicalSingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
+function update_flux_all!(state::SingleLevelThermoPhysicalState, r☉::StaticVector{3})
     update_flux_sun!(state, r☉)
     update_flux_scat_single!(state)
     update_flux_rad_single!(state)
