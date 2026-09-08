@@ -165,6 +165,19 @@ where ``\mathbf{f}_j`` and ``a_j`` are the force and area of sub-facet ``j`` in 
 
 When self-heating is enabled, the photons that leave the roughness model towards the sky and are intercepted by other facets ``k`` of the global shape are accounted for as for a smooth facet, taking the emission of the patch as isotropic: the power ``P_{\mathrm{sky},i} = (A_i / A_\mathrm{proj}) \sum_j E_j a_j f_{\mathrm{sky},j}`` that escapes the model, with ``f_{\mathrm{sky},j}`` the sky view factor of sub-facet ``j``, contributes ``(P_{\mathrm{sky},i} / c) \sum_k f_{ik} \hat{\mathbf{d}}_{ik}``.
 
+## Direction-Dependent Radiance of a Rough Facet
+
+A facet with a roughness model does not radiate as a Lambertian surface: the sunlit wall of a crater is hotter than the shadowed one, and which wall an observer sees depends on the viewing direction. This is thermal-infrared *beaming*. The radiance of such a facet towards an observer direction ``\hat{\mathbf d}`` is evaluated as a post-processing step from the recorded sub-facet temperatures ([`roughness_radiance`](@ref), [`directional_radiance`](@ref)):
+
+```math
+L_i(\hat{\mathbf d}) = \frac{1}{A_\mathrm{proj}\,(\hat{\mathbf z}\cdot\hat{\mathbf d}_\mathrm{local})}
+\sum_j V_j(\hat{\mathbf d}_\mathrm{local})\,(\hat{\mathbf n}_j\cdot\hat{\mathbf d}_\mathrm{local})^+\,a_j\,\frac{\varepsilon\,B(T_j)}{\pi}
+```
+
+where ``\hat{\mathbf d}_\mathrm{local}`` is the observer direction in the local frame of the facet, ``V_j`` is 1 when sub-facet ``j`` is visible from that direction (not hidden by the crater walls), ``A_\mathrm{proj}`` is the projected area of the roughness model, and ``B(T)`` is ``\sigma T^4`` for the total radiance or the Planck function for the spectral radiance at a given wavelength. The denominator is the projected area of the patch as seen by the observer, so that an isothermal, unshadowed patch reduces to the Lambertian ``\varepsilon B(T)/\pi``.
+
+The brightness temperature ``T_b(\hat{\mathbf d})`` is that of a blackbody with the same Lambertian radiance, ``B(T_b)/\pi = L_i(\hat{\mathbf d})`` ([`brightness_temperature`](@ref)); emissivity is not divided out, so a smooth grey facet at temperature ``T`` has ``T_b = \varepsilon^{1/4} T``. Facets without a roughness model radiate as smooth Lambertian surfaces from their recorded surface temperature. The result is one value per facet, which a ray-caster can place on an image.
+
 ## Binary Asteroid Systems
 
 For binary asteroid systems, `AsteroidThermoPhysicalModels.jl` provides comprehensive modeling of thermal interactions between the primary and secondary bodies.
