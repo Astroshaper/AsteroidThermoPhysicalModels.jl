@@ -75,5 +75,7 @@ include("heat_conduction_analytical.jl")
 include("energy_flux.jl")
 include("non_grav.jl")
 include("thermal_radiation.jl")
+include("directional_radiance.jl")
+export roughness_radiance, directional_radiance, brightness_temperature
 
 end # module AsteroidThermoPhysicalModels
