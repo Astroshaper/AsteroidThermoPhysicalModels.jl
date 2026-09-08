@@ -108,8 +108,13 @@ grid_params.Δz
   (`F_i = (A_i / A_proj) Σⱼ fⱼ`, rotated into the body frame; the roughness `scale` cancels);
   the torque acts at the parent face centre, and with `with_self_heating` the photons that
   leave the roughness model towards the sky and are intercepted by other global faces are
-  accounted for isotropically. The `solve` integration lands in a later release of the v0.3.0
-  series
+  accounted for isotropically. `solve` and `export_solution` run end to end on a
+  `HierarchicalShapeModel` with the existing `SingleAsteroidOutputSpec`; the recorded
+  `surface_temperature` / `subsurface_temperature` are the smooth-surface baseline of the global
+  faces, `face_forces` / `forces` / `torques` include the roughness, and `absorbed_power` /
+  `emitted_power` count every roughness face from its sub-faces as a representative patch.
+  Recording the sub-face temperatures and the direction-dependent brightness temperature of a
+  rough face follow in the next releases of the v0.3.0 series
 
 ### Changed
 
