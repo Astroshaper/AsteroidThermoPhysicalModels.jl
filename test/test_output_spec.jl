@@ -40,6 +40,13 @@ introduced in v0.2.0:
         @test output.save_face_forces            == false
         @test output.save_forces                 == false
         @test output.save_torques                == false
+        @test output.roughness_face_ids          == Int[]
+        @test output.save_roughness_surface_temperature == false
+
+        output_rough = SingleAsteroidOutputSpec(output_times, subsurface_face_ids;
+            roughness_face_ids = [1, 7], save_roughness_surface_temperature = true)
+        @test output_rough.roughness_face_ids == [1, 7]
+        @test output_rough.save_roughness_surface_temperature == true
     end
 
     @testset "SingleAsteroidOutputSpec inner constructor validation" begin
@@ -47,6 +54,9 @@ introduced in v0.2.0:
         @test_throws ArgumentError SingleAsteroidOutputSpec(output_times, Int[], true, true, false, true, true)
         # save_subsurface_temperature=false with empty subsurface_face_ids → OK
         @test_nowarn SingleAsteroidOutputSpec(output_times, Int[], true, false, false, true, true)
+        # save_roughness_surface_temperature=true with empty roughness_face_ids → ArgumentError
+        @test_throws ArgumentError SingleAsteroidOutputSpec(output_times, subsurface_face_ids;
+            save_roughness_surface_temperature = true)
     end
 
     @testset "BinaryAsteroidOutputSpec construction" begin
