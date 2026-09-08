@@ -120,6 +120,44 @@ Direction-dependent radiance and brightness temperature of rough facets:
             @test ATPM._brightness_temperature(L, λ) ≈ T rtol=1e-10
         end
         @test ATPM._brightness_temperature(ATPM.σ_SB * 300.0^4 / π, nothing) ≈ 300.0
+        # Degenerate radiances: zero is a 0 K blackbody, a negative value is not a radiance
+        @test ATPM._brightness_temperature(0.0, 10e-6) == 0.0
+        @test isnan(ATPM._brightness_temperature(-1.0, 10e-6))
+    end
+
+    @testset "plain ShapeModel and facets without a roughness model are Lambertian" begin
+        d̂ = normalize(SVector(1.0, 0.0, 0.0))
+
+        # A plain ShapeModel: every facet is a smooth Lambertian surface
+        shape_plain = load_shape_obj(path_obj)
+        problem_plain = SingleAsteroidThermoPhysicalProblem(shape_plain, thermo_params, grid_params;
+            with_self_shadowing=false, with_self_heating=false)
+        output_plain = SingleAsteroidOutputSpec(output_times, Int[]; save_subsurface_temperature=false)
+        sol_plain = solve(problem_plain, CrankNicolson(); ephem, output=output_plain,
+            initial_temperature=200.0, show_progress=false)
+        L_plain = directional_radiance(problem_plain, sol_plain, 1, d̂)
+        for i in eachindex(L_plain)
+            cosθ = shape_plain.face_normals[i] ⋅ d̂
+            if cosθ > 0
+                @test L_plain[i] ≈ ε * ATPM.σ_SB * sol_plain.surface_temperature[i, 1]^4 / π
+            else
+                @test isnan(L_plain[i])
+            end
+        end
+
+        # A crater on facet 1 only: facet 1 is rough, the others fall back to the smooth
+        # Lambertian radiance of their own surface temperature
+        shape_part = load_shape_obj(path_obj; as_hierarchical=true)
+        add_roughness_models!(shape_part, create_shape_crater(0.4, 0.1; Nx=4, Ny=4), 1)
+        problem_part = SingleAsteroidThermoPhysicalProblem(shape_part, thermo_params, grid_params;
+            with_self_shadowing=false, with_self_heating=false)
+        output_part = SingleAsteroidOutputSpec(output_times, Int[]; save_subsurface_temperature=false,
+            roughness_face_ids=[1], save_roughness_surface_temperature=true)
+        sol_part = solve(problem_part, CrankNicolson(); ephem, output=output_part,
+            initial_temperature=200.0, show_progress=false)
+        L_part = directional_radiance(problem_part, sol_part, 1, d̂)
+        @test isequal(L_part[2:end], L_plain[2:end])   # same smooth solution, same smooth radiance (NaN-aware)
+        @test !isnan(L_part[1]) && L_part[1] != L_plain[1]
     end
 
     @testset "surface temperature must have been recorded" begin
