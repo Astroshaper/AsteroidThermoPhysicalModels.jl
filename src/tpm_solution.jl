@@ -13,25 +13,23 @@ Solution types and export functions for thermophysical simulations.
 
 Output specification for a single-asteroid thermophysical simulation.
 
-Encapsulates which timesteps, face indices, and physical quantities to record.
+Encapsulates which timesteps, face indices, and physical quantities to record. Quantities
+recorded for every face are switched on and off by a `save_*` flag; quantities recorded for
+selected faces only are switched on by listing those faces — an empty list means "not saved".
 
 # Fields
-- `output_times`                : Timesteps at which data are saved [s]; must be a subset of `ephem.times`
-- `subsurface_face_ids`         : Face indices for which to save subsurface temperature profiles
-- `save_surface_temperature`    : Save surface temperature at `output_times` (default: `true`)
-- `save_subsurface_temperature` : Save subsurface temperature profiles at `output_times` (default: `true`)
-- `save_face_forces`            : Save per-face thermal forces at `output_times` (default: `false`)
-- `save_forces`                 : Save net thermal force at `output_times` (default: `false`)
-- `save_torques`                : Save net thermal torque at `output_times` (default: `false`)
-- `roughness_face_ids`          : Global face indices whose roughness-model surface temperatures to save (default: empty)
-- `save_roughness_surface_temperature` : Save the surface temperature of every sub-face of the roughness
-  models on `roughness_face_ids` at `output_times` (default: `false`); requires a shape with surface roughness
+- `output_times`             : Timesteps at which data are saved [s]; must be a subset of `ephem.times`
+- `save_surface_temperature` : Save the surface temperature of every face at `output_times` (default: `true`)
+- `subsurface_face_ids`      : Faces whose subsurface temperature profiles to save at `output_times` (default: none)
+- `roughness_face_ids`       : Faces whose roughness-model surface temperatures (every sub-face) to save
+  at `output_times` (default: none); requires a shape with surface roughness
+- `save_face_forces`         : Save the thermal force on every face at `output_times` (default: `false`)
+- `save_forces`              : Save the net thermal force at `output_times` (default: `false`)
+- `save_torques`             : Save the net thermal torque at `output_times` (default: `false`)
 
 # Notes
-- `save_subsurface_temperature = true` requires a non-empty `subsurface_face_ids`.
-- `save_roughness_surface_temperature = true` requires a non-empty `roughness_face_ids`, a problem
-  built on a shape with surface roughness, and a roughness model on every listed face; the last two
-  are checked when the solution is allocated at `solve` time.
+- `roughness_face_ids` requires a problem built on a shape with surface roughness and a roughness
+  model on every listed face; both are checked when the solution is allocated at `solve` time.
 - `save_face_forces` stores per-face forces in the body-fixed frame; it works with both
   `SingleAsteroidEphemerides{Nothing}` and `SingleAsteroidEphemerides{<:AbstractVector}`.
 - `save_forces` and `save_torques` require ephemerides with `R_body_to_inertial`
@@ -40,94 +38,48 @@ Encapsulates which timesteps, face indices, and physical quantities to record.
 
 # Example
 ```julia
-output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids;
-    save_surface_temperature    = true,
-    save_subsurface_temperature = true,
-    save_face_forces            = false,
-    save_forces                 = true,
-    save_torques                = true,
-    roughness_face_ids          = [1, 7],
-    save_roughness_surface_temperature = true,
+output = SingleAsteroidOutputSpec(output_times;
+    save_surface_temperature = true,
+    subsurface_face_ids      = [1, 2, 3],
+    roughness_face_ids       = [1, 7],
+    save_face_forces         = false,
+    save_forces              = true,
+    save_torques             = true,
 )
 ```
 """
 struct SingleAsteroidOutputSpec
-    output_times                ::Vector{Float64}
-    subsurface_face_ids         ::Vector{Int}
-    save_surface_temperature    ::Bool
-    save_subsurface_temperature ::Bool
-    save_face_forces            ::Bool
-    save_forces                 ::Bool
-    save_torques                ::Bool
-    roughness_face_ids                 ::Vector{Int}
-    save_roughness_surface_temperature ::Bool
-
-    function SingleAsteroidOutputSpec(
-        output_times,
-        subsurface_face_ids,
-        save_surface_temperature,
-        save_subsurface_temperature,
-        save_face_forces,
-        save_forces,
-        save_torques,
-        roughness_face_ids,
-        save_roughness_surface_temperature,
-    )
-        if save_subsurface_temperature && isempty(subsurface_face_ids)
-            throw(ArgumentError(
-                "subsurface_face_ids must be non-empty when save_subsurface_temperature = true"
-            ))
-        end
-        if save_roughness_surface_temperature && isempty(roughness_face_ids)
-            throw(ArgumentError(
-                "roughness_face_ids must be non-empty when save_roughness_surface_temperature = true"
-            ))
-        end
-        new(
-            output_times,
-            subsurface_face_ids,
-            save_surface_temperature,
-            save_subsurface_temperature,
-            save_face_forces,
-            save_forces,
-            save_torques,
-            roughness_face_ids,
-            save_roughness_surface_temperature,
-        )
-    end
+    output_times             ::Vector{Float64}
+    save_surface_temperature ::Bool
+    subsurface_face_ids      ::Vector{Int}
+    roughness_face_ids       ::Vector{Int}
+    save_face_forces         ::Bool
+    save_forces              ::Bool
+    save_torques             ::Bool
 end
 
-# Positional form without the roughness fields (no roughness output)
-SingleAsteroidOutputSpec(
-    output_times, subsurface_face_ids,
-    save_surface_temperature, save_subsurface_temperature, save_face_forces, save_forces, save_torques,
-) = SingleAsteroidOutputSpec(
-    output_times, subsurface_face_ids,
-    save_surface_temperature, save_subsurface_temperature, save_face_forces, save_forces, save_torques,
-    Int[], false,
-)
+"""
+    SingleAsteroidOutputSpec(output_times; kwargs...)
 
+Keyword constructor; see [`SingleAsteroidOutputSpec`](@ref) for the meaning of each keyword.
+"""
 function SingleAsteroidOutputSpec(
-    output_times        ::Vector{Float64},
-    subsurface_face_ids ::Vector{Int};
-    save_surface_temperature    ::Bool = true,
-    save_subsurface_temperature ::Bool = true,
-    save_face_forces            ::Bool = false,
-    save_forces                 ::Bool = false,
-    save_torques                ::Bool = false,
-    roughness_face_ids                 ::Vector{Int} = Int[],
-    save_roughness_surface_temperature ::Bool = false,
+    output_times             ::AbstractVector{<:Real};
+    save_surface_temperature ::Bool = true,
+    subsurface_face_ids      ::AbstractVector{<:Integer} = Int[],
+    roughness_face_ids       ::AbstractVector{<:Integer} = Int[],
+    save_face_forces         ::Bool = false,
+    save_forces              ::Bool = false,
+    save_torques             ::Bool = false,
 )
     SingleAsteroidOutputSpec(
-        output_times,
-        subsurface_face_ids,
+        convert(Vector{Float64}, output_times),
         save_surface_temperature,
-        save_subsurface_temperature,
+        convert(Vector{Int}, subsurface_face_ids),
+        convert(Vector{Int}, roughness_face_ids),
         save_face_forces,
         save_forces,
         save_torques,
-        roughness_face_ids,
-        save_roughness_surface_temperature,
     )
 end
 
@@ -144,19 +96,18 @@ Wraps two `SingleAsteroidOutputSpec` instances, one for each body.
 # Example
 ```julia
 # Convenience constructor: shared Bool flags, separate output_times and subsurface_face_ids
-output = BinaryAsteroidOutputSpec(
-    output_times_primary,   subsurface_face_ids_primary,
-    output_times_secondary, subsurface_face_ids_secondary;
-    save_surface_temperature    = true,
-    save_subsurface_temperature = true,
-    save_face_forces            = false,
-    save_forces                 = true,
-    save_torques                = true,
+output = BinaryAsteroidOutputSpec(output_times_primary, output_times_secondary;
+    subsurface_face_ids_primary   = [1, 2],
+    subsurface_face_ids_secondary = [3],
+    save_surface_temperature = true,
+    save_face_forces         = false,
+    save_forces              = true,
+    save_torques             = true,
 )
 
 # Base constructor: independent spec per body
-output_primary   = SingleAsteroidOutputSpec(output_times_primary,   subsurface_face_ids_primary;   save_forces=true)
-output_secondary = SingleAsteroidOutputSpec(output_times_secondary, subsurface_face_ids_secondary; save_forces=false)
+output_primary   = SingleAsteroidOutputSpec(output_times_primary;   subsurface_face_ids=[1, 2], save_forces=true)
+output_secondary = SingleAsteroidOutputSpec(output_times_secondary; subsurface_face_ids=[3])
 output = BinaryAsteroidOutputSpec(output_primary, output_secondary)
 ```
 """
@@ -166,26 +117,23 @@ struct BinaryAsteroidOutputSpec
 end
 
 function BinaryAsteroidOutputSpec(
-    output_times_primary          ::Vector{Float64},
-    subsurface_face_ids_primary   ::Vector{Int},
-    output_times_secondary        ::Vector{Float64},
-    subsurface_face_ids_secondary ::Vector{Int};
-    save_surface_temperature    ::Bool = true,
-    save_subsurface_temperature ::Bool = true,
-    save_face_forces            ::Bool = false,
-    save_forces                 ::Bool = false,
-    save_torques                ::Bool = false,
+    output_times_primary   ::AbstractVector{<:Real},
+    output_times_secondary ::AbstractVector{<:Real};
+    subsurface_face_ids_primary   ::AbstractVector{<:Integer} = Int[],
+    subsurface_face_ids_secondary ::AbstractVector{<:Integer} = Int[],
+    save_surface_temperature ::Bool = true,
+    save_face_forces         ::Bool = false,
+    save_forces              ::Bool = false,
+    save_torques             ::Bool = false,
 )
-    output_primary = SingleAsteroidOutputSpec(
-        output_times_primary, subsurface_face_ids_primary;
-        save_surface_temperature, save_subsurface_temperature, save_face_forces, save_forces, save_torques,
+    output_primary = SingleAsteroidOutputSpec(output_times_primary;
+        subsurface_face_ids = subsurface_face_ids_primary,
+        save_surface_temperature, save_face_forces, save_forces, save_torques,
     )
-
-    output_secondary = SingleAsteroidOutputSpec(
-        output_times_secondary, subsurface_face_ids_secondary;
-        save_surface_temperature, save_subsurface_temperature, save_face_forces, save_forces, save_torques,
+    output_secondary = SingleAsteroidOutputSpec(output_times_secondary;
+        subsurface_face_ids = subsurface_face_ids_secondary,
+        save_surface_temperature, save_face_forces, save_forces, save_torques,
     )
-
     BinaryAsteroidOutputSpec(output_primary, output_secondary)
 end
 
@@ -310,11 +258,11 @@ function _build_single_solution(
 
     depth_nodes            = state.problem.grid_params.Δz * collect(0:n_depth-1)
     surface_temperature    = output.save_surface_temperature    ? zeros(n_face, n_save) : nothing
-    subsurface_temperature = output.save_subsurface_temperature ? Dict{Int,Matrix{Float64}}(i => zeros(n_depth, n_save) for i in output.subsurface_face_ids) : nothing
+    subsurface_temperature = !isempty(output.subsurface_face_ids) ? Dict{Int,Matrix{Float64}}(i => zeros(n_depth, n_save) for i in output.subsurface_face_ids) : nothing
     face_forces            = output.save_face_forces            ? zeros(SVector{3,Float64}, n_face, n_save) : nothing
     forces                 = output.save_forces  ? zeros(SVector{3,Float64}, n_save) : nothing
     torques                = output.save_torques ? zeros(SVector{3,Float64}, n_save) : nothing
-    roughness_surface_temperature = output.save_roughness_surface_temperature ?
+    roughness_surface_temperature = !isempty(output.roughness_face_ids) ?
         Dict{Int,Matrix{Float64}}(i => zeros(_n_roughness_faces(state, i), n_save) for i in output.roughness_face_ids) : nothing
 
     SingleAsteroidThermoPhysicalSolution(
@@ -330,7 +278,7 @@ end
 # roughness models at all, or face `i` carries none, since there would be nothing to save.
 function _n_roughness_faces(state::SingleAsteroidThermoPhysicalState, i::Integer)
     isempty(state.roughness_states) && throw(ArgumentError(
-        "save_roughness_surface_temperature requires a shape with surface roughness (see `add_roughness_models!`)"
+        "roughness_face_ids requires a shape with surface roughness (see `add_roughness_models!`)"
     ))
     k = state.face_roughness_indices[i]
     k == 0 && throw(ArgumentError(
@@ -398,7 +346,7 @@ function record_timestep!(
         solution.surface_temperature[:, i_save] .= surface_temperature(state)
     end
 
-    if solution.output.save_subsurface_temperature
+    if !isempty(solution.output.subsurface_face_ids)
         for (i, T_sub) in solution.subsurface_temperature
             T_sub[:, i_save] .= state.temperature[:, i]
         end
@@ -408,7 +356,7 @@ function record_timestep!(
         solution.face_forces[:, i_save] .= state.face_forces
     end
 
-    if solution.output.save_roughness_surface_temperature
+    if !isempty(solution.output.roughness_face_ids)
         for (i, T_rough) in solution.roughness_surface_temperature
             rs = state.roughness_states[state.face_roughness_indices[i]]
             T_rough[:, i_save] .= surface_temperature(rs)
@@ -599,20 +547,20 @@ Export simulation results to CSV files in `dirpath`.
 Files written depend on the `output` specification:
 - `diagnostics.csv`            : always (`absorbed_power`, `emitted_power` at all timesteps)
 - `surface_temperature.csv`    : when `output.save_surface_temperature = true`
-- `subsurface_temperature.csv` : when `output.save_subsurface_temperature = true`
+- `subsurface_temperature.csv` : when `output.subsurface_face_ids` is non-empty
 - `thermal_face_forces.csv`    : when `output.save_face_forces = true`
 - `thermal_net_forces.csv`     : when `output.save_forces = true` or `output.save_torques = true`
-- `roughness_surface_temperature.csv` : when `output.save_roughness_surface_temperature = true`;
+- `roughness_surface_temperature.csv` : when `output.roughness_face_ids` is non-empty;
   long format with columns `time`, `face_id`, `sub_face_id`, `temperature`
 """
 function export_solution(dirpath, solution::SingleAsteroidThermoPhysicalSolution)
     mkpath(dirpath)
     _export_diagnostics(dirpath, solution)
     solution.output.save_surface_temperature    && _export_surface_temperature(dirpath, solution)
-    solution.output.save_subsurface_temperature && _export_subsurface_temperature(dirpath, solution)
+    !isempty(solution.output.subsurface_face_ids) && _export_subsurface_temperature(dirpath, solution)
     solution.output.save_face_forces            && _export_thermal_face_forces(dirpath, solution)
     (solution.output.save_forces || solution.output.save_torques) && _export_thermal_net_forces(dirpath, solution)
-    solution.output.save_roughness_surface_temperature && _export_roughness_surface_temperature(dirpath, solution)
+    !isempty(solution.output.roughness_face_ids) && _export_roughness_surface_temperature(dirpath, solution)
 end
 
 

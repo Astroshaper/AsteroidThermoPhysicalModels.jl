@@ -8,6 +8,28 @@ This page summarizes breaking changes between versions and how to update your co
 
 The API changes of v0.2.0 and v0.3.0 are listed in the [changelog](https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl/blob/main/CHANGELOG.md).
 
+### `SingleAsteroidOutputSpec`: face-specific outputs are selected by face lists
+
+`subsurface_face_ids` is now a keyword, and the `save_subsurface_temperature` /
+`save_roughness_surface_temperature` flags are gone: listing faces switches the output on, an
+empty list (the default) leaves it off. Only the surface temperature is saved by default.
+
+```julia
+# before
+output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids)
+output = SingleAsteroidOutputSpec(output_times, Int[]; save_subsurface_temperature=false, save_forces=true)
+output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids;
+    roughness_face_ids=[1, 7], save_roughness_surface_temperature=true)
+
+# after
+output = SingleAsteroidOutputSpec(output_times; subsurface_face_ids)
+output = SingleAsteroidOutputSpec(output_times; save_forces=true)
+output = SingleAsteroidOutputSpec(output_times; subsurface_face_ids, roughness_face_ids=[1, 7])
+```
+
+The `BinaryAsteroidOutputSpec` convenience constructor changes in the same way:
+`BinaryAsteroidOutputSpec(output_times_primary, output_times_secondary; subsurface_face_ids_primary, subsurface_face_ids_secondary, ...)`.
+
 ### Requires AsteroidShapeModels.jl v0.6
 
 v0.3.0 raises the AsteroidShapeModels.jl compat to `"0.6"`. Surface roughness is carried by

@@ -99,7 +99,7 @@ Thermal radiance of every global facet towards the observer direction `d̂` (bod
 at output time `solution.output.output_times[i_save]`.
 
 Facets whose roughness-model surface temperatures were recorded
-(`output.roughness_face_ids` with `save_roughness_surface_temperature = true`) radiate
+(`output.roughness_face_ids`) radiate
 anisotropically according to [`roughness_radiance`](@ref); every other facet radiates as a
 smooth Lambertian surface, ``\\varepsilon B(T_i)/\\pi``, from its recorded `surface_temperature`.
 A facet seen from behind gives `NaN`.

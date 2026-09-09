@@ -87,7 +87,7 @@ problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
 output_times        = collect(et_range)[end-n_step_in_cycle:end]  # Save the final rotation
 subsurface_face_ids = [1, 2, 3, 4, 10]                            # Face indices for subsurface output
 
-output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids)
+output = SingleAsteroidOutputSpec(output_times; subsurface_face_ids)
 
 ##= Run TPM =##
 solution = solve(problem, ExplicitEuler();
@@ -203,8 +203,8 @@ output_times        = collect(et_range)[end-n_step_in_cycle:end]
 subsurface_face_ids = [1, 2, 3, 4, 10]
 
 output = BinaryAsteroidOutputSpec(
-    SingleAsteroidOutputSpec(output_times, subsurface_face_ids),
-    SingleAsteroidOutputSpec(output_times, subsurface_face_ids),
+    SingleAsteroidOutputSpec(output_times; subsurface_face_ids),
+    SingleAsteroidOutputSpec(output_times; subsurface_face_ids),
 )
 
 ##= Run TPM =##
@@ -264,9 +264,10 @@ ephem = SingleAsteroidEphemerides(et_range, r_sun, R_body_to_inertial)
 # ...define problem as above...
 
 # Enable force and torque output
-output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids;
-    save_forces  = true,
-    save_torques = true,
+output = SingleAsteroidOutputSpec(output_times;
+    subsurface_face_ids = subsurface_face_ids,
+    save_forces         = true,
+    save_torques        = true,
 )
 
 solution = solve(problem, ExplicitEuler();
@@ -286,7 +287,7 @@ If only per-face forces in the body-fixed frame are needed (without rotation mat
 
 ```julia
 ephem  = SingleAsteroidEphemerides(et_range, r_sun)  # no rotation matrix required
-output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids; save_face_forces=true)
+output = SingleAsteroidOutputSpec(output_times; subsurface_face_ids, save_face_forces=true)
 
 solution = solve(problem, ExplicitEuler(); ephem=ephem, output=output, initial_temperature=200.0)
 
@@ -326,9 +327,9 @@ The problem's `with_self_heating` governs the global facets and, through them, t
 To record the temperatures of the rough surface itself, list the facets whose roughness models to save:
 
 ```julia
-output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids;
-    roughness_face_ids                 = [1, 7],
-    save_roughness_surface_temperature = true,
+output = SingleAsteroidOutputSpec(output_times;
+    subsurface_face_ids = subsurface_face_ids,
+    roughness_face_ids  = [1, 7],
 )
 solution = solve(problem, CrankNicolson(); ephem=ephem, output=output, initial_temperature=200.0)
 

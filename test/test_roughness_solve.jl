@@ -60,10 +60,10 @@ End-to-end tests of `solve` on a `ShapeModel` with surface roughness:
     @testset "partial roughness: global-level outputs equal the plain run" begin
         times, ephem = make_ephem(2; with_rotation=false)
         output_times = times[end-n_step_cycle:end]
-        output = SingleAsteroidOutputSpec(output_times, [1, 7];
-            save_surface_temperature    = true,
-            save_subsurface_temperature = true,
-            save_face_forces            = true,
+        output = SingleAsteroidOutputSpec(output_times;
+            save_surface_temperature = true,
+            subsurface_face_ids      = [1, 7],
+            save_face_forces         = true,
         )
 
         shape_plain = load_shape_obj(path_obj)
@@ -95,12 +95,11 @@ End-to-end tests of `solve` on a `ShapeModel` with surface roughness:
     @testset "near-flat roughness reproduces the plain net force, torque and power" begin
         times, ephem = make_ephem(2; with_rotation=true)
         output_times = times[end-n_step_cycle:end]
-        output = SingleAsteroidOutputSpec(output_times, Int[];
-            save_surface_temperature    = false,
-            save_subsurface_temperature = false,
-            save_face_forces            = false,
-            save_forces                 = true,
-            save_torques                = true,
+        output = SingleAsteroidOutputSpec(output_times;
+            save_surface_temperature = false,
+            save_face_forces         = false,
+            save_forces              = true,
+            save_torques             = true,
         )
 
         shape_plain = load_shape_obj(path_obj)
@@ -128,10 +127,7 @@ End-to-end tests of `solve` on a `ShapeModel` with surface roughness:
     @testset "energy balance closes with roughness faces as representative patches" begin
         n_cycle = 10
         times, ephem = make_ephem(n_cycle; with_rotation=false)
-        output = SingleAsteroidOutputSpec(times[end:end], Int[];
-            save_surface_temperature    = true,
-            save_subsurface_temperature = false,
-        )
+        output = SingleAsteroidOutputSpec(times[end:end]; save_surface_temperature = true)
 
         shape_hier = load_shape_obj(path_obj)
         add_roughness_models!(shape_hier, roughness_model)
@@ -153,9 +149,7 @@ End-to-end tests of `solve` on a `ShapeModel` with surface roughness:
         shape_hier = load_shape_obj(path_obj)
         add_roughness_models!(shape_hier, roughness_model, 1)
         add_roughness_models!(shape_hier, roughness_model, 7)
-        output = SingleAsteroidOutputSpec(output_times, Int[];
-            save_subsurface_temperature = false,
-            roughness_face_ids = [7, 1], save_roughness_surface_temperature = true)
+        output = SingleAsteroidOutputSpec(output_times; roughness_face_ids = [7, 1])
         sol = solve(make_problem(shape_hier), CrankNicolson();
             ephem, output, initial_temperature=200.0, show_progress=false)
 
@@ -183,10 +177,8 @@ End-to-end tests of `solve` on a `ShapeModel` with surface roughness:
         # A roughness model flat to 1e-6 reproduces the smooth face's surface temperature
         shape_flat = load_shape_obj(path_obj)
         add_roughness_models!(shape_flat, create_shape_crater(0.4, 1e-6; Nx=4, Ny=4))
-        output_flat = SingleAsteroidOutputSpec(output_times, Int[];
-            save_subsurface_temperature = false,
-            roughness_face_ids = collect(1:length(shape_flat.faces)),
-            save_roughness_surface_temperature = true)
+        output_flat = SingleAsteroidOutputSpec(output_times;
+            roughness_face_ids = collect(1:length(shape_flat.faces)))
         sol_flat = solve(make_problem(shape_flat), CrankNicolson();
             ephem, output=output_flat, initial_temperature=200.0, show_progress=false)
         for (i, T_rough) in sol_flat.roughness_surface_temperature
@@ -194,9 +186,7 @@ End-to-end tests of `solve` on a `ShapeModel` with surface roughness:
         end
 
         # Requesting a face without a roughness model, or a plain ShapeModel, is an error
-        output_bad = SingleAsteroidOutputSpec(output_times, Int[];
-            save_subsurface_temperature = false,
-            roughness_face_ids = [2], save_roughness_surface_temperature = true)
+        output_bad = SingleAsteroidOutputSpec(output_times; roughness_face_ids = [2])
         @test_throws ArgumentError solve(make_problem(shape_hier), CrankNicolson();
             ephem, output=output_bad, initial_temperature=200.0, show_progress=false)
         shape_plain = load_shape_obj(path_obj)
@@ -207,12 +197,12 @@ End-to-end tests of `solve` on a `ShapeModel` with surface roughness:
     @testset "export_solution and show_progress" begin
         times, ephem = make_ephem(1; with_rotation=true)
         output_times = times[end-5:end]
-        output = SingleAsteroidOutputSpec(output_times, [1];
-            save_surface_temperature    = true,
-            save_subsurface_temperature = true,
-            save_face_forces            = true,
-            save_forces                 = true,
-            save_torques                = true,
+        output = SingleAsteroidOutputSpec(output_times;
+            save_surface_temperature = true,
+            subsurface_face_ids      = [1],
+            save_face_forces         = true,
+            save_forces              = true,
+            save_torques             = true,
         )
 
         shape_hier = load_shape_obj(path_obj)
