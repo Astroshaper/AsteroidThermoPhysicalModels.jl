@@ -131,8 +131,8 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Didymos fo
     subsurface_face_ids1 = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature of the primary
     subsurface_face_ids2 = [1, 2, 3, 4, 20]  # Face indices to save subsurface temperature of the secondary
     output = BinaryAsteroidOutputSpec(
-        SingleAsteroidOutputSpec(output_times, subsurface_face_ids1),
-        SingleAsteroidOutputSpec(output_times, subsurface_face_ids2),
+        SingleAsteroidOutputSpec(output_times; subsurface_face_ids=subsurface_face_ids1),
+        SingleAsteroidOutputSpec(output_times; subsurface_face_ids=subsurface_face_ids2),
     )
 
     solution = solve(problem, ExplicitEuler();

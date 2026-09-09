@@ -38,9 +38,7 @@ Direction-dependent radiance and brightness temperature of rough facets:
         n_face = length(shape.faces)
         problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
             with_self_shadowing=false, with_self_heating=false)
-        output = SingleAsteroidOutputSpec(output_times, Int[];
-            save_subsurface_temperature=false,
-            roughness_face_ids=collect(1:n_face), save_roughness_surface_temperature=true)
+        output = SingleAsteroidOutputSpec(output_times; roughness_face_ids=collect(1:n_face))
         sol = solve(problem, CrankNicolson(); ephem, output, initial_temperature=200.0, show_progress=false)
         shape, problem, sol
     end
@@ -132,7 +130,7 @@ Direction-dependent radiance and brightness temperature of rough facets:
         shape_plain = load_shape_obj(path_obj)
         problem_plain = SingleAsteroidThermoPhysicalProblem(shape_plain, thermo_params, grid_params;
             with_self_shadowing=false, with_self_heating=false)
-        output_plain = SingleAsteroidOutputSpec(output_times, Int[]; save_subsurface_temperature=false)
+        output_plain = SingleAsteroidOutputSpec(output_times)
         sol_plain = solve(problem_plain, CrankNicolson(); ephem, output=output_plain,
             initial_temperature=200.0, show_progress=false)
         L_plain = directional_radiance(problem_plain, sol_plain, 1, d̂)
@@ -151,8 +149,7 @@ Direction-dependent radiance and brightness temperature of rough facets:
         add_roughness_models!(shape_part, create_shape_crater(0.4, 0.1; Nx=4, Ny=4), 1)
         problem_part = SingleAsteroidThermoPhysicalProblem(shape_part, thermo_params, grid_params;
             with_self_shadowing=false, with_self_heating=false)
-        output_part = SingleAsteroidOutputSpec(output_times, Int[]; save_subsurface_temperature=false,
-            roughness_face_ids=[1], save_roughness_surface_temperature=true)
+        output_part = SingleAsteroidOutputSpec(output_times; roughness_face_ids=[1])
         sol_part = solve(problem_part, CrankNicolson(); ephem, output=output_part,
             initial_temperature=200.0, show_progress=false)
         L_part = directional_radiance(problem_part, sol_part, 1, d̂)
@@ -165,8 +162,7 @@ Direction-dependent radiance and brightness temperature of rough facets:
         add_roughness_models!(shape, create_shape_crater(0.4, 0.1; Nx=4, Ny=4))
         problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
             with_self_shadowing=false, with_self_heating=false)
-        output = SingleAsteroidOutputSpec(output_times, Int[];
-            save_surface_temperature=false, save_subsurface_temperature=false)
+        output = SingleAsteroidOutputSpec(output_times; save_surface_temperature=false)
         sol = solve(problem, CrankNicolson(); ephem, output, initial_temperature=200.0, show_progress=false)
         @test_throws ArgumentError directional_radiance(problem, sol, 1, SVector(1.0, 0.0, 0.0))
     end

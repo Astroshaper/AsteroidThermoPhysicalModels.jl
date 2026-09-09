@@ -57,7 +57,7 @@ Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
             with_self_heating   = false,
         )
 
-        output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids, true, true, false, true, true)
+        output = SingleAsteroidOutputSpec(output_times; subsurface_face_ids, save_forces=true, save_torques=true)
         solution = solve(problem, CrankNicolson();
             ephem               = ephem,
             output              = output,
@@ -99,10 +99,9 @@ Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
         )
         n_face = length(shape.faces)
 
-        output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids;
-            save_surface_temperature    = false,
-            save_subsurface_temperature = false,
-            save_face_forces            = true,
+        output = SingleAsteroidOutputSpec(output_times;
+            save_surface_temperature = false,
+            save_face_forces         = true,
         )
         solution = solve(problem, CrankNicolson();
             ephem               = ephem_no_rot,
@@ -147,8 +146,8 @@ Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
         )
 
         output = BinaryAsteroidOutputSpec(
-            SingleAsteroidOutputSpec(output_times, subsurface_face_ids, true, true, false, true, true),
-            SingleAsteroidOutputSpec(output_times, subsurface_face_ids, true, true, false, true, true),
+            SingleAsteroidOutputSpec(output_times; subsurface_face_ids, save_forces=true, save_torques=true),
+            SingleAsteroidOutputSpec(output_times; subsurface_face_ids, save_forces=true, save_torques=true),
         )
         solution = solve(problem, CrankNicolson();
             ephem                         = ephem,
@@ -184,7 +183,7 @@ Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
                 with_self_shadowing=false, with_self_heating=false),
             ExplicitEuler();
             ephem               = SingleAsteroidEphemerides(times, r_sun),
-            output              = SingleAsteroidOutputSpec(output_times, subsurface_face_ids),
+            output              = SingleAsteroidOutputSpec(output_times; subsurface_face_ids),
             initial_temperature = 200.0,
             show_progress       = false,
         )
@@ -213,8 +212,8 @@ Covers: _alloc_solution (with forces/torques), record_timestep! (with R),
                 [Matrix{Float64}(I, 3, 3) for _ in times],
             ),
             output = BinaryAsteroidOutputSpec(
-                SingleAsteroidOutputSpec(output_times, subsurface_face_ids),
-                SingleAsteroidOutputSpec(output_times, subsurface_face_ids),
+                SingleAsteroidOutputSpec(output_times; subsurface_face_ids),
+                SingleAsteroidOutputSpec(output_times; subsurface_face_ids),
             ),
             initial_temperature_primary   = 200.0,
             initial_temperature_secondary = 200.0,

@@ -105,7 +105,7 @@ See https://github.com/Astroshaper/Astroshaper-examples/tree/main/TPM_Ryugu for 
     ## --- Run TPM ---
     output_times        = ephem.times[end-n_step_in_cycle:end]  # Save temperature during the final rotation
     subsurface_face_ids = [1, 2, 3, 4, 10]  # Face indices to save subsurface temperature
-    output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids)
+    output = SingleAsteroidOutputSpec(output_times; subsurface_face_ids)
 
     solution = solve(problem, ExplicitEuler();
         ephem               = ephem,
