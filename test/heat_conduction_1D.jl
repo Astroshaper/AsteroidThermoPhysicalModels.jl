@@ -133,4 +133,11 @@ Tests for 1D heat conduction solvers:
         println("    - Implicit Euler vs. Isothermal analytical solution: ", δ_max_IE)
         println("    - Crank-Nicolson vs. Isothermal analytical solution: ", δ_max_CN)
     end
+    @testset "explicit Euler rejects an unstable time step" begin
+        # λ = αΔt/Δz² ≥ 0.5 is an input error (the time step), so it raises an ArgumentError
+        α = k / (ρ * Cₚ)
+        Δt_unstable = 0.5 * grid_params.Δz^2 / α
+        @test_throws ArgumentError AsteroidThermoPhysicalModels.explicit_euler!(state_EE, Δt_unstable)
+        @test_nowarn AsteroidThermoPhysicalModels.explicit_euler!(state_EE, 0.9 * Δt_unstable)
+    end
 end

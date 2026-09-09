@@ -351,7 +351,7 @@ Unit tests for SingleAsteroidThermoPhysicalState on a shape with surface roughne
 
         shape_hier.face_visibility_graph = nothing
         r☉ = SVector(1.0, 0.0, 0.0) * AsteroidThermoPhysicalModels.au2m
-        @test_throws ErrorException AsteroidThermoPhysicalModels.update_flux_sun!(state_hier, r☉)
+        @test_throws ArgumentError AsteroidThermoPhysicalModels.update_flux_sun!(state_hier, r☉)
     end
 
     @testset "update_flux_scat_single! / update_flux_rad_single! (global level)" begin

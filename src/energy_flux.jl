@@ -223,10 +223,10 @@ end
 # when the graph was removed from the (mutable) shape afterwards — which must fail loudly
 # rather than silently drop the term that depends on it.
 function _require_face_visibility_graph(shape::ShapeModel, flag::AbstractString)
-    has_face_visibility_graph(shape) || error(
+    has_face_visibility_graph(shape) || throw(ArgumentError(
         "face_visibility_graph must be built when `$flag` is enabled. " *
         "Use `build_face_visibility_graph!(shape)` or load the shape with `with_face_visibility=true`."
-    )
+    ))
     return nothing
 end
 
@@ -354,10 +354,10 @@ function update_flux_sun!(
     if state.problem.with_mutual_shadowing
         # Check BVH availability
         if !has_bvh(state.primary.problem.shape) || !has_bvh(state.secondary.problem.shape)
-            error(
-                "BVH must be built for both shapes when MUTUAL_SHADOWING is enabled. " *
+            throw(ArgumentError(
+                "BVH must be built for both shapes when `with_mutual_shadowing` is enabled. " *
                 "Use `build_bvh!(shape)` or load shapes with `with_bvh=true`."
-            )
+            ))
         end
 
         shape1 = state.primary.problem.shape
