@@ -16,14 +16,14 @@ in the subsurface of asteroids, including:
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    update_temperature_zero_conductivity!(state::SingleLevelThermoPhysicalState)
+    update_temperature_zero_conductivity!(state::SingleAsteroidThermoPhysicalState)
 
 Update surface temperature for the zero thermal conductivity case.
 When thermal conductivity is zero, there is no heat conduction into the subsurface,
 and the surface temperature is determined solely by instantaneous radiative equilibrium.
 
 # Arguments
-- `state::SingleLevelThermoPhysicalState` : Thermophysical simulation state for a single asteroid
+- `state::SingleAsteroidThermoPhysicalState` : Thermophysical simulation state for a single asteroid
 
 # Mathematical Formula
 For each face, the surface temperature T is calculated from:
@@ -44,7 +44,7 @@ where:
 - The temperature instantly adjusts to balance incoming and outgoing radiation
 - No subsurface temperatures are updated (only surface layer)
 """
-function update_temperature_zero_conductivity!(state::SingleLevelThermoPhysicalState)
+function update_temperature_zero_conductivity!(state::SingleAsteroidThermoPhysicalState)
     for i_face in axes(state.temperature, 2)
         R_vis = state.problem.thermo_params.reflectance_vis[i_face]
         R_ir  = state.problem.thermo_params.reflectance_ir[i_face]
@@ -62,7 +62,6 @@ end
 
 """
     update_temperature!(state::SingleAsteroidThermoPhysicalState, Δt)
-    update_temperature!(state::HierarchicalSingleAsteroidThermoPhysicalState, Δt)
 
 Update the temperature distribution for the next time step by solving the 1D heat conduction equation.
 The solver method is determined by `state.solver_cache`, and special handling is applied for zero conductivity.
@@ -82,11 +81,12 @@ The function automatically selects the appropriate solver based on `state.solver
 - The zero-conductivity case uses instantaneous radiative equilibrium
 
 # Notes
-- For a `HierarchicalSingleAsteroidThermoPhysicalState`, the global faces are advanced first
-  and then every sub-face state in `roughness_states`, each a full set of 1D columns driven by
-  its own fluxes and using its own solver cache. The global faces are solved independently of
-  their roughness models and serve as the smooth-surface baseline for the same run; nothing
-  flows from the sub-faces back to them.
+- For a shape with surface roughness, the global faces are advanced first and then every
+  sub-face state in `roughness_states`, each a full set of 1D columns driven by its own fluxes
+  and using its own solver cache. The global faces are solved independently of their roughness
+  models and serve as the smooth-surface baseline for the same run; nothing flows from the
+  sub-faces back to them. For a smooth surface `roughness_states` is empty and only the global
+  faces are advanced.
 
 # Mathematical Background
 Solves the 1D heat conduction equation:
@@ -99,17 +99,15 @@ where α = k/(ρCₚ) is the thermal diffusivity.
 - `explicit_euler!`, `implicit_euler!`, `crank_nicolson!` for specific solver implementations
 - `update_temperature_zero_conductivity!` for the zero-conductivity case
 """
-update_temperature!(state::SingleAsteroidThermoPhysicalState, Δt) = _update_temperature!(state, Δt)
-
-function update_temperature!(state::HierarchicalSingleAsteroidThermoPhysicalState, Δt)
+function update_temperature!(state::SingleAsteroidThermoPhysicalState, Δt)
     _update_temperature!(state, Δt)      # global faces: the smooth-surface baseline
-    for rs in state.roughness_states      # sub-faces of each roughness model
+    for rs in state.roughness_states      # sub-faces of each roughness model (empty when smooth)
         _update_temperature!(rs, Δt)
     end
 end
 
 # Advance the faces that `state` describes directly, by the solver its cache was built for.
-function _update_temperature!(state::SingleLevelThermoPhysicalState, Δt)
+function _update_temperature!(state::SingleAsteroidThermoPhysicalState, Δt)
     # Handle zero-conductivity case
     if iszero(state.problem.thermo_params.conductivity)
         update_temperature_zero_conductivity!(state)
@@ -149,13 +147,13 @@ end
 
 
 """
-    explicit_euler!(state::SingleLevelThermoPhysicalState, Δt)
+    explicit_euler!(state::SingleAsteroidThermoPhysicalState, Δt)
 
 Solve the 1D heat conduction equation using the explicit (forward) Euler method.
 This method is conditionally stable and requires careful time step selection.
 
 # Arguments
-- `state::SingleLevelThermoPhysicalState` : Thermophysical simulation state for a single asteroid
+- `state::SingleAsteroidThermoPhysicalState` : Thermophysical simulation state for a single asteroid
 - `Δt::Real` : Time step [s]
 
 # Method Properties
@@ -187,7 +185,7 @@ The method is stable only when λ < 0.5. If this condition is violated, an error
 # Errors
 - Throws an error if λ ≥ 0.5 (stability violation)
 """
-function explicit_euler!(state::SingleLevelThermoPhysicalState, Δt)
+function explicit_euler!(state::SingleAsteroidThermoPhysicalState, Δt)
     T = state.temperature
     n_depth = size(T, 1)
     n_face = size(T, 2)
@@ -216,13 +214,13 @@ end
 
 
 """
-    implicit_euler!(state::SingleLevelThermoPhysicalState, Δt)
+    implicit_euler!(state::SingleAsteroidThermoPhysicalState, Δt)
 
 Solve the 1D heat conduction equation using the implicit (backward) Euler method.
 This method is unconditionally stable, allowing for larger time steps than explicit methods.
 
 # Arguments
-- `state::SingleLevelThermoPhysicalState` : Thermophysical simulation state for a single asteroid
+- `state::SingleAsteroidThermoPhysicalState` : Thermophysical simulation state for a single asteroid
 - `Δt::Real` : Time step [s]
 
 # Method Properties
@@ -260,7 +258,7 @@ Different boundary conditions modify the tridiagonal matrix:
 - `tridiagonal_matrix_algorithm!` for the solution algorithm
 - `update_upper_temperature!`, `update_lower_temperature!` for boundary conditions
 """
-function implicit_euler!(state::SingleLevelThermoPhysicalState, Δt)
+function implicit_euler!(state::SingleAsteroidThermoPhysicalState, Δt)
     T = state.temperature
     n_depth = size(T, 1)
     n_face = size(T, 2)
@@ -338,13 +336,13 @@ end
 
 
 """
-    crank_nicolson!(state::SingleLevelThermoPhysicalState, Δt)
+    crank_nicolson!(state::SingleAsteroidThermoPhysicalState, Δt)
 
 Solve the 1D heat conduction equation using the Crank-Nicolson method.
 This method combines the explicit and implicit Euler methods for improved accuracy.
 
 # Arguments
-- `state::SingleLevelThermoPhysicalState` : Thermophysical simulation state for a single asteroid
+- `state::SingleAsteroidThermoPhysicalState` : Thermophysical simulation state for a single asteroid
 - `Δt::Real` : Time step [s]
 
 # Method Properties
@@ -381,7 +379,7 @@ that includes information from the current time step.
 - `tridiagonal_matrix_algorithm!` for the solution algorithm
 - `implicit_euler!`, `explicit_euler!` for comparison with other methods
 """
-function crank_nicolson!(state::SingleLevelThermoPhysicalState, Δt)
+function crank_nicolson!(state::SingleAsteroidThermoPhysicalState, Δt)
     T = state.temperature
     n_depth = size(T, 1)
     n_face = size(T, 2)
@@ -466,7 +464,7 @@ end
 
 """
     tridiagonal_matrix_algorithm!(a, b, c, d, x)
-    tridiagonal_matrix_algorithm!(state::SingleLevelThermoPhysicalState)
+    tridiagonal_matrix_algorithm!(state::SingleAsteroidThermoPhysicalState)
 
 Tridiagonal matrix algorithm to solve the heat conduction equation
 by the implicit (backward) Euler and Crank-Nicolson methods.
@@ -497,7 +495,7 @@ function tridiagonal_matrix_algorithm!(a, b, c, d, x)
     end
 end
 
-tridiagonal_matrix_algorithm!(state::SingleLevelThermoPhysicalState) = tridiagonal_matrix_algorithm!(state.solver_cache.a, state.solver_cache.b, state.solver_cache.c, state.solver_cache.d, state.solver_cache.x)
+tridiagonal_matrix_algorithm!(state::SingleAsteroidThermoPhysicalState) = tridiagonal_matrix_algorithm!(state.solver_cache.a, state.solver_cache.b, state.solver_cache.c, state.solver_cache.d, state.solver_cache.x)
 
 
 # ╔═══════════════════════════════════════════════════════════════════╗
@@ -505,7 +503,7 @@ tridiagonal_matrix_algorithm!(state::SingleLevelThermoPhysicalState) = tridiagon
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    update_upper_temperature!(state::SingleLevelThermoPhysicalState, i::Integer)
+    update_upper_temperature!(state::SingleAsteroidThermoPhysicalState, i::Integer)
 
 Update the temperature of the upper surface based on the boundary condition `state.problem.upper_boundary_condition`.
 
@@ -513,7 +511,7 @@ Update the temperature of the upper surface based on the boundary condition `sta
 - `state` : Thermophysical simulation state for a single asteroid
 - `i`    : Index of the face of the shape model
 """
-function update_upper_temperature!(state::SingleLevelThermoPhysicalState, i::Integer)
+function update_upper_temperature!(state::SingleAsteroidThermoPhysicalState, i::Integer)
 
     #### Radiation boundary condition ####
     if state.problem.upper_boundary_condition isa RadiationBoundaryCondition
@@ -585,12 +583,12 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 """
-    update_lower_temperature!(state::SingleLevelThermoPhysicalState)
+    update_lower_temperature!(state::SingleAsteroidThermoPhysicalState)
 
 Update the temperature at the lower boundary (deepest layer) based on the boundary condition.
 
 # Arguments
-- `state::SingleLevelThermoPhysicalState` : Thermophysical simulation state for a single asteroid
+- `state::SingleAsteroidThermoPhysicalState` : Thermophysical simulation state for a single asteroid
 
 # Boundary Conditions
 The function applies one of the following boundary conditions at the bottom of the computational domain:
@@ -610,7 +608,7 @@ The function applies one of the following boundary conditions at the bottom of t
 - For explicit Euler method, it directly updates the temperature vector
 - The lower boundary should be deep enough that the chosen condition doesn't affect surface temperatures
 """
-function update_lower_temperature!(state::SingleLevelThermoPhysicalState)
+function update_lower_temperature!(state::SingleAsteroidThermoPhysicalState)
 
     #### Insulation boundary condition ####
     if state.problem.lower_boundary_condition isa InsulationBoundaryCondition

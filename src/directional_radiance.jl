@@ -22,9 +22,9 @@ end
 
 
 """
-    roughness_radiance(shape::HierarchicalShapeModel, i, T_sub, ε, d̂; λ=nothing) -> L
+    roughness_radiance(shape::ShapeModel, i, T_sub, ε, d̂; λ=nothing) -> L
 
-Thermal radiance of global facet `i` of `shape`, whose roughness model has the sub-facet
+Thermal radiance of facet `i` of `shape`, whose roughness model has the sub-facet
 surface temperatures `T_sub`, towards the observer direction `d̂` given in the body-fixed frame.
 
 The roughness model is a representative patch of the facet's surface, so the radiance is the
@@ -44,7 +44,7 @@ a sunlit crater whose hot wall faces the observer radiates more than that — th
 beaming.
 
 # Arguments
-- `shape` : Hierarchical shape model; facet `i` must carry a roughness model
+- `shape` : Shape model with surface roughness; facet `i` must carry a roughness model
 - `i`     : Global facet index
 - `T_sub` : Surface temperature of each sub-facet of the roughness model [K]
 - `ε`     : Emissivity of the facet (grey: independent of wavelength)
@@ -66,7 +66,7 @@ beaming.
   patch are not; the representative-patch picture assumes patches much smaller than the facet.
 """
 function roughness_radiance(
-    shape::HierarchicalShapeModel, i::Integer, T_sub::AbstractVector{<:Real}, ε::Real,
+    shape::ShapeModel, i::Integer, T_sub::AbstractVector{<:Real}, ε::Real,
     d̂::StaticVector{3}; λ::Union{Nothing, Real} = nothing,
 )
     model = get_roughness_model(shape, i)::ShapeModel
@@ -88,7 +88,7 @@ function roughness_radiance(
         cosθ_j <= 0 && continue
         emitted += cosθ_j * model.face_areas[j] * ε * _lambert_radiance(T_sub[j], λ)
     end
-    return emitted / (_projected_area(model) * cosθ_view)
+    return emitted / (projected_area(model) * cosθ_view)
 end
 
 
@@ -137,15 +137,12 @@ function directional_radiance(
         if haskey(T_rough, i)
             L[i] = roughness_radiance(shape, i, view(T_rough[i], :, i_save), ε[i], d̂; λ)
         else
-            n̂ = _global_shape(shape).face_normals[i]
+            n̂ = shape.face_normals[i]
             L[i] = n̂ ⋅ d̂ > 0 ? ε[i] * _lambert_radiance(solution.surface_temperature[i, i_save], λ) : NaN
         end
     end
     return L
 end
-
-_global_shape(shape::ShapeModel) = shape
-_global_shape(shape::HierarchicalShapeModel) = shape.global_shape
 
 
 """

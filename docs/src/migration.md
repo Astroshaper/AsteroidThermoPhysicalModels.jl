@@ -8,6 +8,14 @@ This page summarizes breaking changes between versions and how to update your co
 
 The API changes of v0.2.0 and v0.3.0 are listed in the [changelog](https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl/blob/main/CHANGELOG.md).
 
+### Requires AsteroidShapeModels.jl v0.6
+
+v0.3.0 raises the AsteroidShapeModels.jl compat to `"0.6"`. Surface roughness is carried by
+`ShapeModel` itself (`shape.roughness`, built with `add_roughness_models!`); load shapes with
+plain `load_shape_obj` / `load_shape_grid`. If your scripts used AsteroidShapeModels.jl v0.5
+APIs directly (e.g., `HierarchicalShapeModel`, `as_hierarchical=true`, `has_roughness_model`),
+see the [AsteroidShapeModels.jl migration guide](https://astroshaper.github.io/AsteroidShapeModels.jl/stable/guides/migration/).
+
 ### Results that change: net thermal force on non-spherical shapes
 
 Up to v0.2.1 the net thermal force was accumulated as ``\sum_i (\hat{\mathbf{r}}_i \cdot \mathbf{F}_i)\,\hat{\mathbf{r}}_i``,

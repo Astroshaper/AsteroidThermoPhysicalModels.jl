@@ -78,6 +78,33 @@ Unit tests for the Problem-Solver API introduced in v0.2.0:
         @test problem.secondary.thermo_params.conductivity[begin] ≈ 0.2
     end
 
+    @testset "BinaryAsteroidThermoPhysicalProblem rejects surface roughness" begin
+        # The binary flux updates apply the eclipse shadowing and the mutual heating to the
+        # global faces after the sub-faces have been updated, so a rough binary would run and
+        # report sub-face results that ignore both. Refuse it at construction, on either body.
+        shape_rough = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"))
+        add_roughness_models!(shape_rough, create_shape_crater(0.4, 0.1; Nx=4, Ny=4))
+        shape_smooth = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"))
+
+        prob_rough  = SingleAsteroidThermoPhysicalProblem(shape_rough,  thermo_params1, grid_params1;
+            with_self_shadowing=false, with_self_heating=false)
+        prob_smooth = SingleAsteroidThermoPhysicalProblem(shape_smooth, thermo_params2, grid_params2;
+            with_self_shadowing=false, with_self_heating=false)
+
+        @test_throws ArgumentError BinaryAsteroidThermoPhysicalProblem(prob_rough,  prob_smooth;
+            with_mutual_shadowing=false, with_mutual_heating=false)
+        @test_throws ArgumentError BinaryAsteroidThermoPhysicalProblem(prob_smooth, prob_rough;
+            with_mutual_shadowing=false, with_mutual_heating=false)
+        @test_throws ArgumentError BinaryAsteroidThermoPhysicalProblem(
+            (shape_rough, shape_smooth), (thermo_params1, thermo_params2), (grid_params1, grid_params2);
+            with_self_shadowing=false, with_self_heating=false,
+            with_mutual_shadowing=false, with_mutual_heating=false)
+
+        # A smooth pair still constructs
+        @test BinaryAsteroidThermoPhysicalProblem(prob_smooth, prob_smooth;
+            with_mutual_shadowing=false, with_mutual_heating=false) isa BinaryAsteroidThermoPhysicalProblem
+    end
+
     @testset "init_temperature! with AbstractMatrix" begin
         problem = SingleAsteroidThermoPhysicalProblem(shape1, thermo_params1, grid_params1;
             with_self_shadowing = false,

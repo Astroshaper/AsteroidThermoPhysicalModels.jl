@@ -154,7 +154,7 @@ where ``\mathbf{F}_i`` is the recoil force on facet ``i`` (direct emission and r
 
 ### Facets with a roughness model
 
-When a facet ``i`` of a `HierarchicalShapeModel` carries a roughness model, the recoil is computed on every sub-facet ``j`` of that model in its local frame — direct emission and reflection, plus the momentum of photons intercepted by the other sub-facets, which is always included — and the facet force is replaced by their sum. The roughness model is a patch that represents the surface of the facet statistically, so the sum is counted for the area of the facet rather than for the area of the patch:
+When a facet ``i`` of a `ShapeModel` carries a roughness model, the recoil is computed on every sub-facet ``j`` of that model in its local frame — direct emission and reflection, plus the momentum of photons intercepted by the other sub-facets, which is always included — and the facet force is replaced by their sum. The roughness model is a patch that represents the surface of the facet statistically, so the sum is counted for the area of the facet rather than for the area of the patch:
 
 ```math
 \mathbf{F}_i = \frac{A_i}{A_\mathrm{proj}} \, \mathbf{R}_i^{\mathsf T} \sum_j \mathbf{f}_j, \qquad

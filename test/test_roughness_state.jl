@@ -1,9 +1,9 @@
 #=
-test_hierarchical_state.jl
+test_roughness_state.jl
 
-Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
-- _build_single_state dispatch for HierarchicalShapeModel
-- init_temperature! for HierarchicalSingleAsteroidThermoPhysicalState (Real and AbstractMatrix)
+Unit tests for SingleAsteroidThermoPhysicalState on a shape with surface roughness:
+- _build_single_state for a ShapeModel carrying roughness models
+- init_temperature! including the sub-face states (Real and AbstractMatrix)
 - automatic preparation of the geometric data required for self-shadowing and self-heating
 - update_flux_sun! on the global level, compared against the plain ShapeModel result
 - update_flux_sun! on the sub-face level: gate on the global illumination, consistency with a
@@ -22,16 +22,16 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
   follows the global self-heating flag
 =#
 
-@testset "HierarchicalSingleAsteroidThermoPhysicalState" begin
+@testset "SingleAsteroidThermoPhysicalState with surface roughness" begin
     msg = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-    |        Test: HierarchicalSingleAsteroidTPMState        |
+    |         Test: TPM state with surface roughness         |
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     """
     println(msg)
 
-    # Build a HierarchicalShapeModel from icosahedron with a crater roughness on all faces
-    hier_shape = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"); as_hierarchical=true)
+    # Build a ShapeModel from icosahedron with a crater roughness on all faces
+    hier_shape = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"))
     roughness_model = create_shape_crater(0.4, 0.1; Nx=4, Ny=4)
     add_roughness_models!(hier_shape, roughness_model)
 
@@ -50,7 +50,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         with_self_heating   = false,
     )
 
-    n_global_faces = length(hier_shape.global_shape.faces)
+    n_global_faces = length(hier_shape.faces)
 
     @testset "problem construction" begin
         @test problem isa SingleAsteroidThermoPhysicalProblem
@@ -60,8 +60,8 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
 
     state = AsteroidThermoPhysicalModels._build_single_state(problem, CrankNicolson())
 
-    @testset "_build_single_state returns HierarchicalSingleAsteroidThermoPhysicalState" begin
-        @test state isa AsteroidThermoPhysicalModels.HierarchicalSingleAsteroidThermoPhysicalState
+    @testset "_build_single_state returns a state with sub-face states" begin
+        @test state isa AsteroidThermoPhysicalModels.SingleAsteroidThermoPhysicalState
         @test size(state.temperature) == (grid_params.n_depth, n_global_faces)
         @test length(state.illuminated_faces) == n_global_faces
         @test length(state.flux_sun)          == n_global_faces
@@ -79,6 +79,18 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         # Each sub-state is an independent SingleAsteroidThermoPhysicalState
         @test all(rs isa AsteroidThermoPhysicalModels.SingleAsteroidThermoPhysicalState
                   for rs in state.roughness_states)
+    end
+
+    @testset "smooth shape has empty roughness vectors" begin
+        shape_smooth = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"))
+        problem_smooth = SingleAsteroidThermoPhysicalProblem(shape_smooth, thermo_params, grid_params;
+            with_self_shadowing = false,
+            with_self_heating   = false,
+        )
+        state_smooth = AsteroidThermoPhysicalModels._build_single_state(problem_smooth, CrankNicolson())
+
+        @test isempty(state_smooth.face_roughness_indices)
+        @test isempty(state_smooth.roughness_states)
     end
 
     @testset "init_temperature! (Real)" begin
@@ -110,7 +122,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
 
     @testset "no-roughness faces" begin
         # Build a shape with roughness on only one face
-        hier_shape2 = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"); as_hierarchical=true)
+        hier_shape2 = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"))
         add_roughness_models!(hier_shape2, roughness_model, 1)
 
         problem2 = SingleAsteroidThermoPhysicalProblem(hier_shape2, thermo_params, grid_params;
@@ -119,7 +131,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         )
         state2 = AsteroidThermoPhysicalModels._build_single_state(problem2, CrankNicolson())
 
-        n_faces2 = length(hier_shape2.global_shape.faces)
+        n_faces2 = length(hier_shape2.faces)
 
         @test length(state2.face_roughness_indices) == n_faces2
         @test state2.face_roughness_indices[1] == 1       # face 1 has roughness
@@ -128,40 +140,40 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
     end
 
     @testset "self-shadowing geometry prepared automatically" begin
-        # Self-shadowing is evaluated on the global shape, so the visibility graph and the
-        # maximum elevations must be built there rather than on the hierarchical wrapper.
-        hier_shape3 = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"); as_hierarchical=true)
+        # Self-shadowing is evaluated on the (global) shape itself, so the visibility graph
+        # and the maximum elevations must be built on it.
+        hier_shape3 = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"))
         add_roughness_models!(hier_shape3, roughness_model)
 
-        @test isnothing(hier_shape3.global_shape.face_visibility_graph)
-        @test isnothing(hier_shape3.global_shape.face_max_elevations)
+        @test isnothing(hier_shape3.face_visibility_graph)
+        @test isnothing(hier_shape3.face_max_elevations)
 
         SingleAsteroidThermoPhysicalProblem(hier_shape3, thermo_params, grid_params;
             with_self_shadowing = true,
             with_self_heating   = false,
         )
 
-        @test !isnothing(hier_shape3.global_shape.face_visibility_graph)
-        @test !isnothing(hier_shape3.global_shape.face_max_elevations)
+        @test !isnothing(hier_shape3.face_visibility_graph)
+        @test !isnothing(hier_shape3.face_max_elevations)
     end
 
     @testset "self-heating geometry prepared automatically" begin
-        hier_shape4 = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"); as_hierarchical=true)
+        hier_shape4 = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"))
         add_roughness_models!(hier_shape4, roughness_model)
 
-        @test isnothing(hier_shape4.global_shape.face_visibility_graph)
+        @test isnothing(hier_shape4.face_visibility_graph)
 
         SingleAsteroidThermoPhysicalProblem(hier_shape4, thermo_params, grid_params;
             with_self_shadowing = false,
             with_self_heating   = true,
         )
 
-        @test !isnothing(hier_shape4.global_shape.face_visibility_graph)
-        @test isnothing(hier_shape4.global_shape.face_max_elevations)  # not needed by self-heating
+        @test !isnothing(hier_shape4.face_visibility_graph)
+        @test isnothing(hier_shape4.face_max_elevations)  # not needed by self-heating
     end
 
     @testset "update_flux_sun! (global level)" begin
-        # The global level of a hierarchical state must reproduce the plain ShapeModel result
+        # The global level of a state with roughness must reproduce the smooth-shape result
         # exactly: the sub-face machinery must not perturb the global solar flux.
         path_obj = joinpath(@__DIR__, "shape", "icosahedron.obj")
         au2m = AsteroidThermoPhysicalModels.au2m
@@ -172,7 +184,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
 
         for with_self_shadowing in (false, true)
             shape_plain = load_shape_obj(path_obj)
-            shape_hier  = load_shape_obj(path_obj; as_hierarchical=true)
+            shape_hier  = load_shape_obj(path_obj)
             add_roughness_models!(shape_hier, roughness_model)
 
             problem_plain = SingleAsteroidThermoPhysicalProblem(shape_plain, thermo_params, grid_params;
@@ -196,7 +208,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
                 # round-off) are skipped, since their illumination flag is not well defined.
                 r̂☉ = normalize(r☉)
                 F☉ = AsteroidThermoPhysicalModels.SOLAR_CONST / (norm(r☉) * AsteroidThermoPhysicalModels.m2au)^2
-                for (i, n̂) in enumerate(shape_hier.global_shape.face_normals)
+                for (i, n̂) in enumerate(shape_hier.face_normals)
                     cosθ = n̂ ⋅ r̂☉
                     abs(cosθ) < 1e-8 && continue
                     if cosθ > 0
@@ -231,7 +243,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         path_obj = joinpath(@__DIR__, "shape", "icosahedron.obj")
         crater   = create_shape_crater(0.4, 0.1; Nx=6, Ny=6)
 
-        shape_hier = load_shape_obj(path_obj; as_hierarchical=true)
+        shape_hier = load_shape_obj(path_obj)
         add_roughness_models!(shape_hier, crater)
         problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
             with_self_shadowing=true, with_self_heating=false)
@@ -279,7 +291,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         # With a roughness model that is flat to 1e-6, every sub-face has the normal of its
         # parent face, so its solar flux must equal the parent's. This pins the rotation into
         # the local frame: a wrong rotation would change cos θ and show up here.
-        shape_hier = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"); as_hierarchical=true)
+        shape_hier = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"))
         add_roughness_models!(shape_hier, create_shape_crater(0.4, 1e-6; Nx=4, Ny=4))
         problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
             with_self_shadowing=false, with_self_heating=false)
@@ -298,7 +310,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         for (i, k) in enumerate(state_hier.face_roughness_indices)
             rs = state_hier.roughness_states[k]
             if state_hier.illuminated_faces[i]
-                shape_hier.global_shape.face_normals[i] ⋅ r̂☉ < 1e-3 && continue  # grazing: skip
+                shape_hier.face_normals[i] ⋅ r̂☉ < 1e-3 && continue  # grazing: skip
                 n_checked += 1
                 @test all(rs.illuminated_faces)
                 @test all(isapprox.(rs.flux_sun, state_hier.flux_sun[i]; atol=1e-5 * F☉))
@@ -311,14 +323,14 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
 
     @testset "update_flux_sun! (partial roughness)" begin
         # Faces without a roughness model are skipped; the one with it is updated
-        shape_hier = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"); as_hierarchical=true)
+        shape_hier = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"))
         add_roughness_models!(shape_hier, create_shape_crater(0.4, 0.1; Nx=4, Ny=4), 1)
         problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
             with_self_shadowing=false, with_self_heating=false)
         state_hier = AsteroidThermoPhysicalModels._build_single_state(problem_hier, CrankNicolson())
 
         # Point the Sun along the normal of face 1 so that it is certainly lit
-        n̂₁ = shape_hier.global_shape.face_normals[1]
+        n̂₁ = shape_hier.face_normals[1]
         AsteroidThermoPhysicalModels.update_flux_sun!(state_hier, n̂₁ * AsteroidThermoPhysicalModels.au2m)
 
         @test state_hier.illuminated_faces[1]
@@ -331,13 +343,13 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         # The problem constructor builds the graph, but the global shape is mutable and may
         # lose it afterwards. Self-shadowing must then fail loudly rather than silently skip
         # the shadow test.
-        shape_hier = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"); as_hierarchical=true)
+        shape_hier = load_shape_obj(joinpath(@__DIR__, "shape", "icosahedron.obj"))
         add_roughness_models!(shape_hier, roughness_model)
         problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
             with_self_shadowing=true, with_self_heating=false)
         state_hier = AsteroidThermoPhysicalModels._build_single_state(problem_hier, CrankNicolson())
 
-        shape_hier.global_shape.face_visibility_graph = nothing
+        shape_hier.face_visibility_graph = nothing
         r☉ = SVector(1.0, 0.0, 0.0) * AsteroidThermoPhysicalModels.au2m
         @test_throws ErrorException AsteroidThermoPhysicalModels.update_flux_sun!(state_hier, r☉)
     end
@@ -346,11 +358,10 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         # Self-heating vanishes identically on a convex shape, so the icosahedron used above
         # cannot tell a working implementation from a broken one. A crater is concave: its
         # faces see each other, and both self-heating terms are non-zero.
-        make_crater(; as_hierarchical) =
-            create_shape_crater(0.4, 0.1; Nx=8, Ny=8, as_hierarchical)
+        make_crater() = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
 
-        shape_plain = make_crater(as_hierarchical=false)
-        shape_hier  = make_crater(as_hierarchical=true)
+        shape_plain = make_crater()
+        shape_hier  = make_crater()
         add_roughness_models!(shape_hier, create_shape_crater(0.4, 0.1; Nx=4, Ny=4))
 
         problem_plain = SingleAsteroidThermoPhysicalProblem(shape_plain, thermo_params, grid_params;
@@ -397,7 +408,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         # global crater makes the parent fluxes non-zero; a roughness crater makes the
         # intra-model exchange non-zero.
         crater = create_shape_crater(0.4, 0.1; Nx=6, Ny=6)
-        shape_hier = create_shape_crater(0.4, 0.1; Nx=8, Ny=8, as_hierarchical=true)
+        shape_hier = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
         add_roughness_models!(shape_hier, crater)
         problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
             with_self_shadowing=false, with_self_heating=true)
@@ -413,7 +424,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         state_alone = AsteroidThermoPhysicalModels._build_single_state(problem_alone, CrankNicolson())
 
         # Vary the temperature from face to face so the radiation term is not degenerate
-        n_faces = length(shape_hier.global_shape.faces)
+        n_faces = length(shape_hier.faces)
         T₀ = repeat(reshape(range(200.0, 300.0; length=n_faces) |> collect, 1, n_faces), grid_params.n_depth)
         AsteroidThermoPhysicalModels.init_temperature!(state_hier, T₀)
 
@@ -457,7 +468,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         # roughness model is still computed. This is what makes an on/off comparison of the
         # global self-heating isolate the external contribution.
         crater = create_shape_crater(0.4, 0.1; Nx=6, Ny=6)
-        shape_hier = create_shape_crater(0.4, 0.1; Nx=8, Ny=8, as_hierarchical=true)
+        shape_hier = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
         add_roughness_models!(shape_hier, crater)
         problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
             with_self_shadowing=false, with_self_heating=false)
@@ -492,7 +503,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
     @testset "near-flat roughness receives exactly the parent flux from outside" begin
         # A flat roughness model has no walls (sky view factor 1) and no exchange between its
         # own faces, so each sub-face must end up with exactly the parent's flux.
-        shape_hier = create_shape_crater(0.4, 0.1; Nx=8, Ny=8, as_hierarchical=true)
+        shape_hier = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
         add_roughness_models!(shape_hier, create_shape_crater(0.4, 1e-6; Nx=4, Ny=4))
         problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
             with_self_shadowing=false, with_self_heating=true)
@@ -519,7 +530,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
     end
 
     @testset "self-heating disabled leaves the global fluxes at zero" begin
-        shape_hier = create_shape_crater(0.4, 0.1; Nx=8, Ny=8, as_hierarchical=true)
+        shape_hier = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
         add_roughness_models!(shape_hier, create_shape_crater(0.4, 0.1; Nx=4, Ny=4))
 
         problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
@@ -537,13 +548,12 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
     end
 
     @testset "update_temperature! (global level)" begin
-        # The global faces of a hierarchical state are solved independently of their roughness
+        # The global faces of a state with roughness are solved independently of their roughness
         # models, so after any number of steps they must match the plain ShapeModel exactly.
         # A concave crater with self-heating exercises every flux term in the surface balance.
-        make_crater(; as_hierarchical) =
-            create_shape_crater(0.4, 0.1; Nx=8, Ny=8, as_hierarchical)
+        make_crater() = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
 
-        n_faces = length(make_crater(as_hierarchical=false).faces)
+        n_faces = length(make_crater().faces)
         T₀ = repeat(reshape(range(200.0, 300.0; length=n_faces) |> collect, 1, n_faces),
                     grid_params.n_depth)
         r☉ = SVector(0.2, -0.1, 1.0) * AsteroidThermoPhysicalModels.au2m
@@ -551,8 +561,8 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         n_steps = 10
 
         for algorithm in (CrankNicolson(), ImplicitEuler(), ExplicitEuler())
-            shape_plain = make_crater(as_hierarchical=false)
-            shape_hier  = make_crater(as_hierarchical=true)
+            shape_plain = make_crater()
+            shape_hier  = make_crater()
             add_roughness_models!(shape_hier, create_shape_crater(0.4, 0.1; Nx=4, Ny=4))
 
             problem_plain = SingleAsteroidThermoPhysicalProblem(shape_plain, thermo_params, grid_params;
@@ -598,7 +608,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         n_steps = 10
 
         for algorithm in (CrankNicolson(), ImplicitEuler(), ExplicitEuler())
-            shape_hier = load_shape_obj(path_obj; as_hierarchical=true)
+            shape_hier = load_shape_obj(path_obj)
             add_roughness_models!(shape_hier, create_shape_crater(0.4, 1e-6; Nx=4, Ny=4))
             problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
                 with_self_shadowing=true, with_self_heating=false)
@@ -618,7 +628,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
                 rs = state_hier.roughness_states[k]
                 # Skip grazing incidence, where the 1e-6 tilt of the sub-face normals is not
                 # small against cos θ of the parent (same reasoning as for the fluxes)
-                state_hier.illuminated_faces[i] && shape_hier.global_shape.face_normals[i] ⋅ r̂☉ < 0.05 && continue
+                state_hier.illuminated_faces[i] && shape_hier.face_normals[i] ⋅ r̂☉ < 0.05 && continue
                 n_checked += 1
                 for j in axes(rs.temperature, 2)
                     @test all(isapprox.(rs.temperature[:, j], state_hier.temperature[:, i]; rtol=1e-5))
@@ -641,7 +651,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         )
 
         shape_plain = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
-        shape_hier  = create_shape_crater(0.4, 0.1; Nx=8, Ny=8, as_hierarchical=true)
+        shape_hier  = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
         add_roughness_models!(shape_hier, create_shape_crater(0.4, 0.1; Nx=4, Ny=4))
 
         problem_plain = SingleAsteroidThermoPhysicalProblem(shape_plain, thermo_params_k0, grid_params;
@@ -699,7 +709,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         # the one face with a crater gets a different force (its recoil is that of the crater).
         path_obj = joinpath(@__DIR__, "shape", "icosahedron.obj")
         shape_plain = load_shape_obj(path_obj)
-        shape_hier  = load_shape_obj(path_obj; as_hierarchical=true)
+        shape_hier  = load_shape_obj(path_obj)
         add_roughness_models!(shape_hier, roughness_model, 1)
 
         problem_plain = SingleAsteroidThermoPhysicalProblem(shape_plain, thermo_params, grid_params;
@@ -727,7 +737,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         # normalisation.
         path_obj = joinpath(@__DIR__, "shape", "icosahedron.obj")
         shape_plain = load_shape_obj(path_obj)
-        shape_hier  = load_shape_obj(path_obj; as_hierarchical=true)
+        shape_hier  = load_shape_obj(path_obj)
         add_roughness_models!(shape_hier, create_shape_crater(0.4, 1e-6; Nx=4, Ny=4))
 
         problem_plain = SingleAsteroidThermoPhysicalProblem(shape_plain, thermo_params, grid_params;
@@ -763,7 +773,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         r☉ = SVector(0.3, -0.2, 0.9) * AsteroidThermoPhysicalModels.au2m
 
         states = map((1.0, 0.1)) do scale
-            shape_hier = load_shape_obj(path_obj; as_hierarchical=true)
+            shape_hier = load_shape_obj(path_obj)
             add_roughness_models!(shape_hier, roughness_model; scale)
             problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
                 with_self_shadowing=false, with_self_heating=false)
@@ -782,7 +792,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
     @testset "update_thermal_force! (deep crater changes the force; net force and torque re-summed)" begin
         path_obj = joinpath(@__DIR__, "shape", "icosahedron.obj")
         shape_plain = load_shape_obj(path_obj)
-        shape_hier  = load_shape_obj(path_obj; as_hierarchical=true)
+        shape_hier  = load_shape_obj(path_obj)
         add_roughness_models!(shape_hier, roughness_model)
 
         problem_plain = SingleAsteroidThermoPhysicalProblem(shape_plain, thermo_params, grid_params;
@@ -808,7 +818,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         @test all(state_hier.face_forces .!= state_plain.face_forces)
         @test all(f -> all(isfinite, f), state_hier.face_forces)
         @test state_hier.force  ≈ sum(state_hier.face_forces)
-        @test state_hier.torque ≈ sum(r × f for (r, f) in zip(shape_hier.global_shape.face_centers, state_hier.face_forces))
+        @test state_hier.torque ≈ sum(r × f for (r, f) in zip(shape_hier.face_centers, state_hier.face_forces))
     end
 
     @testset "update_thermal_force! (sky re-absorption term follows the global self-heating)" begin
@@ -822,7 +832,7 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
         r☉ = SVector(0.2, -0.1, 1.0) * AsteroidThermoPhysicalModels.au2m
 
         for with_self_heating in (true, false)
-            shape_hier = create_shape_crater(0.4, 0.1; Nx=8, Ny=8, as_hierarchical=true)
+            shape_hier = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
             add_roughness_models!(shape_hier, create_shape_crater(0.4, 0.1; Nx=4, Ny=4))
             problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
                 with_self_shadowing=false, with_self_heating)
@@ -830,13 +840,12 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
             AsteroidThermoPhysicalModels.init_temperature!(state_hier, 250.0)
             update_fluxes_and_force!(state_hier, r☉)
 
-            global_shape = shape_hier.global_shape
             n_sky = 0
             for (i, k) in enumerate(state_hier.face_roughness_indices)
                 rs = state_hier.roughness_states[k]
                 rshape = rs.problem.shape
                 A_proj = sum(a * (n̂ ⋅ ẑ) for (a, n̂) in zip(rshape.face_areas, rshape.face_normals))
-                patches_per_face = global_shape.face_areas[i] / A_proj
+                patches_per_face = shape_hier.face_areas[i] / A_proj
                 patch = patches_per_face * transform_physical_vector_local_to_global(shape_hier, i, sum(rs.face_forces))
 
                 if with_self_heating
@@ -845,8 +854,8 @@ Unit tests for HierarchicalSingleAsteroidThermoPhysicalState:
                         f_sky = max(0.0, 1 - sum(get_view_factors(rshape.face_visibility_graph, j)))
                         E_j * rshape.face_areas[j] * f_sky
                     end
-                    sky = sum(zip(get_view_factors(global_shape.face_visibility_graph, i),
-                                  get_visible_face_directions(global_shape.face_visibility_graph, i));
+                    sky = sum(zip(get_view_factors(shape_hier.face_visibility_graph, i),
+                                  get_visible_face_directions(shape_hier.face_visibility_graph, i));
                               init=zero(SVector{3, Float64})) do (f, d̂)
                         P_sky / c₀ * f * d̂
                     end
