@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.3.0] - TBD
+## [0.3.0] - 2026-09-09
 
 This release adds **surface roughness** to the thermophysical model, on top of
 AsteroidShapeModels.jl v0.6: a facet can carry a small roughness model (e.g. a spherical crater)

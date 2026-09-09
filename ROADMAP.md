@@ -78,10 +78,6 @@ Redesign the API around a Problem-Solver pattern inspired by `DifferentialEquati
 - [x] **API Cleanup**
   - [x] Remove `subsolar_temperature(r☉, params)` overload; use the explicit scalar form `subsolar_temperature(r☉, R_vis, ε)` instead
 
----
-**↓ Planned Releases ↓**
----
-
 ## v0.2.1 - Patch Fixes (Released: 2026-06-26)
 
 Non-breaking fixes and convenience improvements before the v0.3.0 surface roughness work.
@@ -91,19 +87,26 @@ Non-breaking fixes and convenience improvements before the v0.3.0 surface roughn
 - [x] **`*Ephemerides` auto-conversion** — constructors accept plain `Vector` inputs for position and rotation fields and convert to `SVector`/`SMatrix` internally; no need to import `StaticArrays` at the call site
 - [x] **Test prefix cleanup** — remove unnecessary `AsteroidThermoPhysicalModels.` prefixes from exported symbols in test files
 
-## v0.3.0 - Surface Roughness Support + ThermoParams Redesign (Target: 2026)
+## v0.3.0 - Surface Roughness Support + ThermoParams Redesign (Released: 2026-09-09)
 
-Introduce thermophysical modeling of surface roughness using `HierarchicalShapeModel` from `AsteroidShapeModels.jl`. This release also redesigns `ThermoParams` to separate material properties from numerical grid settings — a prerequisite for clean per-face material access in the roughness model.
+Thermophysical modeling of surface roughness on top of `AsteroidShapeModels.jl` v0.6, where a facet of a `ShapeModel` can carry a roughness model (e.g. a spherical crater) that is solved as a thermophysical model of its own. This release also separates `ThermoParams` (material) from `GridParams` (depth grid), makes the output specification keyword-only, and corrects two long-standing errors in the net thermal force and the thermal radiation flux.
 
-- [x] **`ThermoParams` / `GridParams` redesign** (breaking) — PR #218: separate thermophysical material properties (`ThermoParams`) from numerical depth-grid settings (`GridParams`)
+- [x] **`ThermoParams` / `GridParams` redesign** (breaking) — #218
+- [x] **Surface roughness** — state with independent sub-facet states (#222), global-level fluxes and heat conduction (#223, #225, #226), sub-facet illumination, self-heating with external irradiation, and heat conduction in the local frame of each facet (#227, #229, #231), thermal force of the sub-facets summed onto the parent facet as a representative patch (#233), `solve` end to end (#234)
+- [x] **Roughness surface temperatures recorded** (`roughness_face_ids`, `roughness_surface_temperature.csv`) — #235
+- [x] **Direction-dependent radiance and brightness temperature** of rough facets (thermal-infrared beaming) for image comparison — #236
+- [x] **Migration to `AsteroidShapeModels.jl` v0.6** (breaking) — #238: `HierarchicalShapeModel` is gone, roughness lives on `ShapeModel`; the state type is unified
+- [x] **Keyword-only `SingleAsteroidOutputSpec`** (breaking) — #239: face-specific outputs are selected by face lists
+- [x] **`ArgumentError` for input errors** (breaking) — #240
+- [x] **Fixes**: self-heating silently disabled without a visibility graph (#222), guards and re-absorption flag (#228), `flux_rad` reflectance (#230), net thermal force projection (#232)
 
-- [x] **Roughness-aware problem type** — PR #222: `SingleAsteroidThermoPhysicalProblem` accepts a `HierarchicalShapeModel`, and the new `HierarchicalSingleAsteroidThermoPhysicalState` holds an independent sub-face state (illumination, flux, temperature, thermal force) for each roughness-carrying face
+---
+**↓ Planned Releases ↓**
+---
 
-- [ ] **Sub-face flux and temperature calculations**: compute solar flux, self-heating, and 1D heat conduction on sub-faces in their local coordinate frames
+## v0.3.1 - Multi-threading, Solver Quality and Extended I/O (Target: 2026)
 
-- [ ] **Global aggregation**: transform sub-face thermal forces to the global frame and accumulate into body-level force and torque
-
-## v0.3.1 - Solver Quality and Extended I/O (Target: 2026)
+- [ ] **Multi-threading** of the sub-facet loops and the global heat conduction — a roughness run on a 9k-facet shape with 4×4 craters takes about 50 minutes single-threaded (3.5 hours with 8×8); parameter surveys need an order of magnitude less
 
 - [ ] **Heat conduction solver validation**
   - [ ] Validate numerical methods against analytical solutions
@@ -129,7 +132,6 @@ Introduce thermophysical modeling of surface roughness using `HierarchicalShapeM
 ## v0.5.0 - Performance Optimizations (Target: 2027)
 
 - [ ] **Computational Enhancements**
-  - [ ] Multi-threading support
   - [ ] GPU acceleration
   - [ ] Memory optimization
 
