@@ -8,6 +8,26 @@ This page summarizes breaking changes between versions and how to update your co
 
 The API changes of v0.2.0 and v0.3.0 are listed in the [changelog](https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl/blob/main/CHANGELOG.md).
 
+### `ThermoParams` / `GridParams`: material and grid parameters are separate types
+
+```julia
+# before
+thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params; ...)
+
+# after
+thermo_params = ThermoParams(; conductivity=k, density=ρ, heat_capacity=Cₚ,
+    reflectance_vis=R_vis, reflectance_ir=R_ir, emissivity=ε)
+grid_params = GridParams(; z_max, n_depth)   # Δz is auto-computed
+problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params; ...)
+```
+
+`grid_params` is a required third positional argument of `BinaryAsteroidThermoPhysicalProblem`
+as well; a single non-tuple instance is shared by both bodies. Field access changes from
+`thermo_params.thermal_conductivity` to `thermo_params.conductivity`, and from
+`thermo_params.n_depth` / `.Δz` to `grid_params.n_depth` / `.Δz`. `broadcast_thermo_params!`
+is gone: length-1 vectors are expanded to the number of faces when the problem is built.
+
 ### `SingleAsteroidOutputSpec`: face-specific outputs are selected by face lists
 
 `subsurface_face_ids` is now a keyword, and the `save_subsurface_temperature` /
@@ -37,6 +57,14 @@ v0.3.0 raises the AsteroidShapeModels.jl compat to `"0.6"`. Surface roughness is
 plain `load_shape_obj` / `load_shape_grid`. If your scripts used AsteroidShapeModels.jl v0.5
 APIs directly (e.g., `HierarchicalShapeModel`, `as_hierarchical=true`, `has_roughness_model`),
 see the [AsteroidShapeModels.jl migration guide](https://astroshaper.github.io/AsteroidShapeModels.jl/stable/guides/migration/).
+
+### Exceptions: input errors raise `ArgumentError`
+
+Errors that you fix by changing the inputs now raise `ArgumentError` instead of a plain
+`ErrorException`, as in AsteroidShapeModels.jl v0.6: a missing face visibility graph while
+`with_self_shadowing` / `with_self_heating` is enabled, a missing BVH while
+`with_mutual_shadowing` is enabled, and an explicit Euler time step at or beyond the stability
+limit (λ = αΔt/Δz² ≥ 0.5). Update any `catch` or `@test_throws` that named `ErrorException`.
 
 ### Results that change: net thermal force on non-spherical shapes
 

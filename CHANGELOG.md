@@ -9,18 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.0] - TBD
 
-This release separates thermophysical material properties (`ThermoParams`) from
-numerical grid configuration (`GridParams`). The old monolithic `ThermoParams` that
-held both material and grid parameters is replaced by two focused types.
+This release adds **surface roughness** to the thermophysical model, on top of
+AsteroidShapeModels.jl v0.6: a facet can carry a small roughness model (e.g. a spherical crater)
+that is solved as a thermophysical model of its own, which produces thermal-infrared beaming in
+the recorded forces and in the new direction-dependent radiance. It also separates the material
+properties (`ThermoParams`) from the depth grid (`GridParams`), makes the output specification
+keyword-only, and corrects two long-standing errors in the net thermal force and the thermal
+radiation flux.
 
 ### Migration Guide
+
+**1. `ThermoParams` / `GridParams`** — material and grid parameters are separate types:
 
 ```julia
 # v0.2.x
 thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
 problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params; ...)
 
-# v0.3.0 — material and grid parameters are now separate
+# v0.3.0
 thermo_params = ThermoParams(
     conductivity    = k,
     density         = ρ,
@@ -33,187 +39,182 @@ grid_params = GridParams(; z_max=z_max, n_depth=n_depth)  # Δz is auto-computed
 problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params; ...)
 ```
 
-For binary asteroid problems:
+For binary asteroid problems `grid_params` is a required third positional argument; a single
+`ThermoParams` / `GridParams` instance (non-tuple) is shared by both bodies:
 
 ```julia
 # v0.2.x
-problem = BinaryAsteroidThermoPhysicalProblem(
-    (shape1, shape2),
-    (thermo_params1, thermo_params2);
-    ...
-)
-
-# v0.3.0 — grid_params is now a required third positional argument
-problem = BinaryAsteroidThermoPhysicalProblem(
-    (shape1, shape2),
-    (thermo_params1, thermo_params2),
-    (grid_params1, grid_params2);
-    ...
-)
-# Or pass a single shared instance for both bodies:
-problem = BinaryAsteroidThermoPhysicalProblem(
-    (shape1, shape2),
-    thermo_params,
-    grid_params;
-    ...
-)
-```
-
-For code that reads fields of `ThermoParams`:
-
-```julia
-# v0.2.x
-thermo_params.thermal_conductivity  # Vector{Float64}
-thermo_params.n_depth               # Int
-thermo_params.Δz                    # Float64
+problem = BinaryAsteroidThermoPhysicalProblem((shape1, shape2), (thermo_params1, thermo_params2); ...)
 
 # v0.3.0
-thermo_params.conductivity  # renamed field
-grid_params.n_depth
-grid_params.Δz
+problem = BinaryAsteroidThermoPhysicalProblem((shape1, shape2), (thermo_params1, thermo_params2), (grid_params1, grid_params2); ...)
+problem = BinaryAsteroidThermoPhysicalProblem((shape1, shape2), thermo_params, grid_params; ...)
 ```
+
+Field access: `thermo_params.thermal_conductivity` → `thermo_params.conductivity`;
+`thermo_params.n_depth` / `.Δz` → `grid_params.n_depth` / `.Δz`.
+
+**2. `SingleAsteroidOutputSpec`** — face-specific outputs are selected by listing faces:
+
+```julia
+# v0.2.x
+output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids; save_forces=true)
+output = SingleAsteroidOutputSpec(output_times, Int[]; save_subsurface_temperature=false)
+
+# v0.3.0
+output = SingleAsteroidOutputSpec(output_times; subsurface_face_ids, save_forces=true)
+output = SingleAsteroidOutputSpec(output_times)    # surface temperature only
+```
+
+**3. AsteroidShapeModels.jl v0.6** — the compat is raised to `"0.6"`. Surface roughness is carried
+by `ShapeModel` itself (`shape.roughness`, built with `add_roughness_models!`); the former
+`HierarchicalShapeModel` wrapper and the `as_hierarchical` keyword no longer exist. See the
+[AsteroidShapeModels.jl migration guide](https://astroshaper.github.io/AsteroidShapeModels.jl/stable/guides/migration/).
+
+**4. Exceptions** — errors caused by the inputs raise `ArgumentError` instead of `ErrorException`.
+
+**5. Results that change** — net thermal forces on non-spherical shapes computed with v0.2.1 or
+earlier should be recomputed (see *Fixed*).
 
 ### Added
 
-- **`GridParams`** struct for numerical depth-grid configuration, extracted from the
-  old monolithic `ThermoParams`:
-  - Fields: `z_max` (depth of lower boundary [m]), `n_depth` (number of depth nodes), `Δz` (node spacing [m])
-  - `GridParams(; z_max, n_depth)` keyword constructor: `Δz` is auto-computed as `z_max / (n_depth - 1)`, placing nodes uniformly at `0, Δz, 2Δz, …, z_max`; use the positional constructor `GridParams(z_max, n_depth, Δz)` to specify `Δz` explicitly
-  - `GridParams` is now exported
-- **`ThermoParams` keyword constructor** `ThermoParams(; conductivity, density, heat_capacity, reflectance_vis, reflectance_ir, emissivity)`: avoids relying on positional argument order
-- **`ThermoParams` mixed scalar/vector constructor**: scalar arguments are automatically broadcast to match the length of any vector arguments, removing the need for manual `fill()` calls in non-uniform surface cases
-- **Surface-roughness state**: `SingleAsteroidThermoPhysicalState` gains
-  `face_roughness_indices` (face → sub-state index, 0 = no roughness) and `roughness_states`
-  (an independent `SingleAsteroidThermoPhysicalState` per roughness-carrying face). Both are
-  empty for a smooth surface, so the per-face layout and behaviour of smooth shapes are
-  unchanged
-- **`SingleAsteroidThermoPhysicalProblem` accepts a `ShapeModel` with surface roughness**
-  (AsteroidShapeModels.jl ≥ 0.6, `add_roughness_models!`): the problem type is unchanged;
-  the solver builds the sub-face states from `shape.roughness`. `init_temperature!`, `surface_temperature`, the
-  global-level flux updates (`update_flux_sun!`, `update_flux_scat_single!`,
-  `update_flux_rad_single!`), and the global-level heat conduction (`update_temperature!`
-  with all three solvers) support the new state. The global faces are solved independently
-  of their roughness models and serve as the smooth-surface baseline. `update_flux_sun!` also
-  illuminates the sub-faces of every roughness model in its local frame, with self-shadowing
-  inside the roughness model, gated on the illumination of the parent global face.
-  `update_flux_scat_single!` and `update_flux_rad_single!` compute the self-heating inside
-  each roughness model and add the flux the parent face receives from the other global faces,
-  distributed over the sub-faces by their sky view factor. Self-shadowing and self-heating
-  inside a roughness model are always on; the problem's `with_self_heating` governs the global
-  faces and, through them, the external irradiation of the sub-faces. `update_temperature!`
-  advances the sub-faces after the global faces, each as a full set of 1D columns driven by its
-  own fluxes. `update_thermal_force!` computes the recoil on every sub-face, including the
-  momentum of photons re-absorbed inside the roughness model, and replaces the force on the
-  parent face by the sum, counted for the parent's area as a representative patch
-  (`F_i = (A_i / A_proj) Σⱼ fⱼ`, rotated into the body frame; the roughness `scale` cancels);
-  the torque acts at the parent face centre, and with `with_self_heating` the photons that
-  leave the roughness model towards the sky and are intercepted by other global faces are
-  accounted for isotropically. `solve` and `export_solution` run end to end on a
-  shape with surface roughness with the existing `SingleAsteroidOutputSpec`; the recorded
-  `surface_temperature` / `subsurface_temperature` are the smooth-surface baseline of the global
-  faces, `face_forces` / `forces` / `torques` include the roughness, and `absorbed_power` /
-  `emitted_power` count every roughness face from its sub-faces as a representative patch.
-
+- **Surface roughness** (requires AsteroidShapeModels.jl ≥ 0.6). `SingleAsteroidThermoPhysicalProblem`
+  accepts a `ShapeModel` whose facets carry roughness models (`add_roughness_models!`); the
+  problem type is unchanged, and `solve` / `export_solution` run end to end with the existing
+  `SingleAsteroidOutputSpec`.
+  - **State**: `SingleAsteroidThermoPhysicalState` gains `face_roughness_indices` (facet →
+    sub-state index, 0 = no roughness) and `roughness_states` (an independent
+    `SingleAsteroidThermoPhysicalState` per roughness-carrying facet). Both are empty for a
+    smooth surface, so the layout and behaviour of smooth shapes are unchanged.
+  - **Global facets are the smooth-surface baseline**: they are solved independently of their
+    roughness models; nothing flows from the sub-facets back to them. The recorded
+    `surface_temperature` / `subsurface_temperature` are this baseline.
+  - **Illumination** (`update_flux_sun!`): the sub-facets of every roughness model are
+    illuminated in the local frame of their parent facet, with self-shadowing inside the
+    roughness model, and are dark whenever the parent facet is not illuminated.
+  - **Self-heating** (`update_flux_scat_single!`, `update_flux_rad_single!`): scattering and
+    radiative exchange between the sub-facets, plus the flux the parent facet receives from the
+    other global facets, distributed over the sub-facets by their sky view factor.
+    Self-shadowing and self-heating inside a roughness model are always on; the problem's
+    `with_self_heating` governs the global facets and, through them, this external irradiation.
+  - **Heat conduction** (`update_temperature!`): the sub-facets are advanced after the global
+    facets, each as a full set of 1D columns driven by its own fluxes, with the same
+    `GridParams`.
+  - **Thermal force** (`update_thermal_force!`): the recoil on every sub-facet, including the
+    momentum of photons re-absorbed inside the roughness model, replaces the force on the
+    parent facet, counted for the parent's area as a representative patch
+    (`F_i = (A_i / A_proj) R_iᵀ Σⱼ fⱼ`; the roughness `scale` cancels). The torque acts at the
+    parent facet centre. With `with_self_heating`, the photons that leave the roughness model
+    towards the sky and are intercepted by other global facets are accounted for
+    isotropically. `face_forces` / `forces` / `torques` therefore include the roughness.
+  - **Power budget**: `absorbed_power` / `emitted_power` count every roughness facet from its
+    sub-facets as a representative patch, without the smooth-surface value of that facet.
 - **Roughness surface temperatures can be recorded**: `SingleAsteroidOutputSpec` gains
-  `roughness_face_ids` and `save_roughness_surface_temperature`; the solution carries
-  `roughness_surface_temperature::Dict{Int, Matrix}` (global face → `(n_sub, n_output)`) and
-  `export_solution` writes `roughness_surface_temperature.csv` in long format (`time`,
-  `face_id`, `sub_face_id`, `temperature`). `surface_temperature` remains the smooth-surface
-  baseline of the global faces
-
+  `roughness_face_ids`; the solution carries `roughness_surface_temperature::Dict{Int, Matrix}`
+  (facet → `(n_sub, n_output)`) and `export_solution` writes `roughness_surface_temperature.csv`
+  in long format (`time`, `face_id`, `sub_face_id`, `temperature`).
 - **Direction-dependent radiance and brightness temperature**: `roughness_radiance`,
-  `directional_radiance` and `brightness_temperature` evaluate, as a post-processing step,
-  the thermal radiance of every facet towards an observer direction from the recorded
-  surface temperatures. A facet with a roughness model radiates from its visible sub-facets
-  per unit projected area (thermal-infrared beaming); the others as smooth Lambertian
-  surfaces. Total (`σT⁴`) or spectral (Planck at a given wavelength); one value per facet,
-  ready for a ray-caster
+  `directional_radiance` and `brightness_temperature` evaluate, as a post-processing step, the
+  thermal radiance of every facet towards an observer direction from the recorded surface
+  temperatures. A facet with a roughness model radiates from its visible sub-facets per unit
+  projected area (thermal-infrared beaming); the others as smooth Lambertian surfaces. Total
+  (`σT⁴`) or spectral (Planck at a given wavelength); one value per facet, ready for a
+  ray-caster.
+- **`GridParams`** struct for the numerical depth grid, extracted from the old monolithic
+  `ThermoParams`: fields `z_max`, `n_depth`, `Δz`; `GridParams(; z_max, n_depth)` computes
+  `Δz = z_max / (n_depth - 1)` (nodes at `0, Δz, …, z_max`), the positional
+  `GridParams(z_max, n_depth, Δz)` sets `Δz` explicitly. Exported.
+- **`ThermoParams` keyword constructor** `ThermoParams(; conductivity, density, heat_capacity,
+  reflectance_vis, reflectance_ir, emissivity)`, and a **mixed scalar/vector constructor** that
+  broadcasts scalars to the length of the vector arguments (no manual `fill()` for non-uniform
+  surfaces).
+- **`SingleAsteroidOutputSpec` accepts any `AbstractVector`** for `output_times` and the face
+  lists (ranges, other integer element types) and stores them as `Vector{Float64}` /
+  `Vector{Int}`.
 
 ### Changed
 
-- **Breaking**: errors caused by the inputs raise `ArgumentError` instead of a plain
-  `ErrorException`, matching AsteroidShapeModels.jl v0.6: a missing face visibility graph when
-  `with_self_shadowing` / `with_self_heating` is enabled, a missing BVH when
-  `with_mutual_shadowing` is enabled, and a time step that violates the explicit Euler
-  stability limit (λ ≥ 0.5). Code that catches `ErrorException` for these cases must be updated
+- **Breaking**: `ThermoParams` no longer holds grid parameters (`z_max`, `Δz`, `n_depth`);
+  pass a `GridParams` separately. `ThermoParams.thermal_conductivity` is renamed to
+  `conductivity`. The positional 9-argument constructor is removed; use the 6-argument
+  `ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε)` or the keyword constructor.
+- **Breaking**: `SingleAsteroidThermoPhysicalProblem(shape, thermo_params; ...)` →
+  `SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params; ...)`, and
+  `BinaryAsteroidThermoPhysicalProblem((shape1, shape2), (tp1, tp2); ...)` →
+  `BinaryAsteroidThermoPhysicalProblem((shape1, shape2), (tp1, tp2), (gp1, gp2); ...)`.
 - **Breaking**: `SingleAsteroidOutputSpec` selects the face-specific outputs by face lists
   alone. `subsurface_face_ids` moves from a positional argument to a keyword, and the
   `save_subsurface_temperature` / `save_roughness_surface_temperature` flags are removed: a
   non-empty `subsurface_face_ids` / `roughness_face_ids` saves the corresponding output, an
   empty list (the default) does not. The positional constructors are gone, and the
   `BinaryAsteroidOutputSpec` convenience constructor takes the two `output_times` positionally
-  with `subsurface_face_ids_primary` / `subsurface_face_ids_secondary` as keywords
-  ```julia
-  # v0.2.x / early v0.3.0
-  output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids; save_forces=true)
-  output = SingleAsteroidOutputSpec(output_times, Int[]; save_subsurface_temperature=false)
-
-  # v0.3.0
-  output = SingleAsteroidOutputSpec(output_times; subsurface_face_ids, save_forces=true)
-  output = SingleAsteroidOutputSpec(output_times)
-  ```
-- **Requires AsteroidShapeModels.jl v0.6**: surface roughness is carried by `ShapeModel`
-  itself (`shape.roughness`, built by `add_roughness_models!`) — the former
-  `HierarchicalShapeModel` wrapper no longer exists. Load shapes with plain
-  `load_shape_obj` / `load_shape_grid` (the `as_hierarchical` keyword is gone), and query
-  per-face roughness with `has_roughness(shape, i)`
-- **`BinaryAsteroidThermoPhysicalProblem` rejects shapes with surface roughness** with an
-  `ArgumentError`. The binary flux updates apply the eclipse shadowing and the mutual heating
-  to the global faces after the sub-faces have been updated, so a rough binary would run and
-  report sub-face results that ignore both; the guard closes that path until it is supported
-
-- **Breaking**: `ThermoParams` no longer holds grid parameters (`z_max`, `Δz`, `n_depth`); pass a `GridParams` instance separately
-- **Breaking**: `ThermoParams.thermal_conductivity` renamed to `ThermoParams.conductivity`
-- **Breaking**: Positional 9-argument constructor `ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)` removed; use `ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε)` (6-arg) or the keyword constructor
-- **Breaking**: `SingleAsteroidThermoPhysicalProblem(shape, thermo_params; ...)` → `SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params; ...)`
-- **Breaking**: `BinaryAsteroidThermoPhysicalProblem((shape1, shape2), (tp1, tp2); ...)` → `BinaryAsteroidThermoPhysicalProblem((shape1, shape2), (tp1, tp2), (gp1, gp2); ...)`; a single `ThermoParams`/`GridParams` instance (non-tuple) can be shared between both bodies
-
+  with `subsurface_face_ids_primary` / `subsurface_face_ids_secondary` as keywords.
+- **Breaking**: requires AsteroidShapeModels.jl v0.6. Surface roughness is carried by
+  `ShapeModel` itself (`shape.roughness`); the former `HierarchicalShapeModel` wrapper and the
+  `as_hierarchical` keyword of the loaders no longer exist, and per-facet roughness is queried
+  with `has_roughness(shape, i)`.
+- **Breaking**: errors caused by the inputs raise `ArgumentError` instead of a plain
+  `ErrorException`, matching AsteroidShapeModels.jl v0.6: a missing face visibility graph when
+  `with_self_shadowing` / `with_self_heating` is enabled, a missing BVH when
+  `with_mutual_shadowing` is enabled, and a time step that violates the explicit Euler
+  stability limit (λ ≥ 0.5).
 - **A missing face visibility graph now raises when the flag that needs it is enabled.** The
   scattered-light and thermal-radiation updates used to return silently, so `with_self_heating
   = true` on a shape whose graph was removed after problem construction produced zero
-  self-heating with no warning. They now fail the way the solar flux update already did for
-  `with_self_shadowing`
+  self-heating with no warning. They now fail the way the solar flux update already did.
 - **The re-absorption recoil term in `update_thermal_force!` follows `with_self_heating`.** It
   used to be applied whenever a visibility graph was present, so enabling `with_self_shadowing`
   alone switched it on. It is the momentum counterpart of the re-absorbed energy and now follows
-  the same flag as the energy terms
+  the same flag as the energy terms.
+- **`BinaryAsteroidThermoPhysicalProblem` rejects shapes with surface roughness** with an
+  `ArgumentError`. The binary flux updates apply the eclipse shadowing and the mutual heating
+  to the global facets after the sub-facets have been updated, so a rough binary would report
+  sub-facet results that ignore both; the guard closes that path until it is supported.
+- Preparing the geometry (visibility graph, maximum elevations, BVH) reports its elapsed time;
+  building the visibility graph for a large shape takes minutes and previously produced no
+  output until the run ended.
 
 ### Removed
 
-- **Breaking**: `broadcast_thermo_params!` removed; single-body `ThermoParams` (length-1 vectors) are now expanded to `n_face` at `SingleAsteroidThermoPhysicalProblem` construction time via an internal `_expand_thermo_params` call, eliminating the need for mutation
+- **Breaking**: `broadcast_thermo_params!`; single-body `ThermoParams` (length-1 vectors) are
+  expanded to `n_face` at `SingleAsteroidThermoPhysicalProblem` construction time.
 
 ### Fixed
 
-- **The net thermal force dropped the tangential part of every face force.** `update_thermal_force!`
-  accumulated `(r̂ᵢ ⋅ Fᵢ) r̂ᵢ` — each face force projected onto the direction of the face
-  centre from the origin — instead of `Fᵢ`. Where a force acts does not enter the motion of
-  the centre of mass, so the projection had no physical basis; it rotated each face force
-  towards the radial direction and scaled it by `r̂ᵢ ⋅ n̂ᵢ`, which on Ryugu ranges from −0.28
-  to 1. On an isothermal closed body the net recoil must vanish, and the projected sum did
-  not (0.14 % of the one-sided force scale on the 49k-face Ryugu shape). The net force is
-  now `Σᵢ Fᵢ`; the torque was already `Σᵢ rᵢ × Fᵢ` and is unchanged
+- **The net thermal force dropped the tangential part of every facet force.**
+  `update_thermal_force!` accumulated `(r̂ᵢ ⋅ Fᵢ) r̂ᵢ` — each facet force projected onto the
+  direction of the facet centre from the origin — instead of `Fᵢ`. Where a force acts does not
+  enter the motion of the centre of mass, so the projection had no physical basis; it rotated
+  each facet force towards the radial direction and scaled it by `r̂ᵢ ⋅ n̂ᵢ`, which on Ryugu
+  ranges from −0.28 to 1. On an isothermal closed body the net recoil must vanish, and the
+  projected sum did not (0.14 % of the one-sided force scale on the 49k-facet Ryugu shape).
+  The net force is now `Σᵢ Fᵢ`; the torque was already `Σᵢ rᵢ × Fᵢ` and is unchanged. On the
+  49k-facet Ryugu shape the rotation-averaged net force was about 7 % too small in magnitude
+  and 6° off in direction; net forces computed on non-spherical shapes with earlier versions
+  should be recomputed.
 - **`flux_rad` carried the emitter's thermal-infrared reflectance.** The self-heating and
-  mutual-heating thermal radiation terms multiplied the emission of the source face by
-  `1 − R_ir` of the *source*, on top of the `1 − R_ir` of the *receiving* face applied by the
+  mutual-heating thermal radiation terms multiplied the emission of the source facet by
+  `1 − R_ir` of the *source*, on top of the `1 − R_ir` of the *receiving* facet applied by the
   surface boundary condition, so with a non-zero `R_ir` the absorbed thermal radiation was
   counted short by a factor `1 − R_ir`. `flux_rad` is now the incident irradiance, like
-  `flux_sun` and `flux_scat`, and the receiving face's reflectance is applied exactly once.
-  No change for the default `R_ir = 0`
+  `flux_sun` and `flux_scat`, and the receiving facet's reflectance is applied exactly once.
+  No change for the default `R_ir = 0`.
 - **Self-heating silently did nothing without a face visibility graph.** When a shape was
   loaded without `with_face_visibility=true`, `with_self_heating = true` was accepted but the
   scattered-light and thermal-radiation flux updates returned early and the re-absorption
   recoil term was skipped, so the run completed and reported physically wrong results with no
   warning. The problem constructor now builds the visibility graph whenever self-heating is
-  enabled
+  enabled.
 - **Self-shadowing crashed at the first flux update on a lazily prepared shape.** Only
   `face_visibility_graph` was built, while `update_illumination!` also requires
-  `face_max_elevations`. Both are now built, in dependency order
-- Preparing the geometry reports its elapsed time; building the visibility graph for a large
-  shape takes minutes and previously produced no output until the run ended
+  `face_max_elevations`. Both are now built, in dependency order.
 
 ### Internal
 
-- Moved `GridParams` definition to `src/grid_params.jl`
+- Moved `GridParams` to `src/grid_params.jl`; the hierarchical-state machinery of the
+  development series (`HierarchicalSingleAsteroidThermoPhysicalState`,
+  `SingleLevelThermoPhysicalState`) was folded into `SingleAsteroidThermoPhysicalState` before
+  release and never shipped.
 
 ## [0.2.1] - 2026-06-26
 
