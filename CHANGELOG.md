@@ -136,6 +136,10 @@ grid_params.Δz
   `HierarchicalShapeModel` wrapper no longer exists. Load shapes with plain
   `load_shape_obj` / `load_shape_grid` (the `as_hierarchical` keyword is gone), and query
   per-face roughness with `has_roughness(shape, i)`
+- **`BinaryAsteroidThermoPhysicalProblem` rejects shapes with surface roughness** with an
+  `ArgumentError`. The binary flux updates apply the eclipse shadowing and the mutual heating
+  to the global faces after the sub-faces have been updated, so a rough binary would run and
+  report sub-face results that ignore both; the guard closes that path until it is supported
 
 - **Breaking**: `ThermoParams` no longer holds grid parameters (`z_max`, `Δz`, `n_depth`); pass a `GridParams` instance separately
 - **Breaking**: `ThermoParams.thermal_conductivity` renamed to `ThermoParams.conductivity`

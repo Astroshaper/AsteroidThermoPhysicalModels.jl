@@ -233,6 +233,9 @@ Construct a thermophysical problem for a binary asteroid system.
 # Notes
 - If `with_mutual_shadowing = true` and BVH is not yet built for either shape, it is built automatically.
   To avoid this, pre-build with `build_bvh!` or pass `with_bvh=true` when loading shapes.
+- Shapes with surface roughness are rejected with an `ArgumentError`: the eclipse shadowing and
+  the mutual heating are applied to the global faces only, so the sub-faces of a roughness model
+  would ignore both. Surface roughness is supported for single asteroids.
 """
 function BinaryAsteroidThermoPhysicalProblem(
     primary   ::SingleAsteroidThermoPhysicalProblem,
@@ -240,6 +243,17 @@ function BinaryAsteroidThermoPhysicalProblem(
     with_mutual_shadowing ::Bool = true,
     with_mutual_heating   ::Bool = true,
 )
+    # The binary flux updates apply the eclipse shadowing and the mutual heating to the global
+    # faces after the sub-faces of any roughness model have been updated, so the sub-faces
+    # would neither be darkened by an eclipse nor receive the other body's radiation. Refuse
+    # roughness until the binary path handles it, rather than return wrong results silently.
+    if has_roughness(primary.shape) || has_roughness(secondary.shape)
+        throw(ArgumentError(
+            "surface roughness is not supported for binary asteroids yet: " *
+            "the eclipse shadowing and the mutual heating are applied to the global faces only"
+        ))
+    end
+
     if with_mutual_shadowing
         if !has_bvh(primary.shape)
             @info "Building BVH for primary shape..."
