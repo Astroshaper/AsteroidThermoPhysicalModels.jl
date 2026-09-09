@@ -56,7 +56,7 @@ absorbed_energy_flux(R_vis, R_ir, F_sun, F_scat, F_rad) = (1 - R_vis) * F_sun + 
 
 
 # Power absorbed by face `i` of `shape` [W]
-function _absorbed_power(state::SingleLevelThermoPhysicalState, shape::ShapeModel, i::Integer)
+function _absorbed_power(state::SingleAsteroidThermoPhysicalState, shape::ShapeModel, i::Integer)
     R_vis  = state.problem.thermo_params.reflectance_vis[i]
     R_ir   = state.problem.thermo_params.reflectance_ir[i]
     F_sun  = state.flux_sun[i]
@@ -67,7 +67,7 @@ function _absorbed_power(state::SingleLevelThermoPhysicalState, shape::ShapeMode
 end
 
 # Power emitted by face `i` of `shape` [W]
-function _emitted_power(state::SingleLevelThermoPhysicalState, shape::ShapeModel, i::Integer)
+function _emitted_power(state::SingleAsteroidThermoPhysicalState, shape::ShapeModel, i::Integer)
     ε = state.problem.thermo_params.emissivity[i]
     T = state.temperature[begin, i]  # Surface temperature
 
@@ -77,18 +77,17 @@ end
 
 """
     integrate_absorbed_power(state::SingleAsteroidThermoPhysicalState) -> Float64
-    integrate_absorbed_power(state::HierarchicalSingleAsteroidThermoPhysicalState) -> Float64
 
 Integrate the absorbed energy flux over all surface facets to obtain total absorbed power [W]:
 ```
 P_abs = Σᵢ F_abs,ᵢ × Aᵢ
 ```
 
-For a `HierarchicalSingleAsteroidThermoPhysicalState`, a global face with a roughness model is
-counted from its sub-faces and not from the global level: its roughness model is a patch that
-represents the face statistically, so the absorbed power of the patch, `Σⱼ F_abs,ⱼ aⱼ` in the
-units of the model, is scaled to the area of the face by `Aᵢ / A_proj` (see
-`update_thermal_force!`). A global face without a roughness model contributes as usual.
+When the shape carries surface roughness, a face with a roughness model is counted from its
+sub-faces and not from the global level: its roughness model is a patch that represents the
+face statistically, so the absorbed power of the patch, `Σⱼ F_abs,ⱼ aⱼ` in the units of the
+model, is scaled to the area of the face by `Aᵢ / A_proj` (see `update_thermal_force!`).
+A face without a roughness model contributes as usual.
 
 # See Also
 - `integrate_emitted_power` for the total emitted power
@@ -96,18 +95,15 @@ units of the model, is scaled to the area of the face by `Aᵢ / A_proj` (see
 """
 function integrate_absorbed_power(state::SingleAsteroidThermoPhysicalState)
     shape = state.problem.shape
-    sum(i -> _absorbed_power(state, shape, i), eachindex(shape.faces))
-end
+    isempty(state.roughness_states) && return sum(i -> _absorbed_power(state, shape, i), eachindex(shape.faces))
 
-function integrate_absorbed_power(state::HierarchicalSingleAsteroidThermoPhysicalState)
-    global_shape = state.problem.shape.global_shape
     P_abs = 0.0
     for (i, k) in enumerate(state.face_roughness_indices)
         if k == 0
-            P_abs += _absorbed_power(state, global_shape, i)
+            P_abs += _absorbed_power(state, shape, i)
         else
             rs = state.roughness_states[k]
-            P_abs += global_shape.face_areas[i] / _projected_area(rs.problem.shape) * integrate_absorbed_power(rs)
+            P_abs += shape.face_areas[i] / projected_area(rs.problem.shape) * integrate_absorbed_power(rs)
         end
     end
     P_abs
@@ -116,7 +112,6 @@ end
 
 """
     integrate_emitted_power(state::SingleAsteroidThermoPhysicalState) -> Float64
-    integrate_emitted_power(state::HierarchicalSingleAsteroidThermoPhysicalState) -> Float64
 
 Integrate the thermal emission over all surface facets to obtain total emitted power [W]:
 ```
@@ -125,27 +120,24 @@ P_emit = Σᵢ εᵢ × σ × Tᵢ⁴ × Aᵢ
 
 In thermal equilibrium, `integrate_emitted_power` ≈ `integrate_absorbed_power`.
 
-For a `HierarchicalSingleAsteroidThermoPhysicalState`, a global face with a roughness model is
-counted from its sub-faces, scaled to the area of the face by `Aᵢ / A_proj`, exactly as in
-`integrate_absorbed_power`; the smooth-surface emission of that global face is not added.
+When the shape carries surface roughness, a face with a roughness model is counted from its
+sub-faces, scaled to the area of the face by `Aᵢ / A_proj`, exactly as in
+`integrate_absorbed_power`; the smooth-surface emission of that face is not added.
 
 # See Also
 - `integrate_absorbed_power` for the total absorbed power
 """
 function integrate_emitted_power(state::SingleAsteroidThermoPhysicalState)
     shape = state.problem.shape
-    sum(i -> _emitted_power(state, shape, i), eachindex(shape.faces))
-end
+    isempty(state.roughness_states) && return sum(i -> _emitted_power(state, shape, i), eachindex(shape.faces))
 
-function integrate_emitted_power(state::HierarchicalSingleAsteroidThermoPhysicalState)
-    global_shape = state.problem.shape.global_shape
     P_emit = 0.0
     for (i, k) in enumerate(state.face_roughness_indices)
         if k == 0
-            P_emit += _emitted_power(state, global_shape, i)
+            P_emit += _emitted_power(state, shape, i)
         else
             rs = state.roughness_states[k]
-            P_emit += global_shape.face_areas[i] / _projected_area(rs.problem.shape) * integrate_emitted_power(rs)
+            P_emit += shape.face_areas[i] / projected_area(rs.problem.shape) * integrate_emitted_power(rs)
         end
     end
     P_emit
@@ -158,7 +150,6 @@ end
 
 """
     update_flux_all!(state::SingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
-    update_flux_all!(state::HierarchicalSingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
 
 Update all energy fluxes (solar, scattered, thermal radiation) to the surface for a single asteroid.
 
@@ -174,13 +165,12 @@ Update all energy fluxes (solar, scattered, thermal radiation) to the surface fo
 # Notes
 - This is a convenience function that calls all individual flux update functions
 - Automatically respects `with_self_shadowing` and `with_self_heating`
-- For a `HierarchicalSingleAsteroidThermoPhysicalState`, each of the three updates handles the
-  global faces first and then the sub-faces of every roughness model. The order of the three
-  calls is fixed: the external irradiation of the sub-faces reads the scattered and thermal
-  flux of the parent global face, which must therefore be complete before the sub-face update
-  runs.
+- When the shape carries surface roughness, each of the three updates handles the global faces
+  first and then the sub-faces of every roughness model. The order of the three calls is
+  fixed: the external irradiation of the sub-faces reads the scattered and thermal flux of the
+  parent global face, which must therefore be complete before the sub-face update runs.
 """
-function update_flux_all!(state::SingleLevelThermoPhysicalState, r☉::StaticVector{3})
+function update_flux_all!(state::SingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
     update_flux_sun!(state, r☉)
     update_flux_scat_single!(state)
     update_flux_rad_single!(state)
@@ -233,7 +223,7 @@ end
 # when the graph was removed from the (mutable) shape afterwards — which must fail loudly
 # rather than silently drop the term that depends on it.
 function _require_face_visibility_graph(shape::ShapeModel, flag::AbstractString)
-    isnothing(shape.face_visibility_graph) && error(
+    has_face_visibility_graph(shape) || error(
         "face_visibility_graph must be built when `$flag` is enabled. " *
         "Use `build_face_visibility_graph!(shape)` or load the shape with `with_face_visibility=true`."
     )
@@ -241,11 +231,10 @@ function _require_face_visibility_graph(shape::ShapeModel, flag::AbstractString)
 end
 
 
-# Shared implementation of the solar flux update for the faces of `shape`. The shape is
-# passed explicitly because a `HierarchicalShapeModel` keeps its faces under `global_shape`
-# rather than as direct fields, so the caller decides which level is being updated.
+# Shared implementation of the solar flux update for the faces of `shape`. Used for the
+# global faces of `state` and, through the sub-face states, for the roughness models.
 function _update_flux_sun!(
-    state::SingleLevelThermoPhysicalState, shape::ShapeModel, r☉::StaticVector{3},
+    state::SingleAsteroidThermoPhysicalState, shape::ShapeModel, r☉::StaticVector{3},
 )
     # Calculate solar flux and direction
     r̂☉ = normalize(r☉)
@@ -293,47 +282,25 @@ checks whether each face is shadowed by other parts of the asteroid.
 - The input vector `r☉` must not be normalized (used for distance calculation)
 - Faces with negative dot product (facing away from Sun) receive zero flux
 - Shadowed faces (when `with_self_shadowing = true`) also receive zero flux
+- When the shape carries surface roughness, the sub-faces of every roughness model are then
+  illuminated in the local frame of their parent face (dark when the parent is not illuminated)
 """
 function update_flux_sun!(state::SingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
     _update_flux_sun!(state, state.problem.shape, r☉)
-end
-
-
-"""
-    update_flux_sun!(state::HierarchicalSingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
-
-Update the direct solar irradiation flux on every global face and on every sub-face of an
-asteroid with surface roughness.
-
-# Arguments
-- `state::HierarchicalSingleAsteroidThermoPhysicalState` : Thermophysical simulation state for a single asteroid with surface roughness
-- `r☉::StaticVector{3}`     : Position vector from asteroid to Sun in body-fixed frame (NOT normalized) [m]
-
-# Algorithm
-1. Global level: identical to `SingleAsteroidThermoPhysicalState`, on `state.problem.shape.global_shape`.
-2. Sub-face level, for every global face that carries a roughness model:
-   - If the global face is not illuminated (facing away from the Sun, or shadowed by the global
-     topography), every one of its sub-faces is dark. A roughness model has no terrain beyond
-     its own rim, so without this gate a Sun below the local horizon could still light sub-faces
-     tilted towards it.
-   - Otherwise the Sun vector is rotated into the local frame of the face and the sub-faces are
-     illuminated by the same model as any `ShapeModel`, including self-shadowing within the
-     roughness model.
-
-# Notes
-- The global level must be updated first: the sub-face gate reads `state.illuminated_faces`.
-- The transform to the local frame is a pure rotation, so `|r☉|` and hence the solar flux at
-  the asteroid are preserved.
-"""
-function update_flux_sun!(state::HierarchicalSingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
-    _update_flux_sun!(state, state.problem.shape.global_shape, r☉)
     _update_roughness_flux_sun!(state, r☉)
 end
 
 
-# Sub-face solar flux for every global face that carries a roughness model. See the docstring
-# of `update_flux_sun!` for the gate on the global illumination.
-function _update_roughness_flux_sun!(state::HierarchicalSingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
+# Sub-face solar flux for every face that carries a roughness model; no-op for a smooth
+# surface. The global level must be updated first: the gate below reads
+# `state.illuminated_faces` — if the parent face is not illuminated (facing away from the Sun,
+# or shadowed by the global topography), every one of its sub-faces is dark. A roughness model
+# has no terrain beyond its own rim, so without this gate a Sun below the local horizon could
+# still light sub-faces tilted towards it. Otherwise the Sun vector is rotated into the local
+# frame of the face (a pure rotation, so `|r☉|` and hence the solar flux are preserved) and
+# the sub-faces are illuminated like any `ShapeModel`, including self-shadowing within the
+# roughness model.
+function _update_roughness_flux_sun!(state::SingleAsteroidThermoPhysicalState, r☉::StaticVector{3})
     shape = state.problem.shape
     for (i, k) in enumerate(state.face_roughness_indices)
         k == 0 && continue
@@ -386,7 +353,7 @@ function update_flux_sun!(
     # Only apply mutual shadowing if enabled
     if state.problem.with_mutual_shadowing
         # Check BVH availability
-        if isnothing(state.primary.problem.shape.bvh) || isnothing(state.secondary.problem.shape.bvh)
+        if !has_bvh(state.primary.problem.shape) || !has_bvh(state.secondary.problem.shape)
             error(
                 "BVH must be built for both shapes when MUTUAL_SHADOWING is enabled. " *
                 "Use `build_bvh!(shape)` or load shapes with `with_bvh=true`."
@@ -414,9 +381,9 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 # Shared implementation of the single-scattering update for the faces of `shape`. As for
-# `_update_flux_sun!`, the shape is passed explicitly so the caller decides which level of a
-# `HierarchicalShapeModel` is being updated.
-function _update_flux_scat_single!(state::SingleLevelThermoPhysicalState, shape::ShapeModel)
+# `_update_flux_sun!`, used for the global faces and, through the sub-face states, for the
+# roughness models.
+function _update_flux_scat_single!(state::SingleAsteroidThermoPhysicalState, shape::ShapeModel)
     state.problem.with_self_heating == false && return
     _require_face_visibility_graph(shape, "with_self_heating")
 
@@ -446,31 +413,11 @@ Update flux of scattered sunlight, only considering single scattering.
 """
 function update_flux_scat_single!(state::SingleAsteroidThermoPhysicalState)
     _update_flux_scat_single!(state, state.problem.shape)
-end
 
-
-"""
-    update_flux_scat_single!(state::HierarchicalSingleAsteroidThermoPhysicalState)
-
-Update flux of scattered sunlight on every global face and on every sub-face of an asteroid with
-surface roughness, only considering single scattering.
-
-# Arguments
-- `state` : Thermophysical simulation state for a single asteroid with surface roughness
-
-# Algorithm
-1. Global level: identical to `SingleAsteroidThermoPhysicalState`, on `state.problem.shape.global_shape`.
-2. Sub-face level, for every global face that carries a roughness model:
-   - scattering between the sub-faces of the roughness model, from the sub-face `flux_sun`
-     computed by `update_flux_sun!`;
-   - plus the scattered light the parent global face receives from the other global faces,
-     distributed over the sub-faces by their sky view factor (see `_add_external_irradiance!`).
-
-# Notes
-- The global level must be updated first: the external term reads `state.flux_scat`.
-"""
-function update_flux_scat_single!(state::HierarchicalSingleAsteroidThermoPhysicalState)
-    _update_flux_scat_single!(state, state.problem.shape.global_shape)
+    # Sub-faces of every roughness model (empty loop for a smooth surface): scattering between
+    # the sub-faces, plus the scattered light the parent face receives from the other faces,
+    # distributed over the sub-faces by their sky view factor (see `_add_external_irradiance!`).
+    # The global level must be updated first: the external term reads `state.flux_scat`.
     for (i, k) in enumerate(state.face_roughness_indices)
         k == 0 && continue
         rs = state.roughness_states[k]
@@ -539,7 +486,7 @@ end
 # it carries no absorptivity: the receiving face's `1 − R_ir` is applied where the flux is
 # absorbed (surface boundary condition, `absorbed_energy_flux`) and its `R_ir` where the
 # reflected part is emitted (`update_thermal_force!`).
-function _update_flux_rad_single!(state::SingleLevelThermoPhysicalState, shape::ShapeModel)
+function _update_flux_rad_single!(state::SingleAsteroidThermoPhysicalState, shape::ShapeModel)
     state.problem.with_self_heating == false && return
     _require_face_visibility_graph(shape, "with_self_heating")
 
@@ -576,34 +523,13 @@ thermal-infrared reflectance of the receiving face is applied where the flux is 
 """
 function update_flux_rad_single!(state::SingleAsteroidThermoPhysicalState)
     _update_flux_rad_single!(state, state.problem.shape)
-end
 
-
-"""
-    update_flux_rad_single!(state::HierarchicalSingleAsteroidThermoPhysicalState)
-
-Update flux of absorption of thermal radiation on every global face and on every sub-face of an
-asteroid with surface roughness.
-
-# Arguments
-- `state` : Thermophysical simulation state for a single asteroid with surface roughness
-
-# Algorithm
-1. Global level: identical to `SingleAsteroidThermoPhysicalState`, on `state.problem.shape.global_shape`.
-2. Sub-face level, for every global face that carries a roughness model:
-   - radiative exchange between the sub-faces of the roughness model, from the sub-face
-     surface temperatures;
-   - plus the thermal radiation the parent global face receives from the other global faces,
-     distributed over the sub-faces by their sky view factor (see `_add_external_irradiance!`).
-
-# Notes
-- The global level must be updated first: the external term reads `state.flux_rad`.
-- The global level is computed from the smooth-surface temperatures of the global faces, so
-  the radiation a sub-face receives from a neighbouring rough face carries the neighbour's
-  smooth temperature rather than its rough-surface emission.
-"""
-function update_flux_rad_single!(state::HierarchicalSingleAsteroidThermoPhysicalState)
-    _update_flux_rad_single!(state, state.problem.shape.global_shape)
+    # Sub-faces of every roughness model (empty loop for a smooth surface): radiative exchange
+    # between the sub-faces from their surface temperatures, plus the thermal radiation the
+    # parent face receives from the other faces, distributed over the sub-faces by their sky
+    # view factor. The global level must be updated first: the external term reads
+    # `state.flux_rad`, and it carries the neighbours' smooth-surface temperatures rather than
+    # their rough-surface emission.
     for (i, k) in enumerate(state.face_roughness_indices)
         k == 0 && continue
         rs = state.roughness_states[k]

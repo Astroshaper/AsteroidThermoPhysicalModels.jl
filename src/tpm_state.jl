@@ -30,6 +30,21 @@ accessed via the `problem` field to avoid duplication.
 - `face_forces`       : Thermal recoil force on each face [N]
 - `force`             : Net thermal recoil force in body-fixed frame [N]
 - `torque`            : Net thermal recoil torque in body-fixed frame [N⋅m]
+## Surface roughness (empty for a smooth surface)
+- `face_roughness_indices` : Maps face index → `roughness_states` index (0 = no roughness);
+                             length = `n_face` when the shape has roughness, empty otherwise.
+                             Mirrors `shape.roughness.face_roughness_indices`, but maps to
+                             *independent* per-face states rather than shared models.
+- `roughness_states`       : Independent sub-face state per roughness-carrying face;
+                             empty when the shape has no roughness. Each sub-state is itself a
+                             `SingleAsteroidThermoPhysicalState` with empty roughness (the
+                             roughness models are smooth `ShapeModel`s)
+
+# Notes
+When the shape carries surface roughness (`has_roughness(problem.shape)`), the fields above
+describe the global faces, and each global face with a roughness model additionally has its
+own sub-face state in `roughness_states`. Code that iterates the roughness states can simply
+loop over them: for a smooth surface the vectors are empty and the loop does nothing.
 """
 struct SingleAsteroidThermoPhysicalState{
     Pr  <: SingleAsteroidThermoPhysicalProblem,
@@ -45,6 +60,8 @@ struct SingleAsteroidThermoPhysicalState{
     face_forces       ::Vector{SVector{3, Float64}}
     force             ::MVector{3, Float64}
     torque            ::MVector{3, Float64}
+    face_roughness_indices ::Vector{Int}
+    roughness_states       ::Vector{SingleAsteroidThermoPhysicalState{Pr, HCC}}
 end
 
 
@@ -87,84 +104,13 @@ end
 
 
 """
-    struct HierarchicalSingleAsteroidThermoPhysicalState <: AbstractAsteroidThermoPhysicalState
-
-Internal simulation state for a single-asteroid thermophysical model with surface roughness.
-Mirrors the two-level structure of `HierarchicalShapeModel`: a global-level state identical in
-layout to `SingleAsteroidThermoPhysicalState`, plus per-face sub-states for the roughness models.
-
-# Fields
-## Global level
-- `problem`           : Problem definition (shape must be `HierarchicalShapeModel`)
-- `solver_cache`      : Pre-allocated cache for the global heat-conduction solver
-- `illuminated_faces` : Illumination flag for each global face
-- `flux_sun`          : Direct solar flux on each global face [W/m²]
-- `flux_scat`         : Scattered-light flux on each global face [W/m²]
-- `flux_rad`          : Thermal-emission flux from surrounding global faces [W/m²]
-- `temperature`       : Temperature matrix `(n_depth, n_global_faces)` [K]
-- `face_forces`       : Thermal recoil force on each global face [N]
-- `force`             : Net thermal recoil force in body-fixed frame [N]
-- `torque`            : Net thermal recoil torque in body-fixed frame [N⋅m]
-## Sub-face level (symmetric with `HierarchicalShapeModel`)
-- `face_roughness_indices` : Maps global face index → `roughness_states` index (0 = no roughness);
-                             length = `n_global_faces`; same direction as `HierarchicalShapeModel.face_roughness_indices`
-- `roughness_states`       : Independent `SingleAsteroidThermoPhysicalState` per roughness-carrying face;
-                             length = number of global faces that have a roughness model
-"""
-struct HierarchicalSingleAsteroidThermoPhysicalState{
-    Pr  <: SingleAsteroidThermoPhysicalProblem{<:HierarchicalShapeModel},
-    HCC <: HeatConductionCache,
-    St  <: SingleAsteroidThermoPhysicalState,
-} <: AbstractAsteroidThermoPhysicalState
-    problem           ::Pr
-    solver_cache      ::HCC
-    illuminated_faces ::Vector{Bool}
-    flux_sun          ::Vector{Float64}
-    flux_scat         ::Vector{Float64}
-    flux_rad          ::Vector{Float64}
-    temperature       ::Matrix{Float64}  # (n_depth, n_global_faces)
-    face_forces       ::Vector{SVector{3, Float64}}
-    force             ::MVector{3, Float64}
-    torque            ::MVector{3, Float64}
-    face_roughness_indices ::Vector{Int}
-    roughness_states       ::Vector{St}
-end
-
-
-"""
-    const SingleLevelThermoPhysicalState
-
-States that describe one set of faces directly: `illuminated_faces`, `flux_sun`, `flux_scat`,
-`flux_rad`, `temperature` and `face_forces` share the same layout in both, so a per-face
-implementation written against one applies to the other. `BinaryAsteroidThermoPhysicalState`
-holds two such states rather than face data of its own, and is deliberately excluded.
-
-For `HierarchicalSingleAsteroidThermoPhysicalState` these fields describe the global faces;
-its sub-face states are themselves `SingleAsteroidThermoPhysicalState`s.
-"""
-const SingleLevelThermoPhysicalState = Union{
-    SingleAsteroidThermoPhysicalState,
-    HierarchicalSingleAsteroidThermoPhysicalState,
-}
-
-
-"""
     surface_temperature(state::SingleAsteroidThermoPhysicalState) -> T_surface
 
 Extract the surface temperature (uppermost layer) for all faces.
+For a shape with surface roughness, these are the global faces; the sub-face
+temperatures live in `state.roughness_states`.
 
 # Returns
 - `T_surface::Vector{Float64}` : Surface temperature for each face [K]
 """
 surface_temperature(state::SingleAsteroidThermoPhysicalState) = state.temperature[begin, :]
-
-
-"""
-    surface_temperature(state::HierarchicalSingleAsteroidThermoPhysicalState) -> T_surface
-
-Extract the global-level surface temperature (uppermost layer) for all global faces.
-
-# Returns
-- `T_surface::Vector{Float64}` : Surface temperature for each global face [K]
-"""
-surface_temperature(state::HierarchicalSingleAsteroidThermoPhysicalState) = state.temperature[begin, :]

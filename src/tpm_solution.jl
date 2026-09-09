@@ -25,13 +25,13 @@ Encapsulates which timesteps, face indices, and physical quantities to record.
 - `save_torques`                : Save net thermal torque at `output_times` (default: `false`)
 - `roughness_face_ids`          : Global face indices whose roughness-model surface temperatures to save (default: empty)
 - `save_roughness_surface_temperature` : Save the surface temperature of every sub-face of the roughness
-  models on `roughness_face_ids` at `output_times` (default: `false`); requires a `HierarchicalShapeModel`
+  models on `roughness_face_ids` at `output_times` (default: `false`); requires a shape with surface roughness
 
 # Notes
 - `save_subsurface_temperature = true` requires a non-empty `subsurface_face_ids`.
 - `save_roughness_surface_temperature = true` requires a non-empty `roughness_face_ids`, a problem
-  built on a `HierarchicalShapeModel`, and a roughness model on every listed face; the last two are
-  checked when the solution is allocated at `solve` time.
+  built on a shape with surface roughness, and a roughness model on every listed face; the last two
+  are checked when the solution is allocated at `solve` time.
 - `save_face_forces` stores per-face forces in the body-fixed frame; it works with both
   `SingleAsteroidEphemerides{Nothing}` and `SingleAsteroidEphemerides{<:AbstractVector}`.
 - `save_forces` and `save_torques` require ephemerides with `R_body_to_inertial`
@@ -296,7 +296,7 @@ end
 # ╚═══════════════════════════════════════════════════════════════════╝
 
 function _build_single_solution(
-    state  ::SingleLevelThermoPhysicalState,
+    state  ::SingleAsteroidThermoPhysicalState,
     times  ::Vector{Float64},
     output ::SingleAsteroidOutputSpec,
 )
@@ -326,12 +326,12 @@ function _build_single_solution(
     )
 end
 
-# Number of sub-faces of the roughness model on global face `i`; raises when the state has no
+# Number of sub-faces of the roughness model on face `i`; raises when the state has no
 # roughness models at all, or face `i` carries none, since there would be nothing to save.
-_n_roughness_faces(state::SingleAsteroidThermoPhysicalState, i::Integer) = throw(ArgumentError(
-    "save_roughness_surface_temperature requires a problem built on a HierarchicalShapeModel"
-))
-function _n_roughness_faces(state::HierarchicalSingleAsteroidThermoPhysicalState, i::Integer)
+function _n_roughness_faces(state::SingleAsteroidThermoPhysicalState, i::Integer)
+    isempty(state.roughness_states) && throw(ArgumentError(
+        "save_roughness_surface_temperature requires a shape with surface roughness (see `add_roughness_models!`)"
+    ))
     k = state.face_roughness_indices[i]
     k == 0 && throw(ArgumentError(
         "roughness_face_ids contains face $i, which has no roughness model"
@@ -345,7 +345,7 @@ end
 Allocate a solution from the given state, ephemerides, and output specification.
 """
 SingleAsteroidThermoPhysicalSolution(
-    state  ::SingleLevelThermoPhysicalState,
+    state  ::SingleAsteroidThermoPhysicalState,
     ephem  ::AbstractSingleAsteroidEphemerides,
     output ::SingleAsteroidOutputSpec,
 ) = _build_single_solution(state, ephem.times, output)
@@ -385,7 +385,7 @@ subsurface temperature, face forces) according to the flags in `solution.output`
 """
 function record_timestep!(
     solution ::SingleAsteroidThermoPhysicalSolution,
-    state    ::SingleLevelThermoPhysicalState,
+    state    ::SingleAsteroidThermoPhysicalState,
     i_time   ::Integer,
 )
     solution.absorbed_power[i_time] = integrate_absorbed_power(state)
@@ -434,7 +434,7 @@ to the inertial frame via `R`.
 """
 function record_timestep!(
     solution ::SingleAsteroidThermoPhysicalSolution,
-    state    ::SingleLevelThermoPhysicalState,
+    state    ::SingleAsteroidThermoPhysicalState,
     i_time   ::Integer,
     R        ::SMatrix{3,3,Float64,9},
 )

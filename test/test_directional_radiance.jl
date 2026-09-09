@@ -33,9 +33,9 @@ Direction-dependent radiance and brightness temperature of rough facets:
     output_times = times[end:end]
 
     function run(roughness_model)
-        shape = load_shape_obj(path_obj; as_hierarchical=true)
+        shape = load_shape_obj(path_obj)
         add_roughness_models!(shape, roughness_model)
-        n_face = length(shape.global_shape.faces)
+        n_face = length(shape.faces)
         problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
             with_self_shadowing=false, with_self_heating=false)
         output = SingleAsteroidOutputSpec(output_times, Int[];
@@ -55,7 +55,7 @@ Direction-dependent radiance and brightness temperature of rough facets:
             L_λ = directional_radiance(problem, sol, 1, d̂; λ=λ_tir)
             n_seen = 0
             for i in eachindex(T)
-                cosθ = shape.global_shape.face_normals[i] ⋅ d̂
+                cosθ = shape.face_normals[i] ⋅ d̂
                 if cosθ > 0.05
                     n_seen += 1
                     @test L[i]   ≈ ε * ATPM.σ_SB * T[i]^4 / π                      rtol=1e-4
@@ -74,13 +74,13 @@ Direction-dependent radiance and brightness temperature of rough facets:
         # ε B(T)/π regardless of direction. Exact at normal incidence; at oblique angles the
         # facet-centre visibility test and the missing neighbour patches leave a few percent.
         crater = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
-        shape = load_shape_obj(path_obj; as_hierarchical=true)
+        shape = load_shape_obj(path_obj)
         add_roughness_models!(shape, crater)
         T_iso = 250.0
         T_sub = fill(T_iso, length(crater.faces))
         L_lambert = ε * ATPM.σ_SB * T_iso^4 / π
         i = 1
-        n̂ = shape.global_shape.face_normals[i]
+        n̂ = shape.face_normals[i]
         @test roughness_radiance(shape, i, T_sub, ε, n̂) ≈ L_lambert rtol=1e-10
         # 30° off the normal, around the facet
         t̂ = normalize(SVector(1.0, 0.0, 0.0) - (SVector(1.0, 0.0, 0.0) ⋅ n̂) * n̂)
@@ -101,7 +101,7 @@ Direction-dependent radiance and brightness temperature of rough facets:
         T_b_sun = brightness_temperature(problem, sol, 1, d̂_sun)
         n_checked = 0
         for i in eachindex(T_b_sun)
-            n̂ = shape.global_shape.face_normals[i]
+            n̂ = shape.face_normals[i]
             cosθ = n̂ ⋅ d̂_sun
             0.3 < cosθ < 0.8 || continue           # obliquely lit: beaming is strongest
             d̂_anti = 2 * cosθ * n̂ - d̂_sun          # mirror of d̂_sun about the normal
@@ -147,7 +147,7 @@ Direction-dependent radiance and brightness temperature of rough facets:
 
         # A crater on facet 1 only: facet 1 is rough, the others fall back to the smooth
         # Lambertian radiance of their own surface temperature
-        shape_part = load_shape_obj(path_obj; as_hierarchical=true)
+        shape_part = load_shape_obj(path_obj)
         add_roughness_models!(shape_part, create_shape_crater(0.4, 0.1; Nx=4, Ny=4), 1)
         problem_part = SingleAsteroidThermoPhysicalProblem(shape_part, thermo_params, grid_params;
             with_self_shadowing=false, with_self_heating=false)
@@ -161,7 +161,7 @@ Direction-dependent radiance and brightness temperature of rough facets:
     end
 
     @testset "surface temperature must have been recorded" begin
-        shape = load_shape_obj(path_obj; as_hierarchical=true)
+        shape = load_shape_obj(path_obj)
         add_roughness_models!(shape, create_shape_crater(0.4, 0.1; Nx=4, Ny=4))
         problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
             with_self_shadowing=false, with_self_heating=false)

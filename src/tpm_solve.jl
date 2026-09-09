@@ -18,78 +18,63 @@ _build_cache(::CrankNicolson, grid_params) = CrankNicolsonCache(grid_params)
 
 
 # Internal helper: build SingleAsteroidThermoPhysicalState from a problem + algorithm.
+# When the shape carries surface roughness, each face with a roughness model gets its own
+# independent sub-face state in `roughness_states`; for a smooth shape both roughness
+# vectors are empty.
 function _build_single_state(
     problem   ::SingleAsteroidThermoPhysicalProblem,
-    algorithm ::AbstractThermoPhysicalAlgorithm,
-)
-    cache   = _build_cache(algorithm, problem.grid_params)
-    n_depth = problem.grid_params.n_depth
-    n_face  = length(problem.shape.faces)
-
-    SingleAsteroidThermoPhysicalState(
-        problem,
-        cache,
-        zeros(Bool, n_face),
-        zeros(n_face),
-        zeros(n_face),
-        zeros(n_face),
-        zeros(n_depth, n_face),
-        zeros(SVector{3, Float64}, n_face),
-        zero(MVector{3, Float64}),
-        zero(MVector{3, Float64}),
-    )
-end
-
-
-# Build HierarchicalSingleAsteroidThermoPhysicalState for a HierarchicalShapeModel problem.
-# Each global face with a roughness model gets its own independent sub-state.
-function _build_single_state(
-    problem   ::SingleAsteroidThermoPhysicalProblem{<:HierarchicalShapeModel},
     algorithm ::AbstractThermoPhysicalAlgorithm,
 )
     shape   = problem.shape
     cache   = _build_cache(algorithm, problem.grid_params)
     n_depth = problem.grid_params.n_depth
-    n_face  = length(shape.global_shape.faces)
+    n_face  = length(shape.faces)
 
-    # Map each global face to an independent roughness state index (0 = no roughness)
-    face_roughness_indices = zeros(Int, n_face)
-    roughness_state_count  = 0
-    for i in 1:n_face
-        if has_roughness_model(shape, i)
-            roughness_state_count += 1
-            face_roughness_indices[i] = roughness_state_count
+    face_roughness_indices = Int[]
+    roughness_states       = SingleAsteroidThermoPhysicalState{typeof(problem), typeof(cache)}[]
+
+    if has_roughness(shape)
+        # Map each face to an independent roughness state index (0 = no roughness)
+        face_roughness_indices = zeros(Int, n_face)
+        roughness_state_count  = 0
+        for i in 1:n_face
+            if has_roughness(shape, i)
+                roughness_state_count += 1
+                face_roughness_indices[i] = roughness_state_count
+            end
+        end
+
+        # Build an independent sub-face state for each face with roughness
+        roughness_states = map(findall(!=(0), face_roughness_indices)) do i
+            roughness_shape = get_roughness_model(shape, i)::ShapeModel
+            tp_sub = ThermoParams(
+                [problem.thermo_params.conductivity[i]],
+                [problem.thermo_params.density[i]],
+                [problem.thermo_params.heat_capacity[i]],
+                [problem.thermo_params.reflectance_vis[i]],
+                [problem.thermo_params.reflectance_ir[i]],
+                [problem.thermo_params.emissivity[i]],
+            )
+            # Self-shadowing and self-heating inside a roughness model are the origin of thermal
+            # beaming, so both are always on rather than inherited from the global problem: a
+            # roughness model without them has no physical meaning. The global problem's
+            # `with_self_heating` governs the global faces only, and through them the external
+            # irradiation of the sub-faces. The constructor builds the visibility graph and the
+            # maximum elevations on the roughness model, which is shared by all faces, once.
+            # Roughness models are smooth `ShapeModel`s (enforced by `add_roughness_models!`),
+            # so the recursion terminates here.
+            mini_prob = SingleAsteroidThermoPhysicalProblem(
+                roughness_shape, tp_sub, problem.grid_params;
+                with_self_shadowing = true,
+                with_self_heating   = true,
+                upper_boundary_condition = problem.upper_boundary_condition,
+                lower_boundary_condition = problem.lower_boundary_condition,
+            )
+            _build_single_state(mini_prob, algorithm)
         end
     end
 
-    # Build an independent SingleAsteroidThermoPhysicalState for each face with roughness
-    roughness_states = map(findall(!=(0), face_roughness_indices)) do i
-        roughness_shape = get_roughness_model(shape, i)::ShapeModel
-        tp_sub = ThermoParams(
-            [problem.thermo_params.conductivity[i]],
-            [problem.thermo_params.density[i]],
-            [problem.thermo_params.heat_capacity[i]],
-            [problem.thermo_params.reflectance_vis[i]],
-            [problem.thermo_params.reflectance_ir[i]],
-            [problem.thermo_params.emissivity[i]],
-        )
-        # Self-shadowing and self-heating inside a roughness model are the origin of thermal
-        # beaming, so both are always on rather than inherited from the global problem: a
-        # roughness model without them has no physical meaning. The global problem's
-        # `with_self_heating` governs the global faces only, and through them the external
-        # irradiation of the sub-faces. The constructor builds the visibility graph and the
-        # maximum elevations on the roughness model, which is shared by all faces, once.
-        mini_prob = SingleAsteroidThermoPhysicalProblem(
-            roughness_shape, tp_sub, problem.grid_params;
-            with_self_shadowing = true,
-            with_self_heating   = true,
-            upper_boundary_condition = problem.upper_boundary_condition,
-            lower_boundary_condition = problem.lower_boundary_condition,
-        )
-        _build_single_state(mini_prob, algorithm)
-    end
-
-    HierarchicalSingleAsteroidThermoPhysicalState(
+    SingleAsteroidThermoPhysicalState(
         problem,
         cache,
         zeros(Bool, n_face),

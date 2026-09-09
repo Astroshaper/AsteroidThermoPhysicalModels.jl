@@ -296,14 +296,14 @@ solution.face_forces
 
 ## Surface Roughness
 
-Surface roughness is modelled by attaching a small shape model — a *roughness model*, for example a spherical crater — to the facets of a `HierarchicalShapeModel` from `AsteroidShapeModels.jl`. Each facet with a roughness model is then solved as a full thermophysical model of its own, in the local frame of the facet, with self-shadowing and self-heating inside the roughness model. This is the origin of thermal-infrared beaming.
+Surface roughness is modelled by attaching a small shape model — a *roughness model*, for example a spherical crater — to the facets of a `ShapeModel` from `AsteroidShapeModels.jl` (stored in its `roughness` field). Each facet with a roughness model is then solved as a full thermophysical model of its own, in the local frame of the facet, with self-shadowing and self-heating inside the roughness model. This is the origin of thermal-infrared beaming.
 
 ```julia
 using AsteroidShapeModels
 using AsteroidThermoPhysicalModels
 
-# Load the global shape as a HierarchicalShapeModel
-shape = load_shape_obj("path/to/shape.obj"; scale=1000, as_hierarchical=true)
+# Load the global shape
+shape = load_shape_obj("path/to/shape.obj"; scale=1000)
 
 # A spherical crater of radius 0.4 and depth 0.1 (in the units of the roughness model),
 # discretised on an 8 × 8 grid, attached to every facet

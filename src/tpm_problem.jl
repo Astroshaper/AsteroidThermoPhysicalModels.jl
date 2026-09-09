@@ -24,7 +24,7 @@ Encapsulates all information needed to describe the physical problem,
 separate from the numerical method used to solve it.
 
 # Fields
-- `shape`                    : Shape model of the asteroid (`ShapeModel` or `HierarchicalShapeModel`)
+- `shape`                    : Shape model of the asteroid (`ShapeModel`, optionally carrying surface roughness)
 - `thermo_params`            : Thermophysical material parameters (all vectors expanded to length `n_face`)
 - `grid_params`              : Numerical grid settings
 - `with_self_shadowing`      : Whether to include self-shadowing
@@ -112,12 +112,12 @@ whatever is missing. `face_max_elevations` depends on `face_visibility_graph`, s
 visibility graph is built first.
 """
 function _prepare_self_shadowing!(shape::ShapeModel)
-    if isnothing(shape.face_visibility_graph)
+    if !has_face_visibility_graph(shape)
         _log_elapsed("Building face_visibility_graph for self-shadowing") do
             build_face_visibility_graph!(shape)
         end
     end
-    if isnothing(shape.face_max_elevations)
+    if !has_face_max_elevations(shape)
         _log_elapsed("Computing face_max_elevations for self-shadowing") do
             compute_face_max_elevations!(shape)
         end
@@ -133,7 +133,7 @@ missing. Self-heating needs the view factors of `face_visibility_graph` only; th
 elevations used to accelerate self-shadowing are not involved.
 """
 function _prepare_self_heating!(shape::ShapeModel)
-    if isnothing(shape.face_visibility_graph)
+    if !has_face_visibility_graph(shape)
         _log_elapsed("Building face_visibility_graph for self-heating") do
             build_face_visibility_graph!(shape)
         end
@@ -164,7 +164,7 @@ Construct a thermophysical problem for a single asteroid.
   `with_face_visibility=true` when loading the shape.
 - `ThermoParams` with length-1 vectors is expanded to `n_face` at construction time.
 """
-function SingleAsteroidThermoPhysicalProblem(shape::AbstractShapeModel, thermo_params::ThermoParams, grid_params::GridParams;
+function SingleAsteroidThermoPhysicalProblem(shape::ShapeModel, thermo_params::ThermoParams, grid_params::GridParams;
     with_self_shadowing ::Bool = true,
     with_self_heating   ::Bool = true,
     upper_boundary_condition   = RadiationBoundaryCondition(),
@@ -174,22 +174,6 @@ function SingleAsteroidThermoPhysicalProblem(shape::AbstractShapeModel, thermo_p
     with_self_heating   && _prepare_self_heating!(shape)
 
     n_face = length(shape.faces)
-    thermo_params_expanded = _expand_thermo_params(thermo_params, n_face)
-
-    SingleAsteroidThermoPhysicalProblem(shape, thermo_params_expanded, grid_params, with_self_shadowing, with_self_heating, upper_boundary_condition, lower_boundary_condition)
-end
-
-
-function SingleAsteroidThermoPhysicalProblem(shape::HierarchicalShapeModel, thermo_params::ThermoParams, grid_params::GridParams;
-    with_self_shadowing ::Bool = true,
-    with_self_heating   ::Bool = true,
-    upper_boundary_condition   = RadiationBoundaryCondition(),
-    lower_boundary_condition   = InsulationBoundaryCondition(),
-)
-    with_self_shadowing && _prepare_self_shadowing!(shape.global_shape)
-    with_self_heating   && _prepare_self_heating!(shape.global_shape)
-
-    n_face = length(shape.global_shape.faces)
     thermo_params_expanded = _expand_thermo_params(thermo_params, n_face)
 
     SingleAsteroidThermoPhysicalProblem(shape, thermo_params_expanded, grid_params, with_self_shadowing, with_self_heating, upper_boundary_condition, lower_boundary_condition)
@@ -257,11 +241,11 @@ function BinaryAsteroidThermoPhysicalProblem(
     with_mutual_heating   ::Bool = true,
 )
     if with_mutual_shadowing
-        if isnothing(primary.shape.bvh)
+        if !has_bvh(primary.shape)
             @info "Building BVH for primary shape..."
             build_bvh!(primary.shape)
         end
-        if isnothing(secondary.shape.bvh)
+        if !has_bvh(secondary.shape)
             @info "Building BVH for secondary shape..."
             build_bvh!(secondary.shape)
         end

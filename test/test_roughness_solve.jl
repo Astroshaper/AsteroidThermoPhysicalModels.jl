@@ -1,7 +1,7 @@
 #=
-test_hierarchical_solve.jl
+test_roughness_solve.jl
 
-End-to-end tests of `solve` on a `HierarchicalShapeModel`:
+End-to-end tests of `solve` on a `ShapeModel` with surface roughness:
 - with roughness on one face only, every global-level output equals the plain ShapeModel run
   exactly, and the force and power of that face are counted from its crater
 - a near-flat roughness model on every face reproduces the plain net force, torque and power
@@ -9,10 +9,10 @@ End-to-end tests of `solve` on a `HierarchicalShapeModel`:
 - export_solution writes the usual files, and show_progress runs
 =#
 
-@testset "solve on HierarchicalShapeModel" begin
+@testset "solve with surface roughness" begin
     msg = """
     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-    |          Test: solve on HierarchicalShapeModel         |
+    |          Test: solve with surface roughness            |
     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
     """
     println(msg)
@@ -67,7 +67,7 @@ End-to-end tests of `solve` on a `HierarchicalShapeModel`:
         )
 
         shape_plain = load_shape_obj(path_obj)
-        shape_hier  = load_shape_obj(path_obj; as_hierarchical=true)
+        shape_hier  = load_shape_obj(path_obj)
         add_roughness_models!(shape_hier, roughness_model, 1)
 
         sol_plain = solve(make_problem(shape_plain), CrankNicolson(); ephem, output, initial_temperature=200.0)
@@ -104,7 +104,7 @@ End-to-end tests of `solve` on a `HierarchicalShapeModel`:
         )
 
         shape_plain = load_shape_obj(path_obj)
-        shape_hier  = load_shape_obj(path_obj; as_hierarchical=true)
+        shape_hier  = load_shape_obj(path_obj)
         add_roughness_models!(shape_hier, create_shape_crater(0.4, 1e-6; Nx=4, Ny=4))
 
         sol_plain = solve(make_problem(shape_plain), CrankNicolson(); ephem, output, initial_temperature=200.0)
@@ -133,7 +133,7 @@ End-to-end tests of `solve` on a `HierarchicalShapeModel`:
             save_subsurface_temperature = false,
         )
 
-        shape_hier = load_shape_obj(path_obj; as_hierarchical=true)
+        shape_hier = load_shape_obj(path_obj)
         add_roughness_models!(shape_hier, roughness_model)
 
         sol = solve(make_problem(shape_hier; with_self_heating=true), CrankNicolson();
@@ -150,7 +150,7 @@ End-to-end tests of `solve` on a `HierarchicalShapeModel`:
         n_sub = length(roughness_model.faces)
 
         # A crater on faces 1 and 7 only; record both
-        shape_hier = load_shape_obj(path_obj; as_hierarchical=true)
+        shape_hier = load_shape_obj(path_obj)
         add_roughness_models!(shape_hier, roughness_model, 1)
         add_roughness_models!(shape_hier, roughness_model, 7)
         output = SingleAsteroidOutputSpec(output_times, Int[];
@@ -181,11 +181,11 @@ End-to-end tests of `solve` on a `HierarchicalShapeModel`:
               sol.roughness_surface_temperature[7][3, end]
 
         # A roughness model flat to 1e-6 reproduces the smooth face's surface temperature
-        shape_flat = load_shape_obj(path_obj; as_hierarchical=true)
+        shape_flat = load_shape_obj(path_obj)
         add_roughness_models!(shape_flat, create_shape_crater(0.4, 1e-6; Nx=4, Ny=4))
         output_flat = SingleAsteroidOutputSpec(output_times, Int[];
             save_subsurface_temperature = false,
-            roughness_face_ids = collect(1:length(shape_flat.global_shape.faces)),
+            roughness_face_ids = collect(1:length(shape_flat.faces)),
             save_roughness_surface_temperature = true)
         sol_flat = solve(make_problem(shape_flat), CrankNicolson();
             ephem, output=output_flat, initial_temperature=200.0, show_progress=false)
@@ -215,7 +215,7 @@ End-to-end tests of `solve` on a `HierarchicalShapeModel`:
             save_torques                = true,
         )
 
-        shape_hier = load_shape_obj(path_obj; as_hierarchical=true)
+        shape_hier = load_shape_obj(path_obj)
         add_roughness_models!(shape_hier, roughness_model)
 
         sol = solve(make_problem(shape_hier), CrankNicolson();

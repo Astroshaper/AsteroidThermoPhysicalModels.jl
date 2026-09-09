@@ -82,14 +82,14 @@ grid_params.Δz
   - `GridParams` is now exported
 - **`ThermoParams` keyword constructor** `ThermoParams(; conductivity, density, heat_capacity, reflectance_vis, reflectance_ir, emissivity)`: avoids relying on positional argument order
 - **`ThermoParams` mixed scalar/vector constructor**: scalar arguments are automatically broadcast to match the length of any vector arguments, removing the need for manual `fill()` calls in non-uniform surface cases
-- **`HierarchicalSingleAsteroidThermoPhysicalState`** for surface roughness: a two-level
-  state mirroring `HierarchicalShapeModel`. The global level has the same layout as
-  `SingleAsteroidThermoPhysicalState`; the sub-face level adds `face_roughness_indices`
-  (global face → sub-state index, 0 = no roughness) and `roughness_states` (an independent
-  `SingleAsteroidThermoPhysicalState` per roughness-carrying face)
-- **`SingleAsteroidThermoPhysicalProblem` accepts a `HierarchicalShapeModel`**: the problem
-  type is unchanged (`shape` is already parametric); the solver builds the hierarchical state
-  by dispatching on the shape type. `init_temperature!`, `surface_temperature`, the
+- **Surface-roughness state**: `SingleAsteroidThermoPhysicalState` gains
+  `face_roughness_indices` (face → sub-state index, 0 = no roughness) and `roughness_states`
+  (an independent `SingleAsteroidThermoPhysicalState` per roughness-carrying face). Both are
+  empty for a smooth surface, so the per-face layout and behaviour of smooth shapes are
+  unchanged
+- **`SingleAsteroidThermoPhysicalProblem` accepts a `ShapeModel` with surface roughness**
+  (AsteroidShapeModels.jl ≥ 0.6, `add_roughness_models!`): the problem type is unchanged;
+  the solver builds the sub-face states from `shape.roughness`. `init_temperature!`, `surface_temperature`, the
   global-level flux updates (`update_flux_sun!`, `update_flux_scat_single!`,
   `update_flux_rad_single!`), and the global-level heat conduction (`update_temperature!`
   with all three solvers) support the new state. The global faces are solved independently
@@ -109,12 +109,10 @@ grid_params.Δz
   the torque acts at the parent face centre, and with `with_self_heating` the photons that
   leave the roughness model towards the sky and are intercepted by other global faces are
   accounted for isotropically. `solve` and `export_solution` run end to end on a
-  `HierarchicalShapeModel` with the existing `SingleAsteroidOutputSpec`; the recorded
+  shape with surface roughness with the existing `SingleAsteroidOutputSpec`; the recorded
   `surface_temperature` / `subsurface_temperature` are the smooth-surface baseline of the global
   faces, `face_forces` / `forces` / `torques` include the roughness, and `absorbed_power` /
   `emitted_power` count every roughness face from its sub-faces as a representative patch.
-  Recording the sub-face temperatures and the direction-dependent brightness temperature of a
-  rough face follow in the next releases of the v0.3.0 series
 
 - **Roughness surface temperatures can be recorded**: `SingleAsteroidOutputSpec` gains
   `roughness_face_ids` and `save_roughness_surface_temperature`; the solution carries
@@ -132,6 +130,12 @@ grid_params.Δz
   ready for a ray-caster
 
 ### Changed
+
+- **Requires AsteroidShapeModels.jl v0.6**: surface roughness is carried by `ShapeModel`
+  itself (`shape.roughness`, built by `add_roughness_models!`) — the former
+  `HierarchicalShapeModel` wrapper no longer exists. Load shapes with plain
+  `load_shape_obj` / `load_shape_grid` (the `as_hierarchical` keyword is gone), and query
+  per-face roughness with `has_roughness(shape, i)`
 
 - **Breaking**: `ThermoParams` no longer holds grid parameters (`z_max`, `Δz`, `n_depth`); pass a `GridParams` instance separately
 - **Breaking**: `ThermoParams.thermal_conductivity` renamed to `ThermoParams.conductivity`
