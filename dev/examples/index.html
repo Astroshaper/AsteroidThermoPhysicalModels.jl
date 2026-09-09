@@ -77,7 +77,7 @@ problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
 output_times        = collect(et_range)[end-n_step_in_cycle:end]  # Save the final rotation
 subsurface_face_ids = [1, 2, 3, 4, 10]                            # Face indices for subsurface output
 
-output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids)
+output = SingleAsteroidOutputSpec(output_times; subsurface_face_ids)
 
 ##= Run TPM =##
 solution = solve(problem, ExplicitEuler();
@@ -185,8 +185,8 @@ output_times        = collect(et_range)[end-n_step_in_cycle:end]
 subsurface_face_ids = [1, 2, 3, 4, 10]
 
 output = BinaryAsteroidOutputSpec(
-    SingleAsteroidOutputSpec(output_times, subsurface_face_ids),
-    SingleAsteroidOutputSpec(output_times, subsurface_face_ids),
+    SingleAsteroidOutputSpec(output_times; subsurface_face_ids),
+    SingleAsteroidOutputSpec(output_times; subsurface_face_ids),
 )
 
 ##= Run TPM =##
@@ -230,9 +230,10 @@ ephem = SingleAsteroidEphemerides(et_range, r_sun, R_body_to_inertial)
 # ...define problem as above...
 
 # Enable force and torque output
-output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids;
-    save_forces  = true,
-    save_torques = true,
+output = SingleAsteroidOutputSpec(output_times;
+    subsurface_face_ids = subsurface_face_ids,
+    save_forces         = true,
+    save_torques        = true,
 )
 
 solution = solve(problem, ExplicitEuler();
@@ -246,7 +247,7 @@ solution.forces
 
 # Net thermal torque in the inertial frame [N⋅m] — Vector of length n_time
 solution.torques</code></pre><p>If only per-face forces in the body-fixed frame are needed (without rotation matrices), use <code>save_face_forces=true</code> with a <code>SingleAsteroidEphemerides{Nothing}</code> (i.e., without <code>R_body_to_inertial</code>):</p><pre><code class="language-julia hljs">ephem  = SingleAsteroidEphemerides(et_range, r_sun)  # no rotation matrix required
-output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids; save_face_forces=true)
+output = SingleAsteroidOutputSpec(output_times; subsurface_face_ids, save_face_forces=true)
 
 solution = solve(problem, ExplicitEuler(); ephem=ephem, output=output, initial_temperature=200.0)
 
@@ -268,9 +269,9 @@ problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
     with_self_shadowing = true,
     with_self_heating   = true,
 )
-solution = solve(problem, CrankNicolson(); ephem=ephem, output=output, initial_temperature=200.0)</code></pre><p>The recorded <code>surface_temperature</code> and <code>subsurface_temperature</code> are those of the global facets, which are solved independently of their roughness models and serve as the smooth-surface baseline of the same run. <code>face_forces</code>, <code>forces</code> and <code>torques</code> include the roughness: on a facet with a roughness model the force is the sum over its sub-facets, counted for the area of the facet (see <em>Facets with a roughness model</em> in the physical model). <code>absorbed_power</code> and <code>emitted_power</code> count such facets from their sub-facets in the same way.</p><p>The problem&#39;s <code>with_self_heating</code> governs the global facets and, through them, the irradiation the sub-facets receive from the rest of the body; self-shadowing and self-heating inside a roughness model are always on.</p><p>To record the temperatures of the rough surface itself, list the facets whose roughness models to save:</p><pre><code class="language-julia hljs">output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids;
-    roughness_face_ids                 = [1, 7],
-    save_roughness_surface_temperature = true,
+solution = solve(problem, CrankNicolson(); ephem=ephem, output=output, initial_temperature=200.0)</code></pre><p>The recorded <code>surface_temperature</code> and <code>subsurface_temperature</code> are those of the global facets, which are solved independently of their roughness models and serve as the smooth-surface baseline of the same run. <code>face_forces</code>, <code>forces</code> and <code>torques</code> include the roughness: on a facet with a roughness model the force is the sum over its sub-facets, counted for the area of the facet (see <em>Facets with a roughness model</em> in the physical model). <code>absorbed_power</code> and <code>emitted_power</code> count such facets from their sub-facets in the same way.</p><p>The problem&#39;s <code>with_self_heating</code> governs the global facets and, through them, the irradiation the sub-facets receive from the rest of the body; self-shadowing and self-heating inside a roughness model are always on.</p><p>To record the temperatures of the rough surface itself, list the facets whose roughness models to save:</p><pre><code class="language-julia hljs">output = SingleAsteroidOutputSpec(output_times;
+    subsurface_face_ids = subsurface_face_ids,
+    roughness_face_ids  = [1, 7],
 )
 solution = solve(problem, CrankNicolson(); ephem=ephem, output=output, initial_temperature=200.0)
 
@@ -279,4 +280,4 @@ i_save = 3                        # index into output_times, e.g. the image epoc
 
 L   = directional_radiance(problem, solution, i_save, d̂_obs)            # W/m²/sr, one value per facet
 T_b = brightness_temperature(problem, solution, i_save, d̂_obs)          # K
-L_λ = directional_radiance(problem, solution, i_save, d̂_obs; λ=10e-6)   # spectral, at 10 μm</code></pre><p>Facets with a recorded roughness model radiate according to their sub-facet temperatures and the crater walls in view (see <em>Direction-Dependent Radiance of a Rough Facet</em> in the physical model); the others as smooth Lambertian surfaces. Facets seen from behind give <code>NaN</code>. The per-facet vector is ready to be placed on an image by a ray-caster such as <code>FOVSimulator.jl</code>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../physical_model/">« Physical model</a><a class="docs-footer-nextpage" href="../benchmarks/">Performance »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Wednesday 9 September 2026 12:49">Wednesday 9 September 2026</span>. Using Julia version 1.12.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+L_λ = directional_radiance(problem, solution, i_save, d̂_obs; λ=10e-6)   # spectral, at 10 μm</code></pre><p>Facets with a recorded roughness model radiate according to their sub-facet temperatures and the crater walls in view (see <em>Direction-Dependent Radiance of a Rough Facet</em> in the physical model); the others as smooth Lambertian surfaces. Facets seen from behind give <code>NaN</code>. The per-facet vector is ready to be placed on an image by a ray-caster such as <code>FOVSimulator.jl</code>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../physical_model/">« Physical model</a><a class="docs-footer-nextpage" href="../benchmarks/">Performance »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.19.0 on <span class="colophon-date" title="Wednesday 9 September 2026 13:47">Wednesday 9 September 2026</span>. Using Julia version 1.12.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
