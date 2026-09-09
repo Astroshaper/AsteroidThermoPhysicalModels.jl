@@ -38,6 +38,7 @@ pkg> add AsteroidThermoPhysicalModels
 - **Self-Shadowing**: Local shadows cast by topography
 - **Self-Heating**: Re-absorption of scattered and radiated photons by surrounding facets
 - **Binary Systems**: Support for mutual shadowing (eclipses) and mutual heating between primary and secondary bodies
+- **Surface Roughness**: Facets carry roughness models (e.g. spherical craters) solved as thermophysical models of their own, with self-shadowing and self-heating inside the roughness model — thermal-infrared beaming in the forces and in the radiance
 
 ### Shape Models
 - Supports Wavefront OBJ format (*.obj)
@@ -46,43 +47,35 @@ pkg> add AsteroidThermoPhysicalModels
 - **Yarkovsky Effect**: Orbital perturbation due to asymmetric thermal emission
 - **YORP Effect**: Rotational perturbation due to asymmetric thermal emission
 
-## 🆕 What's New in v0.2.x
+### Observables
+- **Direction-dependent radiance and brightness temperature** of every facet towards an observer, total or at a given wavelength, for comparison with thermal-infrared images
 
-### v0.2.1
+## 🆕 What's New in v0.3.x
 
-- `*Ephemerides` constructors now accept `AbstractRange` for `times` — no need to call `collect` beforehand
-- `*Ephemerides` constructors now auto-convert plain arrays to `SVector`/`SMatrix` — no need to import `StaticArrays`
+### v0.3.0
 
-### v0.2.0
-
-This release introduces a **Problem-Solver API** inspired by `DifferentialEquations.jl`, replacing the old `run_TPM!` function.
-
-### API Redesign (Breaking)
+This release adds **surface roughness** on top of `AsteroidShapeModels.jl` v0.6: a facet can carry a small roughness model (e.g. a spherical crater) that is solved as a thermophysical model of its own, which produces thermal-infrared beaming in the recorded forces and in the new direction-dependent radiance.
 
 ```julia
-# v0.1.x
-ephem  = (time = times, sun = r_sun)   # NamedTuple
-stpm   = SingleAsteroidThermoPhysicalModel(shape, thermo_params; ...)
-result = run_TPM!(stpm, ephem, times_to_save, face_ID)
+shape  = load_shape_obj("shape.obj"; scale=1000)
+crater = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)   # radius 0.4, depth 0.1, on a 1 × 1 patch
+add_roughness_models!(shape, crater)                  # every facet, or add_roughness_models!(shape, crater, face_idx)
 
-# v0.2.0
-ephem   = SingleAsteroidEphemerides(times, r_sun)
-problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params; ...)
-output  = SingleAsteroidOutputSpec(output_times;
-    save_surface_temperature = true,
-    subsurface_face_ids      = subsurface_face_ids,
-    save_face_forces            = false,
-    save_forces                 = false,  # true requires R_body_to_inertial in ephem
-    save_torques                = false,
-)
-solution = solve(problem, CrankNicolson();
-    ephem               = ephem,
-    output              = output,
-    initial_temperature = 200.0,
-)
+problem  = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params; with_self_shadowing=true, with_self_heating=true)
+output   = SingleAsteroidOutputSpec(output_times; roughness_face_ids=1:length(shape.faces))
+solution = solve(problem, CrankNicolson(); ephem=ephem, output=output, initial_temperature=200.0)
+
+T_b = brightness_temperature(problem, solution, i_save, d̂_observer; λ=10e-6)   # per facet, towards the observer [K]
 ```
 
-See the [Migration Guide](CHANGELOG.md#migration-guide) and [CHANGELOG](CHANGELOG.md) for details.
+**Breaking changes** (see the [Migration Guide](https://astroshaper.github.io/AsteroidThermoPhysicalModels.jl/stable/migration/)):
+
+- `ThermoParams` holds material properties only; the depth grid moves to the new `GridParams`, a third positional argument of the problem constructors
+- `SingleAsteroidOutputSpec(output_times; subsurface_face_ids, roughness_face_ids, save_*...)` is keyword-only; face-specific outputs are switched on by listing faces
+- Requires `AsteroidShapeModels.jl` v0.6 (`HierarchicalShapeModel` no longer exists)
+- Input errors raise `ArgumentError`
+
+**Results that change**: the net thermal force on non-spherical shapes was biased by a radial projection up to v0.2.1 (about 7 % in magnitude and 6° in direction on Ryugu); recompute archived net forces with v0.3.0.
 
 ## 🌟 Example
 
