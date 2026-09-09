@@ -131,6 +131,11 @@ grid_params.Δz
 
 ### Changed
 
+- **Breaking**: errors caused by the inputs raise `ArgumentError` instead of a plain
+  `ErrorException`, matching AsteroidShapeModels.jl v0.6: a missing face visibility graph when
+  `with_self_shadowing` / `with_self_heating` is enabled, a missing BVH when
+  `with_mutual_shadowing` is enabled, and a time step that violates the explicit Euler
+  stability limit (λ ≥ 0.5). Code that catches `ErrorException` for these cases must be updated
 - **Breaking**: `SingleAsteroidOutputSpec` selects the face-specific outputs by face lists
   alone. `subsurface_face_ids` moves from a positional argument to a keyword, and the
   `save_subsurface_temperature` / `save_roughness_surface_temperature` flags are removed: a

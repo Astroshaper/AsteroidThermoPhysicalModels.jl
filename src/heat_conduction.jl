@@ -183,7 +183,7 @@ The method is stable only when λ < 0.5. If this condition is violated, an error
 - Consider using implicit methods for larger time steps
 
 # Errors
-- Throws an error if λ ≥ 0.5 (stability violation)
+- Throws an `ArgumentError` if λ ≥ 0.5 (stability violation)
 """
 function explicit_euler!(state::SingleAsteroidThermoPhysicalState, Δt)
     T = state.temperature
@@ -198,7 +198,7 @@ function explicit_euler!(state::SingleAsteroidThermoPhysicalState, Δt)
 
         α = thermal_diffusivity(k, ρ, Cₚ)  # Thermal diffusivity [m²/s]
         λ = α * Δt / Δz^2
-        λ ≥ 0.5 && error("Explicit Euler method is unstable because λ = αΔt/Δz² = $λ (must be < 0.5). Consider reducing time step from Δt = $Δt or using an implicit solver.")
+        λ ≥ 0.5 && throw(ArgumentError("Explicit Euler method is unstable because λ = αΔt/Δz² = $λ (must be < 0.5). Consider reducing time step from Δt = $Δt or using an implicit solver."))
 
         for i_depth in 2:(n_depth-1)
             state.solver_cache.x[i_depth] = (1-2λ)*T[i_depth, i_face] + λ*(T[i_depth+1, i_face] + T[i_depth-1, i_face])  # Predict temperature at next time step

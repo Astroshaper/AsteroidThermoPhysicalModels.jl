@@ -1,8 +1,8 @@
 #=
 test_self_heating_guards.jl
 
-The terms that depend on the face visibility graph must fail loudly when the graph is missing
-and the flag that needs it is enabled, and the re-absorption recoil term must follow
+The terms that depend on the face visibility graph (or, for mutual shadowing, the BVH) must
+fail loudly when that data is missing and the flag that needs it is enabled, and the re-absorption recoil term must follow
 `with_self_heating` rather than the mere presence of the graph.
 =#
 
@@ -50,8 +50,8 @@ and the flag that needs it is enabled, and the re-absorption recoil term must fo
         state = make_state(with_self_shadowing=false, with_self_heating=true)
         AsteroidThermoPhysicalModels.update_flux_sun!(state, r☉)
         state.problem.shape.face_visibility_graph = nothing
-        @test_throws ErrorException AsteroidThermoPhysicalModels.update_flux_scat_single!(state)
-        @test_throws ErrorException AsteroidThermoPhysicalModels.update_flux_rad_single!(state)
+        @test_throws ArgumentError AsteroidThermoPhysicalModels.update_flux_scat_single!(state)
+        @test_throws ArgumentError AsteroidThermoPhysicalModels.update_flux_rad_single!(state)
     end
 
     @testset "scattering and radiation stay silent when self-heating is off" begin
@@ -89,6 +89,28 @@ and the flag that needs it is enabled, and the re-absorption recoil term must fo
         state = make_state(with_self_shadowing=false, with_self_heating=true)
         AsteroidThermoPhysicalModels.update_flux_all!(state, r☉)
         state.problem.shape.face_visibility_graph = nothing
-        @test_throws ErrorException AsteroidThermoPhysicalModels.update_thermal_force!(state)
+        @test_throws ArgumentError AsteroidThermoPhysicalModels.update_thermal_force!(state)
+    end
+    @testset "mutual shadowing raises without the BVH" begin
+        # The binary problem builds the BVH, but the shapes are mutable and may lose it
+        # afterwards; the eclipse test must then fail loudly rather than be skipped.
+        path_obj = joinpath(@__DIR__, "shape", "icosahedron.obj")
+        shape1 = load_shape_obj(path_obj; scale=1000)
+        shape2 = load_shape_obj(path_obj; scale=500)
+        problem = BinaryAsteroidThermoPhysicalProblem((shape1, shape2), thermo_params, grid_params;
+            with_self_shadowing=false, with_self_heating=false,
+            with_mutual_shadowing=true, with_mutual_heating=false)
+        state = AsteroidThermoPhysicalModels._build_binary_state(problem, CrankNicolson())
+        AsteroidThermoPhysicalModels.init_temperature!(state, 250.0)
+
+        r☉₁ = r☉
+        r₁₂ = SVector(5000.0, 0.0, 0.0)
+        R₁₂ = SMatrix{3,3,Float64}(I)
+        r☉₂ = R₁₂ * (r☉₁ - r₁₂)
+        r₂₁ = -R₁₂ * r₁₂
+        @test_nowarn AsteroidThermoPhysicalModels.update_flux_sun!(state, r☉₁, r☉₂, r₁₂, r₂₁, R₁₂, R₁₂')
+
+        shape2.bvh = nothing
+        @test_throws ArgumentError AsteroidThermoPhysicalModels.update_flux_sun!(state, r☉₁, r☉₂, r₁₂, r₂₁, R₁₂, R₁₂')
     end
 end
