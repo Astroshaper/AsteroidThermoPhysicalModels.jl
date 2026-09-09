@@ -131,6 +131,22 @@ grid_params.Δz
 
 ### Changed
 
+- **Breaking**: `SingleAsteroidOutputSpec` selects the face-specific outputs by face lists
+  alone. `subsurface_face_ids` moves from a positional argument to a keyword, and the
+  `save_subsurface_temperature` / `save_roughness_surface_temperature` flags are removed: a
+  non-empty `subsurface_face_ids` / `roughness_face_ids` saves the corresponding output, an
+  empty list (the default) does not. The positional constructors are gone, and the
+  `BinaryAsteroidOutputSpec` convenience constructor takes the two `output_times` positionally
+  with `subsurface_face_ids_primary` / `subsurface_face_ids_secondary` as keywords
+  ```julia
+  # v0.2.x / early v0.3.0
+  output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids; save_forces=true)
+  output = SingleAsteroidOutputSpec(output_times, Int[]; save_subsurface_temperature=false)
+
+  # v0.3.0
+  output = SingleAsteroidOutputSpec(output_times; subsurface_face_ids, save_forces=true)
+  output = SingleAsteroidOutputSpec(output_times)
+  ```
 - **Requires AsteroidShapeModels.jl v0.6**: surface roughness is carried by `ShapeModel`
   itself (`shape.roughness`, built by `add_roughness_models!`) — the former
   `HierarchicalShapeModel` wrapper no longer exists. Load shapes with plain

@@ -68,9 +68,9 @@ result = run_TPM!(stpm, ephem, times_to_save, face_ID)
 # v0.2.0
 ephem   = SingleAsteroidEphemerides(times, r_sun)
 problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params; ...)
-output  = SingleAsteroidOutputSpec(output_times, subsurface_face_ids;
-    save_surface_temperature    = true,
-    save_subsurface_temperature = true,
+output  = SingleAsteroidOutputSpec(output_times;
+    save_surface_temperature = true,
+    subsurface_face_ids      = subsurface_face_ids,
     save_face_forces            = false,
     save_forces                 = false,  # true requires R_body_to_inertial in ephem
     save_torques                = false,
@@ -133,7 +133,7 @@ problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
 # --- Output specification ---
 output_times        = ephem.times[end-119:end]  # final rotation period
 subsurface_face_ids = [1, 2, 3]                 # faces for saving subsurface temperature profiles
-output = SingleAsteroidOutputSpec(output_times, subsurface_face_ids)
+output = SingleAsteroidOutputSpec(output_times; subsurface_face_ids)
 
 # --- Solve ---
 solution = solve(problem, CrankNicolson();
