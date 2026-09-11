@@ -81,14 +81,7 @@ function roughness_radiance(
     visible = Vector{Bool}(undef, length(model.faces))
     update_illumination!(visible, model, d̂_local; with_self_shadowing=true)
 
-    emitted = 0.0
-    for j in eachindex(model.faces)
-        visible[j] || continue
-        cosθ_j = model.face_normals[j] ⋅ d̂_local
-        cosθ_j <= 0 && continue
-        emitted += cosθ_j * model.face_areas[j] * ε * _lambert_radiance(T_sub[j], λ)
-    end
-    return emitted / (projected_area(model) * cosθ_view)
+    return _directional_emission(model, visible, d̂_local, n -> ε * _lambert_radiance(T_sub[n], λ))
 end
 
 

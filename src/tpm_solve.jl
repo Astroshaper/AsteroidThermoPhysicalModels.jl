@@ -32,6 +32,7 @@ function _build_single_state(
 
     face_roughness_indices = Int[]
     roughness_states       = SingleAsteroidThermoPhysicalState{typeof(problem), typeof(cache)}[]
+    roughness_neighbours   = RoughnessNeighbours[]
 
     if has_roughness(shape)
         # Map each face to an independent roughness state index (0 = no roughness)
@@ -72,6 +73,12 @@ function _build_single_state(
             )
             _build_single_state(mini_prob, algorithm)
         end
+
+        # The exchange of radiation between roughness models needs, for every pair of visible
+        # faces, the sub-faces that each model exposes towards the other. Only with self-heating.
+        if problem.with_self_heating
+            roughness_neighbours = _build_roughness_neighbours(shape, face_roughness_indices)
+        end
     end
 
     SingleAsteroidThermoPhysicalState(
@@ -87,7 +94,43 @@ function _build_single_state(
         zero(MVector{3, Float64}),
         face_roughness_indices,
         roughness_states,
+        roughness_neighbours,
     )
+end
+
+
+# For every face with a roughness model, the visibility of its sub-faces from the direction of
+# each neighbouring global face, and the position of the face in that neighbour's own list.
+# The direction `d̂_ij` of the visibility graph is rotated into the local frame of the model and
+# handed to `update_illumination!` in place of the Sun: illumination from a direction is the
+# same test as being seen from it. The masks are geometry only; the temperatures they weight are
+# supplied at every step.
+function _build_roughness_neighbours(shape::ShapeModel, face_roughness_indices::Vector{Int})
+    graph = shape.face_visibility_graph
+    map(findall(!=(0), face_roughness_indices)) do i
+        model      = get_roughness_model(shape, i)::ShapeModel
+        neighbours = get_visible_face_indices(graph, i)
+        directions = get_visible_face_directions(graph, i)
+        visible    = Vector{BitVector}(undef, length(neighbours))
+        position   = zeros(Int, length(neighbours))
+        seen       = Vector{Bool}(undef, length(model.faces))
+
+        for (p, (j, d̂_ij)) in enumerate(zip(neighbours, directions))
+            d̂_local = transform_physical_vector_global_to_local(shape, i, d̂_ij)
+            update_illumination!(seen, model, d̂_local; with_self_shadowing=true)
+            visible[p] = BitVector(seen)
+
+            if face_roughness_indices[j] != 0
+                q = findfirst(==(i), get_visible_face_indices(graph, j))
+                isnothing(q) && throw(ArgumentError(
+                    "face_visibility_graph is not symmetric: face $i sees face $j but not the reverse"
+                ))
+                position[p] = q
+            end
+        end
+
+        RoughnessNeighbours(visible, position)
+    end
 end
 
 
