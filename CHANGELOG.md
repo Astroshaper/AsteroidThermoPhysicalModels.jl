@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **The radiation a roughness model receives from the other facets is now directional.**
+  Up to v0.3.0 the sub-facets of a roughness model received the flux their parent facet
+  receives from the other facets (the smooth-surface `flux_scat` / `flux_rad`) spread
+  isotropically by their sky view factor. Now, for every facet `j` visible from the parent,
+  the emission of `j` *towards the parent* is evaluated — from the sub-facets of `j`'s own
+  roughness model that face the parent, i.e. with thermal-infrared beaming, or as a Lambertian
+  face when `j` is smooth — and distributed over the sub-facets of the parent that see `j`.
+  The sub-facet visibilities of every visible pair are precomputed when the state is built
+  (`RoughnessNeighbours`). Results of runs with surface roughness and `with_self_heating =
+  true` change on concave shapes (nothing changes on convex shapes, where no facet sees
+  another); a flat roughness model reproduces the previous result. The global-level fluxes
+  are unchanged. Cost: proportional to the number of visible pairs of rough facets times the
+  number of sub-facets — about 15 µs per pair and time step for a 1000-sub-facet model, and
+  0.5 ms per pair for the precomputation of the masks. This is a few percent of a step on a
+  mostly convex body, where only a few facets see each other, but dominates it on a strongly
+  concave one (2048 facets seeing 560 others each: 16 s per step, 9 min of precomputation)
+
 ## [0.3.0] - 2026-09-09
 
 This release adds **surface roughness** to the thermophysical model, on top of

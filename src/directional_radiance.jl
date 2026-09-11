@@ -16,7 +16,7 @@ _lambert_radiance(T, λ::Real)   = blackbody_radiance(λ, T) / π
 _brightness_temperature(L, ::Nothing) = (π * L / σ_SB)^(1/4)
 function _brightness_temperature(L, λ::Real)
     # π L = 2 h c² / λ⁵ / expm1(h c / (λ k T))  ⇒  T = h c / (λ k log1p(2 h c² / (λ⁵ π L)))
-    L <= 0 && return L == 0 ? 0.0 : NaN
+    L ≤ 0 && return L == 0 ? 0.0 : NaN
     h * c₀ / (λ * k_B * log1p(2 * h * c₀^2 / (λ^5 * π * L)))
 end
 
@@ -69,26 +69,19 @@ function roughness_radiance(
     shape::ShapeModel, i::Integer, T_sub::AbstractVector{<:Real}, ε::Real,
     d̂::StaticVector{3}; λ::Union{Nothing, Real} = nothing,
 )
-    model = get_roughness_model(shape, i)::ShapeModel
-    length(T_sub) == length(model.faces) || throw(ArgumentError(
-        "T_sub has $(length(T_sub)) entries but the roughness model of facet $i has $(length(model.faces)) facets"
+    patch = get_roughness_model(shape, i)::ShapeModel
+    length(T_sub) == length(patch.faces) || throw(ArgumentError(
+        "T_sub has $(length(T_sub)) entries but the roughness model of facet $i has $(length(patch.faces)) facets"
     ))
     d̂_local = transform_physical_vector_global_to_local(shape, i, normalize(d̂))
     cosθ_view = d̂_local[3]
-    cosθ_view <= 0 && return NaN
+    cosθ_view ≤ 0 && return NaN
 
-    _prepare_self_shadowing!(model)
-    visible = Vector{Bool}(undef, length(model.faces))
-    update_illumination!(visible, model, d̂_local; with_self_shadowing=true)
+    _prepare_self_shadowing!(patch)
+    visible = Vector{Bool}(undef, length(patch.faces))
+    update_illumination!(visible, patch, d̂_local; with_self_shadowing=true)
 
-    emitted = 0.0
-    for j in eachindex(model.faces)
-        visible[j] || continue
-        cosθ_j = model.face_normals[j] ⋅ d̂_local
-        cosθ_j <= 0 && continue
-        emitted += cosθ_j * model.face_areas[j] * ε * _lambert_radiance(T_sub[j], λ)
-    end
-    return emitted / (projected_area(model) * cosθ_view)
+    return _directional_emission(patch, visible, d̂_local, n -> ε * _lambert_radiance(T_sub[n], λ))
 end
 
 

@@ -12,6 +12,29 @@ abstract type AbstractAsteroidThermoPhysicalState end
 
 
 """
+    struct RoughnessNeighbours
+
+For one global face that carries a roughness model: which of its sub-faces are seen from the
+direction of each neighbouring global face, in the order of the face's list in the face
+visibility graph. This is the geometric part of the exchange of radiation between roughness
+models (see `update_flux_rad_single!`); it does not change during a run and is built once, at
+state construction, when `with_self_heating` is enabled.
+
+# Fields
+- `visible_sub_faces`     : `visible_sub_faces[p][m]` is `true` when sub-face `m` is seen from the direction
+                            of the `p`-th visible global face (in the local frame of the model,
+                            including self-shadowing by the model's own topography)
+- `index_in_neighbour`    : Index of this face in the list of the `p`-th visible face, so that
+                            the neighbour's mask towards this face can be read directly; `0` when
+                            the neighbour has no roughness model
+"""
+struct RoughnessNeighbours
+    visible_sub_faces     ::Vector{BitVector}
+    index_in_neighbour    ::Vector{Int}
+end
+
+
+"""
     struct SingleAsteroidThermoPhysicalState <: AbstractAsteroidThermoPhysicalState
 
 Internal simulation state for a single-asteroid thermophysical model.
@@ -39,6 +62,10 @@ accessed via the `problem` field to avoid duplication.
                              empty when the shape has no roughness. Each sub-state is itself a
                              `SingleAsteroidThermoPhysicalState` with empty roughness (the
                              roughness models are smooth `ShapeModel`s)
+- `roughness_neighbours`   : Per roughness-carrying face (same order as `roughness_states`),
+                             the visibility of its sub-faces from the direction of each
+                             neighbouring global face (`RoughnessNeighbours`). Built only when
+                             `with_self_heating` is enabled; empty otherwise
 
 # Notes
 When the shape carries surface roughness (`has_roughness(problem.shape)`), the fields above
@@ -62,6 +89,7 @@ struct SingleAsteroidThermoPhysicalState{
     torque            ::MVector{3, Float64}
     face_roughness_indices ::Vector{Int}
     roughness_states       ::Vector{SingleAsteroidThermoPhysicalState{Pr, HCC}}
+    roughness_neighbours   ::Vector{RoughnessNeighbours}
 end
 
 
