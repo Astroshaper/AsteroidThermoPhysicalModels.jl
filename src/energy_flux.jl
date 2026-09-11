@@ -428,48 +428,48 @@ end
 
 
 """
-    _directional_emission(model::ShapeModel, visible, d̂_local, emission) -> E
+    _directional_emission(patch::ShapeModel, visible, d̂_local, emission) -> E
 
-Emission of a roughness model `model` towards the direction `d̂_local` (unit vector in the local
-frame of the model), per unit area of the model's reference plane projected onto that direction:
+Emission of a roughness model `patch` towards the direction `d̂_local` (unit vector in the local
+frame of the patch), per unit area of the patch's reference plane projected onto that direction:
 ```
 E(d̂) = Σₙ Vₙ (n̂ₙ ⋅ d̂)⁺ Eₙ aₙ / (A_proj cos θ)
 ```
 where `visible[n]` (`Vₙ`) tells whether sub-face `n` is seen from `d̂`, `emission(n)` (`Eₙ`)
 is the quantity emitted by sub-face `n` per unit area — `ε σ T⁴` for thermal emission,
 `R_vis F_sun` for reflected sunlight, a radiance for `roughness_radiance` — and `cos θ` is the
-z component of `d̂_local`. For a uniform, unshadowed model this reduces to `E = Eₙ`: the
+z component of `d̂_local`. For a uniform, unshadowed patch this reduces to `E = Eₙ`: the
 representative patch radiates like a smooth Lambertian face. Sub-faces facing away from `d̂`
 do not contribute.
 
 The caller guarantees `cos θ > 0`.
 """
-function _directional_emission(model::ShapeModel, visible, d̂_local::StaticVector{3}, emission)
+function _directional_emission(patch::ShapeModel, visible, d̂_local::StaticVector{3}, emission)
     cosθ  = d̂_local[3]
     total = 0.0
-    for n in eachindex(model.faces)
+    for n in eachindex(patch.faces)
         visible[n] || continue
-        cosθ_n = model.face_normals[n] ⋅ d̂_local
-        cosθ_n <= 0 && continue
-        total += cosθ_n * model.face_areas[n] * emission(n)
+        cosθ_n = patch.face_normals[n] ⋅ d̂_local
+        cosθ_n ≤ 0 && continue
+        total += cosθ_n * patch.face_areas[n] * emission(n)
     end
-    return total / (projected_area(model) * cosθ)
+    return total / (projected_area(patch) * cosθ)
 end
 
 
-# Add to the sub-face fluxes `flux_sub` of `model` the irradiance `F` that the parent face
+# Add to the sub-face fluxes `flux_sub` of `patch` the irradiance `F` that the parent face
 # receives from the direction `d̂_local` (local frame): a distant source of intensity `F / cos θ`
 # lights the sub-faces it can see, each by its own inclination — the same rule as for the
 # sunlight. The power received, Σₘ Fₘ aₘ, equals F A_proj up to the shadowing discretisation
 # of the sub-faces (seen or not from the ray through their centre): on a height field every
 # ray through the reference plane meets a sub-face, the walls shading the floor.
-function _distribute_directional!(flux_sub::AbstractVector, model::ShapeModel, visible, d̂_local::StaticVector{3}, F::Real)
+function _distribute_directional!(flux_sub::AbstractVector, patch::ShapeModel, visible, d̂_local::StaticVector{3}, F::Real)
     cosθ = d̂_local[3]
-    (F <= 0 || cosθ <= 0) && return
+    (F ≤ 0 || cosθ ≤ 0) && return
     intensity = F / cosθ
-    for m in eachindex(model.faces)
+    for m in eachindex(patch.faces)
         visible[m] || continue
-        cosθ_m = model.face_normals[m] ⋅ d̂_local
+        cosθ_m = patch.face_normals[m] ⋅ d̂_local
         cosθ_m > 0 && (flux_sub[m] += intensity * cosθ_m)
     end
 end
@@ -515,7 +515,7 @@ function _add_external!(state::SingleAsteroidThermoPhysicalState, k::Integer, i:
     graph      = shape.face_visibility_graph
     rs         = state.roughness_states[k]
     neighbours = state.roughness_neighbours[k]
-    model      = rs.problem.shape
+    patch      = rs.problem.shape
     flux_sub   = kind === :rad ? rs.flux_rad : rs.flux_scat
 
     visible_indices = get_visible_face_indices(graph, i)
@@ -532,19 +532,19 @@ function _add_external!(state::SingleAsteroidThermoPhysicalState, k::Integer, i:
                 state.problem.thermo_params.reflectance_vis[j] * state.flux_sun[j]
         else
             rs_j    = state.roughness_states[k_j]
-            model_j = rs_j.problem.shape
-            seen_j  = state.roughness_neighbours[k_j].visible[neighbours.position_in_neighbour[p]]
+            patch_j = rs_j.problem.shape
+            visible_sub_faces_j = state.roughness_neighbours[k_j].visible_sub_faces[neighbours.position_in_neighbour[p]]
             d̂ⱼᵢ     = transform_physical_vector_global_to_local(shape, j, -d̂ᵢⱼ)
             tp_j    = rs_j.problem.thermo_params
             Eⱼ = kind === :rad ?
-                _directional_emission(model_j, seen_j, d̂ⱼᵢ, n -> tp_j.emissivity[n] * σ_SB * rs_j.temperature[begin, n]^4) :
-                _directional_emission(model_j, seen_j, d̂ⱼᵢ, n -> tp_j.reflectance_vis[n] * rs_j.flux_sun[n])
+                _directional_emission(patch_j, visible_sub_faces_j, d̂ⱼᵢ, n -> tp_j.emissivity[n] * σ_SB * rs_j.temperature[begin, n]^4) :
+                _directional_emission(patch_j, visible_sub_faces_j, d̂ⱼᵢ, n -> tp_j.reflectance_vis[n] * rs_j.flux_sun[n])
         end
 
         # Far-field: irradiance on face i, then distributed over the sub-faces that see j
         Fᵢⱼ = Eⱼ * fᵢⱼ
         d̂ᵢⱼ_local = transform_physical_vector_global_to_local(shape, i, d̂ᵢⱼ)
-        _distribute_directional!(flux_sub, model, neighbours.visible[p], d̂ᵢⱼ_local, Fᵢⱼ)
+        _distribute_directional!(flux_sub, patch, neighbours.visible_sub_faces[p], d̂ᵢⱼ_local, Fᵢⱼ)
     end
 end
 

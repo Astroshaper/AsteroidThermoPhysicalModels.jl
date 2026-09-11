@@ -157,12 +157,12 @@ function update_thermal_force!(state::SingleAsteroidThermoPhysicalState)
     for (i, k) in enumerate(state.face_roughness_indices)
         k == 0 && continue
         rs = state.roughness_states[k]
-        roughness_shape = rs.problem.shape
+        patch = rs.problem.shape
         update_thermal_force!(rs)  # includes the re-absorption inside the roughness model
 
         # Representative patch: count the model-unit forces for the parent's area. The
         # rotation is linear, so the sub-face forces are summed first and rotated once.
-        patches_per_face = shape.face_areas[i] / projected_area(roughness_shape)
+        patches_per_face = shape.face_areas[i] / projected_area(patch)
         f_sum = sum(rs.face_forces)
         state.face_forces[i] = patches_per_face * transform_physical_vector_local_to_global(shape, i, f_sum)
 
@@ -171,9 +171,9 @@ function update_thermal_force!(state::SingleAsteroidThermoPhysicalState)
         # escaping the model, P_sky = (A_i / A_proj) Σⱼ E_j a_j f_sky,j, contributes
         # P_sky / c × Σₖ f_ik d̂_ik.
         if with_self_heating
-            graph_sub = roughness_shape.face_visibility_graph
-            P_sky = patches_per_face * sum(eachindex(roughness_shape.faces)) do j
-                _emittance(rs, j) * roughness_shape.face_areas[j] * _sky_view_factor(graph_sub, j)
+            graph_sub = patch.face_visibility_graph
+            P_sky = patches_per_face * sum(eachindex(patch.faces)) do j
+                _emittance(rs, j) * patch.face_areas[j] * _sky_view_factor(graph_sub, j)
             end
             view_factors = get_view_factors(shape.face_visibility_graph, i)
             directions   = get_visible_face_directions(shape.face_visibility_graph, i)

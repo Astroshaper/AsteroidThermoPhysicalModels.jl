@@ -47,7 +47,7 @@ function _build_single_state(
 
         # Build an independent sub-face state for each face with roughness
         roughness_states = map(findall(!=(0), face_roughness_indices)) do i
-            roughness_shape = get_roughness_model(shape, i)::ShapeModel
+            patch = get_roughness_model(shape, i)::ShapeModel
             tp_sub = ThermoParams(
                 [problem.thermo_params.conductivity[i]],
                 [problem.thermo_params.density[i]],
@@ -65,7 +65,7 @@ function _build_single_state(
             # Roughness models are smooth `ShapeModel`s (enforced by `add_roughness_models!`),
             # so the recursion terminates here.
             mini_prob = SingleAsteroidThermoPhysicalProblem(
-                roughness_shape, tp_sub, problem.grid_params;
+                patch, tp_sub, problem.grid_params;
                 with_self_shadowing = true,
                 with_self_heating   = true,
                 upper_boundary_condition = problem.upper_boundary_condition,
@@ -103,24 +103,24 @@ end
 
 # For every face with a roughness model, the visibility of its sub-faces from the direction of
 # each neighbouring global face, and the position of the face in that neighbour's own list.
-# The direction `d̂_ij` of the visibility graph is rotated into the local frame of the model and
+# The direction `d̂_ij` of the visibility graph is rotated into the local frame of the patch and
 # handed to `update_illumination!` in place of the Sun: illumination from a direction is the
 # same test as being seen from it. The masks are geometry only; the temperatures they weight are
 # supplied at every step.
 function _build_roughness_neighbours(shape::ShapeModel, face_roughness_indices::Vector{Int})
     graph = shape.face_visibility_graph
     map(findall(!=(0), face_roughness_indices)) do i
-        model      = get_roughness_model(shape, i)::ShapeModel
+        patch      = get_roughness_model(shape, i)::ShapeModel
         neighbours = get_visible_face_indices(graph, i)
         directions = get_visible_face_directions(graph, i)
-        visible    = Vector{BitVector}(undef, length(neighbours))
+        visible_sub_faces = Vector{BitVector}(undef, length(neighbours))
         position   = zeros(Int, length(neighbours))
-        seen       = Vector{Bool}(undef, length(model.faces))
+        seen       = Vector{Bool}(undef, length(patch.faces))
 
         for (p, (j, d̂_ij)) in enumerate(zip(neighbours, directions))
             d̂_local = transform_physical_vector_global_to_local(shape, i, d̂_ij)
-            update_illumination!(seen, model, d̂_local; with_self_shadowing=true)
-            visible[p] = BitVector(seen)
+            update_illumination!(seen, patch, d̂_local; with_self_shadowing=true)
+            visible_sub_faces[p] = BitVector(seen)
 
             if face_roughness_indices[j] != 0
                 q = findfirst(==(i), get_visible_face_indices(graph, j))
@@ -131,7 +131,7 @@ function _build_roughness_neighbours(shape::ShapeModel, face_roughness_indices::
             end
         end
 
-        RoughnessNeighbours(visible, position)
+        RoughnessNeighbours(visible_sub_faces, position)
     end
 end
 

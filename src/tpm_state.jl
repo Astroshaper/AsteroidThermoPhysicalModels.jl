@@ -21,7 +21,7 @@ models (see `update_flux_rad_single!`); it does not change during a run and is b
 state construction, when `with_self_heating` is enabled.
 
 # Fields
-- `visible`               : `visible[p][m]` is `true` when sub-face `m` is seen from the direction
+- `visible_sub_faces`     : `visible_sub_faces[p][m]` is `true` when sub-face `m` is seen from the direction
                             of the `p`-th visible global face (in the local frame of the model,
                             including self-shadowing by the model's own topography)
 - `position_in_neighbour` : Position of this face in the list of the `p`-th visible face, so that
@@ -29,7 +29,7 @@ state construction, when `with_self_heating` is enabled.
                             the neighbour has no roughness model
 """
 struct RoughnessNeighbours
-    visible               ::Vector{BitVector}
+    visible_sub_faces     ::Vector{BitVector}
     position_in_neighbour ::Vector{Int}
 end
 
