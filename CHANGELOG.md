@@ -20,8 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`RoughnessNeighbours`). Results of runs with surface roughness and `with_self_heating =
   true` change on concave shapes (nothing changes on convex shapes, where no facet sees
   another); a flat roughness model reproduces the previous result. The global-level fluxes
-  are unchanged. Cost: about +6 % of a step for a 1000-sub-facet model (+20 % for a
-  32-sub-facet one), plus a few seconds of precomputation
+  are unchanged. Cost: proportional to the number of visible pairs of rough facets times the
+  number of sub-facets — about 15 µs per pair and time step for a 1000-sub-facet model, and
+  0.5 ms per pair for the precomputation of the masks. This is a few percent of a step on a
+  mostly convex body, where only a few facets see each other, but dominates it on a strongly
+  concave one (2048 facets seeing 560 others each: 16 s per step, 9 min of precomputation)
 
 ## [0.3.0] - 2026-09-09
 
