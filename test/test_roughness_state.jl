@@ -955,6 +955,12 @@ Unit tests for SingleAsteroidThermoPhysicalState on a shape with surface roughne
         state_hier  = AsteroidThermoPhysicalModels._build_single_state(problem_hier,  CrankNicolson())
         AsteroidThermoPhysicalModels.init_temperature!(state_plain, 250.0)
         AsteroidThermoPhysicalModels.init_temperature!(state_hier,  250.0)
+        # A uniform temperature gives the crater exactly the recoil of the flat face: the direct
+        # recoils sum to -2/3 E A_proj ẑ and the re-absorption recoils cancel pairwise by
+        # reciprocity (a_j f_jk = a_k f_kj, d̂_jk = -d̂_kj). Make the sub-faces differ so that
+        # the crater really has a force of its own.
+        rs = state_hier.roughness_states[1]
+        rs.temperature[begin, :] .= range(240.0, 260.0; length=length(rs.problem.shape.faces))
 
         r☉ = SVector(0.3, -0.2, 0.9) * AsteroidThermoPhysicalModels.au2m
         update_fluxes_and_force!(state_plain, r☉)
@@ -962,6 +968,7 @@ Unit tests for SingleAsteroidThermoPhysicalState on a shape with surface roughne
 
         @test state_hier.face_forces[2:end] == state_plain.face_forces[2:end]
         @test state_hier.face_forces[1]     != state_plain.face_forces[1]
+        @test !isapprox(state_hier.face_forces[1], state_plain.face_forces[1]; rtol=1e-6)
         @test state_hier.force ≈ sum(state_hier.face_forces)
     end
 
