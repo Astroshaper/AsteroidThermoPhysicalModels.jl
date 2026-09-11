@@ -128,14 +128,21 @@ End-to-end tests of `solve` on a `ShapeModel` with surface roughness:
         n_cycle = 10
         times, ephem = make_ephem(n_cycle; with_rotation=false)
         output = SingleAsteroidOutputSpec(times[end:end]; save_surface_temperature = true)
+        last_cycle = length(times)-n_step_cycle+1:length(times)
 
+        # Convex global shape: no exchange between global faces
         shape_hier = load_shape_obj(path_obj)
         add_roughness_models!(shape_hier, roughness_model)
-
         sol = solve(make_problem(shape_hier; with_self_heating=true), CrankNicolson();
             ephem, output, initial_temperature=200.0)
+        ratio = sum(sol.emitted_power[last_cycle]) / sum(sol.absorbed_power[last_cycle])
+        @test abs(ratio - 1) < 0.05
 
-        last_cycle = length(times)-n_step_cycle+1:length(times)
+        # Concave global shape: the roughness models exchange radiation with each other
+        shape_concave = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
+        add_roughness_models!(shape_concave, roughness_model)
+        sol = solve(make_problem(shape_concave; with_self_heating=true), CrankNicolson();
+            ephem, output, initial_temperature=200.0)
         ratio = sum(sol.emitted_power[last_cycle]) / sum(sol.absorbed_power[last_cycle])
         @test abs(ratio - 1) < 0.05
     end

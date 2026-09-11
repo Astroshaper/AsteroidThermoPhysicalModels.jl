@@ -10,8 +10,9 @@ Unit tests for SingleAsteroidThermoPhysicalState on a shape with surface roughne
   standalone roughness model, and a near-flat roughness model reproducing the parent face
 - update_flux_scat_single! / update_flux_rad_single! on the global level, likewise
 - update_flux_scat_single! / update_flux_rad_single! on the sub-face level: self-heating inside
-  the roughness model, the external irradiation from the other global faces, and its absence
-  when the global self-heating is off
+  the roughness model, the directional irradiation from the other global faces (against an
+  independent reference implementation, on rough, flat and partly rough shapes), and its
+  absence when the global self-heating is off
 - update_temperature! on the global level, for all three solvers and for zero conductivity
 - update_temperature! on the sub-face level: the sub-faces advance, a near-flat roughness model
   reproduces the temperature of its parent face, and zero conductivity gives radiative
@@ -401,12 +402,58 @@ Unit tests for SingleAsteroidThermoPhysicalState on a shape with surface roughne
         end
     end
 
+    # Reference implementation of the external irradiation of the sub-faces of global face `i`
+    # (sub-state `k`), written independently of the package: for every visible global face
+    # `j`, the emission of `j` towards `i` (directional for a rough `j`, Lambertian for a smooth
+    # one) times the view factor, distributed over the sub-faces of `i` that see `j`. The
+    # visibility is recomputed here with `update_illumination!`, so this also checks the
+    # precomputed masks. `emission(state_or_substate, n)` gives the emitted quantity per face.
+    function external_reference(state_hier, shape_hier, i, k, emission_global, emission_sub)
+        graph = shape_hier.face_visibility_graph
+        rs    = state_hier.roughness_states[k]
+        model = rs.problem.shape
+        ext   = zeros(length(model.faces))
+        seen  = Vector{Bool}(undef, length(model.faces))
+        total = 0.0     # Σ_j F_ij, the irradiance of the parent
+        power = 0.0     # power received by the sub-faces, as from a distant source of each F_ij
+        for (j, f, d̂) in zip(get_visible_face_indices(graph, i), get_view_factors(graph, i), get_visible_face_directions(graph, i))
+            k_j = state_hier.face_roughness_indices[j]
+            if k_j == 0
+                E = emission_global(j)
+            else
+                rs_j = state_hier.roughness_states[k_j]; model_j = rs_j.problem.shape
+                d̂_ji = transform_physical_vector_global_to_local(shape_hier, j, -d̂)
+                seen_j = Vector{Bool}(undef, length(model_j.faces))
+                update_illumination!(seen_j, model_j, d̂_ji; with_self_shadowing=true)
+                E = sum(max(0.0, model_j.face_normals[n] ⋅ d̂_ji) * model_j.face_areas[n] * emission_sub(rs_j, n)
+                        for n in eachindex(model_j.faces) if seen_j[n]; init=0.0) / (projected_area(model_j) * d̂_ji[3])
+            end
+            F = E * f
+            total += F
+            d̂_ij = transform_physical_vector_global_to_local(shape_hier, i, d̂)
+            update_illumination!(seen, model, d̂_ij; with_self_shadowing=true)
+            for m in eachindex(model.faces)
+                seen[m] || continue
+                c = model.face_normals[m] ⋅ d̂_ij
+                c > 0 || continue
+                ext[m] += F / d̂_ij[3] * c
+                power  += F / d̂_ij[3] * c * model.face_areas[m]
+            end
+        end
+        ext, total, power
+    end
+    ε_of(state) = state.problem.thermo_params.emissivity
+    emission_rad_global(state)  = j -> ε_of(state)[j] * AsteroidThermoPhysicalModels.σ_SB * state.temperature[begin, j]^4
+    emission_rad_sub            = (rs, n) -> ε_of(rs)[n] * AsteroidThermoPhysicalModels.σ_SB * rs.temperature[begin, n]^4
+    emission_scat_global(state) = j -> state.problem.thermo_params.reflectance_vis[j] * state.flux_sun[j]
+    emission_scat_sub           = (rs, n) -> rs.problem.thermo_params.reflectance_vis[n] * rs.flux_sun[n]
+
     @testset "update_flux_scat_single! / update_flux_rad_single! (sub-face level)" begin
         # Self-heating inside the roughness model must be exactly what a standalone state of
-        # the roughness model gives, and the flux the parent receives from the other global
-        # faces must be added on top, weighted by each sub-face's sky view factor. A concave
-        # global crater makes the parent fluxes non-zero; a roughness crater makes the
-        # intra-model exchange non-zero.
+        # the roughness model gives, and the radiation the other global faces send towards the
+        # sub-faces must be added on top — from the sub-faces of the neighbours' own roughness
+        # models, direction by direction. A concave global crater makes the neighbours' terms
+        # non-zero; a roughness crater makes the intra-model exchange non-zero.
         crater = create_shape_crater(0.4, 0.1; Nx=6, Ny=6)
         shape_hier = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
         add_roughness_models!(shape_hier, crater)
@@ -417,6 +464,18 @@ Unit tests for SingleAsteroidThermoPhysicalState on a shape with surface roughne
         # Self-heating inside the roughness model is always on
         @test all(rs.problem.with_self_heating for rs in state_hier.roughness_states)
         @test !isnothing(crater.face_visibility_graph)
+
+        # The pair visibility exists for every roughness state, with one mask per visible face
+        @test length(state_hier.roughness_neighbours) == length(state_hier.roughness_states)
+        for (i, k) in enumerate(state_hier.face_roughness_indices)
+            nb = state_hier.roughness_neighbours[k]
+            @test length(nb.visible) == n_visible_faces(shape_hier.face_visibility_graph, i)
+            @test all(length(v) == length(crater.faces) for v in nb.visible)
+            # Every neighbour carries roughness here, so every reverse position points back at i
+            for (p, j) in enumerate(get_visible_face_indices(shape_hier.face_visibility_graph, i))
+                @test get_visible_face_indices(shape_hier.face_visibility_graph, j)[nb.position_in_neighbour[p]] == i
+            end
+        end
 
         # Standalone state of the same roughness model, with the same flags as the sub-states
         problem_alone = SingleAsteroidThermoPhysicalProblem(crater, thermo_params, grid_params;
@@ -433,17 +492,11 @@ Unit tests for SingleAsteroidThermoPhysicalState on a shape with surface roughne
         AsteroidThermoPhysicalModels.update_flux_scat_single!(state_hier)
         AsteroidThermoPhysicalModels.update_flux_rad_single!(state_hier)
 
-        # The parent fluxes are non-zero somewhere, so the external term is exercised
+        # The global fluxes are non-zero somewhere, so the shape really is concave
         @test any(>(0), state_hier.flux_scat)
         @test any(>(0), state_hier.flux_rad)
 
-        # Sky view factor of each sub-face of the (shared) roughness model
-        f_sky = [max(0.0, 1 - sum(get_view_factors(crater.face_visibility_graph, j)))
-                 for j in eachindex(crater.faces)]
-        @test all(0 .<= f_sky .<= 1)
-        @test any(<(1), f_sky)   # the crater walls do hide part of the sky
-
-        n_checked = 0
+        n_checked = n_irradiated = 0
         for (i, k) in enumerate(state_hier.face_roughness_indices)
             rs = state_hier.roughness_states[k]
             state_hier.illuminated_faces[i] || continue
@@ -456,17 +509,70 @@ Unit tests for SingleAsteroidThermoPhysicalState on a shape with surface roughne
             AsteroidThermoPhysicalModels.update_flux_scat_single!(state_alone)
             AsteroidThermoPhysicalModels.update_flux_rad_single!(state_alone)
 
-            @test rs.flux_scat ≈ state_alone.flux_scat .+ f_sky .* state_hier.flux_scat[i]
-            @test rs.flux_rad  ≈ state_alone.flux_rad  .+ f_sky .* state_hier.flux_rad[i]
+            ext_rad,  total_rad,  power_rad  = external_reference(state_hier, shape_hier, i, k, emission_rad_global(state_hier),  emission_rad_sub)
+            ext_scat, total_scat, power_scat = external_reference(state_hier, shape_hier, i, k, emission_scat_global(state_hier), emission_scat_sub)
+            @test rs.flux_rad  ≈ state_alone.flux_rad  .+ ext_rad
+            @test rs.flux_scat ≈ state_alone.flux_scat .+ ext_scat
+
+            # Each neighbour irradiates the sub-faces like a distant source of irradiance F_ij
+            # (the same rule as the sunlight): the power received is F_ij / cos θ times the
+            # projected area of the sub-faces seen from that direction. This equals F_ij A_proj
+            # up to the shadowing discretisation of the sub-faces (a sub-face is seen or not
+            # from the ray through its centre), which is a few percent on this coarse crater.
+            model = rs.problem.shape
+            @test sum((rs.flux_rad .- state_alone.flux_rad) .* model.face_areas) ≈ power_rad
+            total_rad > 0 && (n_irradiated += 1)   # the flat rim of the global crater sees nothing
+
+            # ...and it is directional: the sub-faces that see no neighbour receive nothing,
+            # the others do, unlike an isotropic (sky-view-factor) distribution
+            seen_any = falses(length(model.faces))
+            for d̂ in get_visible_face_directions(shape_hier.face_visibility_graph, i)
+                d̂_ij = transform_physical_vector_global_to_local(shape_hier, i, d̂)
+                seen = Vector{Bool}(undef, length(model.faces))
+                update_illumination!(seen, model, d̂_ij; with_self_shadowing=true)
+                seen_any .|= seen .& (map(n̂ -> n̂ ⋅ d̂_ij, model.face_normals) .> 0)
+            end
+            @test all(iszero, ext_rad[.!seen_any])
+            @test all(>(0), ext_rad[seen_any])
         end
         @test n_checked > 0
+        @test n_irradiated > 0
+    end
+
+    @testset "external irradiation differs from an isotropic distribution on a deep crater" begin
+        # With a deep roughness crater, the walls facing a neighbour receive its radiation and the
+        # walls behind do not; distributing the same power by the sky view factor (the isotropic
+        # limit) gives a different pattern. On a flat model the two coincide (next testset).
+        crater = create_shape_crater(0.5, 0.3; Nx=6, Ny=6)
+        shape_hier = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
+        add_roughness_models!(shape_hier, crater)
+        problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
+            with_self_shadowing=false, with_self_heating=true)
+        state_hier = AsteroidThermoPhysicalModels._build_single_state(problem_hier, CrankNicolson())
+        AsteroidThermoPhysicalModels.init_temperature!(state_hier, 250.0)
+
+        r☉ = SVector(0.2, -0.1, 1.0) * AsteroidThermoPhysicalModels.au2m
+        AsteroidThermoPhysicalModels.update_flux_sun!(state_hier, r☉)
+        AsteroidThermoPhysicalModels.update_flux_scat_single!(state_hier)
+        AsteroidThermoPhysicalModels.update_flux_rad_single!(state_hier)
+
+        f_sky = [max(0.0, 1 - sum(get_view_factors(crater.face_visibility_graph, m))) for m in eachindex(crater.faces)]
+        n_differ = 0
+        for (i, k) in enumerate(state_hier.face_roughness_indices)
+            ext_rad, total_rad, _ = external_reference(state_hier, shape_hier, i, k, emission_rad_global(state_hier), emission_rad_sub)
+            total_rad > 0 || continue
+            isotropic = f_sky .* total_rad     # same power, spread as the sky-view-factor rule would
+            isapprox(ext_rad, isotropic; rtol=1e-3) || (n_differ += 1)
+        end
+        @test n_differ > 0
     end
 
     @testset "global self-heating off removes the external term only" begin
-        # With `with_self_heating = false` on the global problem, the parent fluxes are zero
-        # and the sub-faces receive nothing from outside — but the self-heating inside each
-        # roughness model is still computed. This is what makes an on/off comparison of the
-        # global self-heating isolate the external contribution.
+        # With `with_self_heating = false` on the global problem, no radiation is exchanged
+        # between global faces, no pair visibility is built, and the sub-faces receive nothing
+        # from outside — but the self-heating inside each roughness model is still computed.
+        # This is what makes an on/off comparison of the global self-heating isolate the
+        # external contribution.
         crater = create_shape_crater(0.4, 0.1; Nx=6, Ny=6)
         shape_hier = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
         add_roughness_models!(shape_hier, crater)
@@ -474,6 +580,7 @@ Unit tests for SingleAsteroidThermoPhysicalState on a shape with surface roughne
             with_self_shadowing=false, with_self_heating=false)
         state_hier = AsteroidThermoPhysicalModels._build_single_state(problem_hier, CrankNicolson())
         AsteroidThermoPhysicalModels.init_temperature!(state_hier, 250.0)
+        @test isempty(state_hier.roughness_neighbours)
 
         problem_alone = SingleAsteroidThermoPhysicalProblem(crater, thermo_params, grid_params;
             with_self_shadowing=true, with_self_heating=true)
@@ -501,8 +608,10 @@ Unit tests for SingleAsteroidThermoPhysicalState on a shape with surface roughne
     end
 
     @testset "near-flat roughness receives exactly the parent flux from outside" begin
-        # A flat roughness model has no walls (sky view factor 1) and no exchange between its
-        # own faces, so each sub-face must end up with exactly the parent's flux.
+        # A flat roughness model has no walls: every sub-face sees every neighbour with the
+        # inclination of the parent, and the neighbours (flat too) radiate as their smooth
+        # faces. The directional exchange therefore reduces to the smooth-surface flux of the
+        # parent face — the isotropic limit — and each sub-face must end up with exactly it.
         shape_hier = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
         add_roughness_models!(shape_hier, create_shape_crater(0.4, 1e-6; Nx=4, Ny=4))
         problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
@@ -515,18 +624,74 @@ Unit tests for SingleAsteroidThermoPhysicalState on a shape with surface roughne
         AsteroidThermoPhysicalModels.update_flux_scat_single!(state_hier)
         AsteroidThermoPhysicalModels.update_flux_rad_single!(state_hier)
 
-        # The view factors of a model flat to 1e-6 are ~1e-11 rather than zero, so the exchange
-        # between its own faces leaves a residual of ~1e-10 W/m². Compare with an absolute
-        # tolerance scaled by the largest parent flux: a relative one would fail on parents
-        # whose flux is exactly zero.
-        atol_scat = 1e-6 * maximum(state_hier.flux_scat)
-        atol_rad  = 1e-6 * maximum(state_hier.flux_rad)
+        # A model flat to 1e-6 is not exactly flat: the tilt of its normals (~1e-5) is felt
+        # for the neighbours seen at grazing angles (cos θ down to ~1e-3 on this crater), and
+        # the solar flux of its sub-faces differs from the parent's by ~1e-5 of the solar
+        # constant, which enters the reflected sunlight of the neighbours. Compare with an
+        # absolute tolerance scaled by the largest parent flux: a relative one would fail on
+        # parents whose flux is exactly zero.
+        atol_scat = 1e-4 * maximum(state_hier.flux_scat)
+        atol_rad  = 1e-4 * maximum(state_hier.flux_rad)
         @test atol_scat > 0 && atol_rad > 0
         for (i, k) in enumerate(state_hier.face_roughness_indices)
             rs = state_hier.roughness_states[k]
             @test all(isapprox.(rs.flux_scat, state_hier.flux_scat[i]; atol=atol_scat))
             @test all(isapprox.(rs.flux_rad,  state_hier.flux_rad[i];  atol=atol_rad))
         end
+    end
+
+    @testset "external irradiation with roughness on part of the faces" begin
+        # Neighbours without a roughness model radiate as smooth Lambertian faces; the rough
+        # faces among them radiate directionally. The reference implementation handles both.
+        crater = create_shape_crater(0.4, 0.1; Nx=6, Ny=6)
+        shape_hier = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
+        rough_faces = 1:2:length(shape_hier.faces)
+        for i in rough_faces
+            add_roughness_models!(shape_hier, crater, i)
+        end
+        problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
+            with_self_shadowing=false, with_self_heating=true)
+        state_hier = AsteroidThermoPhysicalModels._build_single_state(problem_hier, CrankNicolson())
+        n_faces = length(shape_hier.faces)
+        T₀ = repeat(reshape(range(200.0, 300.0; length=n_faces) |> collect, 1, n_faces), grid_params.n_depth)
+        AsteroidThermoPhysicalModels.init_temperature!(state_hier, T₀)
+
+        r☉ = SVector(0.2, -0.1, 1.0) * AsteroidThermoPhysicalModels.au2m
+        AsteroidThermoPhysicalModels.update_flux_sun!(state_hier, r☉)
+        AsteroidThermoPhysicalModels.update_flux_scat_single!(state_hier)
+        AsteroidThermoPhysicalModels.update_flux_rad_single!(state_hier)
+
+        problem_alone = SingleAsteroidThermoPhysicalProblem(crater, thermo_params, grid_params;
+            with_self_shadowing=true, with_self_heating=true)
+        state_alone = AsteroidThermoPhysicalModels._build_single_state(problem_alone, CrankNicolson())
+
+        n_mixed = 0
+        for (i, k) in enumerate(state_hier.face_roughness_indices)
+            k == 0 && continue
+            rs = state_hier.roughness_states[k]
+            nb = state_hier.roughness_neighbours[k]
+            js = get_visible_face_indices(shape_hier.face_visibility_graph, i)
+            any(j -> state_hier.face_roughness_indices[j] == 0, js) && any(j -> state_hier.face_roughness_indices[j] != 0, js) && (n_mixed += 1)
+            # Reverse positions: 0 for smooth neighbours, the position of i otherwise
+            for (p, j) in enumerate(js)
+                if state_hier.face_roughness_indices[j] == 0
+                    @test nb.position_in_neighbour[p] == 0
+                else
+                    @test get_visible_face_indices(shape_hier.face_visibility_graph, j)[nb.position_in_neighbour[p]] == i
+                end
+            end
+
+            AsteroidThermoPhysicalModels.init_temperature!(state_alone, T₀[begin, i])
+            AsteroidThermoPhysicalModels.update_flux_sun!(state_alone, transform_physical_vector_global_to_local(shape_hier, i, r☉))
+            AsteroidThermoPhysicalModels.update_flux_scat_single!(state_alone)
+            AsteroidThermoPhysicalModels.update_flux_rad_single!(state_alone)
+            ext_rad, _, _  = external_reference(state_hier, shape_hier, i, k, emission_rad_global(state_hier),  emission_rad_sub)
+            ext_scat, _, _ = external_reference(state_hier, shape_hier, i, k, emission_scat_global(state_hier), emission_scat_sub)
+            @test rs.flux_rad  ≈ state_alone.flux_rad  .+ ext_rad
+            @test rs.flux_scat ≈ state_alone.flux_scat .+ ext_scat
+            @test all(isfinite, rs.flux_rad)
+        end
+        @test n_mixed > 0
     end
 
     @testset "self-heating disabled leaves the global fluxes at zero" begin

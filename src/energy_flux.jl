@@ -415,38 +415,136 @@ function update_flux_scat_single!(state::SingleAsteroidThermoPhysicalState)
     _update_flux_scat_single!(state, state.problem.shape)
 
     # Sub-faces of every roughness model (empty loop for a smooth surface): scattering between
-    # the sub-faces, plus the scattered light the parent face receives from the other faces,
-    # distributed over the sub-faces by their sky view factor (see `_add_external_irradiance!`).
-    # The global level must be updated first: the external term reads `state.flux_scat`.
+    # the sub-faces, plus the sunlight reflected towards them by the other global faces — from
+    # the sub-faces of those faces' own roughness models, direction by direction (see
+    # `_add_external_scattering!`). Only with self-heating, which is what the external term is.
     for (i, k) in enumerate(state.face_roughness_indices)
         k == 0 && continue
         rs = state.roughness_states[k]
         _update_flux_scat_single!(rs, rs.problem.shape)
-        _add_external_irradiance!(rs.flux_scat, rs.problem.shape, state.flux_scat[i])
+        state.problem.with_self_heating && _add_external_scattering!(state, k, i)
     end
 end
 
 
 """
-    _add_external_irradiance!(flux_sub, shape::ShapeModel, flux_parent)
+    _directional_emission(model::ShapeModel, visible, d̂_local, emission) -> E
 
-Add to the sub-face fluxes `flux_sub` of a roughness model `shape` the flux `flux_parent` that
-its parent global face receives from the other global faces.
+Emission of a roughness model `model` towards the direction `d̂_local` (unit vector in the local
+frame of the model), per unit area of the model's reference plane projected onto that direction:
+```
+E(d̂) = Σₙ Vₙ (n̂ₙ ⋅ d̂)⁺ Eₙ aₙ / (A_proj cos θ)
+```
+where `visible[n]` (`Vₙ`) tells whether sub-face `n` is seen from `d̂`, `emission(n)` (`Eₙ`)
+is the quantity emitted by sub-face `n` per unit area — `ε σ T⁴` for thermal emission,
+`R_vis F_sun` for reflected sunlight, a radiance for `roughness_radiance` — and `cos θ` is the
+z component of `d̂_local`. For a uniform, unshadowed model this reduces to `E = Eₙ`: the
+representative patch radiates like a smooth Lambertian face. Sub-faces facing away from `d̂`
+do not contribute.
 
-The parent flux is taken as isotropic over the parent's sky hemisphere, so sub-face `j`
-receives it in proportion to its sky view factor `1 − Σₖ fⱼₖ` — the part of the hemisphere not
-covered by the other sub-faces. A sub-face on the floor of a deep crater therefore receives
-less than one on the rim, and a flat roughness model receives exactly the parent flux. On a
-convex body the parent flux is zero and nothing is added.
-
-This is the isotropic limit of a directional treatment in which each neighbouring global
-face radiates with its own rough-surface beaming; it is the level implemented for now.
+The caller guarantees `cos θ > 0`.
 """
-function _add_external_irradiance!(flux_sub::AbstractVector, shape::ShapeModel, flux_parent::Real)
-    iszero(flux_parent) && return
-    graph = shape.face_visibility_graph
-    for j in eachindex(shape.faces)
-        flux_sub[j] += _sky_view_factor(graph, j) * flux_parent
+function _directional_emission(model::ShapeModel, visible, d̂_local::StaticVector{3}, emission)
+    cosθ  = d̂_local[3]
+    total = 0.0
+    for n in eachindex(model.faces)
+        visible[n] || continue
+        cosθ_n = model.face_normals[n] ⋅ d̂_local
+        cosθ_n <= 0 && continue
+        total += cosθ_n * model.face_areas[n] * emission(n)
+    end
+    return total / (projected_area(model) * cosθ)
+end
+
+
+# Add to the sub-face fluxes `flux_sub` of `model` the irradiance `F` that the parent face
+# receives from the direction `d̂_local` (local frame): a distant source of intensity `F / cos θ`
+# lights the sub-faces it can see, each by its own inclination — the same rule as for the
+# sunlight. The power received, Σₘ Fₘ aₘ, equals F A_proj up to the shadowing discretisation
+# of the sub-faces (seen or not from the ray through their centre): on a height field every
+# ray through the reference plane meets a sub-face, the walls shading the floor.
+function _distribute_directional!(flux_sub::AbstractVector, model::ShapeModel, visible, d̂_local::StaticVector{3}, F::Real)
+    cosθ = d̂_local[3]
+    (F <= 0 || cosθ <= 0) && return
+    intensity = F / cosθ
+    for m in eachindex(model.faces)
+        visible[m] || continue
+        cosθ_m = model.face_normals[m] ⋅ d̂_local
+        cosθ_m > 0 && (flux_sub[m] += intensity * cosθ_m)
+    end
+end
+
+
+"""
+    _add_external_radiation!(state, k, i)
+    _add_external_scattering!(state, k, i)
+
+Add to the sub-faces of the roughness model on global face `i` (sub-state `k`) the thermal
+radiation, respectively the reflected sunlight, that they receive from the other global faces.
+
+For every face `j` visible from `i` (view factor `f_ij`, direction `d̂_ij` from the face
+visibility graph):
+
+1. **Emitter**: the emission of `j` towards `i`. If `j` carries a roughness model, it is the
+   directional emission of that model (`_directional_emission`) — the hot sunlit wall of a
+   crater that faces `i` radiates more towards `i` than a smooth face would (thermal-infrared
+   beaming), a shaded wall less. The sub-faces of `j` seen from `i` come from the mask that `j`
+   precomputed towards `i` (`RoughnessNeighbours`). If `j` is smooth, it radiates as a Lambertian
+   face, `ε σ T_j⁴` or `R_vis F_sun,j`.
+2. **Far-field**: the irradiance reaching face `i` is `F_ij = E_j(d̂_ji) f_ij`, the same form as
+   the smooth-face term `ε σ T_j⁴ f_ij` — the view factor already carries the geometry of the
+   pair, and both faces are taken as small compared to their distance, as the view factor does.
+3. **Receiver**: `F_ij` is distributed over the sub-faces of `i` that see `j`
+   (`_distribute_directional!`), so the wall facing `j` is heated and the wall behind it is not.
+
+Thermal emission uses the sub-face temperatures of the previous time step and reflected sunlight
+uses the direct solar flux only (single scattering, as on the global level), so the result does
+not depend on the order in which the roughness models are updated. The global-level fluxes of
+face `i` are not touched: they remain the smooth-surface baseline.
+"""
+function _add_external_radiation!(state::SingleAsteroidThermoPhysicalState, k::Integer, i::Integer)
+    _add_external!(state, k, i, :rad)
+end
+
+function _add_external_scattering!(state::SingleAsteroidThermoPhysicalState, k::Integer, i::Integer)
+    _add_external!(state, k, i, :scat)
+end
+
+function _add_external!(state::SingleAsteroidThermoPhysicalState, k::Integer, i::Integer, kind::Symbol)
+    shape      = state.problem.shape
+    graph      = shape.face_visibility_graph
+    rs         = state.roughness_states[k]
+    neighbours = state.roughness_neighbours[k]
+    model      = rs.problem.shape
+    flux_sub   = kind === :rad ? rs.flux_rad : rs.flux_scat
+
+    visible_indices = get_visible_face_indices(graph, i)
+    view_factors    = get_view_factors(graph, i)
+    directions      = get_visible_face_directions(graph, i)
+
+    for (p, (j, fᵢⱼ, d̂ᵢⱼ)) in enumerate(zip(visible_indices, view_factors, directions))
+        k_j = state.face_roughness_indices[j]
+
+        # Emitter: j towards i
+        if k_j == 0
+            Eⱼ = kind === :rad ?
+                state.problem.thermo_params.emissivity[j] * σ_SB * state.temperature[begin, j]^4 :
+                state.problem.thermo_params.reflectance_vis[j] * state.flux_sun[j]
+        else
+            rs_j    = state.roughness_states[k_j]
+            model_j = rs_j.problem.shape
+            seen_j  = state.roughness_neighbours[k_j].visible[neighbours.position_in_neighbour[p]]
+            d̂ⱼᵢ     = transform_physical_vector_global_to_local(shape, j, -d̂ᵢⱼ)
+            tp_j    = rs_j.problem.thermo_params
+            Eⱼ = kind === :rad ?
+                _directional_emission(model_j, seen_j, d̂ⱼᵢ, n -> tp_j.emissivity[n] * σ_SB * rs_j.temperature[begin, n]^4) :
+                _directional_emission(model_j, seen_j, d̂ⱼᵢ, n -> tp_j.reflectance_vis[n] * rs_j.flux_sun[n])
+        end
+
+        # Far-field: irradiance on face i, then distributed over the sub-faces that see j
+        Fᵢⱼ = Eⱼ * fᵢⱼ
+        d̂ᵢⱼ_local = transform_physical_vector_global_to_local(shape, i, d̂ᵢⱼ)
+        _distribute_directional!(flux_sub, model, neighbours.visible[p], d̂ᵢⱼ_local, Fᵢⱼ)
     end
 end
 
@@ -526,15 +624,13 @@ function update_flux_rad_single!(state::SingleAsteroidThermoPhysicalState)
 
     # Sub-faces of every roughness model (empty loop for a smooth surface): radiative exchange
     # between the sub-faces from their surface temperatures, plus the thermal radiation the
-    # parent face receives from the other faces, distributed over the sub-faces by their sky
-    # view factor. The global level must be updated first: the external term reads
-    # `state.flux_rad`, and it carries the neighbours' smooth-surface temperatures rather than
-    # their rough-surface emission.
+    # other global faces send towards them — from the sub-faces of those faces' own roughness
+    # models, direction by direction (see `_add_external_radiation!`). Only with self-heating.
     for (i, k) in enumerate(state.face_roughness_indices)
         k == 0 && continue
         rs = state.roughness_states[k]
         _update_flux_rad_single!(rs, rs.problem.shape)
-        _add_external_irradiance!(rs.flux_rad, rs.problem.shape, state.flux_rad[i])
+        state.problem.with_self_heating && _add_external_radiation!(state, k, i)
     end
 end
 
