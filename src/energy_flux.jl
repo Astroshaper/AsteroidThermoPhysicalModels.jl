@@ -463,7 +463,7 @@ end
 # sunlight. The power received, Σₘ Fₘ aₘ, equals F A_proj up to the shadowing discretisation
 # of the sub-faces (seen or not from the ray through their centre): on a height field every
 # ray through the reference plane meets a sub-face, the walls shading the floor.
-function _distribute_directional!(flux_sub::AbstractVector, patch::ShapeModel, visible, d̂_local::StaticVector{3}, F::Real)
+function _add_directional_irradiance!(flux_sub::AbstractVector, patch::ShapeModel, visible, d̂_local::StaticVector{3}, F::Real)
     cosθ = d̂_local[3]
     (F ≤ 0 || cosθ ≤ 0) && return
     intensity = F / cosθ
@@ -495,7 +495,7 @@ visibility graph):
    the smooth-face term `ε σ T_j⁴ f_ij` — the view factor already carries the geometry of the
    pair, and both faces are taken as small compared to their distance, as the view factor does.
 3. **Receiver**: `F_ij` is distributed over the sub-faces of `i` that see `j`
-   (`_distribute_directional!`), so the wall facing `j` is heated and the wall behind it is not.
+   (`_add_directional_irradiance!`), so the wall facing `j` is heated and the wall behind it is not.
 
 Thermal emission uses the sub-face temperatures of the previous time step and reflected sunlight
 uses the direct solar flux only (single scattering, as on the global level), so the result does
@@ -544,7 +544,7 @@ function _add_external!(state::SingleAsteroidThermoPhysicalState, k::Integer, i:
         # Far-field: irradiance on face i, then distributed over the sub-faces that see j
         Fᵢⱼ = Eⱼ * fᵢⱼ
         d̂ᵢⱼ_local = transform_physical_vector_global_to_local(shape, i, d̂ᵢⱼ)
-        _distribute_directional!(flux_sub, patch, neighbours.visible_sub_faces[p], d̂ᵢⱼ_local, Fᵢⱼ)
+        _add_directional_irradiance!(flux_sub, patch, neighbours.visible_sub_faces[p], d̂ᵢⱼ_local, Fᵢⱼ)
     end
 end
 
