@@ -694,6 +694,76 @@ Unit tests for SingleAsteroidThermoPhysicalState on a shape with surface roughne
         @test n_mixed > 0
     end
 
+    @testset "external irradiation with heterogeneous roughness models, scales and rotations" begin
+        # Every face may carry its own roughness model, scale and orientation. The masks are
+        # built per face from that face's own patch and transform, and the emitter side reads
+        # the neighbour's own patch and mask, so models with different numbers of sub-faces,
+        # different scales and rotated local frames must all agree with the reference
+        # implementation (which uses the same per-face transforms).
+        crater_a = create_shape_crater(0.4, 0.1; Nx=4, Ny=4)
+        crater_b = create_shape_crater(0.3, 0.2; xc=0.3, yc=0.6, Nx=6, Ny=6)   # off-centre: not symmetric under rotation
+        shape_hier = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
+        n_faces = length(shape_hier.faces)
+        R_z(ϕ) = SMatrix{3, 3}(cos(ϕ), sin(ϕ), 0, -sin(ϕ), cos(ϕ), 0, 0, 0, 1)
+        for i in 1:n_faces
+            if isodd(i)
+                add_roughness_models!(shape_hier, crater_a, i)
+            else
+                # crater_b at half scale, with its local frame rotated by 60° about the face normal
+                scale = 0.5
+                t = AsteroidShapeModels.compute_face_roughness_transform(shape_hier, i; scale)
+                t_rot = AsteroidShapeModels.AffineMap(R_z(π/3) * t.linear, R_z(π/3) * t.translation)
+                add_roughness_models!(shape_hier, crater_b, i; scale, transform=t_rot)
+            end
+        end
+        @test get_roughness_model_scale(shape_hier, 2) ≈ 0.5
+        @test get_roughness_model_scale(shape_hier, 1) ≈ 1.0
+        # The rotation really is applied: the local x axis of face 2 differs from the default one
+        t_default = AsteroidShapeModels.compute_face_roughness_transform(shape_hier, 2; scale=0.5)
+        ê_x_default = (t_default.linear * 0.5)' * SVector(1.0, 0.0, 0.0)
+        ê_x_rotated = transform_physical_vector_local_to_global(shape_hier, 2, SVector(1.0, 0.0, 0.0))
+        @test ê_x_default ⋅ ê_x_rotated ≈ cos(π/3)
+
+        problem_hier = SingleAsteroidThermoPhysicalProblem(shape_hier, thermo_params, grid_params;
+            with_self_shadowing=false, with_self_heating=true)
+        state_hier = AsteroidThermoPhysicalModels._build_single_state(problem_hier, CrankNicolson())
+        T₀ = repeat(reshape(range(200.0, 300.0; length=n_faces) |> collect, 1, n_faces), grid_params.n_depth)
+        AsteroidThermoPhysicalModels.init_temperature!(state_hier, T₀)
+
+        r☉ = SVector(0.2, -0.1, 1.0) * AsteroidThermoPhysicalModels.au2m
+        AsteroidThermoPhysicalModels.update_flux_sun!(state_hier, r☉)
+        AsteroidThermoPhysicalModels.update_flux_scat_single!(state_hier)
+        AsteroidThermoPhysicalModels.update_flux_rad_single!(state_hier)
+
+        # One standalone state per roughness model, for the intra-patch part
+        alone = Dict(patch => AsteroidThermoPhysicalModels._build_single_state(
+                SingleAsteroidThermoPhysicalProblem(patch, thermo_params, grid_params;
+                    with_self_shadowing=true, with_self_heating=true), CrankNicolson())
+            for patch in (crater_a, crater_b))
+
+        n_checked = 0
+        for (i, k) in enumerate(state_hier.face_roughness_indices)
+            rs = state_hier.roughness_states[k]
+            nb = state_hier.roughness_neighbours[k]
+            patch = rs.problem.shape
+            @test patch === (isodd(i) ? crater_a : crater_b)
+            @test all(length(v) == length(patch.faces) for v in nb.visible_sub_faces)
+
+            state_alone = alone[patch]
+            AsteroidThermoPhysicalModels.init_temperature!(state_alone, T₀[begin, i])
+            AsteroidThermoPhysicalModels.update_flux_sun!(state_alone, transform_physical_vector_global_to_local(shape_hier, i, r☉))
+            AsteroidThermoPhysicalModels.update_flux_scat_single!(state_alone)
+            AsteroidThermoPhysicalModels.update_flux_rad_single!(state_alone)
+            ext_rad, total_rad, _ = external_reference(state_hier, shape_hier, i, k, emission_rad_global(state_hier),  emission_rad_sub)
+            ext_scat, _, _        = external_reference(state_hier, shape_hier, i, k, emission_scat_global(state_hier), emission_scat_sub)
+            @test rs.flux_rad  ≈ state_alone.flux_rad  .+ ext_rad
+            @test rs.flux_scat ≈ state_alone.flux_scat .+ ext_scat
+            @test all(isfinite, rs.flux_rad)
+            total_rad > 0 && (n_checked += 1)
+        end
+        @test n_checked > 0
+    end
+
     @testset "self-heating disabled leaves the global fluxes at zero" begin
         shape_hier = create_shape_crater(0.4, 0.1; Nx=8, Ny=8)
         add_roughness_models!(shape_hier, create_shape_crater(0.4, 0.1; Nx=4, Ny=4))
