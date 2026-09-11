@@ -165,6 +165,26 @@ where ``\mathbf{f}_j`` and ``a_j`` are the force and area of sub-facet ``j`` in 
 
 When self-heating is enabled, the photons that leave the roughness model towards the sky and are intercepted by other facets ``k`` of the global shape are accounted for as for a smooth facet, taking the emission of the patch as isotropic: the power ``P_{\mathrm{sky},i} = (A_i / A_\mathrm{proj}) \sum_j E_j a_j f_{\mathrm{sky},j}`` that escapes the model, with ``f_{\mathrm{sky},j}`` the sky view factor of sub-facet ``j``, contributes ``(P_{\mathrm{sky},i} / c) \sum_k f_{ik} \hat{\mathbf{d}}_{ik}``.
 
+### Irradiation of a roughness model by the other facets
+
+A facet ``i`` that carries a roughness model receives, on its sub-facets ``m``, the scattered sunlight and the thermal radiation of every facet ``j`` visible from ``i``. The same far-field approximation as the view factor is used — both facets are small compared to their distance, so every sub-facet of ``j`` sees every sub-facet of ``i`` along the single direction ``\hat{\boldsymbol{d}}_{ij}`` — and the exchange separates into an emitter side and a receiver side.
+
+The emission of ``j`` towards ``i`` is that of its own roughness model in the direction ``\hat{\boldsymbol{d}}_{ji}``, per unit area of the model's reference plane projected onto that direction:
+
+```math
+E_j(\hat{\boldsymbol{d}}_{ji}) = \frac{1}{A_\mathrm{proj}\cos\theta_{ji}} \sum_n V_n(\hat{\boldsymbol{d}}_{ji})\,(\hat{\boldsymbol{n}}_n \cdot \hat{\boldsymbol{d}}_{ji})^+ \, E_n \, a_n
+```
+
+where ``V_n`` tells whether sub-facet ``n`` of ``j`` is seen from ``\hat{\boldsymbol{d}}_{ji}`` (it may be hidden by the model's own walls), ``E_n`` is ``\varepsilon\sigma T_n^4`` for thermal radiation and ``R_\mathrm{vis} F_{\mathrm{sun},n}`` for reflected sunlight (single scattering), and ``\cos\theta_{ji}`` is the inclination of ``\hat{\boldsymbol{d}}_{ji}`` to the reference plane. A hot sunlit wall that faces ``i`` makes ``E_j`` larger than the Lambertian ``\varepsilon\sigma T_j^4`` of the smooth facet — thermal-infrared beaming — and a shaded wall makes it smaller. A facet without a roughness model radiates as a Lambertian face.
+
+The irradiance reaching ``i`` is ``F_{ij} = E_j(\hat{\boldsymbol{d}}_{ji}) f_{ij}``, the same form as the smooth-surface term ``\varepsilon\sigma T_j^4 f_{ij}``. It is distributed over the sub-facets of ``i`` that see ``j``, each by its own inclination:
+
+```math
+F_m \mathrel{+}= \frac{F_{ij}}{\cos\theta_{ij}} \, V_m(\hat{\boldsymbol{d}}_{ij}) \, (\hat{\boldsymbol{n}}_m \cdot \hat{\boldsymbol{d}}_{ij})^+
+```
+
+so that the wall facing ``j`` is heated and the wall behind it is not — the same rule as for the sunlight, with ``F_{ij}`` in place of the solar flux. The power received, ``\sum_m F_m a_m``, equals ``F_{ij} A_\mathrm{proj}`` up to the shadowing discretisation of the sub-facets. The sub-facet visibilities ``V`` of every visible pair are geometric and are computed once when the state is built; the temperatures they weight are those of each time step. For a flat roughness model every sub-facet sees every neighbour with the inclination of the facet, and the sum reduces to the smooth-surface flux of the facet. The global-level fluxes of ``i`` are not affected: they remain the smooth-surface baseline.
+
 ## Direction-Dependent Radiance of a Rough Facet
 
 A facet with a roughness model does not radiate as a Lambertian surface: the sunlit wall of a crater is hotter than the shadowed one, and which wall an observer sees depends on the viewing direction. This is thermal-infrared *beaming*. The radiance of such a facet towards an observer direction ``\hat{\mathbf d}`` is evaluated as a post-processing step from the recorded sub-facet temperatures ([`roughness_radiance`](@ref), [`directional_radiance`](@ref)):
