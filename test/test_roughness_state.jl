@@ -471,9 +471,9 @@ Unit tests for SingleAsteroidThermoPhysicalState on a shape with surface roughne
             nb = state_hier.roughness_neighbours[k]
             @test length(nb.visible_sub_faces) == n_visible_faces(shape_hier.face_visibility_graph, i)
             @test all(length(v) == length(crater.faces) for v in nb.visible_sub_faces)
-            # Every neighbour carries roughness here, so every reverse position points back at i
+            # Every neighbour carries roughness here, so every reverse index points back at i
             for (p, j) in enumerate(get_visible_face_indices(shape_hier.face_visibility_graph, i))
-                @test get_visible_face_indices(shape_hier.face_visibility_graph, j)[nb.position_in_neighbour[p]] == i
+                @test get_visible_face_indices(shape_hier.face_visibility_graph, j)[nb.index_in_neighbour[p]] == i
             end
         end
 
@@ -675,9 +675,9 @@ Unit tests for SingleAsteroidThermoPhysicalState on a shape with surface roughne
             # Reverse positions: 0 for smooth neighbours, the position of i otherwise
             for (p, j) in enumerate(js)
                 if state_hier.face_roughness_indices[j] == 0
-                    @test nb.position_in_neighbour[p] == 0
+                    @test nb.index_in_neighbour[p] == 0
                 else
-                    @test get_visible_face_indices(shape_hier.face_visibility_graph, j)[nb.position_in_neighbour[p]] == i
+                    @test get_visible_face_indices(shape_hier.face_visibility_graph, j)[nb.index_in_neighbour[p]] == i
                 end
             end
 

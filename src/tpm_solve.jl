@@ -102,7 +102,7 @@ end
 
 
 # For every face with a roughness model, the visibility of its sub-faces from the direction of
-# each neighbouring global face, and the position of the face in that neighbour's own list.
+# each neighbouring global face, and the index of the face in that neighbour's own list.
 # The direction `d̂_ij` of the visibility graph is rotated into the local frame of the patch and
 # handed to `update_illumination!` in place of the Sun: illumination from a direction is the
 # same test as being seen from it. The masks are geometry only; the temperatures they weight are
@@ -114,7 +114,7 @@ function _build_roughness_neighbours(shape::ShapeModel, face_roughness_indices::
         neighbours = get_visible_face_indices(graph, i)
         directions = get_visible_face_directions(graph, i)
         visible_sub_faces = Vector{BitVector}(undef, length(neighbours))
-        position   = zeros(Int, length(neighbours))
+        index_in_neighbour = zeros(Int, length(neighbours))
         seen       = Vector{Bool}(undef, length(patch.faces))
 
         for (p, (j, d̂_ij)) in enumerate(zip(neighbours, directions))
@@ -127,11 +127,11 @@ function _build_roughness_neighbours(shape::ShapeModel, face_roughness_indices::
                 isnothing(q) && throw(ArgumentError(
                     "face_visibility_graph is not symmetric: face $i sees face $j but not the reverse"
                 ))
-                position[p] = q
+                index_in_neighbour[p] = q
             end
         end
 
-        RoughnessNeighbours(visible_sub_faces, position)
+        RoughnessNeighbours(visible_sub_faces, index_in_neighbour)
     end
 end
 

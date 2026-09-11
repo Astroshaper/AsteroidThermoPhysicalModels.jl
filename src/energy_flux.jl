@@ -533,7 +533,7 @@ function _add_external!(state::SingleAsteroidThermoPhysicalState, k::Integer, i:
         else
             rs_j    = state.roughness_states[k_j]
             patch_j = rs_j.problem.shape
-            visible_sub_faces_j = state.roughness_neighbours[k_j].visible_sub_faces[neighbours.position_in_neighbour[p]]
+            visible_sub_faces_j = state.roughness_neighbours[k_j].visible_sub_faces[neighbours.index_in_neighbour[p]]
             d̂ⱼᵢ     = transform_physical_vector_global_to_local(shape, j, -d̂ᵢⱼ)
             tp_j    = rs_j.problem.thermo_params
             Eⱼ = kind === :rad ?

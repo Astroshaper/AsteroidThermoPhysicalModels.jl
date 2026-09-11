@@ -24,13 +24,13 @@ state construction, when `with_self_heating` is enabled.
 - `visible_sub_faces`     : `visible_sub_faces[p][m]` is `true` when sub-face `m` is seen from the direction
                             of the `p`-th visible global face (in the local frame of the model,
                             including self-shadowing by the model's own topography)
-- `position_in_neighbour` : Position of this face in the list of the `p`-th visible face, so that
+- `index_in_neighbour`    : Index of this face in the list of the `p`-th visible face, so that
                             the neighbour's mask towards this face can be read directly; `0` when
                             the neighbour has no roughness model
 """
 struct RoughnessNeighbours
     visible_sub_faces     ::Vector{BitVector}
-    position_in_neighbour ::Vector{Int}
+    index_in_neighbour    ::Vector{Int}
 end
 
 
