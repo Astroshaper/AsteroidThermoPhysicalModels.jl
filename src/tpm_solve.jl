@@ -77,7 +77,9 @@ function _build_single_state(
         # The exchange of radiation between roughness models needs, for every pair of visible
         # faces, the sub-faces that each model exposes towards the other. Only with self-heating.
         if problem.with_self_heating
-            roughness_neighbours = _build_roughness_neighbours(shape, face_roughness_indices)
+            _log_elapsed("Building sub-facet visibility masks for the roughness models") do
+                roughness_neighbours = _build_roughness_neighbours(shape, face_roughness_indices)
+            end
         end
     end
 
