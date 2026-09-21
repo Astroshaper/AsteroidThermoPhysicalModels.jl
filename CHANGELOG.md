@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `analytical_solution_periodic`, the linearised periodic solution of the 1D heat equation
+  in a slab with a radiation boundary condition at the surface and an insulated bottom, and a
+  test (`test/test_heat_conduction_periodic.jl`) that verifies the amplitude, phase lag and
+  depth decay of the three solvers against it. The test documents the current accuracy of the
+  surface boundary condition (#247): with 20 nodes per skin depth the surface amplitude is
+  0.2–0.5 % too large and its phase lag 0.25–0.75° too small
+
 ### Changed
 
 - **The radiation a roughness model receives from the other facets is now directional.**

@@ -109,7 +109,9 @@ Thermophysical modeling of surface roughness on top of `AsteroidShapeModels.jl` 
 - [ ] **Multi-threading** of the sub-facet loops and the global heat conduction — a roughness run on a 9k-facet shape with 4×4 craters takes about 50 minutes single-threaded (3.5 hours with 8×8); parameter surveys need an order of magnitude less
 
 - [ ] **Heat conduction solver validation**
-  - [ ] Validate numerical methods against analytical solutions
+  - [x] Validate numerical methods against analytical solutions — periodic solution with a radiation boundary condition
+  - [ ] Non-uniform (geometrically stretched) depth grid for long seasonal spin-ups (#246)
+  - [ ] Surface energy balance with the half-cell heat capacity and a second-order conduction flux (#247)
   - [ ] Optimize implicit solver matrix operations
 
 - [ ] **Extended I/O**
