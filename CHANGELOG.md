@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`save_forces` / `save_torques` with rotation-free binary ephemerides now raise an
+  `ArgumentError` at `solve` time instead of silently returning zeros.** With
+  `BinaryAsteroidEphemerides{Nothing}` (no `R_primary_to_inertial`), the forces were neither
+  computed nor recorded, but the solution arrays were still allocated, so the solver returned
+  all-zero forces and torques without any error. The single-asteroid guard already existed;
+  the binary case now behaves the same. `save_face_forces` (body-fixed, per-face) remains
+  valid without rotation matrices. (#250)
+
 ### Changed
 
 - **The radiation a roughness model receives from the other facets is now directional.**

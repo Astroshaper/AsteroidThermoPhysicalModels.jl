@@ -124,6 +124,31 @@ Unit tests for SingleAsteroidOutputSpec and BinaryAsteroidOutputSpec types:
         @test_throws ArgumentError AsteroidThermoPhysicalModels._validate_output_spec(output, ephem_b)
     end
 
+    @testset "_validate_output_spec — invalid binary (ArgumentError: forces with no rotation matrices)" begin
+        # save_forces/save_torques require R_primary_to_inertial in ephemerides; without this
+        # guard the solver would silently return all-zero forces and torques (#250)
+        r_secondary            = [[1e6, 0.0, 0.0]          for _ in 1:n]
+        R_primary_to_secondary = [Matrix{Float64}(I, 3, 3) for _ in 1:n]
+        ephem_b = BinaryAsteroidEphemerides(times, r_sun, r_secondary, R_primary_to_secondary)
+
+        output_forces = BinaryAsteroidOutputSpec(output_times, output_times; save_forces=true)
+        @test_throws ArgumentError AsteroidThermoPhysicalModels._validate_output_spec(output_forces, ephem_b)
+
+        output_torques = BinaryAsteroidOutputSpec(output_times, output_times; save_torques=true)
+        @test_throws ArgumentError AsteroidThermoPhysicalModels._validate_output_spec(output_torques, ephem_b)
+
+        # The flags on the secondary alone must be rejected as well
+        output_secondary_only = BinaryAsteroidOutputSpec(
+            SingleAsteroidOutputSpec(output_times),
+            SingleAsteroidOutputSpec(output_times; save_forces=true),
+        )
+        @test_throws ArgumentError AsteroidThermoPhysicalModels._validate_output_spec(output_secondary_only, ephem_b)
+
+        # save_face_forces (body-fixed, per-face) stays valid without rotation matrices
+        output_face_forces = BinaryAsteroidOutputSpec(output_times, output_times; save_face_forces=true)
+        @test_nowarn AsteroidThermoPhysicalModels._validate_output_spec(output_face_forces, ephem_b)
+    end
+
     @testset "BinaryAsteroidOutputSpec convenience constructor" begin
         output_times_s        = times[end-1:end]
         subsurface_face_ids_s = [2, 4]
