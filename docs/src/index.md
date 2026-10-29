@@ -63,12 +63,13 @@ using AsteroidThermoPhysicalModels
 # Load shape model
 shape = load_shape_obj("asteroid_shape.obj"; scale=1000, with_face_visibility=true, with_bvh=true)
 
-# Ephemerides: one rotation with a synthetic sun trajectory (use SPICE kernels in practice)
-P       = 8.0 * 3600  # Rotation period [s]
-n_steps = 73
-times   = range(0.0, P; length=n_steps)
-r_sun   = [[cos(2π*t/P), sin(2π*t/P), 0.0] * 1.5e11 for t in times]  # Sun position in the body-fixed frame [m]
-ephem   = SingleAsteroidEphemerides(collect(times), r_sun)
+# Ephemerides: 5 rotations with a synthetic sun trajectory (use SPICE kernels in practice)
+P        = 8.0 * 3600  # Rotation period [s]
+n_cycles = 5           # Number of rotations to simulate
+n_steps  = 72          # Time steps per rotation
+times    = range(0.0, n_cycles * P; length=n_cycles * n_steps + 1)
+r_sun    = [[cos(2π*t/P), sin(2π*t/P), 0.0] * 1.5e11 for t in times]  # Sun position in the body-fixed frame [m]
+ephem    = SingleAsteroidEphemerides(collect(times), r_sun)
 
 # Material properties and depth grid
 thermo_params = ThermoParams(
@@ -89,8 +90,8 @@ problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
     lower_boundary_condition = InsulationBoundaryCondition(),
 )
 
-# Output specification: save the last 10 epochs; subsurface profiles of faces 1–3
-output = SingleAsteroidOutputSpec(times[end-9:end]; subsurface_face_ids=[1, 2, 3])
+# Output specification: save the last rotation; subsurface profiles of faces 1–3
+output = SingleAsteroidOutputSpec(times[end-n_steps:end]; subsurface_face_ids=[1, 2, 3])
 
 # Solve
 # Heat-conduction algorithm. Other choices:
