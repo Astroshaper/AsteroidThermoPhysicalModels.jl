@@ -103,20 +103,20 @@ shape = load_shape_obj("path/to/shape.obj"; scale=1000, with_face_visibility=tru
 ephem = SingleAsteroidEphemerides(times, r_sun)
 
 # --- Thermal parameters ---
-k     = 0.1    # Thermal conductivity [W/m/K]
-ρ     = 1270.0 # Density [kg/m³]
-Cₚ    = 600.0  # Heat capacity [J/kg/K]
-R_vis = 0.04   # Reflectance in visible light [-]
-R_ir  = 0.0    # Reflectance in thermal infrared [-]
-ε     = 1.0    # Emissivity [-]
-z_max   = 0.6  # Lower boundary depth [m]
-n_depth = 61   # Number of depth nodes
-Δz      = z_max / (n_depth - 1)
+thermo_params = ThermoParams(
+    conductivity    = 0.1,     # Thermal conductivity [W/m/K]
+    density         = 1270.0,  # Density [kg/m³]
+    heat_capacity   = 600.0,   # Heat capacity [J/kg/K]
+    reflectance_vis = 0.04,    # Reflectance in visible light [-]
+    reflectance_ir  = 0.0,     # Reflectance in thermal infrared [-]
+    emissivity      = 1.0,     # Emissivity [-]
+)
 
-thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+# --- Depth grid ---
+grid_params = GridParams(; z_max=0.6, n_depth=61)  # lower boundary at 0.6 m, 61 depth nodes
 
 # --- Problem definition ---
-problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
     with_self_shadowing      = true,
     with_self_heating        = true,
     upper_boundary_condition = RadiationBoundaryCondition(),
@@ -129,7 +129,12 @@ subsurface_face_ids = [1, 2, 3]                 # faces for saving subsurface te
 output = SingleAsteroidOutputSpec(output_times; subsurface_face_ids)
 
 # --- Solve ---
-solution = solve(problem, CrankNicolson();
+# Heat-conduction algorithm. Other choices:
+#   ExplicitEuler() : first order, conditionally stable (Fourier number < 0.5)
+#   ImplicitEuler() : first order, unconditionally stable
+algorithm = CrankNicolson()  # second order, unconditionally stable
+
+solution = solve(problem, algorithm;
     ephem               = ephem,
     output              = output,
     initial_temperature = 200.0,  # [K]
