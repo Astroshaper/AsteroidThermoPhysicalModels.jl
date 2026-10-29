@@ -93,7 +93,12 @@ problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
 output = SingleAsteroidOutputSpec(times[end-9:end]; subsurface_face_ids=[1, 2, 3])
 
 # Solve
-solution = solve(problem, CrankNicolson();
+# Heat-conduction algorithm. Other choices:
+#   ExplicitEuler() : first order, conditionally stable (Fourier number < 0.5)
+#   ImplicitEuler() : first order, unconditionally stable
+algorithm = CrankNicolson()  # second order, unconditionally stable
+
+solution = solve(problem, algorithm;
     ephem               = ephem,
     output              = output,
     initial_temperature = 200.0,  # [K]
@@ -133,7 +138,8 @@ problem = BinaryAsteroidThermoPhysicalProblem(prob1, prob2;
 )
 
 # Solve (binary_ephem::BinaryAsteroidEphemerides carries the mutual orbit and rotations)
-solution = solve(problem, CrankNicolson();
+algorithm = CrankNicolson()  # or ExplicitEuler(), ImplicitEuler()
+solution = solve(problem, algorithm;
     ephem                         = binary_ephem,
     output                        = BinaryAsteroidOutputSpec(output_times, output_times),
     initial_temperature_primary   = 200.0,

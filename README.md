@@ -136,7 +136,12 @@ subsurface_face_ids = [1, 2, 3]                 # faces for saving subsurface te
 output = SingleAsteroidOutputSpec(output_times; subsurface_face_ids)
 
 # --- Solve ---
-solution = solve(problem, CrankNicolson();
+# Heat-conduction algorithm. Other choices:
+#   ExplicitEuler() : first order, conditionally stable (Fourier number < 0.5)
+#   ImplicitEuler() : first order, unconditionally stable
+algorithm = CrankNicolson()  # second order, unconditionally stable
+
+solution = solve(problem, algorithm;
     ephem               = ephem,
     output              = output,
     initial_temperature = 200.0,  # [K]
