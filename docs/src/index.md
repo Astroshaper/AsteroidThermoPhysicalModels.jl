@@ -61,70 +61,65 @@ Here's a simple example of setting up and running a thermophysical model for a s
 using AsteroidThermoPhysicalModels
 
 # Load shape model
-shape = load_shape_obj("asteroid_shape.obj"; scale=1000, with_face_visibility=true)
+shape = load_shape_obj("asteroid_shape.obj"; scale=1000, with_face_visibility=true, with_bvh=true)
 
-# Set thermal parameters
-P = 8.0 * 3600  # Rotation period [s]
-l = 0.05         # Thermal skin depth [m]
-Γ = 200.0        # Thermal inertia [J m⁻² K⁻¹ s⁻¹/²]
-R_vis = 0.1      # Reflectance in visible light [-]
-R_ir = 0.0       # Reflectance in thermal infrared [-]
-ε = 0.9          # Emissivity [-]
-z_max = 0.5      # Depth of lower boundary [m]
-n_depth = 41     # Number of depth steps
-Δz = z_max / (n_depth - 1)  # Depth step width [m]
+# Ephemerides: 5 rotations with a synthetic sun trajectory (use SPICE kernels in practice)
+P        = 8.0 * 3600  # Rotation period [s]
+n_cycles = 5           # Number of rotations to simulate
+n_steps  = 72          # Time steps per rotation
+times    = range(0.0, n_cycles * P; length=n_cycles * n_steps + 1)
+r_sun    = [[cos(2π*t/P), sin(2π*t/P), 0.0] * 1.5e11 for t in times]  # Sun position in the body-fixed frame [m]
+ephem    = SingleAsteroidEphemerides(collect(times), r_sun)
 
-thermo_params = ThermoParams(P, l, Γ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+# Material properties and depth grid
+thermo_params = ThermoParams(
+    conductivity    = 0.1,     # [W/m/K]
+    density         = 1270.0,  # [kg/m³]
+    heat_capacity   = 600.0,   # [J/kg/K]
+    reflectance_vis = 0.1,     # [-]
+    reflectance_ir  = 0.0,     # [-]
+    emissivity      = 0.9,     # [-]
+)
+grid_params = GridParams(; z_max=0.5, n_depth=41)  # lower boundary at 0.5 m, 41 depth nodes
 
-# Create TPM model
-stpm = SingleAsteroidTPM(shape, thermo_params;
-    SELF_SHADOWING = true,
-    SELF_HEATING   = true,
-    SOLVER         = CrankNicolsonSolver(thermo_params),
-    BC_UPPER       = RadiationBoundaryCondition(),
-    BC_LOWER       = InsulationBoundaryCondition()
+# Problem definition
+problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
+    with_self_shadowing      = true,
+    with_self_heating        = true,
+    upper_boundary_condition = RadiationBoundaryCondition(),
+    lower_boundary_condition = InsulationBoundaryCondition(),
 )
 
-# Initialize temperature
-init_temperature!(stpm, 200.0)  # Initial temperature [K]
+# Output specification: save the last rotation; subsurface profiles of faces 1–3
+output = SingleAsteroidOutputSpec(times[end-n_steps:end]; subsurface_face_ids=[1, 2, 3])
 
-# Define ephemerides (simplified example)
-n_steps = 72
-times = range(0.0, P; length=n_steps)
-sun_positions = [normalize([cos(2π*t/P), sin(2π*t/P), 0.0]) * 1.5e11 for t in times]
+# Solve
+# Heat-conduction algorithm. Other choices:
+#   ExplicitEuler() : first order, conditionally stable (Fourier number < 0.5)
+#   ImplicitEuler() : first order, unconditionally stable
+algorithm = CrankNicolson()  # second order, unconditionally stable
 
-ephem = (time = collect(times), sun = sun_positions)
-
-# Define which timesteps to save detailed data for
-times_to_save = times[end-10:end]  # Save last 10 timesteps
-face_ID = [1, 2, 3]  # Save subsurface temperature for these faces
-
-# Run TPM
-result = run_TPM!(stpm, ephem, times_to_save, face_ID)
+solution = solve(problem, algorithm;
+    ephem               = ephem,
+    output              = output,
+    initial_temperature = 200.0,  # [K]
+)
 
 # Export results
-export_TPM_results("output_directory", result)
+export_solution("output/", solution)
 ```
 
 ## Output Files
 
-After running the simulation, you will get the following output files. Note that the thermal force and torque are calculated in the asteroid-fixed frame.
+`export_solution` writes the saved quantities as CSV files. Which files appear depends on
+the output specification (`SingleAsteroidOutputSpec` / `BinaryAsteroidOutputSpec`):
 
-- `physical_quantities.csv`
-    - `time`     : Time steps [s]
-    - `E_in`     : Input energy per second on the whole surface [W]
-    - `E_out`    : Output energy per second from the whole surface [W]
-    - `E_cons`   : Energy conservation ratio [-], ratio of total energy going out to total energy coming in during the last rotation cycle
-    - `force_x`  : x-component of the thermal force [N]
-    - `force_y`  : y-component of the thermal force [N]
-    - `force_z`  : z-component of the thermal force [N]
-    - `torque_x` : x-component of the thermal torque [N·m]
-    - `torque_y` : y-component of the thermal torque [N·m]
-    - `torque_z` : z-component of the thermal torque [N·m]
-
-- `subsurface_temperature.csv` : Temperature [K] as a function of depth [m] and time [s]
-- `surface_temperature.csv` : Surface temperature of every face [K] as a function of time [s]
-- `thermal_force.csv` : Thermal force on every face of the shape model [N] as a function of time
+- `diagnostics.csv` : Energy balance of every saved epoch (`E_in`, `E_out`, `E_cons`)
+- `surface_temperature.csv` : Surface temperature of every face [K] as a function of time
+- `subsurface_temperature.csv` : Temperature [K] as a function of depth [m] and time (faces in `subsurface_face_ids`)
+- `roughness_surface_temperature.csv` : Sub-facet temperatures of the roughness models (with `save_roughness_temperature = true`)
+- `thermal_net_forces.csv` : Net thermal force [N] and torque [N·m] in the inertial frame (with `save_forces` / `save_torques`; requires the rotation matrices to the inertial frame in the ephemerides)
+- `thermal_face_forces.csv` : Thermal force on every face [N] in the body-fixed frame (with `save_face_forces = true`)
 
 ## Binary Asteroid Systems
 
@@ -133,18 +128,24 @@ After running the simulation, you will get the following output files. Note that
 Example setup for a binary asteroid system:
 
 ```julia
-# Create TPM models for primary and secondary
-stpm1 = SingleAsteroidTPM(shape1, thermo_params1; ...)
-stpm2 = SingleAsteroidTPM(shape2, thermo_params2; ...)
+# Problems for the primary and secondary
+prob1 = SingleAsteroidThermoPhysicalProblem(shape1, thermo_params1, grid_params1; ...)
+prob2 = SingleAsteroidThermoPhysicalProblem(shape2, thermo_params2, grid_params2; ...)
 
-# Create binary TPM model
-btpm = BinaryAsteroidTPM(stpm1, stpm2;
-    MUTUAL_SHADOWING = true,
-    MUTUAL_HEATING   = true,
+# Binary problem
+problem = BinaryAsteroidThermoPhysicalProblem(prob1, prob2;
+    with_mutual_shadowing = true,
+    with_mutual_heating   = true,
 )
 
-# Run TPM for binary system
-result = run_TPM!(btpm, binary_ephem, times_to_save, face_ID_pri, face_ID_sec)
+# Solve (binary_ephem::BinaryAsteroidEphemerides carries the mutual orbit and rotations)
+algorithm = CrankNicolson()  # or ExplicitEuler(), ImplicitEuler()
+solution = solve(problem, algorithm;
+    ephem                         = binary_ephem,
+    output                        = BinaryAsteroidOutputSpec(output_times, output_times),
+    initial_temperature_primary   = 200.0,
+    initial_temperature_secondary = 200.0,
+)
 ```
 
 ## Non-Gravitational Effects
