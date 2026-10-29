@@ -103,20 +103,13 @@ shape = load_shape_obj("path/to/shape.obj"; scale=1000, with_face_visibility=tru
 ephem = SingleAsteroidEphemerides(times, r_sun)
 
 # --- Thermal parameters ---
-k     = 0.1    # Thermal conductivity [W/m/K]
-ρ     = 1270.0 # Density [kg/m³]
-Cₚ    = 600.0  # Heat capacity [J/kg/K]
-R_vis = 0.04   # Reflectance in visible light [-]
-R_ir  = 0.0    # Reflectance in thermal infrared [-]
-ε     = 1.0    # Emissivity [-]
-
 thermo_params = ThermoParams(
-    conductivity    = k,
-    density         = ρ,
-    heat_capacity   = Cₚ,
-    reflectance_vis = R_vis,
-    reflectance_ir  = R_ir,
-    emissivity      = ε,
+    conductivity    = 0.1,     # Thermal conductivity [W/m/K]
+    density         = 1270.0,  # Density [kg/m³]
+    heat_capacity   = 600.0,   # Heat capacity [J/kg/K]
+    reflectance_vis = 0.04,    # Reflectance in visible light [-]
+    reflectance_ir  = 0.0,     # Reflectance in thermal infrared [-]
+    emissivity      = 1.0,     # Emissivity [-]
 )
 
 # --- Depth grid ---
