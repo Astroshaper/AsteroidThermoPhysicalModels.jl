@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   computed nor recorded, but the solution arrays were still allocated, so the solver returned
   all-zero forces and torques without any error. The single-asteroid guard already existed;
   the binary case now behaves the same. `save_face_forces` (body-fixed, per-face) remains
-  valid without rotation matrices. (#250)
+  valid without rotation matrices. (issue #250, fixed in PR #251)
 
 ### Changed
 
@@ -34,7 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   number of sub-facets — about 15 µs per pair and time step for a 1000-sub-facet model, and
   0.5 ms per pair for the precomputation of the masks. This is a few percent of a step on a
   mostly convex body, where only a few facets see each other, but dominates it on a strongly
-  concave one (2048 facets seeing 560 others each: 16 s per step, 9 min of precomputation)
+  concave one (2048 facets seeing 560 others each: 16 s per step, 9 min of precomputation).
+  (PR #244)
 
 ## [0.3.0] - 2026-09-09
 
