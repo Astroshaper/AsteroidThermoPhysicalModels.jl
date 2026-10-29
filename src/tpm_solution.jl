@@ -170,6 +170,22 @@ function _validate_output_spec(output::BinaryAsteroidOutputSpec, ephem)
     _validate_output_spec(output.secondary, ephem)
 end
 
+# For {Nothing} ephem, forces and torques cannot be computed (no rotation matrices).
+# Without this guard the solver would run and return force/torque arrays still filled
+# with their zero initialisation (#250).
+function _validate_output_spec(output::BinaryAsteroidOutputSpec, ephem::BinaryAsteroidEphemerides{Nothing})
+    _validate_output_spec(output.primary,   ephem)
+    _validate_output_spec(output.secondary, ephem)
+
+    if output.primary.save_forces   || output.primary.save_torques ||
+       output.secondary.save_forces || output.secondary.save_torques
+        throw(ArgumentError(
+            "save_forces and save_torques require R_primary_to_inertial in ephemerides " *
+            "(use BinaryAsteroidEphemerides with rotation matrices)"
+        ))
+    end
+end
+
 
 # ╔═══════════════════════════════════════════════════════════════════╗
 # ║                     Solution types                                ║
