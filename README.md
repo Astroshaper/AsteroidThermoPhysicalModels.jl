@@ -52,6 +52,17 @@ pkg> add AsteroidThermoPhysicalModels
 
 ## 🆕 What's New in v0.3.x
 
+### v0.3.1
+
+- Requesting `save_forces` / `save_torques` for a binary system without the rotation matrices
+  to the inertial frame now raises an `ArgumentError` at `solve` time instead of silently
+  returning all-zero forces ([#250](https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl/issues/250))
+- The radiation a roughness model receives from the other facets is now directional
+  (thermal-infrared beaming towards the receiving facet); results change on concave shapes
+  with surface roughness and self-heating ([#244](https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl/pull/244))
+- The README quick start and the documentation index now follow the v0.3 API
+  ([#249](https://github.com/Astroshaper/AsteroidThermoPhysicalModels.jl/issues/249))
+
 ### v0.3.0
 
 This release adds **surface roughness** on top of `AsteroidShapeModels.jl` v0.6: a facet can carry a small roughness model (e.g. a spherical crater) that is solved as a thermophysical model of its own, which produces thermal-infrared beaming in the recorded forces and in the new direction-dependent radiance.

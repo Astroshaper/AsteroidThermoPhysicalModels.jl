@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.1] - 2026-10-29
 
+No migration required from v0.3.0.
+
 ### Fixed
 
 - **`save_forces` / `save_torques` with rotation-free binary ephemerides now raise an
