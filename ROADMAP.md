@@ -104,7 +104,13 @@ Thermophysical modeling of surface roughness on top of `AsteroidShapeModels.jl` 
 **↓ Planned Releases ↓**
 ---
 
-## v0.3.1 - Multi-threading, Solver Quality and Extended I/O (Target: 2026)
+## v0.3.1 - Silent-Zero Fix and Directional External Irradiation (Released: 2026-10-29)
+
+- [x] **Reject `save_forces` / `save_torques` with rotation-free binary ephemerides** — silently returned all-zero forces up to v0.3.0; now an `ArgumentError` at `solve` time (#250, #251)
+- [x] **Directional external irradiation of the roughness sub-facets** — the flux a roughness model receives from the other facets carries thermal-infrared beaming instead of an isotropic spread (#244)
+- [x] **Docs**: README quick start and `docs/src/index.md` updated to the v0.3 API; `GridParams` docstring examples use the keyword constructor (#249, #245, #253)
+
+## v0.3.2 - Multi-threading, Solver Quality and Extended I/O (Target: 2026)
 
 - [ ] **Multi-threading** of the sub-facet loops and the global heat conduction — a roughness run on a 9k-facet shape with 4×4 craters takes about 50 minutes single-threaded (3.5 hours with 8×8); parameter surveys need an order of magnitude less
 
