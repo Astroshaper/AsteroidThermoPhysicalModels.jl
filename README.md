@@ -109,14 +109,21 @@ Cₚ    = 600.0  # Heat capacity [J/kg/K]
 R_vis = 0.04   # Reflectance in visible light [-]
 R_ir  = 0.0    # Reflectance in thermal infrared [-]
 ε     = 1.0    # Emissivity [-]
-z_max   = 0.6  # Lower boundary depth [m]
-n_depth = 61   # Number of depth nodes
-Δz      = z_max / (n_depth - 1)
 
-thermo_params = ThermoParams(k, ρ, Cₚ, R_vis, R_ir, ε, z_max, Δz, n_depth)
+thermo_params = ThermoParams(
+    conductivity    = k,
+    density         = ρ,
+    heat_capacity   = Cₚ,
+    reflectance_vis = R_vis,
+    reflectance_ir  = R_ir,
+    emissivity      = ε,
+)
+
+# --- Depth grid ---
+grid_params = GridParams(; z_max=0.6, n_depth=61)  # lower boundary at 0.6 m, 61 depth nodes
 
 # --- Problem definition ---
-problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params;
+problem = SingleAsteroidThermoPhysicalProblem(shape, thermo_params, grid_params;
     with_self_shadowing      = true,
     with_self_heating        = true,
     upper_boundary_condition = RadiationBoundaryCondition(),
